@@ -80,7 +80,7 @@ protocol CocoaMQTTDelegate {
     
     func mqtt(mqtt: CocoaMQTT, didPublishMessage message: CocoaMQTTMessage, id: UInt16)
     
-    func mqtt(mqtt: CocoaMQTT, didReceivedMessage message: CocoaMQTTMessage, id: UInt16 )
+    func mqtt(mqtt: CocoaMQTT, didReceiveMessage message: CocoaMQTTMessage, id: UInt16 )
     
     func mqtt(mqtt: CocoaMQTT, didSubscribeTopic topic: String)
     
