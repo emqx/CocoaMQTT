@@ -22,7 +22,7 @@ protocol CocoaMQTTDelegate {
     
     func mqtt(mqtt: CocoaMQTT, didPublishMessage message: CocoaMQTTMessage, id: UInt16)
     
-    func mqtt(mqtt: CocoaMQTT, didReceivedMessage message: CocoaMQTTMessage, id: UInt16 )
+    func mqtt(mqtt: CocoaMQTT, didReceiveMessage message: CocoaMQTTMessage, id: UInt16 )
     
     func mqtt(mqtt: CocoaMQTT, didSubscribeTopic topic: String)
     
@@ -323,7 +323,7 @@ class CocoaMQTT: NSObject, CocoaMQTTClient, GCDAsyncSocketDelegate, CocoaMQTTRea
     
     func didReceivePublish(reader: CocoaMQTTReader, message: CocoaMQTTMessage, id: UInt16) {
         NSLog("CocoaMQTT: PUBLISH Received from \(message.topic)")
-        delegate?.mqtt(self, didReceivedMessage: message, id: id)
+        delegate?.mqtt(self, didReceiveMessage: message, id: id)
         if message.qos == CocoaMQTTQOS.QOS1 {
             _puback(CocoaMQTTFrameType.PUBACK, msgid: id)
         } else if message.qos == CocoaMQTTQOS.QOS2 {

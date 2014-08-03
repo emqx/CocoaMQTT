@@ -27,7 +27,7 @@ class CocoaMQTTCli: CocoaMQTTDelegate {
         println("didPublishMessage to \(message.topic))")
     }
     
-    func mqtt(mqtt: CocoaMQTT, didReceivedMessage message: CocoaMQTTMessage, id: UInt16 ) {
+    func mqtt(mqtt: CocoaMQTT, didReceiveMessage message: CocoaMQTTMessage, id: UInt16 ) {
         println("didReceivedMessage with id \(id)")
         println("message.topic: \(message.topic)")
         println("message.payload: \(message.string)")
