@@ -7,6 +7,11 @@
 	objects = {
 
 /* Begin PBXBuildFile section */
+		8B39FA6C198DDC1E00857471 /* CocoaMQTT.swift in Sources */ = {isa = PBXBuildFile; fileRef = 8B39FA6B198DDC1E00857471 /* CocoaMQTT.swift */; };
+		8B39FA6E198DDC2900857471 /* CocoaMQTTFrame.swift in Sources */ = {isa = PBXBuildFile; fileRef = 8B39FA6D198DDC2900857471 /* CocoaMQTTFrame.swift */; };
+		8B39FA71198DDC7900857471 /* MSWeakTimer.m in Sources */ = {isa = PBXBuildFile; fileRef = 8B39FA70198DDC7900857471 /* MSWeakTimer.m */; };
+		8B39FA74198DDCB300857471 /* GCDAsyncSocket.m in Sources */ = {isa = PBXBuildFile; fileRef = 8B39FA73198DDCB300857471 /* GCDAsyncSocket.m */; };
+		8B39FA77198DDE1800857471 /* CocoaMQTTMessage.swift in Sources */ = {isa = PBXBuildFile; fileRef = 8B39FA76198DDE1800857471 /* CocoaMQTTMessage.swift */; };
 		8BF70344198DDB7900A220F6 /* main.swift in Sources */ = {isa = PBXBuildFile; fileRef = 8BF70343198DDB7900A220F6 /* main.swift */; };
 /* End PBXBuildFile section */
 
@@ -23,6 +28,14 @@
 /* End PBXCopyFilesBuildPhase section */
 
 /* Begin PBXFileReference section */
+		8B39FA6B198DDC1E00857471 /* CocoaMQTT.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = CocoaMQTT.swift; sourceTree = "<group>"; };
+		8B39FA6D198DDC2900857471 /* CocoaMQTTFrame.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = CocoaMQTTFrame.swift; sourceTree = "<group>"; };
+		8B39FA6F198DDC7900857471 /* MSWeakTimer.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = MSWeakTimer.h; sourceTree = "<group>"; };
+		8B39FA70198DDC7900857471 /* MSWeakTimer.m */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.objc; path = MSWeakTimer.m; sourceTree = "<group>"; };
+		8B39FA72198DDCB300857471 /* GCDAsyncSocket.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = GCDAsyncSocket.h; sourceTree = "<group>"; };
+		8B39FA73198DDCB300857471 /* GCDAsyncSocket.m */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.objc; path = GCDAsyncSocket.m; sourceTree = "<group>"; };
+		8B39FA75198DDD9200857471 /* CocoaMQTT-Bridging-Header.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = "CocoaMQTT-Bridging-Header.h"; sourceTree = "<group>"; };
+		8B39FA76198DDE1800857471 /* CocoaMQTTMessage.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = CocoaMQTTMessage.swift; sourceTree = "<group>"; };
 		8BF70340198DDB7900A220F6 /* CocoaMQTT */ = {isa = PBXFileReference; explicitFileType = "compiled.mach-o.executable"; includeInIndex = 0; path = CocoaMQTT; sourceTree = BUILT_PRODUCTS_DIR; };
 		8BF70343198DDB7900A220F6 /* main.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = main.swift; sourceTree = "<group>"; };
 /* End PBXFileReference section */
@@ -57,7 +70,15 @@
 		8BF70342198DDB7900A220F6 /* CocoaMQTT */ = {
 			isa = PBXGroup;
 			children = (
+				8B39FA72198DDCB300857471 /* GCDAsyncSocket.h */,
+				8B39FA73198DDCB300857471 /* GCDAsyncSocket.m */,
+				8B39FA6F198DDC7900857471 /* MSWeakTimer.h */,
+				8B39FA70198DDC7900857471 /* MSWeakTimer.m */,
 				8BF70343198DDB7900A220F6 /* main.swift */,
+				8B39FA6B198DDC1E00857471 /* CocoaMQTT.swift */,
+				8B39FA6D198DDC2900857471 /* CocoaMQTTFrame.swift */,
+				8B39FA75198DDD9200857471 /* CocoaMQTT-Bridging-Header.h */,
+				8B39FA76198DDE1800857471 /* CocoaMQTTMessage.swift */,
 			);
 			path = CocoaMQTT;
 			sourceTree = "<group>";
@@ -119,6 +140,11 @@
 			buildActionMask = 2147483647;
 			files = (
 				8BF70344198DDB7900A220F6 /* main.swift in Sources */,
+				8B39FA77198DDE1800857471 /* CocoaMQTTMessage.swift in Sources */,
+				8B39FA74198DDCB300857471 /* GCDAsyncSocket.m in Sources */,
+				8B39FA71198DDC7900857471 /* MSWeakTimer.m in Sources */,
+				8B39FA6C198DDC1E00857471 /* CocoaMQTT.swift in Sources */,
+				8B39FA6E198DDC2900857471 /* CocoaMQTTFrame.swift in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -204,6 +230,7 @@
 			isa = XCBuildConfiguration;
 			buildSettings = {
 				PRODUCT_NAME = "$(TARGET_NAME)";
+				SWIFT_OBJC_BRIDGING_HEADER = "CocoaMQTT/CocoaMQTT-Bridging-Header.h";
 			};
 			name = Debug;
 		};
@@ -211,6 +238,7 @@
 			isa = XCBuildConfiguration;
 			buildSettings = {
 				PRODUCT_NAME = "$(TARGET_NAME)";
+				SWIFT_OBJC_BRIDGING_HEADER = "CocoaMQTT/CocoaMQTT-Bridging-Header.h";
 			};
 			name = Release;
 		};
@@ -233,6 +261,7 @@
 				8BF70349198DDB7900A220F6 /* Release */,
 			);
 			defaultConfigurationIsVisible = 0;
+			defaultConfigurationName = Release;
 		};
 /* End XCConfigurationList section */
 	};
