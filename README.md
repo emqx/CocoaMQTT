@@ -94,6 +94,8 @@ protocol CocoaMQTTDelegate {
 
 }
 
+```
+
 AsyncSocket and Timer
 =====================
 
@@ -101,8 +103,6 @@ GCDAsyncSocket.h
 
 MSWeakTimer.h
 
-
-```
 
 LICENSE
 =======
