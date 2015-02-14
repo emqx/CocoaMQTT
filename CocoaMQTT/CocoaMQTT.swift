@@ -214,7 +214,7 @@ class CocoaMQTT: NSObject, CocoaMQTTClient, GCDAsyncSocketDelegate, CocoaMQTTRea
     func publish(message: CocoaMQTTMessage) -> UInt16 {
         let msgId : UInt16 = _nextMessageId()
         let frame = CocoaMQTTFramePublish(msgid: msgId, topic: message.topic, payload: message.payload)
-        frame.qos = message.qos.toRaw()
+        frame.qos = message.qos.rawValue
         frame.retain = message.retain
         frame.dup = message.dup
         send(frame, tag: Int(msgId))
@@ -228,7 +228,7 @@ class CocoaMQTT: NSObject, CocoaMQTTClient, GCDAsyncSocketDelegate, CocoaMQTTRea
     
     func subscribe(topic: String, qos: CocoaMQTTQOS = .QOS1) -> UInt16 {
         let msgId = _nextMessageId()
-        let frame = CocoaMQTTFrameSubscribe(msgid: msgId, topic: topic, reqos: qos.toRaw())
+        let frame = CocoaMQTTFrameSubscribe(msgid: msgId, topic: topic, reqos: qos.rawValue)
         send(frame, tag: Int(msgId))
         subtopics[msgId] = topic //cache?
         return msgId
@@ -272,7 +272,7 @@ class CocoaMQTT: NSObject, CocoaMQTTClient, GCDAsyncSocketDelegate, CocoaMQTTRea
     }
     
     func socket(sock: GCDAsyncSocket!, didReadData data: NSData!, withTag tag: Int) {
-        let etag : CocoaMQTTReadTag = CocoaMQTTReadTag.fromRaw(tag)!
+        let etag : CocoaMQTTReadTag = CocoaMQTTReadTag(rawValue: tag)!
         var bytes = [Byte]([0])
         switch etag {
         case CocoaMQTTReadTag.TAG_HEADER:
@@ -309,7 +309,7 @@ class CocoaMQTT: NSObject, CocoaMQTTClient, GCDAsyncSocketDelegate, CocoaMQTTRea
                 repeats: true,
                 dispatchQueue: dispatch_get_main_queue())
         }
-        let ack = CocoaMQTTConnAck.fromRaw(connack)!
+        let ack = CocoaMQTTConnAck(rawValue: connack)!
         delegate?.mqtt(self, didConnectAck: ack)
     }
 
@@ -340,7 +340,9 @@ class CocoaMQTT: NSObject, CocoaMQTTClient, GCDAsyncSocketDelegate, CocoaMQTTRea
         case .PUBCOMP: descr = "PUBCOMP"
         default: assert(false)
         }
-        if descr? { NSLog("CocoaMQTT: Send \(descr!), msgid: \(msgid)") }
+        if descr != nil {
+            NSLog("CocoaMQTT: Send \(descr!), msgid: \(msgid)")
+        }
         send(CocoaMQTTFramePubAck(type: type, msgid: msgid))
     }
 
@@ -446,7 +448,7 @@ class CocoaMQTTReader {
     func start() { readHeader() }
     
     func readHeader() {
-        _reset(); socket.readDataToLength(1, withTimeout: -1, tag: CocoaMQTTReadTag.TAG_HEADER.toRaw())
+        _reset(); socket.readDataToLength(1, withTimeout: -1, tag: CocoaMQTTReadTag.TAG_HEADER.rawValue)
     }
 
     func headerReady(header: UInt8) {
@@ -456,7 +458,7 @@ class CocoaMQTTReader {
     }
     
     func readLength() {
-        socket.readDataToLength(1, withTimeout: NSTimeInterval(timeout), tag: CocoaMQTTReadTag.TAG_LENGTH.toRaw())
+        socket.readDataToLength(1, withTimeout: NSTimeInterval(timeout), tag: CocoaMQTTReadTag.TAG_LENGTH.rawValue)
     }
 
     func lengthReady(byte: UInt8) {
@@ -474,7 +476,7 @@ class CocoaMQTTReader {
     }
 
     func readPayload() {
-        socket.readDataToLength(length, withTimeout: NSTimeInterval(timeout), tag: CocoaMQTTReadTag.TAG_PAYLOAD.toRaw())
+        socket.readDataToLength(length, withTimeout: NSTimeInterval(timeout), tag: CocoaMQTTReadTag.TAG_PAYLOAD.rawValue)
     }
 
     func payloadReady(data: NSData) {
@@ -485,7 +487,7 @@ class CocoaMQTTReader {
 
     func frameReady() {
         //handle frame
-        let frameType = CocoaMQTTFrameType.fromRaw(UInt8(header & 0xF0))!
+        let frameType = CocoaMQTTFrameType(rawValue: UInt8(header & 0xF0))!
         switch frameType {
         case .CONNACK:
            delegate.didReceiveConnAck(self, connack: data[1])
@@ -516,7 +518,7 @@ class CocoaMQTTReader {
         let frame = CocoaMQTTFramePublish(header: header, data: data)
         frame.unpack()
         let msgId = frame.msgid!
-        let qos = CocoaMQTTQOS.fromRaw(frame.qos)!
+        let qos = CocoaMQTTQOS(rawValue: frame.qos)!
         let message = CocoaMQTTMessage(topic: frame.topic!, payload: frame.payload, qos: qos, retain: frame.retain, dup: frame.dup)
         return (msgId, message)
     }

@@ -210,7 +210,7 @@ class CocoaMQTTFrame {
     }
     
     init(type: CocoaMQTTFrameType, payload: [Byte] = []) {
-        self.header = type.toRaw()
+        self.header = type.rawValue
         self.payload = payload
     }
     
@@ -253,12 +253,12 @@ class CocoaMQTTFrameConnect: CocoaMQTTFrame {
     override func pack() {
         
         variableHeader += PROTOCOL_MAGIC.bytesWithLength
-        variableHeader += PROTOCOL_MAJOR
+        variableHeader.append(PROTOCOL_MAJOR)
         payload += client.clientId.bytesWithLength
         
         if let will = client.willMessage {
             flagWill = true
-            flagWillQOS = will.qos.toRaw()
+            flagWillQOS = will.qos.rawValue
             flagWillRetain = will.retain
             payload += will.topic.bytesWithLength
             payload += will.payload
@@ -273,7 +273,7 @@ class CocoaMQTTFrameConnect: CocoaMQTTFrame {
         }
         
         flagCleanSess = true
-        variableHeader += flags
+        variableHeader.append(flags)
         variableHeader += client.keepAlive.hlBytes
     }
     
@@ -306,11 +306,11 @@ class CocoaMQTTFramePublish : CocoaMQTTFrame {
         var msb = data![0], lsb = data![1]
         var len = UInt16(msb) << 8 + UInt16(lsb)
         var pos : Int = 2 + Int(len)
-    
-        topic = String.stringWithBytes(
-            [Byte](data![2...(pos-1)]),
-            length: Int(len),
-            encoding: NSUTF8StringEncoding)!
+        topic = NSString(bytes: [Byte](data![2...(pos-1)]), length: Int(len), encoding: NSUTF8StringEncoding)
+//        topic = String.stringWithBytes(
+//            [Byte](data![2...(pos-1)]),
+//            length: Int(len),
+//            encoding: NSUTF8StringEncoding)!
 
         //msgid
         msb = data![pos]; lsb = data![pos+1]
@@ -358,20 +358,20 @@ class CocoaMQTTFrameSubscribe: CocoaMQTTFrame {
     
     var topic: String?
     
-    var reqos: UInt8 = CocoaMQTTQOS.QOS0.toRaw()
+    var reqos: UInt8 = CocoaMQTTQOS.QOS0.rawValue
     
     init(msgid: UInt16, topic: String, reqos: UInt8) {
         super.init(type: CocoaMQTTFrameType.SUBSCRIBE)
         self.msgid = msgid
         self.topic = topic
         self.reqos = reqos
-        self.qos = CocoaMQTTQOS.QOS1.toRaw()
+        self.qos = CocoaMQTTQOS.QOS1.rawValue
     }
 
     override func pack() {
         variableHeader += msgid!.hlBytes
         payload += topic!.bytesWithLength
-        payload += reqos
+        payload.append(reqos)
     }
     
 }
@@ -389,7 +389,7 @@ class CocoaMQTTFrameUnsubscribe: CocoaMQTTFrame {
         super.init(type: CocoaMQTTFrameType.UNSUBSCRIBE)
         self.msgid = msgid
         self.topic = topic
-        qos = CocoaMQTTQOS.QOS1.toRaw()
+        qos = CocoaMQTTQOS.QOS1.rawValue
     }
     
     override func pack() {
