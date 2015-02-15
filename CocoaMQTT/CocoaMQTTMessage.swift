@@ -20,9 +20,10 @@ class CocoaMQTTMessage {
     //utf8 bytes array to string
     var string: String? {
     get {
-        return String.stringWithBytes(payload,
-            length: payload.count,
-            encoding: NSUTF8StringEncoding)
+        return NSString(bytes: payload, length: payload.count, encoding: NSUTF8StringEncoding)
+//        return String.stringWithBytes(payload,
+//            length: payload.count,
+//            encoding: NSUTF8StringEncoding)
     }
     }
     

@@ -17,7 +17,7 @@ class CocoaMQTTCli: CocoaMQTTDelegate {
     }
     
     func mqtt(mqtt: CocoaMQTT, didConnectAck ack: CocoaMQTTConnAck) {
-        println("didConnectAck \(ack.toRaw())")
+        println("didConnectAck \(ack.rawValue)")
         mqtt.publish("/c/d/e", withString: "hahah")
         mqtt.subscribe("/a/b/c", qos: CocoaMQTTQOS.QOS1)
         mqtt.ping()
