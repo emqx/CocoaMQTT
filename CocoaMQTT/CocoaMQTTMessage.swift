@@ -15,12 +15,12 @@ class CocoaMQTTMessage {
     
     var topic: String
     
-    var payload: [Byte]
+    var payload: [UInt8]
     
     //utf8 bytes array to string
     var string: String? {
     get {
-        return NSString(bytes: payload, length: payload.count, encoding: NSUTF8StringEncoding)
+        return NSString(bytes: payload, length: payload.count, encoding: NSUTF8StringEncoding) as? String
 //        return String.stringWithBytes(payload,
 //            length: payload.count,
 //            encoding: NSUTF8StringEncoding)
@@ -35,11 +35,11 @@ class CocoaMQTTMessage {
     
     init(topic: String, string: String, qos: CocoaMQTTQOS = .QOS1) {
         self.topic = topic
-        self.payload = [Byte](string.utf8)
+        self.payload = [UInt8](string.utf8)
         self.qos = qos
     }
     
-    init(topic: String, payload: [Byte], qos: CocoaMQTTQOS = .QOS1, retain: Bool = false, dup: Bool = false) {
+    init(topic: String, payload: [UInt8], qos: CocoaMQTTQOS = .QOS1, retain: Bool = false, dup: Bool = false) {
         self.topic = topic
         self.payload = payload
         self.qos = qos

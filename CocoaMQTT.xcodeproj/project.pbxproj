@@ -3,7 +3,7 @@
 	archiveVersion = 1;
 	classes = {
 	};
-	objectVersion = 46;
+	objectVersion = 47;
 	objects = {
 
 /* Begin PBXBuildFile section */
@@ -118,7 +118,7 @@
 				};
 			};
 			buildConfigurationList = 8BF7033B198DDB7900A220F6 /* Build configuration list for PBXProject "CocoaMQTT" */;
-			compatibilityVersion = "Xcode 3.2";
+			compatibilityVersion = "Xcode 6.3";
 			developmentRegion = English;
 			hasScannedForEncodings = 0;
 			knownRegions = (
@@ -229,16 +229,21 @@
 		8BF70348198DDB7900A220F6 /* Debug */ = {
 			isa = XCBuildConfiguration;
 			buildSettings = {
+				ONLY_ACTIVE_ARCH = YES;
 				PRODUCT_NAME = "$(TARGET_NAME)";
 				SWIFT_OBJC_BRIDGING_HEADER = "CocoaMQTT/CocoaMQTT-Bridging-Header.h";
+				VALID_ARCHS = x86_64;
 			};
 			name = Debug;
 		};
 		8BF70349198DDB7900A220F6 /* Release */ = {
 			isa = XCBuildConfiguration;
 			buildSettings = {
+				MTL_ENABLE_DEBUG_INFO = NO;
+				ONLY_ACTIVE_ARCH = YES;
 				PRODUCT_NAME = "$(TARGET_NAME)";
 				SWIFT_OBJC_BRIDGING_HEADER = "CocoaMQTT/CocoaMQTT-Bridging-Header.h";
+				VALID_ARCHS = x86_64;
 			};
 			name = Release;
 		};
