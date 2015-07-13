@@ -19,7 +19,7 @@ extension UInt16 {
     //Least Significant Byte (LSB)
     var lowByte: UInt8 { return UInt8(self & 0x00FF) }
     
-    var hlBytes: [Byte] { return [highByte, lowByte] }
+    var hlBytes: [UInt8] { return [highByte, lowByte] }
 
 }
 
@@ -29,7 +29,7 @@ extension UInt16 {
 extension String {
     
     //ok?
-    var bytesWithLength: [Byte] { return UInt16(countElements(utf8)).hlBytes + utf8 }
+    var bytesWithLength: [UInt8] { return UInt16(count(utf8)).hlBytes + utf8 }
     
 }
 
@@ -145,12 +145,12 @@ class CocoaMQTTFrame {
     /*
      * Variable Header
      */
-    var variableHeader: [Byte] = []
+    var variableHeader: [UInt8] = []
     
     /*
      * Playload
      */
-    var payload: [Byte] = []
+    var payload: [UInt8] = []
     
     /*
      * Type
@@ -209,18 +209,18 @@ class CocoaMQTTFrame {
         self.header = header
     }
     
-    init(type: CocoaMQTTFrameType, payload: [Byte] = []) {
+    init(type: CocoaMQTTFrameType, payload: [UInt8] = []) {
         self.header = type.rawValue
         self.payload = payload
     }
     
-    func data() -> [Byte] {
+    func data() -> [UInt8] {
         self.pack()
-        return [Byte]([header]) + encodeLength() + variableHeader + payload
+        return [UInt8]([header]) + encodeLength() + variableHeader + payload
     }
     
-    func encodeLength() -> [Byte] {
-        var bytes: [Byte] = []
+    func encodeLength() -> [UInt8] {
+        var bytes: [UInt8] = []
         var digit: UInt8 = 0
         var len: UInt32 = UInt32(variableHeader.count+payload.count)
         do {
@@ -288,16 +288,16 @@ class CocoaMQTTFramePublish : CocoaMQTTFrame {
 
     var topic: String?
     
-    var data: [Byte]?
+    var data: [UInt8]?
 
-    init(msgid: UInt16, topic: String, payload: [Byte]) {
+    init(msgid: UInt16, topic: String, payload: [UInt8]) {
         super.init(type: CocoaMQTTFrameType.PUBLISH, payload: payload)
         self.msgid = msgid
         self.topic = topic
         self.qos = 1
     }
     
-    init(header: UInt8, data: [Byte]) {
+    init(header: UInt8, data: [UInt8]) {
         super.init(header: header)
         self.data = data
     }
@@ -306,7 +306,7 @@ class CocoaMQTTFramePublish : CocoaMQTTFrame {
         var msb = data![0], lsb = data![1]
         var len = UInt16(msb) << 8 + UInt16(lsb)
         var pos : Int = 2 + Int(len)
-        topic = NSString(bytes: [Byte](data![2...(pos-1)]), length: Int(len), encoding: NSUTF8StringEncoding)
+        topic = NSString(bytes: [UInt8](data![2...(pos-1)]), length: Int(len), encoding: NSUTF8StringEncoding) as? String
 //        topic = String.stringWithBytes(
 //            [Byte](data![2...(pos-1)]),
 //            length: Int(len),
@@ -321,7 +321,7 @@ class CocoaMQTTFramePublish : CocoaMQTTFrame {
         //payload
         var end = data!.count - 1
         
-        payload = [Byte](data![pos...end])
+        payload = [UInt8](data![pos...end])
     }
 
     override func pack() {

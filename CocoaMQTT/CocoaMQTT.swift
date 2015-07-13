@@ -206,7 +206,7 @@ class CocoaMQTT: NSObject, CocoaMQTTClient, GCDAsyncSocketDelegate, CocoaMQTTRea
     }
     
     func publish(topic: String, withString string: String, qos: CocoaMQTTQOS = .QOS1) -> UInt16 {
-        var data = [Byte](string.utf8)
+        var data = [UInt8](string.utf8)
         let message = CocoaMQTTMessage(topic: topic, string: string, qos: qos)
         return publish(message)
     }
@@ -273,7 +273,7 @@ class CocoaMQTT: NSObject, CocoaMQTTClient, GCDAsyncSocketDelegate, CocoaMQTTRea
     
     func socket(sock: GCDAsyncSocket!, didReadData data: NSData!, withTag tag: Int) {
         let etag : CocoaMQTTReadTag = CocoaMQTTReadTag(rawValue: tag)!
-        var bytes = [Byte]([0])
+        var bytes = [UInt8]([0])
         switch etag {
         case CocoaMQTTReadTag.TAG_HEADER:
             data.getBytes(&bytes, length: 1)
@@ -348,7 +348,7 @@ class CocoaMQTT: NSObject, CocoaMQTTClient, GCDAsyncSocketDelegate, CocoaMQTTRea
 
     func didReceivePubAck(reader: CocoaMQTTReader, msgid: UInt16) {
         NSLog("CocoaMQTT: PUBACK Received: \(msgid)")
-        if let message = messages[msgid]? {
+        if let message = messages[msgid] {
             messages.removeValueForKey(msgid)
             delegate?.mqtt(self, didPublishMessage: message, id: msgid)
         }
@@ -361,7 +361,7 @@ class CocoaMQTT: NSObject, CocoaMQTTClient, GCDAsyncSocketDelegate, CocoaMQTTRea
     
     func didReceivePubRel(reader: CocoaMQTTReader, msgid: UInt16) {
         NSLog("CocoaMQTT: PUBREL Received: \(msgid)")
-        if let message = messages[msgid]? {
+        if let message = messages[msgid] {
             messages.removeValueForKey(msgid)
             delegate?.mqtt(self, didPublishMessage: message, id: msgid)
         }
@@ -430,7 +430,7 @@ class CocoaMQTTReader {
 
     var header: UInt8 = 0
 
-    var data: [Byte] = []
+    var data: [UInt8] = []
 
     var length: UInt = 0
 
@@ -462,7 +462,7 @@ class CocoaMQTTReader {
     }
 
     func lengthReady(byte: UInt8) {
-         length += Int(byte & 127) * multiply
+        length += (UInt)((Int)(byte & 127) * multiply)
          if (byte & 0x80) == 0 { //done
             if length == 0 {
                 frameReady()
@@ -480,7 +480,7 @@ class CocoaMQTTReader {
     }
 
     func payloadReady(data: NSData) {
-        self.data = [Byte](count: data.length, repeatedValue: 0)
+        self.data = [UInt8](count: data.length, repeatedValue: 0)
         data.getBytes(&(self.data), length: data.length)
         frameReady()
     }
@@ -523,7 +523,7 @@ class CocoaMQTTReader {
         return (msgId, message)
     }
 
-    func _msgid(bytes: [Byte]) -> UInt16 {
+    func _msgid(bytes: [UInt8]) -> UInt16 {
         if bytes.count < 2 { return 0 }
         return UInt16(bytes[0]) << 8 + UInt16(bytes[1])
     }
