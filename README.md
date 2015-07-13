@@ -109,11 +109,12 @@ LICENSE
 
 MIT License
 
+## Contributors
+
+* [@andypiper](https://github.com/andypiper)
 
 Author
 =======
 
-Feng Lee from Nextalk.IM
-
-
+feng@emqtt.io
 
