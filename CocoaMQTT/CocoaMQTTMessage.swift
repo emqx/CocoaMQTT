@@ -9,14 +9,14 @@
 import Foundation
 
 /**
-* MQTT Messgae
-*/
+ * MQTT Message
+ */
 class CocoaMQTTMessage {
-    
+
     var topic: String
-    
+
     var payload: [UInt8]
-    
+
     //utf8 bytes array to string
     var string: String? {
     get {
@@ -26,19 +26,19 @@ class CocoaMQTTMessage {
 //            encoding: NSUTF8StringEncoding)
     }
     }
-    
+
     var qos: CocoaMQTTQOS = .QOS1
-    
+
     var retain: Bool = false
-    
+
     var dup: Bool = false
-    
+
     init(topic: String, string: String, qos: CocoaMQTTQOS = .QOS1) {
         self.topic = topic
         self.payload = [UInt8](string.utf8)
         self.qos = qos
     }
-    
+
     init(topic: String, payload: [UInt8], qos: CocoaMQTTQOS = .QOS1, retain: Bool = false, dup: Bool = false) {
         self.topic = topic
         self.payload = payload
@@ -46,17 +46,16 @@ class CocoaMQTTMessage {
         self.retain = retain
         self.dup = dup
     }
-    
+
 }
 
 /**
  * MQTT Will Message
-**/
+ */
 class CocoaMQTTWill: CocoaMQTTMessage {
-    
+
     init(topic: String, message: String) {
         super.init(topic: topic, payload: message.bytesWithLength)
     }
-    
-}
 
+}

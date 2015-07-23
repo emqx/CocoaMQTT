@@ -1,15 +1,24 @@
 CocoaMQTT
 =========
 
-MQTT for iOS and OS X written with Swift
+An MQTT client for iOS and OS X written with Swift
+
+Currently supports MQTT 3.1 (not MQTT 3.1.1)
+
+
+Build
+=====
+Builds in Xcode 6.4 / Swift 1.2
+
+Optionally uses [Swiftlint](https://github.com/realm/SwiftLint) (only in install stage, 
+remove run script build phase to skip or ignore linting)
+
 
 Usage
 =====
-
-Example in main.swift:
+Example in `main.swift` (note this defaults to connect to localhost):
 
 ```swift
-
 let mqtt = CocoaMQTT(clientId: "CocoaMQTT-ClientId")
 mqtt.username = "test"
 mqtt.password = "public"
@@ -17,14 +26,13 @@ mqtt.willMessage = CocoaMQTTWill(topic: "/will", message: "dieout")
 mqtt.keepAlive = 5
 mqtt.delegate = CocoaMQTTCli()
 mqtt.connect()
-
 ```
+
 
 CocoaMQTT
 ==========
 
 ```swift
-
 /**
  * Blueprint of the mqtt client
  **/
@@ -61,14 +69,13 @@ protocol CocoaMQTTClient {
     func disconnect()
     
 }
-
 ```
+
 
 CocoaMQTTDelegate
 =================
 
 ```swift
-
 protocol CocoaMQTTDelegate {
     
     /**
@@ -93,29 +100,31 @@ protocol CocoaMQTTDelegate {
     func mqttDidDisconnect(mqtt: CocoaMQTT, withError err: NSError)
 
 }
-
 ```
+
 
 AsyncSocket and Timer
 =====================
 
-GCDAsyncSocket.h
+These third-party functions are used:
 
-MSWeakTimer.h
+* [GCDAsyncSocket.h](https://github.com/robbiehanson/CocoaAsyncSocket)
+* [MSWeakTimer.h](https://github.com/mindsnacks/MSWeakTimer)
 
 
 LICENSE
 =======
 
-MIT License
+MIT License (see `LICENSE`)
 
 ## Contributors
 
 * [@andypiper](https://github.com/andypiper)
 * [@turtleDeng](https://github.com/turtleDeng)
 
+
 Author
-=======
+======
 
 feng@emqtt.io
 
