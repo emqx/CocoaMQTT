@@ -313,9 +313,14 @@ class CocoaMQTTFramePublish : CocoaMQTTFrame {
 //            encoding: NSUTF8StringEncoding)!
 
         //msgid
-        msb = data![pos]; lsb = data![pos+1]
-        msgid = UInt16(msb) << 8 + UInt16(lsb)
-        pos += 2
+        var innerqos = (self.header & 0x06) >> 1
+        if innerqos == 0{
+            msgid = 0
+        }else{
+            msb = data![pos]; lsb = data![pos+1]
+            msgid = UInt16(msb) << 8 + UInt16(lsb)
+            pos += 2
+        }
         
         
         //payload
