@@ -28,6 +28,8 @@
 /* End PBXCopyFilesBuildPhase section */
 
 /* Begin PBXFileReference section */
+		24EEA69A1B5545E7002DBF79 /* README.md */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = net.daringfireball.markdown; path = README.md; sourceTree = "<group>"; };
+		24EEA69B1B5545E7002DBF79 /* LICENSE */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = text; path = LICENSE; sourceTree = "<group>"; };
 		8B39FA6B198DDC1E00857471 /* CocoaMQTT.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = CocoaMQTT.swift; sourceTree = "<group>"; };
 		8B39FA6D198DDC2900857471 /* CocoaMQTTFrame.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = CocoaMQTTFrame.swift; sourceTree = "<group>"; };
 		8B39FA6F198DDC7900857471 /* MSWeakTimer.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = MSWeakTimer.h; sourceTree = "<group>"; };
@@ -41,7 +43,7 @@
 /* End PBXFileReference section */
 
 /* Begin PBXFrameworksBuildPhase section */
-		8BF7033D198DDB7900A220F6 /* Frameworks */ = {
+		24019DF11B5552D1006D5FA5 /* Frameworks */ = {
 			isa = PBXFrameworksBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
@@ -56,6 +58,8 @@
 			children = (
 				8BF70342198DDB7900A220F6 /* CocoaMQTT */,
 				8BF70341198DDB7900A220F6 /* Products */,
+				24EEA69B1B5545E7002DBF79 /* LICENSE */,
+				24EEA69A1B5545E7002DBF79 /* README.md */,
 			);
 			sourceTree = "<group>";
 		};
@@ -74,11 +78,11 @@
 				8B39FA73198DDCB300857471 /* GCDAsyncSocket.m */,
 				8B39FA6F198DDC7900857471 /* MSWeakTimer.h */,
 				8B39FA70198DDC7900857471 /* MSWeakTimer.m */,
-				8BF70343198DDB7900A220F6 /* main.swift */,
 				8B39FA6B198DDC1E00857471 /* CocoaMQTT.swift */,
 				8B39FA6D198DDC2900857471 /* CocoaMQTTFrame.swift */,
 				8B39FA75198DDD9200857471 /* CocoaMQTT-Bridging-Header.h */,
 				8B39FA76198DDE1800857471 /* CocoaMQTTMessage.swift */,
+				8BF70343198DDB7900A220F6 /* main.swift */,
 			);
 			path = CocoaMQTT;
 			sourceTree = "<group>";
@@ -91,8 +95,9 @@
 			buildConfigurationList = 8BF70347198DDB7900A220F6 /* Build configuration list for PBXNativeTarget "CocoaMQTT" */;
 			buildPhases = (
 				8BF7033C198DDB7900A220F6 /* Sources */,
-				8BF7033D198DDB7900A220F6 /* Frameworks */,
+				24019DF11B5552D1006D5FA5 /* Frameworks */,
 				8BF7033E198DDB7900A220F6 /* CopyFiles */,
+				24A27F1A1B552D8700205E69 /* ShellScript */,
 			);
 			buildRules = (
 			);
@@ -133,6 +138,22 @@
 			);
 		};
 /* End PBXProject section */
+
+/* Begin PBXShellScriptBuildPhase section */
+		24A27F1A1B552D8700205E69 /* ShellScript */ = {
+			isa = PBXShellScriptBuildPhase;
+			buildActionMask = 8;
+			files = (
+			);
+			inputPaths = (
+			);
+			outputPaths = (
+			);
+			runOnlyForDeploymentPostprocessing = 1;
+			shellPath = /bin/sh;
+			shellScript = /usr/local/bin/swiftlint;
+		};
+/* End PBXShellScriptBuildPhase section */
 
 /* Begin PBXSourcesBuildPhase section */
 		8BF7033C198DDB7900A220F6 /* Sources */ = {
