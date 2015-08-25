@@ -11,7 +11,7 @@ import Foundation
 /**
  * MQTT Delegate
  */
-protocol CocoaMQTTDelegate {
+protocol CocoaMQTTDelegate : class {
 
     /**
      * MQTT connected with server
@@ -166,7 +166,7 @@ class CocoaMQTT: NSObject, CocoaMQTTClient, GCDAsyncSocketDelegate, CocoaMQTTRea
 
     //delegate
 
-    var delegate: CocoaMQTTDelegate?
+    weak var  delegate: CocoaMQTTDelegate?
 
     //socket and connection
 
