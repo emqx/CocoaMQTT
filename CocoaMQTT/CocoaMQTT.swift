@@ -32,7 +32,7 @@ protocol CocoaMQTTDelegate : class {
 
     func mqttDidReceivePong(mqtt: CocoaMQTT)
 
-    func mqttDidDisconnect(mqtt: CocoaMQTT, withError err: NSError)
+    func mqttDidDisconnect(mqtt: CocoaMQTT, withError err: NSError?)
 
 }
 
