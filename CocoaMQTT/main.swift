@@ -13,11 +13,11 @@ class CocoaMQTTCli: CocoaMQTTDelegate {
 
 
     func mqtt(mqtt: CocoaMQTT, didConnect host: String, port: Int) {
-        println("didConnect \(host):\(port)")
+        print("didConnect \(host):\(port)")
     }
 
     func mqtt(mqtt: CocoaMQTT, didConnectAck ack: CocoaMQTTConnAck) {
-        println("didConnectAck \(ack.rawValue)")
+        print("didConnectAck \(ack.rawValue)")
         mqtt.publish("/c/d/e", withString: "hahah")
         mqtt.subscribe("/a/b/c", qos: CocoaMQTTQOS.QOS1)
         //mqtt.publish("/a/b/c", withString: "hello")
@@ -25,44 +25,44 @@ class CocoaMQTTCli: CocoaMQTTDelegate {
     }
 
     func mqtt(mqtt: CocoaMQTT, didPublishMessage message: CocoaMQTTMessage, id: UInt16) {
-        println("didPublishMessage to \(message.topic))")
+        print("didPublishMessage to \(message.topic))")
     }
 
     func mqtt(mqtt: CocoaMQTT, didReceiveMessage message: CocoaMQTTMessage, id: UInt16 ) {
-        println("didReceivedMessage with id \(id)")
-        println("message.topic: \(message.topic)")
-        println("message.payload: \(message.string)")
+        print("didReceivedMessage with id \(id)")
+        print("message.topic: \(message.topic)")
+        print("message.payload: \(message.string)")
     }
 
     func mqtt(mqtt: CocoaMQTT, didSubscribeTopic topic: String) {
-        println("didSubscribeTopic to \(topic)")
+        print("didSubscribeTopic to \(topic)")
         //mqtt.unsubscribe(topic)
     }
 
     func mqtt(mqtt: CocoaMQTT, didUnsubscribeTopic topic: String) {
-        println("didUnsubscribeTopic to \(topic)")
+        print("didUnsubscribeTopic to \(topic)")
     }
 
     func mqttDidPing(mqtt: CocoaMQTT) {
-        println("didPing")
+        print("didPing")
     }
 
     func mqttDidReceivePong(mqtt: CocoaMQTT) {
         _console("didReceivePong")
     }
 
-    func mqttDidDisconnect(mqtt: CocoaMQTT, withError err: NSError) {
+    func mqttDidDisconnect(mqtt: CocoaMQTT, withError err: NSError?) {
         _console("mqttDidDisconnect")
     }
 
     func _console(info: String) {
-        println("Delegate: \(info)")
+        print("Delegate: \(info)")
     }
 
 }
 
 
-println("Hello, CocoaMQTT!")
+print("Hello, CocoaMQTT!")
 
 let clientIdPid = "CocoaMQTT-" + String(NSProcessInfo().processIdentifier)
 let mqtt = CocoaMQTT(clientId: clientIdPid)
