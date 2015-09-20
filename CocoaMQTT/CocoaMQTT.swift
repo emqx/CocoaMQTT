@@ -199,19 +199,19 @@ class CocoaMQTT: NSObject, CocoaMQTTClient, GCDAsyncSocketDelegate, CocoaMQTTRea
     func connect() -> Bool {
         socket = GCDAsyncSocket(delegate: self, delegateQueue: dispatch_get_main_queue())
         reader = CocoaMQTTReader(socket: socket!, delegate: self)
-        var err: NSError?
-        if !socket!.connectToHost(self.host, onPort: self.port, error: &err) {
+        do {
+            try socket!.connectToHost(self.host, onPort: self.port)
+            connState = CocoaMQTTConnState.CONNECTING
+            return true
+        } catch let error as NSError {
             #if DEBUG
-            NSLog("CocoaMQTT: socket connect error: \(err?.description)")
+            NSLog("CocoaMQTT: socket connect error: \(error.description)")
             #endif
             return false
         }
-        connState = CocoaMQTTConnState.CONNECTING
-        return true
     }
 
     func publish(topic: String, withString string: String, qos: CocoaMQTTQOS = .QOS1) -> UInt16 {
-        var data = [UInt8](string.utf8)
         let message = CocoaMQTTMessage(topic: topic, string: string, qos: qos)
         return publish(message)
     }
@@ -293,8 +293,6 @@ class CocoaMQTT: NSObject, CocoaMQTTClient, GCDAsyncSocketDelegate, CocoaMQTTRea
             reader!.lengthReady(bytes[0])
         case CocoaMQTTReadTag.TAG_PAYLOAD:
             reader!.payloadReady(data)
-        default:
-            assert(false)
         }
     }
 
@@ -422,7 +420,7 @@ class CocoaMQTT: NSObject, CocoaMQTTClient, GCDAsyncSocketDelegate, CocoaMQTTRea
     }
 
     func _nextMessageId() -> UInt16 {
-        var id = self.gmid++
+        let id = self.gmid++
         if id >= UInt16.max { gmid = 1 }
         return id
     }

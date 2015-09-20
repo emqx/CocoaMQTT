@@ -29,7 +29,7 @@ extension UInt16 {
 extension String {
 
     //ok?
-    var bytesWithLength: [UInt8] { return UInt16(count(utf8)).hlBytes + utf8 }
+    var bytesWithLength: [UInt8] { return UInt16(utf8.count).hlBytes + utf8 }
 
 }
 
@@ -223,7 +223,7 @@ class CocoaMQTTFrame {
         var bytes: [UInt8] = []
         var digit: UInt8 = 0
         var len: UInt32 = UInt32(variableHeader.count+payload.count)
-        do {
+        repeat {
             digit = UInt8(len % 128)
             len = len / 128
             // if there are more digits to encode, set the top bit of this digit
@@ -303,7 +303,7 @@ class CocoaMQTTFramePublish: CocoaMQTTFrame {
 
     func unpack() {
         var msb = data![0], lsb = data![1]
-        var len = UInt16(msb) << 8 + UInt16(lsb)
+        let len = UInt16(msb) << 8 + UInt16(lsb)
         var pos: Int = 2 + Int(len)
         topic = NSString(bytes: [UInt8](data![2...(pos-1)]), length: Int(len), encoding: NSUTF8StringEncoding) as? String
 //        topic = String.stringWithBytes(
@@ -312,7 +312,7 @@ class CocoaMQTTFramePublish: CocoaMQTTFrame {
 //            encoding: NSUTF8StringEncoding)!
 
         //msgid
-        var innerqos = (self.header & 0x06) >> 1
+        let innerqos = (self.header & 0x06) >> 1
         if innerqos == 0{
             msgid = 0
         }else{
@@ -321,7 +321,7 @@ class CocoaMQTTFramePublish: CocoaMQTTFrame {
             pos += 2
         }
         //payload
-        var end = data!.count - 1
+        let end = data!.count - 1
 
         payload = [UInt8](data![pos...end])
     }
