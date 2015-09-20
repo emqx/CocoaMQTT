@@ -164,9 +164,9 @@ class CocoaMQTT: NSObject, CocoaMQTTClient, GCDAsyncSocketDelegate, CocoaMQTTRea
 
     var willMessage: CocoaMQTTWill?
 
-    //delegate
+    //delegate weak
 
-    weak var  delegate: CocoaMQTTDelegate?
+    var delegate: CocoaMQTTDelegate?
 
     //socket and connection
 
