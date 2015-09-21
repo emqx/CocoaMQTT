@@ -1,7 +1,7 @@
 CocoaMQTT
 =========
 
-An MQTT v3.1.1 client for iOS and OS X written with Swift 2
+MQTT v3.1.1 client library for iOS and OS X written with Swift 2
 
 
 Build
