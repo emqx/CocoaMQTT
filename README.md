@@ -1,14 +1,14 @@
 CocoaMQTT
 =========
 
-An MQTT client for iOS and OS X written with Swift
+An MQTT client for iOS and OS X written with Swift 2
 
-Currently supports MQTT 3.1 (not MQTT 3.1.1)
+Currently supports MQTT 3.1.1
 
 
 Build
 =====
-Builds in Xcode 6.4 / Swift 1.2
+Builds in Xcode 7.0 / Swift 2
 
 Optionally uses [Swiftlint](https://github.com/realm/SwiftLint) (only in install stage, 
 remove run script build phase to skip or ignore linting)
@@ -19,13 +19,19 @@ Usage
 Example in `main.swift` (note this defaults to connect to localhost):
 
 ```swift
-let mqtt = CocoaMQTT(clientId: "CocoaMQTT-ClientId")
+let mqttCli = CocoaMQTTCli()
+let clientIdPid = "CocoaMQTT-" + String(NSProcessInfo().processIdentifier)
+let mqtt = CocoaMQTT(clientId: clientIdPid, host: "localhost", port: 1883)
 mqtt.username = "test"
 mqtt.password = "public"
 mqtt.willMessage = CocoaMQTTWill(topic: "/will", message: "dieout")
-mqtt.keepAlive = 5
-mqtt.delegate = CocoaMQTTCli()
+mqtt.keepAlive = 90
+mqtt.delegate = mqttCli
 mqtt.connect()
+
+dispatch_main()
+
+
 ```
 
 
@@ -126,5 +132,13 @@ MIT License (see `LICENSE`)
 Author
 ======
 
-feng@emqtt.io
+Feng Lee <feng@emqtt.io>
+
+
+Twitter
+======
+
+https://twitter.com/emqtt
+
+
 

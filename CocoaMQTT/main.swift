@@ -18,14 +18,15 @@ class CocoaMQTTCli: CocoaMQTTDelegate {
 
     func mqtt(mqtt: CocoaMQTT, didConnectAck ack: CocoaMQTTConnAck) {
         print("didConnectAck \(ack.rawValue)")
-        mqtt.publish("/c/d/e", withString: "hahah")
         mqtt.subscribe("/a/b/c", qos: CocoaMQTTQOS.QOS1)
-        //mqtt.publish("/a/b/c", withString: "hello")
+        mqtt.publish("/a/b/c", withString: "Qos0 Msg", qos: CocoaMQTTQOS.QOS0)
+        mqtt.publish("/a/b/c", withString: "Qos1 Msg", qos: CocoaMQTTQOS.QOS1)
+        mqtt.publish("/a/b/c", withString: "Qos2 Msg", qos: CocoaMQTTQOS.QOS2)
         mqtt.ping()
     }
 
     func mqtt(mqtt: CocoaMQTT, didPublishMessage message: CocoaMQTTMessage, id: UInt16) {
-        print("didPublishMessage to \(message.topic))")
+        print("didPublishMessage to \(message.topic)")
     }
 
     func mqtt(mqtt: CocoaMQTT, didReceiveMessage message: CocoaMQTTMessage, id: UInt16 ) {
@@ -64,13 +65,14 @@ class CocoaMQTTCli: CocoaMQTTDelegate {
 
 print("Hello, CocoaMQTT!")
 
+let mqttCli = CocoaMQTTCli()
 let clientIdPid = "CocoaMQTT-" + String(NSProcessInfo().processIdentifier)
-let mqtt = CocoaMQTT(clientId: clientIdPid)
+let mqtt = CocoaMQTT(clientId: clientIdPid, host: "localhost", port: 1883)
 mqtt.username = "test"
 mqtt.password = "public"
 mqtt.willMessage = CocoaMQTTWill(topic: "/will", message: "dieout")
-mqtt.keepAlive = 5
-mqtt.delegate = CocoaMQTTCli()
+mqtt.keepAlive = 90
+mqtt.delegate = mqttCli
 mqtt.connect()
 
 dispatch_main()

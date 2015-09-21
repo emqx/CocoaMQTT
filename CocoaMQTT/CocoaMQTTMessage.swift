@@ -2,8 +2,8 @@
 //  CocoaMQTTMessage.swift
 //  CocoaMQTT
 //
-//  Created by Feng Lee<feng.lee@nextalk.im> on 14/8/3.
-//  Copyright (c) 2014年 slimpp.io. All rights reserved.
+//  Created by Feng Lee<feng@eqmtt.io> on 14/8/3.
+//  Copyright (c) 2015 emqtt.io. All rights reserved.
 //
 
 import Foundation
@@ -19,12 +19,9 @@ class CocoaMQTTMessage {
 
     //utf8 bytes array to string
     var string: String? {
-    get {
-        return NSString(bytes: payload, length: payload.count, encoding: NSUTF8StringEncoding) as? String
-//        return String.stringWithBytes(payload,
-//            length: payload.count,
-//            encoding: NSUTF8StringEncoding)
-    }
+        get {
+            return NSString(bytes: payload, length: payload.count, encoding: NSUTF8StringEncoding) as? String
+        }
     }
 
     var qos: CocoaMQTTQOS = .QOS1
