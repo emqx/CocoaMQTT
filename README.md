@@ -1,22 +1,19 @@
 CocoaMQTT
 =========
 
-An MQTT client for iOS and OS X written with Swift 2
-
-Currently supports MQTT 3.1.1
+An MQTT v3.1.1 client for iOS and OS X written with Swift 2
 
 
 Build
 =====
-Builds in Xcode 7.0 / Swift 2
 
-Optionally uses [Swiftlint](https://github.com/realm/SwiftLint) (only in install stage, 
-remove run script build phase to skip or ignore linting)
+Build with Xcode 7.0 / Swift 2
 
 
 Usage
 =====
-Example in `main.swift` (note this defaults to connect to localhost):
+
+Example in 'main.swift':
 
 ```swift
 let mqttCli = CocoaMQTTCli()
@@ -30,8 +27,6 @@ mqtt.delegate = mqttCli
 mqtt.connect()
 
 dispatch_main()
-
-
 ```
 
 
@@ -139,6 +134,5 @@ Twitter
 ======
 
 https://twitter.com/emqtt
-
 
 
