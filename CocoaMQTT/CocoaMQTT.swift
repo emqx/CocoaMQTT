@@ -2,8 +2,8 @@
 //  CocoaMQTT.swift
 //  CocoaMQTT
 //
-//  Created by Feng Lee<feng.lee@nextalk.im> on 14/7/28.
-//  Copyright (c) 2014年 slimpp.io. All rights reserved.
+//  Created by Feng Lee<feng@eqmtt.io> on 14/8/3.
+//  Copyright (c) 2015 emqtt.io. All rights reserved.
 //
 
 import Foundation
@@ -51,7 +51,7 @@ protocol CocoaMQTTClient {
 
     var password: String? {get set}
 
-    var cleansess: Bool {get set}
+    var cleanSess: Bool {get set}
 
     var keepAlive: UInt16 {get set}
 
@@ -152,11 +152,11 @@ class CocoaMQTT: NSObject, CocoaMQTTClient, GCDAsyncSocketDelegate, CocoaMQTTRea
 
     var password: String?
 
-    var cleansess: Bool = true
+    var cleanSess: Bool = true
 
     //keep alive
 
-    var keepAlive: UInt16 = 0
+    var keepAlive: UInt16 = 60
 
     var aliveTimer: MSWeakTimer?
 
@@ -164,9 +164,9 @@ class CocoaMQTT: NSObject, CocoaMQTTClient, GCDAsyncSocketDelegate, CocoaMQTTRea
 
     var willMessage: CocoaMQTTWill?
 
-    //delegate
+    //delegate weak??
 
-    weak var  delegate: CocoaMQTTDelegate?
+    weak var delegate: CocoaMQTTDelegate?
 
     //socket and connection
 
@@ -182,7 +182,7 @@ class CocoaMQTT: NSObject, CocoaMQTTClient, GCDAsyncSocketDelegate, CocoaMQTTRea
 
     //subscribed topics
     
-    var subtopics = Dictionary<UInt16, String>()
+    var subscriptions = Dictionary<UInt16, String>()
 
     //published messages
     
@@ -235,14 +235,14 @@ class CocoaMQTT: NSObject, CocoaMQTTClient, GCDAsyncSocketDelegate, CocoaMQTTRea
         let msgId = _nextMessageId()
         let frame = CocoaMQTTFrameSubscribe(msgid: msgId, topic: topic, reqos: qos.rawValue)
         send(frame, tag: Int(msgId))
-        subtopics[msgId] = topic //cache?
+        subscriptions[msgId] = topic //cache?
         return msgId
     }
 
     func unsubscribe(topic: String) -> UInt16 {
         let msgId = _nextMessageId()
         let frame = CocoaMQTTFrameUnsubscribe(msgid: msgId, topic: topic)
-        subtopics[msgId] = topic //cache
+        subscriptions[msgId] = topic //cache
         send(frame, tag: Int(msgId))
         return msgId
     }
@@ -308,9 +308,12 @@ class CocoaMQTT: NSObject, CocoaMQTTClient, GCDAsyncSocketDelegate, CocoaMQTTRea
         #if DEBUG
         NSLog("CocoaMQTT: CONNACK Received: \(connack)")
         #endif
+ 
+        let ack = CocoaMQTTConnAck(rawValue: connack)!
+        delegate?.mqtt(self, didConnectAck: ack)
         
         //keep alive
-        if keepAlive > 0 {
+        if ack == CocoaMQTTConnAck.ACCEPT && keepAlive > 0 {
             aliveTimer = MSWeakTimer.scheduledTimerWithTimeInterval(
                 NSTimeInterval(keepAlive),
                 target: self,
@@ -319,8 +322,6 @@ class CocoaMQTT: NSObject, CocoaMQTTClient, GCDAsyncSocketDelegate, CocoaMQTTRea
                 repeats: true,
                 dispatchQueue: dispatch_get_main_queue())
         }
-        let ack = CocoaMQTTConnAck(rawValue: connack)!
-        delegate?.mqtt(self, didConnectAck: ack)
     }
 
     func _aliveTimerFired() {
@@ -398,7 +399,7 @@ class CocoaMQTT: NSObject, CocoaMQTTClient, GCDAsyncSocketDelegate, CocoaMQTTRea
         #if DEBUG
         NSLog("CocoaMQTT: SUBACK Received: \(msgid)")
         #endif
-        if let topic = subtopics.removeValueForKey(msgid) {
+        if let topic = subscriptions.removeValueForKey(msgid) {
             delegate?.mqtt(self, didSubscribeTopic: topic)
         }
     }
@@ -407,7 +408,7 @@ class CocoaMQTT: NSObject, CocoaMQTTClient, GCDAsyncSocketDelegate, CocoaMQTTRea
         #if DEBUG
         NSLog("CocoaMQTT: UNSUBACK Received: \(msgid)")
         #endif
-        if let topic = subtopics.removeValueForKey(msgid) {
+        if let topic = subscriptions.removeValueForKey(msgid) {
             delegate?.mqtt(self, didUnsubscribeTopic: topic)
         }
     }
