@@ -2,8 +2,8 @@
 //  main.swift
 //  CocoaMQTT
 //
-//  Created by Feng Lee<feng.lee@nextalk.im> on 14/8/3.
-//  Copyright (c) 2014年 slimpp.io. All rights reserved.
+//  Created by Feng Lee<feng@eqmtt.io> on 14/8/3.
+//  Copyright (c) 2015 emqtt.io. All rights reserved.
 //
 
 import Foundation

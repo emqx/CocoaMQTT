@@ -208,31 +208,31 @@ class CocoaMQTTFrameConnect: CocoaMQTTFrame {
     var flagPasswd: Bool {
         //#define FLAG_PASSWD(F, P)		(F | ((P) << 6))
         get { return Bool(bit:(flags >> 6) & 0x01) }
-        
+
         set { flags |= (newValue.bit << 6) }
     }
-    
+
     var flagWillRetain: Bool {
         //#define FLAG_WILLRETAIN(F, R) 	(F | ((R) << 5))
         get { return Bool(bit: (flags >> 5) & 0x01) }
         
         set { flags |= (newValue.bit << 5) }
     }
-    
+
     var flagWillQOS: UInt8 {
         //#define FLAG_WILLQOS(F, Q)		(F | ((Q) << 3))
         get { return (flags >> 3) & 0x03 }
         
         set { flags |= (newValue << 3) }
     }
-    
+
     var flagWill: Bool {
         //#define FLAG_WILL(F, W)			(F | ((W) << 2))
         get { return Bool(bit:(flags >> 2) & 0x01) }
 
         set { flags |= ((newValue.bit) << 2) }
     }
-    
+
     var flagCleanSess: Bool {
         //#define FLAG_CLEANSESS(F, C)	(F | ((C) << 1))
         get { return Bool(bit: (flags >> 1) & 0x01) }
