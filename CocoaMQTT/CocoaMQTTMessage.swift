@@ -11,14 +11,14 @@ import Foundation
 /**
  * MQTT Message
  */
-class CocoaMQTTMessage {
+public class CocoaMQTTMessage {
 
-    var topic: String
+    public var topic: String
 
-    var payload: [UInt8]
+    public var payload: [UInt8]
 
     //utf8 bytes array to string
-    var string: String? {
+    public var string: String? {
         get {
             return NSString(bytes: payload, length: payload.count, encoding: NSUTF8StringEncoding) as? String
         }
@@ -49,9 +49,9 @@ class CocoaMQTTMessage {
 /**
  * MQTT Will Message
  */
-class CocoaMQTTWill: CocoaMQTTMessage {
+public class CocoaMQTTWill: CocoaMQTTMessage {
 
-    init(topic: String, message: String) {
+    public init(topic: String, message: String) {
         super.init(topic: topic, payload: message.bytesWithLength)
     }
 
