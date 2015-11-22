@@ -11,9 +11,19 @@ import Foundation
 
 class CocoaMQTTCli: CocoaMQTTDelegate {
 
-
     func mqtt(mqtt: CocoaMQTT, didConnect host: String, port: Int) {
         print("didConnect \(host):\(port)")
+    }
+    
+    //mqtts
+    func mqttDidSecure(mqtt: CocoaMQTT) {
+        print("didSecure")
+    }
+    
+    //mqtts
+    func mqtt(mqtt: CocoaMQTT, didReceiveTrust trust: SecTrust!, completionHandler: ((Bool) -> Void)!) {
+        print("didReceiveTrust")
+        completionHandler(true)
     }
 
     func mqtt(mqtt: CocoaMQTT, didConnectAck ack: CocoaMQTTConnAck) {
@@ -67,7 +77,12 @@ print("Hello, CocoaMQTT!")
 
 let mqttCli = CocoaMQTTCli()
 let clientIdPid = "CocoaMQTT-" + String(NSProcessInfo().processIdentifier)
-let mqtt = CocoaMQTT(clientId: clientIdPid, host: "localhost", port: 1883)
+//let mqtt = CocoaMQTT(clientId: clientIdPid, host: "localhost", port: 1883)
+
+//mqtts
+let mqtt = CocoaMQTT(clientId: clientIdPid, host: "localhost", port: 8883)
+mqtt.secureMQTT = true
+
 mqtt.username = "test"
 mqtt.password = "public"
 mqtt.willMessage = CocoaMQTTWill(topic: "/will", message: "dieout")

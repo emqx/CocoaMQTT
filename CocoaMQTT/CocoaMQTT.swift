@@ -17,6 +17,10 @@ public protocol CocoaMQTTDelegate : class {
      * MQTT connected with server
      */
     func mqtt(mqtt: CocoaMQTT, didConnect host: String, port: Int)
+    
+    func mqtt(mqtt: CocoaMQTT, didReceiveTrust trust: SecTrust!, completionHandler: ((Bool) -> Void)!)
+    
+    func mqttDidSecure(mqtt: CocoaMQTT)
 
     func mqtt(mqtt: CocoaMQTT, didConnectAck ack: CocoaMQTTConnAck)
 
@@ -27,7 +31,7 @@ public protocol CocoaMQTTDelegate : class {
     func mqtt(mqtt: CocoaMQTT, didSubscribeTopic topic: String)
 
     func mqtt(mqtt: CocoaMQTT, didUnsubscribeTopic topic: String)
-
+    
     func mqttDidPing(mqtt: CocoaMQTT)
 
     func mqttDidReceivePong(mqtt: CocoaMQTT)
@@ -50,6 +54,8 @@ public protocol CocoaMQTTClient {
     var username: String? {get set}
 
     var password: String? {get set}
+    
+    var secureMQTT: Bool {get set}
 
     var cleanSess: Bool {get set}
 
@@ -151,6 +157,8 @@ public class CocoaMQTT: NSObject, CocoaMQTTClient, GCDAsyncSocketDelegate, Cocoa
     public var username: String?
 
     public var password: String?
+    
+    public var secureMQTT: Bool = false
 
     public var cleanSess: Bool = true
 
@@ -263,16 +271,39 @@ public class CocoaMQTT: NSObject, CocoaMQTTClient, GCDAsyncSocketDelegate, Cocoa
     }
 
     //AsyncSocket Delegate
-    
+
     public func socket(sock: GCDAsyncSocket!, didConnectToHost host: String!, port: UInt16) {
         #if DEBUG
-        NSLog("CocoaMQTT: connected to \(host) : \(port)")
+            NSLog("CocoaMQTT: connected to \(host) : \(port)")
         #endif
         connState = CocoaMQTTConnState.CONNECTED
+        
+        if secureMQTT {
+            sock.startTLS(["GCDAsyncSocketManuallyEvaluateTrust": true])
+        } else {
+            let frame = CocoaMQTTFrameConnect(client: self)
+            send(frame)
+            reader!.start()
+        }
+        
+        delegate?.mqtt(self, didConnect: host, port: Int(port))
+    }
+    
+    public func socket(sock: GCDAsyncSocket!, didReceiveTrust trust: SecTrust!, completionHandler: ((Bool) -> Void)!) {
+        #if DEBUG
+            NSLog("CocoaMQTT: didReceiveTrust")
+        #endif
+        delegate?.mqtt(self, didReceiveTrust: trust, completionHandler: completionHandler)
+    }
+    
+    public func socketDidSecure(sock: GCDAsyncSocket!) {
+        #if DEBUG
+            NSLog("CocoaMQTT: socketDidSecure")
+        #endif
         let frame = CocoaMQTTFrameConnect(client: self)
         send(frame)
         reader!.start()
-        delegate?.mqtt(self, didConnect: host, port: Int(port))
+        delegate?.mqttDidSecure(self)
     }
 
     public func socket(sock: GCDAsyncSocket!, didWriteDataWithTag tag: Int) {
