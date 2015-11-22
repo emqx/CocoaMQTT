@@ -14,17 +14,6 @@ class CocoaMQTTCli: CocoaMQTTDelegate {
     func mqtt(mqtt: CocoaMQTT, didConnect host: String, port: Int) {
         print("didConnect \(host):\(port)")
     }
-    
-    //mqtts
-    func mqttDidSecure(mqtt: CocoaMQTT) {
-        print("didSecure")
-    }
-    
-    //mqtts
-    func mqtt(mqtt: CocoaMQTT, didReceiveTrust trust: SecTrust!, completionHandler: ((Bool) -> Void)!) {
-        print("didReceiveTrust")
-        completionHandler(true)
-    }
 
     func mqtt(mqtt: CocoaMQTT, didConnectAck ack: CocoaMQTTConnAck) {
         print("didConnectAck \(ack.rawValue)")

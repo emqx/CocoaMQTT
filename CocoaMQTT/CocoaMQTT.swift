@@ -16,11 +16,8 @@ public protocol CocoaMQTTDelegate : class {
     /**
      * MQTT connected with server
      */
+    
     func mqtt(mqtt: CocoaMQTT, didConnect host: String, port: Int)
-    
-    func mqtt(mqtt: CocoaMQTT, didReceiveTrust trust: SecTrust!, completionHandler: ((Bool) -> Void)!)
-    
-    func mqttDidSecure(mqtt: CocoaMQTT)
 
     func mqtt(mqtt: CocoaMQTT, didConnectAck ack: CocoaMQTTConnAck)
 
@@ -279,7 +276,11 @@ public class CocoaMQTT: NSObject, CocoaMQTTClient, GCDAsyncSocketDelegate, Cocoa
         connState = CocoaMQTTConnState.CONNECTED
         
         if secureMQTT {
-            sock.startTLS(["GCDAsyncSocketManuallyEvaluateTrust": true])
+            #if DEBUG
+                sock.startTLS(["GCDAsyncSocketManuallyEvaluateTrust": true])
+            #else
+                sock.startTLS(nil)
+            #endif
         } else {
             let frame = CocoaMQTTFrameConnect(client: self)
             send(frame)
@@ -293,7 +294,7 @@ public class CocoaMQTT: NSObject, CocoaMQTTClient, GCDAsyncSocketDelegate, Cocoa
         #if DEBUG
             NSLog("CocoaMQTT: didReceiveTrust")
         #endif
-        delegate?.mqtt(self, didReceiveTrust: trust, completionHandler: completionHandler)
+        completionHandler(true)
     }
     
     public func socketDidSecure(sock: GCDAsyncSocket!) {
@@ -303,7 +304,6 @@ public class CocoaMQTT: NSObject, CocoaMQTTClient, GCDAsyncSocketDelegate, Cocoa
         let frame = CocoaMQTTFrameConnect(client: self)
         send(frame)
         reader!.start()
-        delegate?.mqttDidSecure(self)
     }
 
     public func socket(sock: GCDAsyncSocket!, didWriteDataWithTag tag: Int) {
