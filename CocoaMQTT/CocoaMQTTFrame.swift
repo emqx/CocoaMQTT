@@ -318,10 +318,16 @@ class CocoaMQTTFramePublish: CocoaMQTTFrame {
             msgid = UInt16(msb) << 8 + UInt16(lsb)
             pos += 2
         }
+        
         //payload
         let end = data!.count - 1
-
-        payload = [UInt8](data![pos...end])
+        
+        if (end - pos >= 0) {
+            payload = [UInt8](data![pos...end])
+        //receives an empty message
+        } else {
+            payload = []
+        }
     }
 
     override func pack() {
