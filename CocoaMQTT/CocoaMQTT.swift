@@ -62,7 +62,7 @@ public protocol CocoaMQTTClient {
 
     func connect() -> Bool
 
-    func publish(topic: String, withString string: String, qos: CocoaMQTTQOS) -> UInt16
+    func publish(topic: String, withString string: String, qos: CocoaMQTTQOS, retain: Bool, dup: Bool) -> UInt16
 
     func publish(message: CocoaMQTTMessage) -> UInt16
 
@@ -216,8 +216,8 @@ public class CocoaMQTT: NSObject, CocoaMQTTClient, GCDAsyncSocketDelegate, Cocoa
         }
     }
 
-    public func publish(topic: String, withString string: String, qos: CocoaMQTTQOS = .QOS1) -> UInt16 {
-        let message = CocoaMQTTMessage(topic: topic, string: string, qos: qos)
+    public func publish(topic: String, withString string: String, qos: CocoaMQTTQOS = .QOS1, retain: Bool = false, dup: Bool = false) -> UInt16 {
+        let message = CocoaMQTTMessage(topic: topic, string: string, qos: qos, retain: retain, dup: dup)
         return publish(message)
     }
 
