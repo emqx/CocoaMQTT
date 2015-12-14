@@ -26,6 +26,7 @@
 #import <sys/ioctl.h>
 #import <sys/poll.h>
 #import <sys/uio.h>
+#import <sys/un.h>
 #import <unistd.h>
 
 #if ! __has_feature(objc_arc)
@@ -164,6 +165,7 @@ enum GCDAsyncSocketConfig
 
 #if TARGET_OS_IPHONE
 static NSThread *cfstreamThread;  // Used for CFStreams
+
 
 static uint64_t cfstreamThreadRetainCount;   // setup & teardown
 static dispatch_queue_t cfstreamThreadSetupQueue; // setup & teardown
@@ -870,14 +872,18 @@ static dispatch_queue_t cfstreamThreadSetupQueue; // setup & teardown
     
     int socket4FD;
     int socket6FD;
+    int socketUN;
+    NSURL *socketUrl;
     int stateIndex;
     NSData * connectInterface4;
     NSData * connectInterface6;
+    NSData * connectInterfaceUN;
     
     dispatch_queue_t socketQueue;
     
     dispatch_source_t accept4Source;
     dispatch_source_t accept6Source;
+    dispatch_source_t acceptUNSource;
     dispatch_source_t connectTimer;
     dispatch_source_t readSource;
     dispatch_source_t writeSource;
@@ -903,6 +909,7 @@ static dispatch_queue_t cfstreamThreadSetupQueue; // setup & teardown
     GCDAsyncSocketPreBuffer *sslPreBuffer;
     size_t sslWriteCachedLength;
     OSStatus sslErrCode;
+    OSStatus lastSSLHandshakeError;
     
     void *IsOnSocketQueueOrTargetQueueKey;
     
@@ -937,6 +944,8 @@ static dispatch_queue_t cfstreamThreadSetupQueue; // setup & teardown
         
         socket4FD = SOCKET_NULL;
         socket6FD = SOCKET_NULL;
+        socketUN = SOCKET_NULL;
+        socketUrl = nil;
         stateIndex = 0;
         
         if (sq)
@@ -1654,17 +1663,218 @@ static dispatch_queue_t cfstreamThreadSetupQueue; // setup & teardown
     return result;
 }
 
+- (BOOL)acceptOnUrl:(NSURL *)url error:(NSError **)errPtr;
+{
+    LogTrace();
+    
+    __block BOOL result = NO;
+    __block NSError *err = nil;
+    
+    // CreateSocket Block
+    // This block will be invoked within the dispatch block below.
+    
+    int(^createSocket)(int, NSData*) = ^int (int domain, NSData *interfaceAddr) {
+        
+        int socketFD = socket(domain, SOCK_STREAM, 0);
+        
+        if (socketFD == SOCKET_NULL)
+        {
+            NSString *reason = @"Error in socket() function";
+            err = [self errnoErrorWithReason:reason];
+            
+            return SOCKET_NULL;
+        }
+        
+        int status;
+        
+        // Set socket options
+        
+        status = fcntl(socketFD, F_SETFL, O_NONBLOCK);
+        if (status == -1)
+        {
+            NSString *reason = @"Error enabling non-blocking IO on socket (fcntl)";
+            err = [self errnoErrorWithReason:reason];
+            
+            LogVerbose(@"close(socketFD)");
+            close(socketFD);
+            return SOCKET_NULL;
+        }
+        
+        int reuseOn = 1;
+        status = setsockopt(socketFD, SOL_SOCKET, SO_REUSEADDR, &reuseOn, sizeof(reuseOn));
+        if (status == -1)
+        {
+            NSString *reason = @"Error enabling address reuse (setsockopt)";
+            err = [self errnoErrorWithReason:reason];
+            
+            LogVerbose(@"close(socketFD)");
+            close(socketFD);
+            return SOCKET_NULL;
+        }
+        
+        // Bind socket
+        
+        status = bind(socketFD, (const struct sockaddr *)[interfaceAddr bytes], (socklen_t)[interfaceAddr length]);
+        if (status == -1)
+        {
+            NSString *reason = @"Error in bind() function";
+            err = [self errnoErrorWithReason:reason];
+            
+            LogVerbose(@"close(socketFD)");
+            close(socketFD);
+            return SOCKET_NULL;
+        }
+        
+        // Listen
+        
+        status = listen(socketFD, 1024);
+        if (status == -1)
+        {
+            NSString *reason = @"Error in listen() function";
+            err = [self errnoErrorWithReason:reason];
+            
+            LogVerbose(@"close(socketFD)");
+            close(socketFD);
+            return SOCKET_NULL;
+        }
+        
+        return socketFD;
+    };
+    
+    // Create dispatch block and run on socketQueue
+    
+    dispatch_block_t block = ^{ @autoreleasepool {
+        
+        if (delegate == nil) // Must have delegate set
+        {
+            NSString *msg = @"Attempting to accept without a delegate. Set a delegate first.";
+            err = [self badConfigError:msg];
+            
+            return_from_block;
+        }
+        
+        if (delegateQueue == NULL) // Must have delegate queue set
+        {
+            NSString *msg = @"Attempting to accept without a delegate queue. Set a delegate queue first.";
+            err = [self badConfigError:msg];
+            
+            return_from_block;
+        }
+        
+        if (![self isDisconnected]) // Must be disconnected
+        {
+            NSString *msg = @"Attempting to accept while connected or accepting connections. Disconnect first.";
+            err = [self badConfigError:msg];
+            
+            return_from_block;
+        }
+        
+        // Clear queues (spurious read/write requests post disconnect)
+        [readQueue removeAllObjects];
+        [writeQueue removeAllObjects];
+        
+        // Remove a previous socket
+        
+        NSError *error = nil;
+        NSFileManager *fileManager = [NSFileManager defaultManager];
+        if ([fileManager fileExistsAtPath:url.path]) {
+            if (![[NSFileManager defaultManager] removeItemAtURL:url error:&error]) {
+                NSString *msg = @"Could not remove previous unix domain socket at given url.";
+                err = [self otherError:msg];
+                
+                return_from_block;
+            }
+        }
+        
+        // Resolve interface from description
+        
+        NSData *interface = [self getInterfaceAddressFromUrl:url];
+        
+        if (interface == nil)
+        {
+            NSString *msg = @"Invalid unix domain url. Specify a valid file url that does not exist (e.g. \"file:///tmp/socket\")";
+            err = [self badParamError:msg];
+            
+            return_from_block;
+        }
+        
+        // Create sockets, configure, bind, and listen
+        
+        LogVerbose(@"Creating unix domain socket");
+        socketUN = createSocket(AF_UNIX, interface);
+        
+        if (socketUN == SOCKET_NULL)
+        {
+            return_from_block;
+        }
+        
+        socketUrl = url;
+        
+        // Create accept sources
+        
+        acceptUNSource = dispatch_source_create(DISPATCH_SOURCE_TYPE_READ, socketUN, 0, socketQueue);
+        
+        int socketFD = socketUN;
+        dispatch_source_t acceptSource = acceptUNSource;
+        
+        dispatch_source_set_event_handler(acceptUNSource, ^{ @autoreleasepool {
+            
+            LogVerbose(@"eventUNBlock");
+            
+            unsigned long i = 0;
+            unsigned long numPendingConnections = dispatch_source_get_data(acceptSource);
+            
+            LogVerbose(@"numPendingConnections: %lu", numPendingConnections);
+            
+            while ([self doAccept:socketFD] && (++i < numPendingConnections));
+        }});
+        
+        dispatch_source_set_cancel_handler(acceptUNSource, ^{
+            
+#if NEEDS_DISPATCH_RETAIN_RELEASE
+            LogVerbose(@"dispatch_release(accept4Source)");
+            dispatch_release(acceptSource);
+#endif
+            
+            LogVerbose(@"close(socket4FD)");
+            close(socketFD);
+        });
+        
+        LogVerbose(@"dispatch_resume(accept4Source)");
+        dispatch_resume(acceptUNSource);
+        
+        flags |= kSocketStarted;
+        
+        result = YES;
+    }};
+    
+    if (dispatch_get_specific(IsOnSocketQueueOrTargetQueueKey))
+        block();
+    else
+        dispatch_sync(socketQueue, block);
+    
+    if (result == NO)
+    {
+        LogInfo(@"Error in accept: %@", err);
+        
+        if (errPtr)
+            *errPtr = err;
+    }
+    
+    return result;
+}
+
 - (BOOL)doAccept:(int)parentSocketFD
 {
     LogTrace();
     
-    BOOL isIPv4;
+    int socketType;
     int childSocketFD;
     NSData *childSocketAddress;
     
     if (parentSocketFD == socket4FD)
     {
-        isIPv4 = YES;
+        socketType = 0;
         
         struct sockaddr_in addr;
         socklen_t addrLen = sizeof(addr);
@@ -1679,11 +1889,28 @@ static dispatch_queue_t cfstreamThreadSetupQueue; // setup & teardown
         
         childSocketAddress = [NSData dataWithBytes:&addr length:addrLen];
     }
-    else // if (parentSocketFD == socket6FD)
+    else if (parentSocketFD == socket6FD)
     {
-        isIPv4 = NO;
+        socketType = 1;
         
         struct sockaddr_in6 addr;
+        socklen_t addrLen = sizeof(addr);
+        
+        childSocketFD = accept(parentSocketFD, (struct sockaddr *)&addr, &addrLen);
+        
+        if (childSocketFD == -1)
+        {
+            LogWarn(@"Accept failed with error: %@", [self errnoError]);
+            return NO;
+        }
+        
+        childSocketAddress = [NSData dataWithBytes:&addr length:addrLen];
+    }
+    else // if (parentSocketFD == socketUN)
+    {
+        socketType = 2;
+        
+        struct sockaddr_un addr;
         socklen_t addrLen = sizeof(addr);
         
         childSocketFD = accept(parentSocketFD, (struct sockaddr *)&addr, &addrLen);
@@ -1731,14 +1958,16 @@ static dispatch_queue_t cfstreamThreadSetupQueue; // setup & teardown
             
             // Create GCDAsyncSocket instance for accepted socket
             
-            GCDAsyncSocket *acceptedSocket = [[GCDAsyncSocket alloc] initWithDelegate:theDelegate
-                                                                        delegateQueue:delegateQueue
-                                                                          socketQueue:childSocketQueue];
+            GCDAsyncSocket *acceptedSocket = [[[self class] alloc] initWithDelegate:theDelegate
+                                                                      delegateQueue:delegateQueue
+                                                                        socketQueue:childSocketQueue];
             
-            if (isIPv4)
+            if (socketType == 0)
                 acceptedSocket->socket4FD = childSocketFD;
-            else
+            else if (socketType == 1)
                 acceptedSocket->socket6FD = childSocketFD;
+            else
+                acceptedSocket->socketUN = childSocketFD;
             
             acceptedSocket->flags = (kSocketStarted | kConnected);
             
@@ -1865,6 +2094,61 @@ static dispatch_queue_t cfstreamThreadSetupQueue; // setup & teardown
         connectInterface4 = interface4;
         connectInterface6 = interface6;
     }
+    
+    // Clear queues (spurious read/write requests post disconnect)
+    [readQueue removeAllObjects];
+    [writeQueue removeAllObjects];
+    
+    return YES;
+}
+
+- (BOOL)preConnectWithUrl:(NSURL *)url error:(NSError **)errPtr
+{
+    NSAssert(dispatch_get_specific(IsOnSocketQueueOrTargetQueueKey), @"Must be dispatched on socketQueue");
+    
+    if (delegate == nil) // Must have delegate set
+    {
+        if (errPtr)
+        {
+            NSString *msg = @"Attempting to connect without a delegate. Set a delegate first.";
+            *errPtr = [self badConfigError:msg];
+        }
+        return NO;
+    }
+    
+    if (delegateQueue == NULL) // Must have delegate queue set
+    {
+        if (errPtr)
+        {
+            NSString *msg = @"Attempting to connect without a delegate queue. Set a delegate queue first.";
+            *errPtr = [self badConfigError:msg];
+        }
+        return NO;
+    }
+    
+    if (![self isDisconnected]) // Must be disconnected
+    {
+        if (errPtr)
+        {
+            NSString *msg = @"Attempting to connect while connected or accepting connections. Disconnect first.";
+            *errPtr = [self badConfigError:msg];
+        }
+        return NO;
+    }
+    
+    NSData *interface = [self getInterfaceAddressFromUrl:url];
+    
+    if (interface == nil)
+    {
+        if (errPtr)
+        {
+            NSString *msg = @"Unknown interface. Specify valid interface by name (e.g. \"en1\") or IP address.";
+            *errPtr = [self badParamError:msg];
+        }
+        return NO;
+    }
+    
+    connectInterfaceUN = interface;
     
     // Clear queues (spurious read/write requests post disconnect)
     [readQueue removeAllObjects];
@@ -2109,6 +2393,66 @@ static dispatch_queue_t cfstreamThreadSetupQueue; // setup & teardown
     return result;
 }
 
+- (BOOL)connectToUrl:(NSURL *)url withTimeout:(NSTimeInterval)timeout error:(NSError **)errPtr;
+{
+    LogTrace();
+    
+    __block BOOL result = NO;
+    __block NSError *err = nil;
+    
+    dispatch_block_t block = ^{ @autoreleasepool {
+        
+        // Check for problems with host parameter
+        
+        if ([url.path length] == 0)
+        {
+            NSString *msg = @"Invalid unix domain socket url.";
+            err = [self badParamError:msg];
+            
+            return_from_block;
+        }
+        
+        // Run through standard pre-connect checks
+        
+        if (![self preConnectWithUrl:url error:&err])
+        {
+            return_from_block;
+        }
+        
+        // We've made it past all the checks.
+        // It's time to start the connection process.
+        
+        flags |= kSocketStarted;
+        
+        // Start the normal connection process
+        
+        NSError *err = nil;
+        if (![self connectWithAddressUN:connectInterfaceUN error:&err])
+        {
+            [self closeWithError:err];
+            
+            return_from_block;
+        }
+        
+        [self startConnectTimeout:timeout];
+        
+        result = YES;
+    }};
+    
+    if (dispatch_get_specific(IsOnSocketQueueOrTargetQueueKey))
+        block();
+    else
+        dispatch_sync(socketQueue, block);
+    
+    if (result == NO)
+    {
+        if (errPtr)
+            *errPtr = err;
+    }
+    
+    return result;
+}
+
 - (void)lookup:(int)aStateIndex didSucceedWithAddress4:(NSData *)address4 address6:(NSData *)address6
 {
     LogTrace();
@@ -2305,6 +2649,87 @@ static dispatch_queue_t cfstreamThreadSetupQueue; // setup & teardown
     return YES;
 }
 
+- (BOOL)connectWithAddressUN:(NSData *)address error:(NSError **)errPtr
+{
+    LogTrace();
+    
+    NSAssert(dispatch_get_specific(IsOnSocketQueueOrTargetQueueKey), @"Must be dispatched on socketQueue");
+    
+    // Create the socket
+    
+    int socketFD;
+    
+    LogVerbose(@"Creating unix domain socket");
+    
+    socketUN = socket(AF_UNIX, SOCK_STREAM, 0);
+    
+    socketFD = socketUN;
+    
+    if (socketFD == SOCKET_NULL)
+    {
+        if (errPtr)
+            *errPtr = [self errnoErrorWithReason:@"Error in socket() function"];
+        
+        return NO;
+    }
+    
+    // Bind the socket to the desired interface (if needed)
+    
+    LogVerbose(@"Binding socket...");
+    
+    int reuseOn = 1;
+    setsockopt(socketFD, SOL_SOCKET, SO_REUSEADDR, &reuseOn, sizeof(reuseOn));
+    
+    //	const struct sockaddr *interfaceAddr = (const struct sockaddr *)[address bytes];
+    //
+    //	int result = bind(socketFD, interfaceAddr, (socklen_t)[address length]);
+    //	if (result != 0)
+    //	{
+    //		if (errPtr)
+    //			*errPtr = [self errnoErrorWithReason:@"Error in bind() function"];
+    //
+    //		return NO;
+    //	}
+    
+    // Prevent SIGPIPE signals
+    
+    int nosigpipe = 1;
+    setsockopt(socketFD, SOL_SOCKET, SO_NOSIGPIPE, &nosigpipe, sizeof(nosigpipe));
+    
+    // Start the connection process in a background queue
+    
+    int aStateIndex = stateIndex;
+    
+    dispatch_queue_t globalConcurrentQueue = dispatch_get_global_queue(DISPATCH_QUEUE_PRIORITY_DEFAULT, 0);
+    dispatch_async(globalConcurrentQueue, ^{
+        
+        const struct sockaddr *addr = (const struct sockaddr *)[address bytes];
+        int result = connect(socketFD, addr, addr->sa_len);
+        if (result == 0)
+        {
+            dispatch_async(socketQueue, ^{ @autoreleasepool {
+                
+                [self didConnect:aStateIndex];
+            }});
+        }
+        else
+        {
+            // TODO: Bad file descriptor
+            perror("connect");
+            NSError *error = [self errnoErrorWithReason:@"Error in connect() function"];
+            
+            dispatch_async(socketQueue, ^{ @autoreleasepool {
+                
+                [self didNotConnect:aStateIndex error:error];
+            }});
+        }
+    });
+    
+    LogVerbose(@"Connecting...");
+    
+    return YES;
+}
+
 - (void)didConnect:(int)aStateIndex
 {
     LogTrace();
@@ -2384,16 +2809,31 @@ static dispatch_queue_t cfstreamThreadSetupQueue; // setup & teardown
     
     NSString *host = [self connectedHost];
     uint16_t port = [self connectedPort];
+    NSURL *url = [self connectedUrl];
     
     __strong id theDelegate = delegate;
     
-    if (delegateQueue && [theDelegate respondsToSelector:@selector(socket:didConnectToHost:port:)])
+    if (delegateQueue && host != nil && [theDelegate respondsToSelector:@selector(socket:didConnectToHost:port:)])
     {
         SetupStreamsPart1();
         
         dispatch_async(delegateQueue, ^{ @autoreleasepool {
             
             [theDelegate socket:self didConnectToHost:host port:port];
+            
+            dispatch_async(socketQueue, ^{ @autoreleasepool {
+                
+                SetupStreamsPart2();
+            }});
+        }});
+    }
+    else if (delegateQueue && url != nil && [theDelegate respondsToSelector:@selector(socket:didConnectToUrl:)])
+    {
+        SetupStreamsPart1();
+        
+        dispatch_async(delegateQueue, ^{ @autoreleasepool {
+            
+            [theDelegate socket:self didConnectToUrl:url];
             
             dispatch_async(socketQueue, ^{ @autoreleasepool {
                 
@@ -2409,7 +2849,7 @@ static dispatch_queue_t cfstreamThreadSetupQueue; // setup & teardown
     
     // Get the connected socket
     
-    int socketFD = (socket4FD != SOCKET_NULL) ? socket4FD : socket6FD;
+    int socketFD = (socket4FD != SOCKET_NULL) ? socket4FD : (socket6FD != SOCKET_NULL) ? socket6FD : socketUN;
     
     // Enable non-blocking IO on the socket
     
@@ -2571,7 +3011,7 @@ static dispatch_queue_t cfstreamThreadSetupQueue; // setup & teardown
 #endif
     
     [sslPreBuffer reset];
-    sslErrCode = noErr;
+    sslErrCode = lastSSLHandshakeError = noErr;
     
     if (sslContext)
     {
@@ -2594,7 +3034,7 @@ static dispatch_queue_t cfstreamThreadSetupQueue; // setup & teardown
     // So we have to unpause the source if needed.
     // This allows the cancel handler to be run, which in turn releases the source and closes the socket.
     
-    if (!accept4Source && !accept6Source && !readSource && !writeSource)
+    if (!accept4Source && !accept6Source && !acceptUNSource && !readSource && !writeSource)
     {
         LogVerbose(@"manually closing close");
         
@@ -2610,6 +3050,15 @@ static dispatch_queue_t cfstreamThreadSetupQueue; // setup & teardown
             LogVerbose(@"close(socket6FD)");
             close(socket6FD);
             socket6FD = SOCKET_NULL;
+        }
+        
+        if (socketUN != SOCKET_NULL)
+        {
+            LogVerbose(@"close(socketUN)");
+            close(socketUN);
+            socketUN = SOCKET_NULL;
+            unlink(socketUrl.path.fileSystemRepresentation);
+            socketUrl = nil;
         }
     }
     else
@@ -2632,6 +3081,16 @@ static dispatch_queue_t cfstreamThreadSetupQueue; // setup & teardown
             // We never suspend accept6Source
             
             accept6Source = NULL;
+        }
+        
+        if (acceptUNSource)
+        {
+            LogVerbose(@"dispatch_source_cancel(acceptUNSource)");
+            dispatch_source_cancel(acceptUNSource);
+            
+            // We never suspend acceptUNSource
+            
+            acceptUNSource = NULL;
         }
         
         if (readSource)
@@ -2658,6 +3117,7 @@ static dispatch_queue_t cfstreamThreadSetupQueue; // setup & teardown
         
         socket4FD = SOCKET_NULL;
         socket6FD = SOCKET_NULL;
+        socketUN = SOCKET_NULL;
     }
     
     // If the client has passed the connect/accept method, then the connection has at least begun.
@@ -2668,6 +3128,7 @@ static dispatch_queue_t cfstreamThreadSetupQueue; // setup & teardown
     // Clear stored socket info and all flags (config remains as is)
     socketFDBytesAvailable = 0;
     flags = 0;
+    sslWriteCachedLength = 0;
     
     if (shouldCallDelegate)
     {
@@ -2993,6 +3454,29 @@ static dispatch_queue_t cfstreamThreadSetupQueue; // setup & teardown
     }
 }
 
+- (NSURL *)connectedUrl
+{
+    if (dispatch_get_specific(IsOnSocketQueueOrTargetQueueKey))
+    {
+        if (socketUN != SOCKET_NULL)
+            return [self connectedUrlFromSocketUN:socketUN];
+        
+        return nil;
+    }
+    else
+    {
+        __block NSURL *result = nil;
+        
+        dispatch_sync(socketQueue, ^{ @autoreleasepool {
+            
+            if (socketUN != SOCKET_NULL)
+                result = [self connectedUrlFromSocketUN:socketUN];
+        }});
+        
+        return result;
+    }
+}
+
 - (NSString *)localHost
 {
     if (dispatch_get_specific(IsOnSocketQueueOrTargetQueueKey))
@@ -3158,6 +3642,18 @@ static dispatch_queue_t cfstreamThreadSetupQueue; // setup & teardown
         return 0;
     }
     return [[self class] portFromSockaddr6:&sockaddr6];
+}
+
+- (NSURL *)connectedUrlFromSocketUN:(int)socketFD
+{
+    struct sockaddr_un sockaddr;
+    socklen_t sockaddrlen = sizeof(sockaddr);
+    
+    if (getpeername(socketFD, (struct sockaddr *)&sockaddr, &sockaddrlen) < 0)
+    {
+        return 0;
+    }
+    return [[self class] urlFromSockaddrUN:&sockaddr];
 }
 
 - (NSString *)localHostFromSocket4:(int)socketFD
@@ -3506,6 +4002,22 @@ static dispatch_queue_t cfstreamThreadSetupQueue; // setup & teardown
     
     if (interfaceAddr4Ptr) *interfaceAddr4Ptr = addr4;
     if (interfaceAddr6Ptr) *interfaceAddr6Ptr = addr6;
+}
+
+- (NSData *)getInterfaceAddressFromUrl:(NSURL *)url;
+{
+    NSString *path = url.path;
+    if (path.length == 0) {
+        return nil;
+    }
+    
+    struct sockaddr_un nativeAddr;
+    nativeAddr.sun_family = AF_UNIX;
+    strlcpy(nativeAddr.sun_path, path.fileSystemRepresentation, sizeof(nativeAddr.sun_path));
+    nativeAddr.sun_len = SUN_LEN(&nativeAddr);
+    NSData *interface = [NSData dataWithBytes:&nativeAddr length:sizeof(struct sockaddr_un)];
+    
+    return interface;
 }
 
 - (void)setupReadAndWriteSourcesForNewlyConnectedSocket:(int)socketFD
@@ -4225,7 +4737,7 @@ static dispatch_queue_t cfstreamThreadSetupQueue; // setup & teardown
         
         if (flags & kStartingWriteTLS)
         {
-            if ([self usingSecureTransportForTLS])
+            if ([self usingSecureTransportForTLS] && lastSSLHandshakeError == errSSLWouldBlock)
             {
                 // We are in the process of a SSL Handshake.
                 // We were waiting for incoming data which has just arrived.
@@ -4250,7 +4762,7 @@ static dispatch_queue_t cfstreamThreadSetupQueue; // setup & teardown
     }
     
     BOOL done        = NO;  // Completed read operation
-    NSError *error   = nil; // Error occured
+    NSError *error   = nil; // Error occurred
     
     NSUInteger totalBytesReadForCurrentRead = 0;
     
@@ -4568,7 +5080,7 @@ static dispatch_queue_t cfstreamThreadSetupQueue; // setup & teardown
             
             // Read data into buffer
             
-            int socketFD = (socket4FD == SOCKET_NULL) ? socket6FD : socket4FD;
+            int socketFD = (socket4FD != SOCKET_NULL) ? socket4FD : (socket6FD != SOCKET_NULL) ? socket6FD : socketUN;
             
             ssize_t result = read(socketFD, buffer, (size_t)bytesToRead);
             LogVerbose(@"read from socket = %i", (int)result);
@@ -4897,7 +5409,7 @@ static dispatch_queue_t cfstreamThreadSetupQueue; // setup & teardown
         //
         // Query the socket to see if it is still writeable. (Perhaps the peer will continue reading data from us)
         
-        int socketFD = (socket4FD == SOCKET_NULL) ? socket6FD : socket4FD;
+        int socketFD = (socket4FD != SOCKET_NULL) ? socket4FD : (socket6FD != SOCKET_NULL) ? socket6FD : socketUN;
         
         struct pollfd pfd[1];
         pfd[0].fd = socketFD;
@@ -5313,7 +5825,7 @@ static dispatch_queue_t cfstreamThreadSetupQueue; // setup & teardown
         
         if (flags & kStartingReadTLS)
         {
-            if ([self usingSecureTransportForTLS])
+            if ([self usingSecureTransportForTLS] && lastSSLHandshakeError == errSSLWouldBlock)
             {
                 // We are in the process of a SSL Handshake.
                 // We were waiting for available space in the socket's internal OS buffer to continue writing.
@@ -5521,7 +6033,7 @@ static dispatch_queue_t cfstreamThreadSetupQueue; // setup & teardown
         // Writing data directly over raw socket
         //
         
-        int socketFD = (socket4FD == SOCKET_NULL) ? socket6FD : socket4FD;
+        int socketFD = (socket4FD != SOCKET_NULL) ? socket4FD : (socket6FD != SOCKET_NULL) ? socket6FD : socketUN;
         
         const uint8_t *buffer = (const uint8_t *)[currentWrite->buffer bytes] + currentWrite->bytesDone;
         
@@ -5833,7 +6345,7 @@ static dispatch_queue_t cfstreamThreadSetupQueue; // setup & teardown
             NSDictionary *tlsSettings = tlsPacket->tlsSettings;
             
             NSNumber *value = [tlsSettings objectForKey:GCDAsyncSocketUseCFStreamForTLS];
-            if (value && [value boolValue] == YES)
+            if (value && [value boolValue])
                 useSecureTransport = NO;
         }
 #endif
@@ -5919,7 +6431,7 @@ static dispatch_queue_t cfstreamThreadSetupQueue; // setup & teardown
     {
         LogVerbose(@"%@: Reading from socket...", THIS_METHOD);
         
-        int socketFD = (socket6FD == SOCKET_NULL) ? socket4FD : socket6FD;
+        int socketFD = (socket4FD != SOCKET_NULL) ? socket4FD : (socket6FD != SOCKET_NULL) ? socket6FD : socketUN;
         
         BOOL readIntoPreBuffer;
         size_t bytesToRead;
@@ -6039,7 +6551,7 @@ static dispatch_queue_t cfstreamThreadSetupQueue; // setup & teardown
     BOOL done = NO;
     BOOL socketError = NO;
     
-    int socketFD = (socket4FD == SOCKET_NULL) ? socket6FD : socket4FD;
+    int socketFD = (socket4FD != SOCKET_NULL) ? socket4FD : (socket6FD != SOCKET_NULL) ? socket6FD : socketUN;
     
     ssize_t result = write(socketFD, buffer, bytesToWrite);
     
@@ -6112,7 +6624,7 @@ static OSStatus SSLWriteFunction(SSLConnectionRef connection, const void *data, 
     
     // Create SSLContext, and setup IO callbacks and connection ref
     
-    BOOL isServer = [[tlsSettings objectForKey:(NSString *)kCFStreamSSLIsServer] boolValue];
+    BOOL isServer = [[tlsSettings objectForKey:(__bridge NSString *)kCFStreamSSLIsServer] boolValue];
     
 #if TARGET_OS_IPHONE || (__MAC_OS_X_VERSION_MIN_REQUIRED >= 1080)
     {
@@ -6212,7 +6724,7 @@ static OSStatus SSLWriteFunction(SSLConnectionRef connection, const void *data, 
     
     // 1. kCFStreamSSLPeerName
     
-    value = [tlsSettings objectForKey:(NSString *)kCFStreamSSLPeerName];
+    value = [tlsSettings objectForKey:(__bridge NSString *)kCFStreamSSLPeerName];
     if ([value isKindOfClass:[NSString class]])
     {
         NSString *peerName = (NSString *)value;
@@ -6237,7 +6749,7 @@ static OSStatus SSLWriteFunction(SSLConnectionRef connection, const void *data, 
     
     // 2. kCFStreamSSLCertificates
     
-    value = [tlsSettings objectForKey:(NSString *)kCFStreamSSLCertificates];
+    value = [tlsSettings objectForKey:(__bridge NSString *)kCFStreamSSLCertificates];
     if ([value isKindOfClass:[NSArray class]])
     {
         CFArrayRef certs = (__bridge CFArrayRef)value;
@@ -6432,7 +6944,7 @@ static OSStatus SSLWriteFunction(SSLConnectionRef connection, const void *data, 
     
 #pragma clang diagnostic push
 #pragma clang diagnostic ignored "-Wdeprecated-declarations"
-    value = [tlsSettings objectForKey:(NSString *)kCFStreamSSLAllowsAnyRoot];
+    value = [tlsSettings objectForKey:(__bridge NSString *)kCFStreamSSLAllowsAnyRoot];
 #pragma clang diagnostic pop
     if (value)
     {
@@ -6447,7 +6959,7 @@ static OSStatus SSLWriteFunction(SSLConnectionRef connection, const void *data, 
     
 #pragma clang diagnostic push
 #pragma clang diagnostic ignored "-Wdeprecated-declarations"
-    value = [tlsSettings objectForKey:(NSString *)kCFStreamSSLAllowsExpiredRoots];
+    value = [tlsSettings objectForKey:(__bridge NSString *)kCFStreamSSLAllowsExpiredRoots];
 #pragma clang diagnostic pop
     if (value)
     {
@@ -6462,7 +6974,7 @@ static OSStatus SSLWriteFunction(SSLConnectionRef connection, const void *data, 
     
 #pragma clang diagnostic push
 #pragma clang diagnostic ignored "-Wdeprecated-declarations"
-    value = [tlsSettings objectForKey:(NSString *)kCFStreamSSLValidatesCertificateChain];
+    value = [tlsSettings objectForKey:(__bridge NSString *)kCFStreamSSLValidatesCertificateChain];
 #pragma clang diagnostic pop
     if (value)
     {
@@ -6477,7 +6989,7 @@ static OSStatus SSLWriteFunction(SSLConnectionRef connection, const void *data, 
     
 #pragma clang diagnostic push
 #pragma clang diagnostic ignored "-Wdeprecated-declarations"
-    value = [tlsSettings objectForKey:(NSString *)kCFStreamSSLAllowsExpiredCertificates];
+    value = [tlsSettings objectForKey:(__bridge NSString *)kCFStreamSSLAllowsExpiredCertificates];
 #pragma clang diagnostic pop
     if (value)
     {
@@ -6492,7 +7004,7 @@ static OSStatus SSLWriteFunction(SSLConnectionRef connection, const void *data, 
     
 #pragma clang diagnostic push
 #pragma clang diagnostic ignored "-Wdeprecated-declarations"
-    value = [tlsSettings objectForKey:(NSString *)kCFStreamSSLLevel];
+    value = [tlsSettings objectForKey:(__bridge NSString *)kCFStreamSSLLevel];
 #pragma clang diagnostic pop
     if (value)
     {
@@ -6521,7 +7033,7 @@ static OSStatus SSLWriteFunction(SSLConnectionRef connection, const void *data, 
         [sslPreBuffer didWrite:preBufferLength];
     }
     
-    sslErrCode = noErr;
+    sslErrCode = lastSSLHandshakeError = noErr;
     
     // Start the SSL Handshake process
     
@@ -6540,6 +7052,7 @@ static OSStatus SSLWriteFunction(SSLConnectionRef connection, const void *data, 
     // Otherwise, the return value indicates an error code.
     
     OSStatus status = SSLHandshake(sslContext);
+    lastSSLHandshakeError = status;
     
     if (status == noErr)
     {
@@ -6662,6 +7175,7 @@ static OSStatus SSLWriteFunction(SSLConnectionRef connection, const void *data, 
     
     if (shouldTrust)
     {
+        NSAssert(lastSSLHandshakeError == errSSLPeerAuthCompleted, @"ssl_shouldTrustPeer called when last error is %d and not errSSLPeerAuthCompleted", (int)lastSSLHandshakeError);
         [self ssl_continueSSLHandshake];
     }
     else
@@ -7080,7 +7594,7 @@ static void CFWriteStreamCallback (CFWriteStreamRef stream, CFStreamEventType ty
         return YES;
     }
     
-    int socketFD = (socket6FD == SOCKET_NULL) ? socket4FD : socket6FD;
+    int socketFD = (socket4FD != SOCKET_NULL) ? socket4FD : (socket6FD != SOCKET_NULL) ? socket6FD : socketUN;
     
     if (socketFD == SOCKET_NULL)
     {
@@ -7398,7 +7912,7 @@ static void CFWriteStreamCallback (CFWriteStreamRef stream, CFStreamEventType ty
 {
     if (![self createReadAndWriteStream])
     {
-        // Error occured creating streams (perhaps socket isn't open)
+        // Error occurred creating streams (perhaps socket isn't open)
         return NO;
     }
     
@@ -7604,6 +8118,12 @@ static void CFWriteStreamCallback (CFWriteStreamRef stream, CFStreamEventType ty
     return ntohs(pSockaddr6->sin6_port);
 }
 
++ (NSURL *)urlFromSockaddrUN:(const struct sockaddr_un *)pSockaddr
+{
+    NSString *path = [NSString stringWithUTF8String:pSockaddr->sun_path];
+    return [NSURL fileURLWithPath:path];
+}
+
 + (NSString *)hostFromAddress:(NSData *)address
 {
     NSString *host;
@@ -7716,4 +8236,4 @@ static void CFWriteStreamCallback (CFWriteStreamRef stream, CFStreamEventType ty
     return [NSData dataWithBytes:"" length:1];
 }
 
-@end
+@end	
