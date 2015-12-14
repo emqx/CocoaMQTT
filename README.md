@@ -13,7 +13,7 @@ Build with Xcode 7.0 / Swift 2
 Usage
 =====
 
-Example in 'main.swift':
+Example in Example project:
 
 ```swift
 let mqttCli = CocoaMQTTCli()
