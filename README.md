@@ -10,6 +10,47 @@ Build
 Build with Xcode 7.0 / Swift 2
 
 
+Installation
+=====
+###CocoaPods
+Install using [CocoaPods](http://cocoapods.org) by adding this line to your Podfile:
+
+````ruby
+use_frameworks! # Add this if you are targeting iOS 8+ or using Swift
+pod 'CocoaMQTT'  
+````
+Then, run the following command:
+
+```bash
+$ pod install
+```
+Last, creat a CocoaMQTT-Bridging-Header.h file in your project, in which add the following line:
+
+```#import "CocoaMQTT/CocoaMQTT.h"```
+
+#### Manual
+- Open up Terminal, `cd` into your top-level project directory, and run the following command "if" your project is not initialized as a git repository:
+
+```bash
+$ git init
+```
+
+- Add CocoaMQTT as a git [submodule](http://git-scm.com/docs/git-submodule) by running the following command:
+
+```bash
+$ git submodule add https://github.com/emqtt/CocoaMQTT.git
+```
+
+- Open the new `CocoaMQTT` folder, and drag the `CocoaMQTT.xcodeproj` into the Project Navigator of your application's Xcode project.
+
+- Next, select your application project in the Project Navigator (blue project icon) to navigate to the target configuration window and select the application target under the "Targets" heading in the sidebar.
+
+- In the tab bar at the top of that window, open the "General" panel. Click on the + button under the "Embedded Binaries" section.
+    
+- Then select the CocoaMQTT.framework inside `CocoaMQTT.xcodeproj` (to choose iOS or OSX according to your need)
+
+
+
 Usage
 =====
 
