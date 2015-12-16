@@ -1,0 +1,30 @@
+{
+  "DVTSourceControlWorkspaceBlueprintPrimaryRemoteRepositoryKey" : "6AC0722B7BE3FA27716D8CB58780284FED75DC3C",
+  "DVTSourceControlWorkspaceBlueprintWorkingCopyRepositoryLocationsKey" : {
+
+  },
+  "DVTSourceControlWorkspaceBlueprintWorkingCopyStatesKey" : {
+    "6AC0722B7BE3FA27716D8CB58780284FED75DC3C" : 0,
+    "1C75F1C5CFCB95B3702F6F632FA05ED5244B519E" : 0
+  },
+  "DVTSourceControlWorkspaceBlueprintIdentifierKey" : "D5561908-3427-4BF9-A495-8B300CAA7278",
+  "DVTSourceControlWorkspaceBlueprintWorkingCopyPathsKey" : {
+    "6AC0722B7BE3FA27716D8CB58780284FED75DC3C" : "CocoaMQTT\/",
+    "1C75F1C5CFCB95B3702F6F632FA05ED5244B519E" : "CocoaMQTT\/CocoaAsyncSocket\/"
+  },
+  "DVTSourceControlWorkspaceBlueprintNameKey" : "CocoaMQTT",
+  "DVTSourceControlWorkspaceBlueprintVersion" : 204,
+  "DVTSourceControlWorkspaceBlueprintRelativePathToProjectKey" : "CocoaMQTT.xcworkspace",
+  "DVTSourceControlWorkspaceBlueprintRemoteRepositoriesKey" : [
+    {
+      "DVTSourceControlWorkspaceBlueprintRemoteRepositoryURLKey" : "https:\/\/github.com\/robbiehanson\/CocoaAsyncSocket.git",
+      "DVTSourceControlWorkspaceBlueprintRemoteRepositorySystemKey" : "com.apple.dt.Xcode.sourcecontrol.Git",
+      "DVTSourceControlWorkspaceBlueprintRemoteRepositoryIdentifierKey" : "1C75F1C5CFCB95B3702F6F632FA05ED5244B519E"
+    },
+    {
+      "DVTSourceControlWorkspaceBlueprintRemoteRepositoryURLKey" : "github.com:CrazyWisdom\/CocoaMQTT.git",
+      "DVTSourceControlWorkspaceBlueprintRemoteRepositorySystemKey" : "com.apple.dt.Xcode.sourcecontrol.Git",
+      "DVTSourceControlWorkspaceBlueprintRemoteRepositoryIdentifierKey" : "6AC0722B7BE3FA27716D8CB58780284FED75DC3C"
+    }
+  ]
+}
