@@ -150,8 +150,9 @@
 			isa = PBXGroup;
 			children = (
 				040997701C1B1070006B5A6D /* Source */,
-				0409971D1C1B0B96006B5A6D /* CocoaMQTTTests */,
+				044E50B51C21237800EBA80F /* Third Party */,
 				040997101C1B0B96006B5A6D /* Products */,
+				0409971D1C1B0B96006B5A6D /* CocoaMQTTTests */,
 			);
 			sourceTree = "<group>";
 		};
@@ -184,10 +185,6 @@
 				0409977A1C1B1529006B5A6D /* CocoaMQTT.swift */,
 				0409977B1C1B1529006B5A6D /* CocoaMQTTFrame.swift */,
 				0409977C1C1B1529006B5A6D /* CocoaMQTTMessage.swift */,
-				0435B9251C1BBC2A002E9F16 /* MSWeakTimer.h */,
-				0435B9261C1BBC2A002E9F16 /* MSWeakTimer.m */,
-				0435B92F1C1BBC47002E9F16 /* GCDAsyncSocket.h */,
-				0435B9301C1BBC47002E9F16 /* GCDAsyncSocket.m */,
 				040997791C1B14F0006B5A6D /* Supporting Files */,
 			);
 			path = Source;
@@ -200,6 +197,18 @@
 				040997721C1B1070006B5A6D /* Info.plist */,
 			);
 			name = "Supporting Files";
+			sourceTree = "<group>";
+		};
+		044E50B51C21237800EBA80F /* Third Party */ = {
+			isa = PBXGroup;
+			children = (
+				0435B9251C1BBC2A002E9F16 /* MSWeakTimer.h */,
+				0435B9261C1BBC2A002E9F16 /* MSWeakTimer.m */,
+				0435B92F1C1BBC47002E9F16 /* GCDAsyncSocket.h */,
+				0435B9301C1BBC47002E9F16 /* GCDAsyncSocket.m */,
+			);
+			name = "Third Party";
+			path = Source;
 			sourceTree = "<group>";
 		};
 /* End PBXGroup section */
