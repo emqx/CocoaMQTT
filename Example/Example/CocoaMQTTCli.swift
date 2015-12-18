@@ -28,6 +28,11 @@ class CocoaMQTTCli: CocoaMQTTDelegate {
         print("didPublishMessage to \(message.topic)")
     }
     
+    
+    func mqtt(mqtt: CocoaMQTT, didPublishAck msgid: UInt16) {
+        print("didPublishAck with id \(msgid)")
+    }
+    
     func mqtt(mqtt: CocoaMQTT, didReceiveMessage message: CocoaMQTTMessage, id: UInt16 ) {
         print("didReceivedMessage with id \(id)")
         print("message.topic: \(message.topic)")
