@@ -22,6 +22,8 @@ public protocol CocoaMQTTDelegate : class {
     func mqtt(mqtt: CocoaMQTT, didConnectAck ack: CocoaMQTTConnAck)
 
     func mqtt(mqtt: CocoaMQTT, didPublishMessage message: CocoaMQTTMessage, id: UInt16)
+    
+    func mqtt(mqtt: CocoaMQTT, didPublishAck id: UInt16)
 
     func mqtt(mqtt: CocoaMQTT, didReceiveMessage message: CocoaMQTTMessage, id: UInt16 )
 
@@ -230,9 +232,10 @@ public class CocoaMQTT: NSObject, CocoaMQTTClient, GCDAsyncSocketDelegate, Cocoa
         send(frame, tag: Int(msgId))
         if message.qos != CocoaMQTTQOS.QOS0 {
             messages[msgId] = message //cache
-        } else {
-            delegate?.mqtt(self, didPublishMessage: message, id: msgId)
         }
+        
+        delegate?.mqtt(self, didPublishMessage: message, id: msgId)
+        
         return msgId
     }
 
@@ -396,10 +399,8 @@ public class CocoaMQTT: NSObject, CocoaMQTTClient, GCDAsyncSocketDelegate, Cocoa
         #if DEBUG
         NSLog("CocoaMQTT: PUBACK Received: \(msgid)")
         #endif
-        if let message = messages[msgid] {
-            messages.removeValueForKey(msgid)
-            delegate?.mqtt(self, didPublishMessage: message, id: msgid)
-        }
+        messages.removeValueForKey(msgid)
+        delegate?.mqtt(self, didPublishAck: msgid)
     }
 
     func didReceivePubRec(reader: CocoaMQTTReader, msgid: UInt16) {
