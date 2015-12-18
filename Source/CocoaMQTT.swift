@@ -23,7 +23,7 @@ public protocol CocoaMQTTDelegate : class {
 
     func mqtt(mqtt: CocoaMQTT, didPublishMessage message: CocoaMQTTMessage, id: UInt16)
     
-    func mqtt(mqtt: CocoaMQTT, didPublishAck msgid: UInt16)
+    func mqtt(mqtt: CocoaMQTT, didPublishAck id: UInt16)
 
     func mqtt(mqtt: CocoaMQTT, didReceiveMessage message: CocoaMQTTMessage, id: UInt16 )
 
