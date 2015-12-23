@@ -6,10 +6,17 @@
 //  Copyright © 2015年 emqtt.io. All rights reserved.
 //
 
-import Foundation
+import UIKit
 import CocoaMQTT
 
-class CocoaMQTTCli: CocoaMQTTDelegate {
+class BaseViewController: UIViewController {
+    
+    override func viewDidLoad() {
+        super.viewDidLoad()
+    }
+}
+
+extension BaseViewController: CocoaMQTTDelegate {
     
     func mqtt(mqtt: CocoaMQTT, didConnect host: String, port: Int) {
         print("didConnect \(host):\(port)")
@@ -18,10 +25,11 @@ class CocoaMQTTCli: CocoaMQTTDelegate {
     func mqtt(mqtt: CocoaMQTT, didConnectAck ack: CocoaMQTTConnAck) {
         print("didConnectAck \(ack.rawValue)")
         mqtt.subscribe("/a/b/c", qos: CocoaMQTTQOS.QOS1)
-        mqtt.publish("/a/b/c", withString: "Qos0 Msg", qos: CocoaMQTTQOS.QOS0)
-        mqtt.publish("/a/b/c", withString: "Qos1 Msg", qos: CocoaMQTTQOS.QOS1)
-        mqtt.publish("/a/b/c", withString: "Qos2 Msg", qos: CocoaMQTTQOS.QOS2)
         mqtt.ping()
+        //mqtt.publish("/a/b/c", withString: "Qos0 Msg", qos: CocoaMQTTQOS.QOS0)
+        //mqtt.publish("/a/b/c", withString: "Qos1 Msg", qos: CocoaMQTTQOS.QOS1)
+        //mqtt.publish("/a/b/c", withString: "Qos2 Msg", qos: CocoaMQTTQOS.QOS2)
+        
     }
     
     func mqtt(mqtt: CocoaMQTT, didPublishMessage message: CocoaMQTTMessage, id: UInt16) {
