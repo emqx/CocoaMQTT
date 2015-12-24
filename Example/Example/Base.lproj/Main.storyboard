@@ -5,7 +5,7 @@
         <plugIn identifier="com.apple.InterfaceBuilder.IBCocoaTouchPlugin" version="9529"/>
     </dependencies>
     <scenes>
-        <!--Chat-->
+        <!--Animal Farm-->
         <scene sceneID="tne-QT-ifu">
             <objects>
                 <viewController id="BYZ-38-t0r" customClass="ViewController" customModule="Example" customModuleProvider="target" sceneMemberID="viewController">
@@ -18,7 +18,7 @@
                         <autoresizingMask key="autoresizingMask" widthSizable="YES" heightSizable="YES"/>
                         <color key="backgroundColor" white="1" alpha="1" colorSpace="custom" customColorSpace="calibratedWhite"/>
                     </view>
-                    <navigationItem key="navigationItem" title="Chat" id="IkM-8s-A78">
+                    <navigationItem key="navigationItem" title="Animal Farm" id="IkM-8s-A78">
                         <barButtonItem key="leftBarButtonItem" title="Disonnect" id="YB6-j1-IEk"/>
                         <barButtonItem key="rightBarButtonItem" title="Connect" id="93r-JH-c0V">
                             <connections>
@@ -53,7 +53,7 @@
             </objects>
             <point key="canvasLocation" x="245" y="252"/>
         </scene>
-        <!--Panda-->
+        <!--Pig-->
         <scene sceneID="vae-u6-Mrj">
             <objects>
                 <viewController id="uwB-1k-3VM" customClass="ViewController" customModule="Example" customModuleProvider="target" sceneMemberID="viewController">
@@ -66,13 +66,13 @@
                         <autoresizingMask key="autoresizingMask" widthSizable="YES" heightSizable="YES"/>
                         <color key="backgroundColor" white="1" alpha="1" colorSpace="calibratedWhite"/>
                     </view>
-                    <tabBarItem key="tabBarItem" title="Panda" image="Panda" id="w1Y-Bm-fgS"/>
+                    <tabBarItem key="tabBarItem" title="Pig" image="Pig1" id="w1Y-Bm-fgS"/>
                 </viewController>
                 <placeholder placeholderIdentifier="IBFirstResponder" id="HTs-Z2-CRW" userLabel="First Responder" sceneMemberID="firstResponder"/>
             </objects>
             <point key="canvasLocation" x="1085" y="104"/>
         </scene>
-        <!--Puffin-->
+        <!--Horse-->
         <scene sceneID="3VO-o7-igF">
             <objects>
                 <viewController id="ny8-QY-AjK" customClass="ViewController" customModule="Example" customModuleProvider="target" sceneMemberID="viewController">
@@ -85,17 +85,17 @@
                         <autoresizingMask key="autoresizingMask" widthSizable="YES" heightSizable="YES"/>
                         <color key="backgroundColor" white="1" alpha="1" colorSpace="calibratedWhite"/>
                     </view>
-                    <tabBarItem key="tabBarItem" title="Puffin" image="Puffin" id="iOY-U8-Okd"/>
+                    <tabBarItem key="tabBarItem" title="Horse" image="Horse" id="iOY-U8-Okd"/>
                 </viewController>
                 <placeholder placeholderIdentifier="IBFirstResponder" id="mBl-R8-FeU" userLabel="First Responder" sceneMemberID="firstResponder"/>
             </objects>
             <point key="canvasLocation" x="1085" y="847"/>
         </scene>
-        <!--Turtle-->
+        <!--Sheep-->
         <scene sceneID="6pq-Qj-zAC">
             <objects>
                 <navigationController automaticallyAdjustsScrollViewInsets="NO" id="Vmm-g7-i65" sceneMemberID="viewController">
-                    <tabBarItem key="tabBarItem" title="Turtle" image="Turtle Filled" id="Lvh-ym-vRO"/>
+                    <tabBarItem key="tabBarItem" title="Sheep" image="Sheep" id="Lvh-ym-vRO"/>
                     <toolbarItems/>
                     <navigationBar key="navigationBar" contentMode="scaleToFill" id="WOe-pt-IgW">
                         <rect key="frame" x="0.0" y="0.0" width="320" height="44"/>
@@ -112,8 +112,8 @@
         </scene>
     </scenes>
     <resources>
-        <image name="Panda" width="25" height="25"/>
-        <image name="Puffin" width="24" height="24"/>
-        <image name="Turtle Filled" width="25" height="25"/>
+        <image name="Horse" width="25" height="25"/>
+        <image name="Pig1" width="25" height="25"/>
+        <image name="Sheep" width="25" height="25"/>
     </resources>
 </document>
