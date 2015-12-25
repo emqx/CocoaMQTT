@@ -3,9 +3,10 @@
     <dependencies>
         <deployment identifier="iOS"/>
         <plugIn identifier="com.apple.InterfaceBuilder.IBCocoaTouchPlugin" version="9529"/>
+        <capability name="Constraints to layout margins" minToolsVersion="6.0"/>
     </dependencies>
     <scenes>
-        <!--Animal Farm-->
+        <!--Offline-->
         <scene sceneID="tne-QT-ifu">
             <objects>
                 <viewController id="BYZ-38-t0r" customClass="ViewController" customModule="Example" customModuleProvider="target" sceneMemberID="viewController">
@@ -16,23 +17,103 @@
                     <view key="view" contentMode="scaleToFill" id="8bC-Xf-vdC">
                         <rect key="frame" x="0.0" y="0.0" width="600" height="600"/>
                         <autoresizingMask key="autoresizingMask" widthSizable="YES" heightSizable="YES"/>
+                        <subviews>
+                            <view contentMode="scaleToFill" translatesAutoresizingMaskIntoConstraints="NO" id="Xrz-26-va0" userLabel="headerView">
+                                <rect key="frame" x="0.0" y="64" width="600" height="100"/>
+                                <color key="backgroundColor" white="1" alpha="1" colorSpace="calibratedWhite"/>
+                                <constraints>
+                                    <constraint firstAttribute="height" constant="100" id="VHC-nk-o8e"/>
+                                </constraints>
+                            </view>
+                            <imageView userInteractionEnabled="NO" contentMode="scaleToFill" horizontalHuggingPriority="251" verticalHuggingPriority="251" image="animals" translatesAutoresizingMaskIntoConstraints="NO" id="R5O-Ag-dWm">
+                                <rect key="frame" x="260" y="215" width="80" height="80"/>
+                                <constraints>
+                                    <constraint firstAttribute="height" constant="80" id="ceH-BC-l5Y"/>
+                                    <constraint firstAttribute="width" constant="80" id="sHp-Qq-Bws"/>
+                                </constraints>
+                            </imageView>
+                            <label opaque="NO" userInteractionEnabled="NO" contentMode="left" horizontalHuggingPriority="251" verticalHuggingPriority="251" text="Animal Farm" textAlignment="natural" lineBreakMode="tailTruncation" baselineAdjustment="alignBaselines" adjustsFontSizeToFit="NO" translatesAutoresizingMaskIntoConstraints="NO" id="Dfd-f4-RTW">
+                                <rect key="frame" x="265" y="303" width="70" height="14.5"/>
+                                <fontDescription key="fontDescription" style="UICTFontTextStyleFootnote"/>
+                                <color key="textColor" cocoaTouchSystemColor="darkTextColor"/>
+                                <nil key="highlightedColor"/>
+                            </label>
+                            <button opaque="NO" contentMode="scaleToFill" contentHorizontalAlignment="center" contentVerticalAlignment="center" buttonType="roundedRect" lineBreakMode="middleTruncation" translatesAutoresizingMaskIntoConstraints="NO" id="8Nd-Lc-bWb">
+                                <rect key="frame" x="271" y="337" width="59" height="30"/>
+                                <constraints>
+                                    <constraint firstAttribute="width" constant="78" id="mr5-Se-Q9l"/>
+                                </constraints>
+                                <state key="normal" title="Connect"/>
+                                <variation key="default">
+                                    <mask key="constraints">
+                                        <exclude reference="mr5-Se-Q9l"/>
+                                    </mask>
+                                </variation>
+                                <connections>
+                                    <action selector="connectToServer" destination="BYZ-38-t0r" eventType="touchUpInside" id="0uS-Hw-jGG"/>
+                                </connections>
+                            </button>
+                        </subviews>
                         <color key="backgroundColor" white="1" alpha="1" colorSpace="custom" customColorSpace="calibratedWhite"/>
+                        <constraints>
+                            <constraint firstItem="8Nd-Lc-bWb" firstAttribute="top" secondItem="Dfd-f4-RTW" secondAttribute="bottom" constant="20" id="CJ8-WF-hz6"/>
+                            <constraint firstItem="Dfd-f4-RTW" firstAttribute="top" secondItem="R5O-Ag-dWm" secondAttribute="bottom" constant="8" id="HAd-gl-jno"/>
+                            <constraint firstItem="Dfd-f4-RTW" firstAttribute="centerX" secondItem="R5O-Ag-dWm" secondAttribute="centerX" id="Jar-hB-Dkb"/>
+                            <constraint firstAttribute="trailingMargin" secondItem="Xrz-26-va0" secondAttribute="trailing" constant="-20" id="JwI-cH-aZy"/>
+                            <constraint firstItem="Xrz-26-va0" firstAttribute="top" secondItem="y3c-jy-aDJ" secondAttribute="bottom" id="Y4f-Lj-fQx"/>
+                            <constraint firstItem="Xrz-26-va0" firstAttribute="leading" secondItem="8bC-Xf-vdC" secondAttribute="leadingMargin" constant="-20" id="bYc-J1-sap"/>
+                            <constraint firstItem="8Nd-Lc-bWb" firstAttribute="centerX" secondItem="R5O-Ag-dWm" secondAttribute="centerX" id="daG-Ik-lvQ"/>
+                            <constraint firstItem="R5O-Ag-dWm" firstAttribute="centerX" secondItem="8bC-Xf-vdC" secondAttribute="centerX" id="gUa-fH-dMk"/>
+                            <constraint firstItem="Dfd-f4-RTW" firstAttribute="centerY" secondItem="8bC-Xf-vdC" secondAttribute="centerY" constant="10" id="v3k-Ko-Hhk"/>
+                        </constraints>
                     </view>
-                    <navigationItem key="navigationItem" title="Animal Farm" id="IkM-8s-A78">
-                        <barButtonItem key="leftBarButtonItem" title="Disonnect" id="YB6-j1-IEk"/>
-                        <barButtonItem key="rightBarButtonItem" title="Connect" id="93r-JH-c0V">
-                            <connections>
-                                <action selector="connectToServer:" destination="BYZ-38-t0r" id="ZaX-VA-nLs"/>
-                            </connections>
-                        </barButtonItem>
-                    </navigationItem>
+                    <navigationItem key="navigationItem" title="Offline" id="IkM-8s-A78"/>
                     <connections>
-                        <outlet property="connectButtonItem" destination="93r-JH-c0V" id="igj-bu-9Ct"/>
+                        <outlet property="animalsImageView" destination="R5O-Ag-dWm" id="hJg-sr-zkp"/>
+                        <outlet property="connectButton" destination="8Nd-Lc-bWb" id="Qze-do-lLV"/>
                     </connections>
                 </viewController>
                 <placeholder placeholderIdentifier="IBFirstResponder" id="dkx-z0-nzr" sceneMemberID="firstResponder"/>
             </objects>
-            <point key="canvasLocation" x="1897" y="-638"/>
+            <point key="canvasLocation" x="1893" y="-638"/>
+        </scene>
+        <!--Chat View Controller-->
+        <scene sceneID="kue-6q-pQQ">
+            <objects>
+                <viewController storyboardIdentifier="ChatViewController" id="3St-nK-UJy" customClass="ChatViewController" customModule="Example" customModuleProvider="target" sceneMemberID="viewController">
+                    <layoutGuides>
+                        <viewControllerLayoutGuide type="top" id="nsQ-Oo-5xM"/>
+                        <viewControllerLayoutGuide type="bottom" id="Vm1-4Z-C2c"/>
+                    </layoutGuides>
+                    <view key="view" contentMode="scaleToFill" id="M10-sE-zEf">
+                        <rect key="frame" x="0.0" y="0.0" width="600" height="600"/>
+                        <autoresizingMask key="autoresizingMask" widthSizable="YES" heightSizable="YES"/>
+                        <subviews>
+                            <textView clipsSubviews="YES" multipleTouchEnabled="YES" contentMode="scaleToFill" textAlignment="natural" translatesAutoresizingMaskIntoConstraints="NO" id="EFo-WO-pbA">
+                                <rect key="frame" x="20" y="558" width="500" height="32"/>
+                                <color key="backgroundColor" white="1" alpha="1" colorSpace="calibratedWhite"/>
+                                <constraints>
+                                    <constraint firstAttribute="height" constant="32" id="a03-5T-4Hz"/>
+                                </constraints>
+                                <fontDescription key="fontDescription" style="UICTFontTextStyleCaption1"/>
+                                <textInputTraits key="textInputTraits" autocapitalizationType="sentences"/>
+                            </textView>
+                        </subviews>
+                        <color key="backgroundColor" cocoaTouchSystemColor="groupTableViewBackgroundColor"/>
+                        <constraints>
+                            <constraint firstItem="Vm1-4Z-C2c" firstAttribute="top" secondItem="EFo-WO-pbA" secondAttribute="bottom" constant="10" id="c0r-Cn-X7A"/>
+                            <constraint firstAttribute="trailingMargin" secondItem="EFo-WO-pbA" secondAttribute="trailing" constant="60" id="eZ6-bj-kPU"/>
+                            <constraint firstItem="EFo-WO-pbA" firstAttribute="leading" secondItem="M10-sE-zEf" secondAttribute="leadingMargin" id="gcP-8o-w9B"/>
+                        </constraints>
+                    </view>
+                    <connections>
+                        <outlet property="messageTextView" destination="EFo-WO-pbA" id="BKP-53-okR"/>
+                        <outlet property="messageTextViewHeightConstraint" destination="a03-5T-4Hz" id="edk-Xd-ws5"/>
+                    </connections>
+                </viewController>
+                <placeholder placeholderIdentifier="IBFirstResponder" id="zeN-z7-8rC" userLabel="First Responder" sceneMemberID="firstResponder"/>
+            </objects>
+            <point key="canvasLocation" x="2653" y="-627"/>
         </scene>
         <!--Tab Bar Controller-->
         <scene sceneID="hSe-Ev-ywo">
@@ -115,5 +196,6 @@
         <image name="Horse" width="25" height="25"/>
         <image name="Pig1" width="25" height="25"/>
         <image name="Sheep" width="25" height="25"/>
+        <image name="animals" width="300" height="306"/>
     </resources>
 </document>

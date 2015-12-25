@@ -10,11 +10,29 @@ import UIKit
 import CocoaMQTT
 
 class ViewController: UIViewController {
-    //let mqttCli = CocoaMQTTCli()
     let clientIdPid = "CocoaMQTT-" + String(NSProcessInfo().processIdentifier)
     var mqtt: CocoaMQTT?
+    var connected: Bool = false {
+        didSet {
+            if connected {
+                navigationItem.title = "Online"
+                connectButton.setTitle("Disconnect", forState: .Normal)
+            } else {
+                navigationItem.title = "Offline"
+                
+                connectButton.setTitle("Connect", forState: .Normal)
+            }
+        }
+    }
     
-    @IBOutlet weak var connectButtonItem: UIBarButtonItem!
+    @IBOutlet weak var connectButton: UIButton!
+    @IBOutlet weak var animalsImageView: UIImageView! {
+        didSet {
+            animalsImageView.clipsToBounds = true
+            animalsImageView.layer.borderWidth = 1.0
+            animalsImageView.layer.cornerRadius = animalsImageView.frame.width / 2.0
+        }
+    }
     
     override func viewDidLoad() {
         super.viewDidLoad()
@@ -36,13 +54,17 @@ class ViewController: UIViewController {
         }
     }
     
-    
-    @IBAction func connectToServer(sender: UIBarButtonItem) {
-        mqtt!.connect()
-        //dispatch_main()
+    @IBAction func connectToServer() {
+        if connected {
+            mqtt!.disconnect()
+        } else {
+            mqtt!.connect()
+        }
     }
 
+
 }
+
 
 extension ViewController: CocoaMQTTDelegate {
     
@@ -53,10 +75,13 @@ extension ViewController: CocoaMQTTDelegate {
     func mqtt(mqtt: CocoaMQTT, didConnectAck ack: CocoaMQTTConnAck) {
         print("didConnectAck \(ack.rawValue)")
         if ack == .ACCEPT {
-            connectButtonItem.enabled = false
-            connectButtonItem.title = "Connected"
+            connected = true
             mqtt.subscribe("/a/b/c", qos: CocoaMQTTQOS.QOS1)
             mqtt.ping()
+            
+            let chatViewController = storyboard?.instantiateViewControllerWithIdentifier("ChatViewController") as? ChatViewController
+            //navigationController!.pushViewController(chatViewController!, animated: true)
+            navigationController!.presentViewController(chatViewController!, animated: true, completion: nil)
         }
         //mqtt.publish("/a/b/c", withString: "Qos0 Msg", qos: CocoaMQTTQOS.QOS0)
         //mqtt.publish("/a/b/c", withString: "Qos1 Msg", qos: CocoaMQTTQOS.QOS1)
@@ -97,6 +122,7 @@ extension ViewController: CocoaMQTTDelegate {
     }
     
     func mqttDidDisconnect(mqtt: CocoaMQTT, withError err: NSError?) {
+        connected = false
         _console("mqttDidDisconnect")
     }
     
