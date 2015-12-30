@@ -34,6 +34,15 @@ class ViewController: UIViewController {
         }
     }
     
+    @IBAction func connectToServer() {
+        if connected {
+            mqtt!.disconnect()
+        } else {
+            mqtt!.connect()
+        }
+    }
+    
+    
     override func viewDidLoad() {
         super.viewDidLoad()
         mqttSetting()
@@ -50,18 +59,8 @@ class ViewController: UIViewController {
             mqtt.willMessage = CocoaMQTTWill(topic: "/will", message: "dieout")
             mqtt.keepAlive = 90
             mqtt.delegate = self
-            //mqtt.connect()
         }
     }
-    
-    @IBAction func connectToServer() {
-        if connected {
-            mqtt!.disconnect()
-        } else {
-            mqtt!.connect()
-        }
-    }
-
 
 }
 
@@ -80,12 +79,10 @@ extension ViewController: CocoaMQTTDelegate {
             mqtt.ping()
             
             let chatViewController = storyboard?.instantiateViewControllerWithIdentifier("ChatViewController") as? ChatViewController
+            chatViewController?.mqtt = mqtt
             //navigationController!.pushViewController(chatViewController!, animated: true)
             navigationController!.presentViewController(chatViewController!, animated: true, completion: nil)
         }
-        //mqtt.publish("/a/b/c", withString: "Qos0 Msg", qos: CocoaMQTTQOS.QOS0)
-        //mqtt.publish("/a/b/c", withString: "Qos1 Msg", qos: CocoaMQTTQOS.QOS1)
-        //mqtt.publish("/a/b/c", withString: "Qos2 Msg", qos: CocoaMQTTQOS.QOS2)
         
     }
     
@@ -131,4 +128,3 @@ extension ViewController: CocoaMQTTDelegate {
     }
     
 }
-

@@ -15,6 +15,7 @@
 		04DB76BD1C1E82F900776B4C /* CocoaMQTT.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = 04DB76B01C1E82F200776B4C /* CocoaMQTT.framework */; };
 		04DB76BE1C1E82F900776B4C /* CocoaMQTT.framework in Embed Frameworks */ = {isa = PBXBuildFile; fileRef = 04DB76B01C1E82F200776B4C /* CocoaMQTT.framework */; settings = {ATTRIBUTES = (CodeSignOnCopy, RemoveHeadersOnCopy, ); }; };
 		04FE64871C2C41AE001E8F43 /* ChatViewController.swift in Sources */ = {isa = PBXBuildFile; fileRef = 04FE64861C2C41AE001E8F43 /* ChatViewController.swift */; };
+		04FE64A71C2D9F75001E8F43 /* ChatLeftMessageCell.swift in Sources */ = {isa = PBXBuildFile; fileRef = 04FE64A61C2D9F75001E8F43 /* ChatLeftMessageCell.swift */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXContainerItemProxy section */
@@ -100,6 +101,7 @@
 		04DB76631C1E7BB900776B4C /* Info.plist */ = {isa = PBXFileReference; lastKnownFileType = text.plist.xml; path = Info.plist; sourceTree = "<group>"; };
 		04DB767D1C1E7C6100776B4C /* CocoaMQTT.xcodeproj */ = {isa = PBXFileReference; lastKnownFileType = "wrapper.pb-project"; name = CocoaMQTT.xcodeproj; path = ../CocoaMQTT.xcodeproj; sourceTree = "<group>"; };
 		04FE64861C2C41AE001E8F43 /* ChatViewController.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = ChatViewController.swift; sourceTree = "<group>"; };
+		04FE64A61C2D9F75001E8F43 /* ChatLeftMessageCell.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = ChatLeftMessageCell.swift; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
 /* Begin PBXFrameworksBuildPhase section */
@@ -136,6 +138,7 @@
 			children = (
 				04DB76591C1E7BB900776B4C /* ViewController.swift */,
 				04FE64861C2C41AE001E8F43 /* ChatViewController.swift */,
+				04FE64A61C2D9F75001E8F43 /* ChatLeftMessageCell.swift */,
 				04DB765B1C1E7BB900776B4C /* Main.storyboard */,
 				04DB767C1C1E7C2D00776B4C /* Supporting Files */,
 			);
@@ -298,6 +301,7 @@
 			isa = PBXSourcesBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
+				04FE64A71C2D9F75001E8F43 /* ChatLeftMessageCell.swift in Sources */,
 				04DB765A1C1E7BB900776B4C /* ViewController.swift in Sources */,
 				04FE64871C2C41AE001E8F43 /* ChatViewController.swift in Sources */,
 				04DB76581C1E7BB900776B4C /* AppDelegate.swift in Sources */,

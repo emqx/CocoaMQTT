@@ -2,17 +2,15 @@
   "images" : [
     {
       "idiom" : "universal",
-      "filename" : "Puffin.png",
+      "filename" : "Sheep100.png",
       "scale" : "1x"
     },
     {
       "idiom" : "universal",
-      "filename" : "Puffin@2x.png",
       "scale" : "2x"
     },
     {
       "idiom" : "universal",
-      "filename" : "Puffin@3x.png",
       "scale" : "3x"
     }
   ],

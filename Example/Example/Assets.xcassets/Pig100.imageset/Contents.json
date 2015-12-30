@@ -2,17 +2,15 @@
   "images" : [
     {
       "idiom" : "universal",
-      "filename" : "Panda.png",
+      "filename" : "Pig100.png",
       "scale" : "1x"
     },
     {
       "idiom" : "universal",
-      "filename" : "Panda@2x.png",
       "scale" : "2x"
     },
     {
       "idiom" : "universal",
-      "filename" : "Panda@3x.png",
       "scale" : "3x"
     }
   ],
