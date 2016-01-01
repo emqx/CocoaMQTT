@@ -78,15 +78,15 @@ extension ViewController: CocoaMQTTDelegate {
     }
     
     func mqtt(mqtt: CocoaMQTT, didPublishMessage message: CocoaMQTTMessage, id: UInt16) {
-        print("didPublishMessage with message \(message.string)")
+        print("didPublishMessage with message: \(message.string)")
     }
     
     func mqtt(mqtt: CocoaMQTT, didPublishAck id: UInt16) {
-        print("didPublishAck with id \(id)")
+        print("didPublishAck with id: \(id)")
     }
     
     func mqtt(mqtt: CocoaMQTT, didReceiveMessage message: CocoaMQTTMessage, id: UInt16 ) {
-        print("didReceivedMessage : \(message.string) with id \(id)")
+        print("didReceivedMessage: \(message.string) with id \(id)")
         NSNotificationCenter.defaultCenter().postNotificationName("MQTTMessageNotification" + animal!, object: self, userInfo: ["message": message.string!, "topic": message.topic])
     }
     

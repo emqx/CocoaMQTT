@@ -10,12 +10,10 @@ import Foundation
 
 class ChatMessage {
     
-    //let id: Int
     let sender: String
     let content: String
     
     init(sender: String, content: String) {
-        //self.id = id
         self.sender = sender
         self.content = content
     }
