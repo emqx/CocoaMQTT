@@ -14,12 +14,25 @@ class ChatViewController: UIViewController {
     var animal: String? {
         didSet {
             animalAvatarImageView.image = UIImage(named: animal!)
+            if let animal = animal {
+                switch animal {
+                case "Sheep":
+                    sloganLabel.text = "Four legs good, two legs bad."
+                case "Pig":
+                    sloganLabel.text = "All animals are equal."
+                case "Horse":
+                    sloganLabel.text = "I will work harder."
+                default:
+                    break
+                }
+            }
         }
     }
     var mqtt: CocoaMQTT?
-    var messages: [String] = [] {
+    var messages: [ChatMessage] = [] {
         didSet {
             tableView.reloadData()
+            scrollToBottom()
         }
     }
     
@@ -30,8 +43,11 @@ class ChatViewController: UIViewController {
         }
     }
     @IBOutlet weak var animalAvatarImageView: UIImageView!
+    @IBOutlet weak var sloganLabel: UILabel!
     
     @IBOutlet weak var messageTextViewHeightConstraint: NSLayoutConstraint!
+    @IBOutlet weak var inputViewBottomConstraint: NSLayoutConstraint!
+    
     @IBOutlet weak var sendMessageButton: UIButton! {
         didSet {
             sendMessageButton.enabled = false
@@ -41,16 +57,18 @@ class ChatViewController: UIViewController {
     @IBAction func sendMessage() {
         let message = messageTextView.text
         //messages.append(message)
-        mqtt!.publish("/a/b/c", withString: message, qos: .QOS1, retain: true)
-       
+        if let client = animal {
+            mqtt!.publish("/chat/client/" + client, withString: message, qos: .QOS1)
+        }
+    
         messageTextView.text = ""
         sendMessageButton.enabled = false
         messageTextViewHeightConstraint.constant = messageTextView.contentSize.height
         messageTextView.layoutIfNeeded()
+        view.endEditing(true)
     }
     @IBAction func disconnect() {
         mqtt!.disconnect()
-        //dismissViewControllerAnimated(true, completion: nil)
         navigationController?.popViewControllerAnimated(true)
     }
     
@@ -66,6 +84,7 @@ class ChatViewController: UIViewController {
         tableView.rowHeight = UITableViewAutomaticDimension
         tableView.estimatedRowHeight = 50
         NSNotificationCenter.defaultCenter().addObserver(self, selector: "receivedMessage:", name: "MQTTMessageNotification", object: nil)
+        NSNotificationCenter.defaultCenter().addObserver(self, selector: "keyboardChanged:", name: UIKeyboardWillChangeFrameNotification, object: nil)
     }
     
     deinit {
@@ -73,12 +92,35 @@ class ChatViewController: UIViewController {
     }
     
     
-    func receivedMessage(notification: NSNotification) {
+    func keyboardChanged(notification: NSNotification) {
         let userInfo = notification.userInfo as! [String: AnyObject]
-        let message = userInfo["message"] as! String
-        messages.append(message)
+        let keyboardValue = userInfo["UIKeyboardFrameEndUserInfoKey"]
+        let bottomDistance = UIScreen.mainScreen().bounds.size.height - (navigationController?.navigationBar.frame.height)! - keyboardValue!.CGRectValue.origin.y
+        
+        if bottomDistance > 0 {
+            inputViewBottomConstraint.constant = bottomDistance
+        } else {
+            inputViewBottomConstraint.constant = 0
+        }
+        view.layoutIfNeeded()
     }
 
+    func receivedMessage(notification: NSNotification) {
+        let userInfo = notification.userInfo as! [String: AnyObject]
+        let content = userInfo["message"] as! String
+        let topic = userInfo["topic"] as! String
+        let sender = topic.stringByReplacingOccurrencesOfString("/chat/client/", withString: "")
+        let chatMessage = ChatMessage(sender: sender, content: content)
+        messages.append(chatMessage)
+    }
+
+    func scrollToBottom() {
+        let count = messages.count
+        if count > 3 {
+            let indexPath = NSIndexPath(forRow: count - 1, inSection: 0)
+            tableView.scrollToRowAtIndexPath(indexPath, atScrollPosition: .Bottom, animated: true)
+        }
+    }
 }
 
 
@@ -86,8 +128,11 @@ extension ChatViewController: UITextViewDelegate {
     
     func textViewDidChange(textView: UITextView) {
         if textView.contentSize.height != textView.frame.size.height {
-            messageTextViewHeightConstraint.constant = textView.contentSize.height
-            textView.layoutIfNeeded()
+            let textViewHeight = textView.contentSize.height
+            if textViewHeight < 100 {
+                messageTextViewHeightConstraint.constant = textViewHeight
+                textView.layoutIfNeeded()
+            }
         }
         
         if textView.text == "" {
@@ -106,9 +151,21 @@ extension ChatViewController: UITableViewDataSource, UITableViewDelegate {
     }
     
     func tableView(tableView: UITableView, cellForRowAtIndexPath indexPath: NSIndexPath) -> UITableViewCell {
-        let cell = tableView.dequeueReusableCellWithIdentifier("leftMessageCell", forIndexPath: indexPath) as! ChatLeftMessageCell
-        cell.contentLabel.text = messages[indexPath.row]
-        return cell
+        let message = messages[indexPath.row]
+        if message.sender == animal {
+            let cell = tableView.dequeueReusableCellWithIdentifier("rightMessageCell", forIndexPath: indexPath) as! ChatRightMessageCell
+            cell.contentLabel.text = messages[indexPath.row].content
+            cell.avatarImageView.image = UIImage(named: animal!)
+            return cell
+        } else {
+            let cell = tableView.dequeueReusableCellWithIdentifier("leftMessageCell", forIndexPath: indexPath) as! ChatLeftMessageCell
+            cell.contentLabel.text = messages[indexPath.row].content
+            cell.avatarImageView.image = UIImage(named: message.sender)
+            return cell
+        }
+    }
+    
+    func tableView(tableView: UITableView, didSelectRowAtIndexPath indexPath: NSIndexPath) {
+        view.endEditing(true)
     }
 }
-

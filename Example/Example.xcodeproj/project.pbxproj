@@ -7,6 +7,7 @@
 	objects = {
 
 /* Begin PBXBuildFile section */
+		042448B31C366F2300F6A33E /* ChatMessage.swift in Sources */ = {isa = PBXBuildFile; fileRef = 042448B21C366F2300F6A33E /* ChatMessage.swift */; };
 		04A7EAA01C362BC4004A40EF /* ChatRightMessageCell.swift in Sources */ = {isa = PBXBuildFile; fileRef = 04A7EA9F1C362BC4004A40EF /* ChatRightMessageCell.swift */; };
 		04DB76581C1E7BB900776B4C /* AppDelegate.swift in Sources */ = {isa = PBXBuildFile; fileRef = 04DB76571C1E7BB900776B4C /* AppDelegate.swift */; };
 		04DB765A1C1E7BB900776B4C /* ViewController.swift in Sources */ = {isa = PBXBuildFile; fileRef = 04DB76591C1E7BB900776B4C /* ViewController.swift */; };
@@ -93,6 +94,7 @@
 /* End PBXCopyFilesBuildPhase section */
 
 /* Begin PBXFileReference section */
+		042448B21C366F2300F6A33E /* ChatMessage.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = ChatMessage.swift; sourceTree = "<group>"; };
 		04A7EA9F1C362BC4004A40EF /* ChatRightMessageCell.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = ChatRightMessageCell.swift; sourceTree = "<group>"; };
 		04DB76541C1E7BB900776B4C /* Example.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = Example.app; sourceTree = BUILT_PRODUCTS_DIR; };
 		04DB76571C1E7BB900776B4C /* AppDelegate.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AppDelegate.swift; sourceTree = "<group>"; };
@@ -142,6 +144,7 @@
 				04FE64861C2C41AE001E8F43 /* ChatViewController.swift */,
 				04FE64A61C2D9F75001E8F43 /* ChatLeftMessageCell.swift */,
 				04A7EA9F1C362BC4004A40EF /* ChatRightMessageCell.swift */,
+				042448B21C366F2300F6A33E /* ChatMessage.swift */,
 				04DB765B1C1E7BB900776B4C /* Main.storyboard */,
 				04DB767C1C1E7C2D00776B4C /* Supporting Files */,
 			);
@@ -307,6 +310,7 @@
 				04FE64A71C2D9F75001E8F43 /* ChatLeftMessageCell.swift in Sources */,
 				04A7EAA01C362BC4004A40EF /* ChatRightMessageCell.swift in Sources */,
 				04DB765A1C1E7BB900776B4C /* ViewController.swift in Sources */,
+				042448B31C366F2300F6A33E /* ChatMessage.swift in Sources */,
 				04FE64871C2C41AE001E8F43 /* ChatViewController.swift in Sources */,
 				04DB76581C1E7BB900776B4C /* AppDelegate.swift in Sources */,
 			);

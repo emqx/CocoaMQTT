@@ -10,21 +10,7 @@ import UIKit
 import CocoaMQTT
 
 class ViewController: UIViewController {
-    let clientIdPid = "CocoaMQTT-" + String(NSProcessInfo().processIdentifier)
     var mqtt: CocoaMQTT?
-    var animal: String?
-    var connected: Bool = false {
-        didSet {
-            if connected {
-                navigationItem.title = "Online"
-                connectButton.setTitle("Disconnect", forState: .Normal)
-            } else {
-                navigationItem.title = "Offline"
-                
-                connectButton.setTitle("Connect", forState: .Normal)
-            }
-        }
-    }
     
     @IBOutlet weak var connectButton: UIButton!
     @IBOutlet weak var animalsImageView: UIImageView! {
@@ -36,18 +22,15 @@ class ViewController: UIViewController {
     }
     
     @IBAction func connectToServer() {
-        if connected {
-            mqtt!.disconnect()
-        } else {
-            mqtt!.connect()
-        }
+        mqtt!.connect()
     }
     
     
     override func viewDidLoad() {
         super.viewDidLoad()
         mqttSetting()
-        animal = tabBarController?.selectedViewController?.tabBarItem.title
+        navigationController?.interactivePopGestureRecognizer?.enabled = false
+        tabBarController?.delegate = self
     }
     
     override func viewWillAppear(animated: Bool) {
@@ -56,6 +39,8 @@ class ViewController: UIViewController {
     
 
     func mqttSetting() {
+        let animal = tabBarController?.selectedViewController?.tabBarItem.title
+        let clientIdPid = "CocoaMQTT-\(animal!)-" + String(NSProcessInfo().processIdentifier)
         mqtt = CocoaMQTT(clientId: clientIdPid, host: "localhost", port: 1883)
         //mqtts
         //let mqtt = CocoaMQTT(clientId: clientIdPid, host: "localhost", port: 8883)
@@ -69,12 +54,6 @@ class ViewController: UIViewController {
         }
     }
     
-    /*
-    override func prepareForSegue(segue: UIStoryboardSegue, sender: AnyObject?) {
-        let dv = segue.destinationViewController as! ChatViewController
-        dv.mqtt = mqtt
-    }
-    */
 }
 
 
@@ -87,38 +66,34 @@ extension ViewController: CocoaMQTTDelegate {
     func mqtt(mqtt: CocoaMQTT, didConnectAck ack: CocoaMQTTConnAck) {
         //print("didConnectAck \(ack.rawValue)")
         if ack == .ACCEPT {
-            connected = true
-            mqtt.subscribe("/a/b/c", qos: CocoaMQTTQOS.QOS1)
+            mqtt.subscribe("/chat/client/+", qos: CocoaMQTTQOS.QOS1)
             mqtt.ping()
-            //let identifier = animal! + "ToChat"
-            //performSegueWithIdentifier(identifier, sender: self)
+
             let chatViewController = storyboard?.instantiateViewControllerWithIdentifier("ChatViewController") as? ChatViewController
             chatViewController?.mqtt = mqtt
             navigationController!.pushViewController(chatViewController!, animated: true)
-            //navigationController!.presentViewController(chatViewController!, animated: true, completion: nil)
         }
         
     }
     
     func mqtt(mqtt: CocoaMQTT, didPublishMessage message: CocoaMQTTMessage, id: UInt16) {
-        //print("didPublishMessage to \(message.topic)")
+        print("didPublishMessage to \(message.topic)")
+        print("didPublishMessage \(message.string)")
     }
     
-    
     func mqtt(mqtt: CocoaMQTT, didPublishAck id: UInt16) {
-        //print("didPublishAck with id \(id)")
+        print("didPublishAck with id \(id)")
     }
     
     func mqtt(mqtt: CocoaMQTT, didReceiveMessage message: CocoaMQTTMessage, id: UInt16 ) {
-        print("didReceivedMessage with id \(id)")
-        //print("message.topic: \(message.topic)")
-        //print("message.payload: \(message.string)")
-        NSNotificationCenter.defaultCenter().postNotificationName("MQTTMessageNotification", object: self, userInfo: ["message": message.string!])
+        //print("didReceivedMessage with id \(id)")
+        print("message.topic: \(message.topic)")
+        print("didReceivedMessage : \(message.string) with id \(id)")
+        NSNotificationCenter.defaultCenter().postNotificationName("MQTTMessageNotification", object: self, userInfo: ["message": message.string!, "topic": message.topic])
     }
     
     func mqtt(mqtt: CocoaMQTT, didSubscribeTopic topic: String) {
         print("didSubscribeTopic to \(topic)")
-        //mqtt.unsubscribe(topic)
     }
     
     func mqtt(mqtt: CocoaMQTT, didUnsubscribeTopic topic: String) {
@@ -134,7 +109,6 @@ extension ViewController: CocoaMQTTDelegate {
     }
     
     func mqttDidDisconnect(mqtt: CocoaMQTT, withError err: NSError?) {
-        connected = false
         _console("mqttDidDisconnect")
     }
     
@@ -142,4 +116,11 @@ extension ViewController: CocoaMQTTDelegate {
         print("Delegate: \(info)")
     }
     
+}
+
+extension ViewController: UITabBarControllerDelegate {
+    // Prevent automatic popToRootViewController on double-tap of UITabBarController
+    func tabBarController(tabBarController: UITabBarController, shouldSelectViewController viewController: UIViewController) -> Bool {
+        return viewController != tabBarController.selectedViewController
+    }
 }
