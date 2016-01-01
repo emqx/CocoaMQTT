@@ -11,6 +11,7 @@ import CocoaMQTT
 
 class ViewController: UIViewController {
     var mqtt: CocoaMQTT?
+    var animal: String?
     
     @IBOutlet weak var connectButton: UIButton!
     @IBOutlet weak var animalsImageView: UIImageView! {
@@ -28,9 +29,10 @@ class ViewController: UIViewController {
     
     override func viewDidLoad() {
         super.viewDidLoad()
-        mqttSetting()
         navigationController?.interactivePopGestureRecognizer?.enabled = false
         tabBarController?.delegate = self
+        animal = tabBarController?.selectedViewController?.tabBarItem.title
+        mqttSetting()
     }
     
     override func viewWillAppear(animated: Bool) {
@@ -39,7 +41,6 @@ class ViewController: UIViewController {
     
 
     func mqttSetting() {
-        let animal = tabBarController?.selectedViewController?.tabBarItem.title
         let clientIdPid = "CocoaMQTT-\(animal!)-" + String(NSProcessInfo().processIdentifier)
         mqtt = CocoaMQTT(clientId: clientIdPid, host: "localhost", port: 1883)
         //mqtts
@@ -66,7 +67,7 @@ extension ViewController: CocoaMQTTDelegate {
     func mqtt(mqtt: CocoaMQTT, didConnectAck ack: CocoaMQTTConnAck) {
         //print("didConnectAck \(ack.rawValue)")
         if ack == .ACCEPT {
-            mqtt.subscribe("/chat/client/+", qos: CocoaMQTTQOS.QOS1)
+            mqtt.subscribe("chat/room/animals/client/+", qos: CocoaMQTTQOS.QOS1)
             mqtt.ping()
 
             let chatViewController = storyboard?.instantiateViewControllerWithIdentifier("ChatViewController") as? ChatViewController
@@ -77,8 +78,7 @@ extension ViewController: CocoaMQTTDelegate {
     }
     
     func mqtt(mqtt: CocoaMQTT, didPublishMessage message: CocoaMQTTMessage, id: UInt16) {
-        print("didPublishMessage to \(message.topic)")
-        print("didPublishMessage \(message.string)")
+        print("didPublishMessage with message \(message.string)")
     }
     
     func mqtt(mqtt: CocoaMQTT, didPublishAck id: UInt16) {
@@ -86,10 +86,8 @@ extension ViewController: CocoaMQTTDelegate {
     }
     
     func mqtt(mqtt: CocoaMQTT, didReceiveMessage message: CocoaMQTTMessage, id: UInt16 ) {
-        //print("didReceivedMessage with id \(id)")
-        print("message.topic: \(message.topic)")
         print("didReceivedMessage : \(message.string) with id \(id)")
-        NSNotificationCenter.defaultCenter().postNotificationName("MQTTMessageNotification", object: self, userInfo: ["message": message.string!, "topic": message.topic])
+        NSNotificationCenter.defaultCenter().postNotificationName("MQTTMessageNotification" + animal!, object: self, userInfo: ["message": message.string!, "topic": message.topic])
     }
     
     func mqtt(mqtt: CocoaMQTT, didSubscribeTopic topic: String) {

@@ -56,9 +56,8 @@ class ChatViewController: UIViewController {
     
     @IBAction func sendMessage() {
         let message = messageTextView.text
-        //messages.append(message)
         if let client = animal {
-            mqtt!.publish("/chat/client/" + client, withString: message, qos: .QOS1)
+            mqtt!.publish("chat/room/animals/client/" + client, withString: message, qos: .QOS1)
         }
     
         messageTextView.text = ""
@@ -83,7 +82,7 @@ class ChatViewController: UIViewController {
         tableView.dataSource = self
         tableView.rowHeight = UITableViewAutomaticDimension
         tableView.estimatedRowHeight = 50
-        NSNotificationCenter.defaultCenter().addObserver(self, selector: "receivedMessage:", name: "MQTTMessageNotification", object: nil)
+        NSNotificationCenter.defaultCenter().addObserver(self, selector: "receivedMessage:", name: "MQTTMessageNotification" + animal!, object: nil)
         NSNotificationCenter.defaultCenter().addObserver(self, selector: "keyboardChanged:", name: UIKeyboardWillChangeFrameNotification, object: nil)
     }
     
@@ -109,7 +108,7 @@ class ChatViewController: UIViewController {
         let userInfo = notification.userInfo as! [String: AnyObject]
         let content = userInfo["message"] as! String
         let topic = userInfo["topic"] as! String
-        let sender = topic.stringByReplacingOccurrencesOfString("/chat/client/", withString: "")
+        let sender = topic.stringByReplacingOccurrencesOfString("chat/room/animals/client/", withString: "")
         let chatMessage = ChatMessage(sender: sender, content: content)
         messages.append(chatMessage)
     }
