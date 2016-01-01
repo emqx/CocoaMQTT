@@ -7,6 +7,8 @@
 	objects = {
 
 /* Begin PBXBuildFile section */
+		042448B31C366F2300F6A33E /* ChatMessage.swift in Sources */ = {isa = PBXBuildFile; fileRef = 042448B21C366F2300F6A33E /* ChatMessage.swift */; };
+		04A7EAA01C362BC4004A40EF /* ChatRightMessageCell.swift in Sources */ = {isa = PBXBuildFile; fileRef = 04A7EA9F1C362BC4004A40EF /* ChatRightMessageCell.swift */; };
 		04DB76581C1E7BB900776B4C /* AppDelegate.swift in Sources */ = {isa = PBXBuildFile; fileRef = 04DB76571C1E7BB900776B4C /* AppDelegate.swift */; };
 		04DB765A1C1E7BB900776B4C /* ViewController.swift in Sources */ = {isa = PBXBuildFile; fileRef = 04DB76591C1E7BB900776B4C /* ViewController.swift */; };
 		04DB765D1C1E7BB900776B4C /* Main.storyboard in Resources */ = {isa = PBXBuildFile; fileRef = 04DB765B1C1E7BB900776B4C /* Main.storyboard */; };
@@ -14,7 +16,8 @@
 		04DB76621C1E7BB900776B4C /* LaunchScreen.storyboard in Resources */ = {isa = PBXBuildFile; fileRef = 04DB76601C1E7BB900776B4C /* LaunchScreen.storyboard */; };
 		04DB76BD1C1E82F900776B4C /* CocoaMQTT.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = 04DB76B01C1E82F200776B4C /* CocoaMQTT.framework */; };
 		04DB76BE1C1E82F900776B4C /* CocoaMQTT.framework in Embed Frameworks */ = {isa = PBXBuildFile; fileRef = 04DB76B01C1E82F200776B4C /* CocoaMQTT.framework */; settings = {ATTRIBUTES = (CodeSignOnCopy, RemoveHeadersOnCopy, ); }; };
-		04DB76C31C1E836B00776B4C /* CocoaMQTTCli.swift in Sources */ = {isa = PBXBuildFile; fileRef = 04DB76C21C1E836B00776B4C /* CocoaMQTTCli.swift */; };
+		04FE64871C2C41AE001E8F43 /* ChatViewController.swift in Sources */ = {isa = PBXBuildFile; fileRef = 04FE64861C2C41AE001E8F43 /* ChatViewController.swift */; };
+		04FE64A71C2D9F75001E8F43 /* ChatLeftMessageCell.swift in Sources */ = {isa = PBXBuildFile; fileRef = 04FE64A61C2D9F75001E8F43 /* ChatLeftMessageCell.swift */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXContainerItemProxy section */
@@ -91,6 +94,8 @@
 /* End PBXCopyFilesBuildPhase section */
 
 /* Begin PBXFileReference section */
+		042448B21C366F2300F6A33E /* ChatMessage.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = ChatMessage.swift; sourceTree = "<group>"; };
+		04A7EA9F1C362BC4004A40EF /* ChatRightMessageCell.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = ChatRightMessageCell.swift; sourceTree = "<group>"; };
 		04DB76541C1E7BB900776B4C /* Example.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = Example.app; sourceTree = BUILT_PRODUCTS_DIR; };
 		04DB76571C1E7BB900776B4C /* AppDelegate.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AppDelegate.swift; sourceTree = "<group>"; };
 		04DB76591C1E7BB900776B4C /* ViewController.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ViewController.swift; sourceTree = "<group>"; };
@@ -99,7 +104,8 @@
 		04DB76611C1E7BB900776B4C /* Base */ = {isa = PBXFileReference; lastKnownFileType = file.storyboard; name = Base; path = Base.lproj/LaunchScreen.storyboard; sourceTree = "<group>"; };
 		04DB76631C1E7BB900776B4C /* Info.plist */ = {isa = PBXFileReference; lastKnownFileType = text.plist.xml; path = Info.plist; sourceTree = "<group>"; };
 		04DB767D1C1E7C6100776B4C /* CocoaMQTT.xcodeproj */ = {isa = PBXFileReference; lastKnownFileType = "wrapper.pb-project"; name = CocoaMQTT.xcodeproj; path = ../CocoaMQTT.xcodeproj; sourceTree = "<group>"; };
-		04DB76C21C1E836B00776B4C /* CocoaMQTTCli.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = CocoaMQTTCli.swift; sourceTree = "<group>"; };
+		04FE64861C2C41AE001E8F43 /* ChatViewController.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = ChatViewController.swift; sourceTree = "<group>"; };
+		04FE64A61C2D9F75001E8F43 /* ChatLeftMessageCell.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = ChatLeftMessageCell.swift; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
 /* Begin PBXFrameworksBuildPhase section */
@@ -135,7 +141,10 @@
 			isa = PBXGroup;
 			children = (
 				04DB76591C1E7BB900776B4C /* ViewController.swift */,
-				04DB76C21C1E836B00776B4C /* CocoaMQTTCli.swift */,
+				04FE64861C2C41AE001E8F43 /* ChatViewController.swift */,
+				04FE64A61C2D9F75001E8F43 /* ChatLeftMessageCell.swift */,
+				04A7EA9F1C362BC4004A40EF /* ChatRightMessageCell.swift */,
+				042448B21C366F2300F6A33E /* ChatMessage.swift */,
 				04DB765B1C1E7BB900776B4C /* Main.storyboard */,
 				04DB767C1C1E7C2D00776B4C /* Supporting Files */,
 			);
@@ -298,9 +307,12 @@
 			isa = PBXSourcesBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
+				04FE64A71C2D9F75001E8F43 /* ChatLeftMessageCell.swift in Sources */,
+				04A7EAA01C362BC4004A40EF /* ChatRightMessageCell.swift in Sources */,
 				04DB765A1C1E7BB900776B4C /* ViewController.swift in Sources */,
+				042448B31C366F2300F6A33E /* ChatMessage.swift in Sources */,
+				04FE64871C2C41AE001E8F43 /* ChatViewController.swift in Sources */,
 				04DB76581C1E7BB900776B4C /* AppDelegate.swift in Sources */,
-				04DB76C31C1E836B00776B4C /* CocoaMQTTCli.swift in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
