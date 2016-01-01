@@ -11,6 +11,11 @@ import CocoaMQTT
 
 
 class ChatViewController: UIViewController {
+    var animal: String? {
+        didSet {
+            animalAvatarImageView.image = UIImage(named: animal!)
+        }
+    }
     var mqtt: CocoaMQTT?
     var messages: [String] = [] {
         didSet {
@@ -24,6 +29,8 @@ class ChatViewController: UIViewController {
             messageTextView.layer.cornerRadius = 5
         }
     }
+    @IBOutlet weak var animalAvatarImageView: UIImageView!
+    
     @IBOutlet weak var messageTextViewHeightConstraint: NSLayoutConstraint!
     @IBOutlet weak var sendMessageButton: UIButton! {
         didSet {
@@ -33,7 +40,7 @@ class ChatViewController: UIViewController {
     
     @IBAction func sendMessage() {
         let message = messageTextView.text
-        messages.append(message)
+        //messages.append(message)
         mqtt!.publish("/a/b/c", withString: message, qos: .QOS1, retain: true)
        
         messageTextView.text = ""
@@ -43,17 +50,33 @@ class ChatViewController: UIViewController {
     }
     @IBAction func disconnect() {
         mqtt!.disconnect()
-        dismissViewControllerAnimated(true, completion: nil)
+        //dismissViewControllerAnimated(true, completion: nil)
+        navigationController?.popViewControllerAnimated(true)
     }
     
     
     override func viewDidLoad() {
         super.viewDidLoad()
+        navigationController?.navigationBar.hidden = true
+        animal = tabBarController?.selectedViewController?.tabBarItem.title
+        automaticallyAdjustsScrollViewInsets = false
         messageTextView.delegate = self
         tableView.delegate = self
         tableView.dataSource = self
         tableView.rowHeight = UITableViewAutomaticDimension
         tableView.estimatedRowHeight = 50
+        NSNotificationCenter.defaultCenter().addObserver(self, selector: "receivedMessage:", name: "MQTTMessageNotification", object: nil)
+    }
+    
+    deinit {
+        NSNotificationCenter.defaultCenter().removeObserver(self)
+    }
+    
+    
+    func receivedMessage(notification: NSNotification) {
+        let userInfo = notification.userInfo as! [String: AnyObject]
+        let message = userInfo["message"] as! String
+        messages.append(message)
     }
 
 }
