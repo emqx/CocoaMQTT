@@ -158,6 +158,8 @@ public class CocoaMQTT: NSObject, CocoaMQTTClient, GCDAsyncSocketDelegate, Cocoa
     public var password: String?
     
     public var secureMQTT: Bool = false
+    
+    public var backgroundOnSocket: Bool = false
 
     public var cleanSess: Bool = true
 
@@ -277,6 +279,10 @@ public class CocoaMQTT: NSObject, CocoaMQTTClient, GCDAsyncSocketDelegate, Cocoa
             NSLog("CocoaMQTT: connected to \(host) : \(port)")
         #endif
         connState = CocoaMQTTConnState.CONNECTED
+        
+        if backgroundOnSocket {
+            sock.performBlock { sock.enableBackgroundingOnSocket() }
+        }
         
         if secureMQTT {
             #if DEBUG
