@@ -30,7 +30,7 @@ public class CocoaMQTTMessage {
 
     var dup: Bool = false
 
-    init(topic: String, string: String, qos: CocoaMQTTQOS = .QOS1, retain: Bool = false, dup: Bool = false) {
+    public init(topic: String, string: String, qos: CocoaMQTTQOS = .QOS1, retain: Bool = false, dup: Bool = false) {
         self.topic = topic
         self.payload = [UInt8](string.utf8)
         self.qos = qos
@@ -38,7 +38,7 @@ public class CocoaMQTTMessage {
         self.dup = dup
     }
 
-    init(topic: String, payload: [UInt8], qos: CocoaMQTTQOS = .QOS1, retain: Bool = false, dup: Bool = false) {
+    public init(topic: String, payload: [UInt8], qos: CocoaMQTTQOS = .QOS1, retain: Bool = false, dup: Bool = false) {
         self.topic = topic
         self.payload = payload
         self.qos = qos
