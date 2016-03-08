@@ -129,7 +129,7 @@ class CocoaMQTTFrame {
 
     }
 
-    var retain: Bool {
+    var retained: Bool {
 
         get { return (header & 0x01) == 0 ? false : true }
 
@@ -259,7 +259,7 @@ class CocoaMQTTFrameConnect: CocoaMQTTFrame {
         if let will = client.willMessage {
             flagWill = true
             flagWillQOS = will.qos.rawValue
-            flagWillRetain = will.retain
+            flagWillRetain = will.retained
             payload += will.topic.bytesWithLength
             payload += will.payload
         }

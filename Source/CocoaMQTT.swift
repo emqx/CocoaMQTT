@@ -64,7 +64,7 @@ public protocol CocoaMQTTClient {
 
     func connect() -> Bool
 
-    func publish(topic: String, withString string: String, qos: CocoaMQTTQOS, retain: Bool, dup: Bool) -> UInt16
+    func publish(topic: String, withString string: String, qos: CocoaMQTTQOS, retained: Bool, dup: Bool) -> UInt16
 
     func publish(message: CocoaMQTTMessage) -> UInt16
 
@@ -220,8 +220,8 @@ public class CocoaMQTT: NSObject, CocoaMQTTClient, GCDAsyncSocketDelegate, Cocoa
         }
     }
 
-    public func publish(topic: String, withString string: String, qos: CocoaMQTTQOS = .QOS1, retain: Bool = false, dup: Bool = false) -> UInt16 {
-        let message = CocoaMQTTMessage(topic: topic, string: string, qos: qos, retain: retain, dup: dup)
+    public func publish(topic: String, withString string: String, qos: CocoaMQTTQOS = .QOS1, retained: Bool = false, dup: Bool = false) -> UInt16 {
+        let message = CocoaMQTTMessage(topic: topic, string: string, qos: qos, retained: retained, dup: dup)
         return publish(message)
     }
 
@@ -229,7 +229,7 @@ public class CocoaMQTT: NSObject, CocoaMQTTClient, GCDAsyncSocketDelegate, Cocoa
         let msgId: UInt16 = _nextMessageId()
         let frame = CocoaMQTTFramePublish(msgid: msgId, topic: message.topic, payload: message.payload)
         frame.qos = message.qos.rawValue
-        frame.retain = message.retain
+        frame.retained = message.retained
         frame.dup = message.dup
         send(frame, tag: Int(msgId))
         if message.qos != CocoaMQTTQOS.QOS0 {
@@ -588,7 +588,7 @@ public class CocoaMQTTReader {
         frame.unpack()
         let msgId = frame.msgid!
         let qos = CocoaMQTTQOS(rawValue: frame.qos)!
-        let message = CocoaMQTTMessage(topic: frame.topic!, payload: frame.payload, qos: qos, retain: frame.retain, dup: frame.dup)
+        let message = CocoaMQTTMessage(topic: frame.topic!, payload: frame.payload, qos: qos, retained: frame.retained, dup: frame.dup)
         return (msgId, message)
     }
 

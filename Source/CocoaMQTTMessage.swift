@@ -11,7 +11,7 @@ import Foundation
 /**
  * MQTT Message
  */
-public class CocoaMQTTMessage {
+public class CocoaMQTTMessage: NSObject {
 
     public var topic: String
 
@@ -26,23 +26,23 @@ public class CocoaMQTTMessage {
 
     var qos: CocoaMQTTQOS = .QOS1
 
-    var retain: Bool = false
+    var retained: Bool = false
 
     var dup: Bool = false
 
-    public init(topic: String, string: String, qos: CocoaMQTTQOS = .QOS1, retain: Bool = false, dup: Bool = false) {
+    public init(topic: String, string: String, qos: CocoaMQTTQOS = .QOS1, retained: Bool = false, dup: Bool = false) {
         self.topic = topic
         self.payload = [UInt8](string.utf8)
         self.qos = qos
-        self.retain = retain
+        self.retained = retained
         self.dup = dup
     }
 
-    public init(topic: String, payload: [UInt8], qos: CocoaMQTTQOS = .QOS1, retain: Bool = false, dup: Bool = false) {
+    public init(topic: String, payload: [UInt8], qos: CocoaMQTTQOS = .QOS1, retained: Bool = false, dup: Bool = false) {
         self.topic = topic
         self.payload = payload
         self.qos = qos
-        self.retain = retain
+        self.retained = retained
         self.dup = dup
     }
 
