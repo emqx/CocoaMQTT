@@ -25,7 +25,7 @@ public protocol CocoaMQTTDelegate : class {
     
     func mqtt(mqtt: CocoaMQTT, didPublishAck id: UInt16)
 
-    func mqtt(mqtt: CocoaMQTT, didReceiveMessage message: CocoaMQTTMessage, id: UInt16 )
+    func mqtt(mqtt: CocoaMQTT, didReceiveMessage message: CocoaMQTTMessage, id: UInt16, puback: () -> Void)
 
     func mqtt(mqtt: CocoaMQTT, didSubscribeTopic topic: String)
 
@@ -376,12 +376,13 @@ public class CocoaMQTT: NSObject, CocoaMQTTClient, GCDAsyncSocketDelegate, Cocoa
         #if DEBUG
         NSLog("CocoaMQTT: PUBLISH Received from \(message.topic)")
         #endif
-        delegate?.mqtt(self, didReceiveMessage: message, id: id)
-        if message.qos == CocoaMQTTQOS.QOS1 {
-            _puback(CocoaMQTTFrameType.PUBACK, msgid: id)
-        } else if message.qos == CocoaMQTTQOS.QOS2 {
-            _puback(CocoaMQTTFrameType.PUBREC, msgid: id)
-        }
+        delegate?.mqtt(self, didReceiveMessage: message, id: id, puback: { () -> Void in
+            if message.qos == CocoaMQTTQOS.QOS1 {
+                self._puback(CocoaMQTTFrameType.PUBACK, msgid: id)
+            } else if message.qos == CocoaMQTTQOS.QOS2 {
+                self._puback(CocoaMQTTFrameType.PUBREC, msgid: id)
+            }
+        })
     }
 
     func _puback(type: CocoaMQTTFrameType, msgid: UInt16) {
