@@ -23,7 +23,11 @@
 		040997861C1B1529006B5A6D /* CocoaMQTTMessage.swift in Sources */ = {isa = PBXBuildFile; fileRef = 0409977C1C1B1529006B5A6D /* CocoaMQTTMessage.swift */; };
 		040997871C1B1529006B5A6D /* CocoaMQTTMessage.swift in Sources */ = {isa = PBXBuildFile; fileRef = 0409977C1C1B1529006B5A6D /* CocoaMQTTMessage.swift */; };
 		040997881C1B1529006B5A6D /* CocoaMQTTMessage.swift in Sources */ = {isa = PBXBuildFile; fileRef = 0409977C1C1B1529006B5A6D /* CocoaMQTTMessage.swift */; };
-		D1534159DB465A7871ED7F1D /* Pods_CocoaMQTT_iOS.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = C8AA102F9BC52263CF0E51AD /* Pods_CocoaMQTT_iOS.framework */; };
+		041C29651C910AE700DFA02D /* CocoaMQTT-Bridging-Header.h in Headers */ = {isa = PBXBuildFile; fileRef = 041C29641C910AE700DFA02D /* CocoaMQTT-Bridging-Header.h */; };
+		041C29661C910AE700DFA02D /* CocoaMQTT-Bridging-Header.h in Headers */ = {isa = PBXBuildFile; fileRef = 041C29641C910AE700DFA02D /* CocoaMQTT-Bridging-Header.h */; };
+		041C29671C910AE700DFA02D /* CocoaMQTT-Bridging-Header.h in Headers */ = {isa = PBXBuildFile; fileRef = 041C29641C910AE700DFA02D /* CocoaMQTT-Bridging-Header.h */; };
+		041C29681C910AE700DFA02D /* CocoaMQTT-Bridging-Header.h in Headers */ = {isa = PBXBuildFile; fileRef = 041C29641C910AE700DFA02D /* CocoaMQTT-Bridging-Header.h */; };
+		BB6229589DDAC6F5FAB41906 /* libPods-CocoaMQTT iOS.a in Frameworks */ = {isa = PBXBuildFile; fileRef = ABC38B6BE0B22B93C62577E5 /* libPods-CocoaMQTT iOS.a */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXContainerItemProxy section */
@@ -64,9 +68,10 @@
 		0409977A1C1B1529006B5A6D /* CocoaMQTT.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = CocoaMQTT.swift; sourceTree = "<group>"; };
 		0409977B1C1B1529006B5A6D /* CocoaMQTTFrame.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = CocoaMQTTFrame.swift; sourceTree = "<group>"; };
 		0409977C1C1B1529006B5A6D /* CocoaMQTTMessage.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = CocoaMQTTMessage.swift; sourceTree = "<group>"; };
+		041C29641C910AE700DFA02D /* CocoaMQTT-Bridging-Header.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = "CocoaMQTT-Bridging-Header.h"; sourceTree = "<group>"; };
 		132CE111019D56AE4549DA85 /* Pods-CocoaMQTT iOS.release.xcconfig */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = text.xcconfig; name = "Pods-CocoaMQTT iOS.release.xcconfig"; path = "Pods/Target Support Files/Pods-CocoaMQTT iOS/Pods-CocoaMQTT iOS.release.xcconfig"; sourceTree = "<group>"; };
 		3CC8FEEEC15EDE813FA24990 /* Pods-CocoaMQTT iOS.debug.xcconfig */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = text.xcconfig; name = "Pods-CocoaMQTT iOS.debug.xcconfig"; path = "Pods/Target Support Files/Pods-CocoaMQTT iOS/Pods-CocoaMQTT iOS.debug.xcconfig"; sourceTree = "<group>"; };
-		C8AA102F9BC52263CF0E51AD /* Pods_CocoaMQTT_iOS.framework */ = {isa = PBXFileReference; explicitFileType = wrapper.framework; includeInIndex = 0; path = Pods_CocoaMQTT_iOS.framework; sourceTree = BUILT_PRODUCTS_DIR; };
+		ABC38B6BE0B22B93C62577E5 /* libPods-CocoaMQTT iOS.a */ = {isa = PBXFileReference; explicitFileType = archive.ar; includeInIndex = 0; path = "libPods-CocoaMQTT iOS.a"; sourceTree = BUILT_PRODUCTS_DIR; };
 /* End PBXFileReference section */
 
 /* Begin PBXFrameworksBuildPhase section */
@@ -74,7 +79,7 @@
 			isa = PBXFrameworksBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
-				D1534159DB465A7871ED7F1D /* Pods_CocoaMQTT_iOS.framework in Frameworks */,
+				BB6229589DDAC6F5FAB41906 /* libPods-CocoaMQTT iOS.a in Frameworks */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -175,6 +180,7 @@
 			isa = PBXGroup;
 			children = (
 				040997721C1B1070006B5A6D /* Info.plist */,
+				041C29641C910AE700DFA02D /* CocoaMQTT-Bridging-Header.h */,
 			);
 			name = "Supporting Files";
 			sourceTree = "<group>";
@@ -182,7 +188,7 @@
 		868B60FA52858865DB45F5BD /* Frameworks */ = {
 			isa = PBXGroup;
 			children = (
-				C8AA102F9BC52263CF0E51AD /* Pods_CocoaMQTT_iOS.framework */,
+				ABC38B6BE0B22B93C62577E5 /* libPods-CocoaMQTT iOS.a */,
 			);
 			name = Frameworks;
 			sourceTree = "<group>";
@@ -203,6 +209,7 @@
 			isa = PBXHeadersBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
+				041C29651C910AE700DFA02D /* CocoaMQTT-Bridging-Header.h in Headers */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -210,6 +217,7 @@
 			isa = PBXHeadersBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
+				041C29661C910AE700DFA02D /* CocoaMQTT-Bridging-Header.h in Headers */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -217,6 +225,7 @@
 			isa = PBXHeadersBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
+				041C29671C910AE700DFA02D /* CocoaMQTT-Bridging-Header.h in Headers */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -224,6 +233,7 @@
 			isa = PBXHeadersBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
+				041C29681C910AE700DFA02D /* CocoaMQTT-Bridging-Header.h in Headers */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -694,7 +704,7 @@
 				PRODUCT_BUNDLE_IDENTIFIER = io.emqtt.CocoaMQTT;
 				PRODUCT_NAME = CocoaMQTT;
 				SKIP_INSTALL = YES;
-				SWIFT_OBJC_BRIDGING_HEADER = "";
+				SWIFT_OBJC_BRIDGING_HEADER = "Source/CocoaMQTT-Bridging-Header.h";
 				SWIFT_OBJC_INTERFACE_HEADER_NAME = "";
 				SWIFT_OPTIMIZATION_LEVEL = "-Onone";
 			};
@@ -717,7 +727,7 @@
 				PRODUCT_BUNDLE_IDENTIFIER = io.emqtt.CocoaMQTT;
 				PRODUCT_NAME = CocoaMQTT;
 				SKIP_INSTALL = YES;
-				SWIFT_OBJC_BRIDGING_HEADER = "";
+				SWIFT_OBJC_BRIDGING_HEADER = "Source/CocoaMQTT-Bridging-Header.h";
 				SWIFT_OBJC_INTERFACE_HEADER_NAME = "";
 			};
 			name = Release;
@@ -762,7 +772,7 @@
 				PRODUCT_NAME = CocoaMQTT;
 				SDKROOT = macosx;
 				SKIP_INSTALL = YES;
-				SWIFT_OBJC_BRIDGING_HEADER = "";
+				SWIFT_OBJC_BRIDGING_HEADER = "Source/CocoaMQTT-Bridging-Header.h";
 				SWIFT_OBJC_INTERFACE_HEADER_NAME = "";
 				SWIFT_OPTIMIZATION_LEVEL = "-Onone";
 			};
@@ -788,7 +798,7 @@
 				PRODUCT_NAME = CocoaMQTT;
 				SDKROOT = macosx;
 				SKIP_INSTALL = YES;
-				SWIFT_OBJC_BRIDGING_HEADER = "";
+				SWIFT_OBJC_BRIDGING_HEADER = "Source/CocoaMQTT-Bridging-Header.h";
 				SWIFT_OBJC_INTERFACE_HEADER_NAME = "";
 			};
 			name = Release;
@@ -838,7 +848,7 @@
 				PRODUCT_NAME = CocoaMQTT;
 				SDKROOT = watchos;
 				SKIP_INSTALL = YES;
-				SWIFT_OBJC_BRIDGING_HEADER = "";
+				SWIFT_OBJC_BRIDGING_HEADER = "Source/CocoaMQTT-Bridging-Header.h";
 				SWIFT_OBJC_INTERFACE_HEADER_NAME = "";
 				SWIFT_OPTIMIZATION_LEVEL = "-Onone";
 				TARGETED_DEVICE_FAMILY = 4;
@@ -863,7 +873,7 @@
 				PRODUCT_NAME = CocoaMQTT;
 				SDKROOT = watchos;
 				SKIP_INSTALL = YES;
-				SWIFT_OBJC_BRIDGING_HEADER = "";
+				SWIFT_OBJC_BRIDGING_HEADER = "Source/CocoaMQTT-Bridging-Header.h";
 				SWIFT_OBJC_INTERFACE_HEADER_NAME = "";
 				TARGETED_DEVICE_FAMILY = 4;
 				WATCHOS_DEPLOYMENT_TARGET = 2.0;
@@ -886,7 +896,7 @@
 				PRODUCT_NAME = CocoaMQTT;
 				SDKROOT = appletvos;
 				SKIP_INSTALL = YES;
-				SWIFT_OBJC_BRIDGING_HEADER = "";
+				SWIFT_OBJC_BRIDGING_HEADER = "Source/CocoaMQTT-Bridging-Header.h";
 				SWIFT_OBJC_INTERFACE_HEADER_NAME = "";
 				SWIFT_OPTIMIZATION_LEVEL = "-Onone";
 				TARGETED_DEVICE_FAMILY = 3;
@@ -910,7 +920,7 @@
 				PRODUCT_NAME = CocoaMQTT;
 				SDKROOT = appletvos;
 				SKIP_INSTALL = YES;
-				SWIFT_OBJC_BRIDGING_HEADER = "";
+				SWIFT_OBJC_BRIDGING_HEADER = "Source/CocoaMQTT-Bridging-Header.h";
 				SWIFT_OBJC_INTERFACE_HEADER_NAME = "";
 				TARGETED_DEVICE_FAMILY = 3;
 				TVOS_DEPLOYMENT_TARGET = 9.0;
