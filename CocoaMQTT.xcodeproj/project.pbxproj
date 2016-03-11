@@ -24,10 +24,10 @@
 		040997871C1B1529006B5A6D /* CocoaMQTTMessage.swift in Sources */ = {isa = PBXBuildFile; fileRef = 0409977C1C1B1529006B5A6D /* CocoaMQTTMessage.swift */; };
 		040997881C1B1529006B5A6D /* CocoaMQTTMessage.swift in Sources */ = {isa = PBXBuildFile; fileRef = 0409977C1C1B1529006B5A6D /* CocoaMQTTMessage.swift */; };
 		04147C10793053260731F031 /* libPods-CocoaMQTT OSX.a in Frameworks */ = {isa = PBXBuildFile; fileRef = DC52D371D785B3C6A9CB33B7 /* libPods-CocoaMQTT OSX.a */; };
-		041C29651C910AE700DFA02D /* CocoaMQTT-Bridging-Header.h in Headers */ = {isa = PBXBuildFile; fileRef = 041C29641C910AE700DFA02D /* CocoaMQTT-Bridging-Header.h */; };
-		041C29661C910AE700DFA02D /* CocoaMQTT-Bridging-Header.h in Headers */ = {isa = PBXBuildFile; fileRef = 041C29641C910AE700DFA02D /* CocoaMQTT-Bridging-Header.h */; };
-		041C29671C910AE700DFA02D /* CocoaMQTT-Bridging-Header.h in Headers */ = {isa = PBXBuildFile; fileRef = 041C29641C910AE700DFA02D /* CocoaMQTT-Bridging-Header.h */; };
-		041C29681C910AE700DFA02D /* CocoaMQTT-Bridging-Header.h in Headers */ = {isa = PBXBuildFile; fileRef = 041C29641C910AE700DFA02D /* CocoaMQTT-Bridging-Header.h */; };
+		041C29651C910AE700DFA02D /* CocoaMQTT-Bridging-Header.h in Headers */ = {isa = PBXBuildFile; fileRef = 041C29641C910AE700DFA02D /* CocoaMQTT-Bridging-Header.h */; settings = {ATTRIBUTES = (Public, ); }; };
+		041C29661C910AE700DFA02D /* CocoaMQTT-Bridging-Header.h in Headers */ = {isa = PBXBuildFile; fileRef = 041C29641C910AE700DFA02D /* CocoaMQTT-Bridging-Header.h */; settings = {ATTRIBUTES = (Public, ); }; };
+		041C29671C910AE700DFA02D /* CocoaMQTT-Bridging-Header.h in Headers */ = {isa = PBXBuildFile; fileRef = 041C29641C910AE700DFA02D /* CocoaMQTT-Bridging-Header.h */; settings = {ATTRIBUTES = (Public, ); }; };
+		041C29681C910AE700DFA02D /* CocoaMQTT-Bridging-Header.h in Headers */ = {isa = PBXBuildFile; fileRef = 041C29641C910AE700DFA02D /* CocoaMQTT-Bridging-Header.h */; settings = {ATTRIBUTES = (Public, ); }; };
 		64E340AFCC6AE446D1BF84F7 /* libPods-CocoaMQTT iOS.a in Frameworks */ = {isa = PBXBuildFile; fileRef = B9CE702C33DEB9DE19109231 /* libPods-CocoaMQTT iOS.a */; };
 /* End PBXBuildFile section */
 
