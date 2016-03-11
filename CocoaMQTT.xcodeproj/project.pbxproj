@@ -23,11 +23,12 @@
 		040997861C1B1529006B5A6D /* CocoaMQTTMessage.swift in Sources */ = {isa = PBXBuildFile; fileRef = 0409977C1C1B1529006B5A6D /* CocoaMQTTMessage.swift */; };
 		040997871C1B1529006B5A6D /* CocoaMQTTMessage.swift in Sources */ = {isa = PBXBuildFile; fileRef = 0409977C1C1B1529006B5A6D /* CocoaMQTTMessage.swift */; };
 		040997881C1B1529006B5A6D /* CocoaMQTTMessage.swift in Sources */ = {isa = PBXBuildFile; fileRef = 0409977C1C1B1529006B5A6D /* CocoaMQTTMessage.swift */; };
+		04147C10793053260731F031 /* libPods-CocoaMQTT OSX.a in Frameworks */ = {isa = PBXBuildFile; fileRef = DC52D371D785B3C6A9CB33B7 /* libPods-CocoaMQTT OSX.a */; };
 		041C29651C910AE700DFA02D /* CocoaMQTT-Bridging-Header.h in Headers */ = {isa = PBXBuildFile; fileRef = 041C29641C910AE700DFA02D /* CocoaMQTT-Bridging-Header.h */; };
 		041C29661C910AE700DFA02D /* CocoaMQTT-Bridging-Header.h in Headers */ = {isa = PBXBuildFile; fileRef = 041C29641C910AE700DFA02D /* CocoaMQTT-Bridging-Header.h */; };
 		041C29671C910AE700DFA02D /* CocoaMQTT-Bridging-Header.h in Headers */ = {isa = PBXBuildFile; fileRef = 041C29641C910AE700DFA02D /* CocoaMQTT-Bridging-Header.h */; };
 		041C29681C910AE700DFA02D /* CocoaMQTT-Bridging-Header.h in Headers */ = {isa = PBXBuildFile; fileRef = 041C29641C910AE700DFA02D /* CocoaMQTT-Bridging-Header.h */; };
-		BB6229589DDAC6F5FAB41906 /* libPods-CocoaMQTT iOS.a in Frameworks */ = {isa = PBXBuildFile; fileRef = ABC38B6BE0B22B93C62577E5 /* libPods-CocoaMQTT iOS.a */; };
+		64E340AFCC6AE446D1BF84F7 /* libPods-CocoaMQTT iOS.a in Frameworks */ = {isa = PBXBuildFile; fileRef = B9CE702C33DEB9DE19109231 /* libPods-CocoaMQTT iOS.a */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXContainerItemProxy section */
@@ -70,8 +71,11 @@
 		0409977C1C1B1529006B5A6D /* CocoaMQTTMessage.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = CocoaMQTTMessage.swift; sourceTree = "<group>"; };
 		041C29641C910AE700DFA02D /* CocoaMQTT-Bridging-Header.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = "CocoaMQTT-Bridging-Header.h"; sourceTree = "<group>"; };
 		132CE111019D56AE4549DA85 /* Pods-CocoaMQTT iOS.release.xcconfig */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = text.xcconfig; name = "Pods-CocoaMQTT iOS.release.xcconfig"; path = "Pods/Target Support Files/Pods-CocoaMQTT iOS/Pods-CocoaMQTT iOS.release.xcconfig"; sourceTree = "<group>"; };
+		29E29C769A5E6639C3DDAE3C /* Pods-CocoaMQTT OSX.release.xcconfig */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = text.xcconfig; name = "Pods-CocoaMQTT OSX.release.xcconfig"; path = "Pods/Target Support Files/Pods-CocoaMQTT OSX/Pods-CocoaMQTT OSX.release.xcconfig"; sourceTree = "<group>"; };
 		3CC8FEEEC15EDE813FA24990 /* Pods-CocoaMQTT iOS.debug.xcconfig */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = text.xcconfig; name = "Pods-CocoaMQTT iOS.debug.xcconfig"; path = "Pods/Target Support Files/Pods-CocoaMQTT iOS/Pods-CocoaMQTT iOS.debug.xcconfig"; sourceTree = "<group>"; };
-		ABC38B6BE0B22B93C62577E5 /* libPods-CocoaMQTT iOS.a */ = {isa = PBXFileReference; explicitFileType = archive.ar; includeInIndex = 0; path = "libPods-CocoaMQTT iOS.a"; sourceTree = BUILT_PRODUCTS_DIR; };
+		99D40B7687AB42AAA9BC1554 /* Pods-CocoaMQTT OSX.debug.xcconfig */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = text.xcconfig; name = "Pods-CocoaMQTT OSX.debug.xcconfig"; path = "Pods/Target Support Files/Pods-CocoaMQTT OSX/Pods-CocoaMQTT OSX.debug.xcconfig"; sourceTree = "<group>"; };
+		B9CE702C33DEB9DE19109231 /* libPods-CocoaMQTT iOS.a */ = {isa = PBXFileReference; explicitFileType = archive.ar; includeInIndex = 0; path = "libPods-CocoaMQTT iOS.a"; sourceTree = BUILT_PRODUCTS_DIR; };
+		DC52D371D785B3C6A9CB33B7 /* libPods-CocoaMQTT OSX.a */ = {isa = PBXFileReference; explicitFileType = archive.ar; includeInIndex = 0; path = "libPods-CocoaMQTT OSX.a"; sourceTree = BUILT_PRODUCTS_DIR; };
 /* End PBXFileReference section */
 
 /* Begin PBXFrameworksBuildPhase section */
@@ -79,7 +83,7 @@
 			isa = PBXFrameworksBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
-				BB6229589DDAC6F5FAB41906 /* libPods-CocoaMQTT iOS.a in Frameworks */,
+				64E340AFCC6AE446D1BF84F7 /* libPods-CocoaMQTT iOS.a in Frameworks */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -95,6 +99,7 @@
 			isa = PBXFrameworksBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
+				04147C10793053260731F031 /* libPods-CocoaMQTT OSX.a in Frameworks */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -188,7 +193,8 @@
 		868B60FA52858865DB45F5BD /* Frameworks */ = {
 			isa = PBXGroup;
 			children = (
-				ABC38B6BE0B22B93C62577E5 /* libPods-CocoaMQTT iOS.a */,
+				DC52D371D785B3C6A9CB33B7 /* libPods-CocoaMQTT OSX.a */,
+				B9CE702C33DEB9DE19109231 /* libPods-CocoaMQTT iOS.a */,
 			);
 			name = Frameworks;
 			sourceTree = "<group>";
@@ -198,6 +204,8 @@
 			children = (
 				3CC8FEEEC15EDE813FA24990 /* Pods-CocoaMQTT iOS.debug.xcconfig */,
 				132CE111019D56AE4549DA85 /* Pods-CocoaMQTT iOS.release.xcconfig */,
+				99D40B7687AB42AAA9BC1554 /* Pods-CocoaMQTT OSX.debug.xcconfig */,
+				29E29C769A5E6639C3DDAE3C /* Pods-CocoaMQTT OSX.release.xcconfig */,
 			);
 			name = Pods;
 			sourceTree = "<group>";
@@ -282,10 +290,12 @@
 			isa = PBXNativeTarget;
 			buildConfigurationList = 040997411C1B0E06006B5A6D /* Build configuration list for PBXNativeTarget "CocoaMQTT OSX" */;
 			buildPhases = (
+				8A6DC89D2440F8529896608D /* Check Pods Manifest.lock */,
 				0409972B1C1B0E06006B5A6D /* Sources */,
 				0409972C1C1B0E06006B5A6D /* Frameworks */,
 				0409972D1C1B0E06006B5A6D /* Headers */,
 				0409972E1C1B0E06006B5A6D /* Resources */,
+				48D6352EB5FB985DE770D63A /* Copy Pods Resources */,
 			);
 			buildRules = (
 			);
@@ -478,6 +488,36 @@
 /* End PBXResourcesBuildPhase section */
 
 /* Begin PBXShellScriptBuildPhase section */
+		48D6352EB5FB985DE770D63A /* Copy Pods Resources */ = {
+			isa = PBXShellScriptBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+			);
+			inputPaths = (
+			);
+			name = "Copy Pods Resources";
+			outputPaths = (
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+			shellPath = /bin/sh;
+			shellScript = "\"${SRCROOT}/Pods/Target Support Files/Pods-CocoaMQTT OSX/Pods-CocoaMQTT OSX-resources.sh\"\n";
+			showEnvVarsInLog = 0;
+		};
+		8A6DC89D2440F8529896608D /* Check Pods Manifest.lock */ = {
+			isa = PBXShellScriptBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+			);
+			inputPaths = (
+			);
+			name = "Check Pods Manifest.lock";
+			outputPaths = (
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+			shellPath = /bin/sh;
+			shellScript = "diff \"${PODS_ROOT}/../Podfile.lock\" \"${PODS_ROOT}/Manifest.lock\" > /dev/null\nif [[ $? != 0 ]] ; then\n    cat << EOM\nerror: The sandbox is not in sync with the Podfile.lock. Run 'pod install' or update your CocoaPods installation.\nEOM\n    exit 1\nfi\n";
+			showEnvVarsInLog = 0;
+		};
 		C6105797B12F16BF994C3C54 /* Check Pods Manifest.lock */ = {
 			isa = PBXShellScriptBuildPhase;
 			buildActionMask = 2147483647;
@@ -754,6 +794,7 @@
 		};
 		040997421C1B0E06006B5A6D /* Debug */ = {
 			isa = XCBuildConfiguration;
+			baseConfigurationReference = 99D40B7687AB42AAA9BC1554 /* Pods-CocoaMQTT OSX.debug.xcconfig */;
 			buildSettings = {
 				CLANG_ALLOW_NON_MODULAR_INCLUDES_IN_FRAMEWORK_MODULES = NO;
 				CLANG_ENABLE_MODULES = YES;
@@ -780,6 +821,7 @@
 		};
 		040997431C1B0E06006B5A6D /* Release */ = {
 			isa = XCBuildConfiguration;
+			baseConfigurationReference = 29E29C769A5E6639C3DDAE3C /* Pods-CocoaMQTT OSX.release.xcconfig */;
 			buildSettings = {
 				CLANG_ALLOW_NON_MODULAR_INCLUDES_IN_FRAMEWORK_MODULES = NO;
 				CLANG_ENABLE_MODULES = YES;
