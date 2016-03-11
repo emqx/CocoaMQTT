@@ -281,7 +281,7 @@ public class CocoaMQTT: NSObject, CocoaMQTTClient, GCDAsyncSocketDelegate, Cocoa
         connState = CocoaMQTTConnState.CONNECTED
         
         if backgroundOnSocket {
-            sock.performBlock { sock.enableBackgroundingOnSocket() }
+            //sock.performBlock { sock.enableBackgroundingOnSocket() }
         }
         
         if secureMQTT {
