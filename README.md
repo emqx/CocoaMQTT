@@ -39,9 +39,21 @@ Then, run the following command:
 ```bash
 $ carthage update
 ```
-Last, creat a CocoaMQTT-Bridging-Header.h file in your project, in which add the following line:
+Last if you're building for OS X:
 
-```#import "CocoaMQTT/CocoaMQTT.h"```
+- On your application targets “General” settings tab, in the “Embedded Binaries” section, drag and drop CocoaMQTT.framework from the Carthage/Build/Mac folder on disk.
+
+If you're building for iOS, tvOS:
+
+- On your application targets “General” settings tab, in the “Linked Frameworks and Libraries” section, drag and drop each framework you want to use from the Carthage/Build folder on disk.
+
+- On your application targets “Build Phases” settings tab, click the “+” icon and choose “New Run Script Phase”. Create a Run Script with the following contents: 
+`/usr/local/bin/carthage copy-frameworks`
+
+- and add the paths to the frameworks you want to use under “Input Files”, e.g.:
+```
+$(SRCROOT)/Carthage/Build/iOS/CocoaMQTT.framework
+```
 
 #### Manual
 - Open up Terminal, `cd` into your top-level project directory, and run the following command "if" your project is not initialized as a git repository:
