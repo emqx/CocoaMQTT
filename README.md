@@ -28,6 +28,21 @@ Last, creat a CocoaMQTT-Bridging-Header.h file in your project, in which add the
 
 ```#import "CocoaMQTT/CocoaMQTT.h"```
 
+###Carthage
+Install using [Carthage](https://github.com/Carthage/Carthage) by adding this line to your Cartfile:
+
+````
+github "emqtt/CocoaMQTT"
+````
+Then, run the following command:
+
+```bash
+$ carthage update
+```
+Last, creat a CocoaMQTT-Bridging-Header.h file in your project, in which add the following line:
+
+```#import "CocoaMQTT/CocoaMQTT.h"```
+
 #### Manual
 - Open up Terminal, `cd` into your top-level project directory, and run the following command "if" your project is not initialized as a git repository:
 
