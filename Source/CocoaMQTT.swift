@@ -195,7 +195,7 @@ public class CocoaMQTT: NSObject, CocoaMQTTClient, GCDAsyncSocketDelegate, Cocoa
 
     //published messages
     
-    var messages = Dictionary<UInt16, CocoaMQTTMessage>()
+    public var messages = Dictionary<UInt16, CocoaMQTTMessage>()
 
     public init(clientId: String, host: String = "localhost", port: UInt16 = 1883) {
         self.clientId = clientId
