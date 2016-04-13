@@ -7,6 +7,8 @@
 //
 
 import Foundation
+import CocoaAsyncSocket
+import MSWeakTimer
 
 /**
  * MQTT Delegate

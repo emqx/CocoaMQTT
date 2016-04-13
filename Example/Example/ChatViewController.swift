@@ -82,8 +82,8 @@ class ChatViewController: UIViewController {
         tableView.dataSource = self
         tableView.rowHeight = UITableViewAutomaticDimension
         tableView.estimatedRowHeight = 50
-        NSNotificationCenter.defaultCenter().addObserver(self, selector: "receivedMessage:", name: "MQTTMessageNotification" + animal!, object: nil)
-        NSNotificationCenter.defaultCenter().addObserver(self, selector: "keyboardChanged:", name: UIKeyboardWillChangeFrameNotification, object: nil)
+        NSNotificationCenter.defaultCenter().addObserver(self, selector: #selector(ChatViewController.receivedMessage(_:)), name: "MQTTMessageNotification" + animal!, object: nil)
+        NSNotificationCenter.defaultCenter().addObserver(self, selector: #selector(ChatViewController.keyboardChanged(_:)), name: UIKeyboardWillChangeFrameNotification, object: nil)
     }
     
     deinit {
