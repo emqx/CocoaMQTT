@@ -94,7 +94,7 @@ public enum CocoaMQTTQOS: UInt8 {
 /**
  * Connection State
  */
-enum CocoaMQTTConnState: UInt8 {
+public enum CocoaMQTTConnState: UInt8 {
 
     case INIT = 0
 
@@ -179,7 +179,7 @@ public class CocoaMQTT: NSObject, CocoaMQTTClient, GCDAsyncSocketDelegate, Cocoa
 
     //socket and connection
 
-    var connState = CocoaMQTTConnState.INIT
+    public var connState = CocoaMQTTConnState.INIT
 
     var socket: GCDAsyncSocket?
 
@@ -359,7 +359,7 @@ public class CocoaMQTT: NSObject, CocoaMQTTClient, GCDAsyncSocketDelegate, Cocoa
             aliveTimer = MSWeakTimer.scheduledTimerWithTimeInterval(
                 NSTimeInterval(keepAlive),
                 target: self,
-                selector: "_aliveTimerFired",
+                selector: #selector(CocoaMQTT._aliveTimerFired),
                 userInfo: nil,
                 repeats: true,
                 dispatchQueue: dispatch_get_main_queue())
