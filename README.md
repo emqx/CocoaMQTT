@@ -24,9 +24,6 @@ Then, run the following command:
 ```bash
 $ pod install
 ```
-Last, creat a CocoaMQTT-Bridging-Header.h file in your project, in which add the following line:
-
-```#import "CocoaMQTT/CocoaMQTT.h"```
 
 ###Carthage
 Install using [Carthage](https://github.com/Carthage/Carthage) by adding this line to your Cartfile:
