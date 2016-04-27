@@ -26,15 +26,17 @@ $ pod install
 ```
 
 ###Carthage
-Install using [Carthage](https://github.com/Carthage/Carthage) by adding this line to your Cartfile:
+Install using [Carthage](https://github.com/Carthage/Carthage) by adding the following lines to your Cartfile:
 
 ````
-github "emqtt/CocoaMQTT"
+github "robbiehanson/CocoaAsyncSocket" "master"
+github "CrazyWisdom/MSWeakTimer" "master"
+github "emqtt/CocoaMQTT" "master"
 ````
 Then, run the following command:
 
 ```bash
-$ carthage update
+$ carthage update --platform iOS
 ```
 Last if you're building for OS X:
 
