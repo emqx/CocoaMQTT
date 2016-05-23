@@ -274,6 +274,13 @@ public class CocoaMQTT: NSObject, CocoaMQTTClient, GCDAsyncSocketDelegate, Cocoa
         socket!.writeData(NSData(bytes: data, length: data.count), withTimeout: -1, tag: tag)
     }
 
+    func sendConnectFrame() {
+        let frame = CocoaMQTTFrameConnect(client: self)
+        send(frame)
+        reader!.start()
+        delegate?.mqtt(self, didConnect: host, port: Int(port))
+    }
+
     //AsyncSocket Delegate
 
     public func socket(sock: GCDAsyncSocket!, didConnectToHost host: String!, port: UInt16) {
@@ -295,12 +302,8 @@ public class CocoaMQTT: NSObject, CocoaMQTTClient, GCDAsyncSocketDelegate, Cocoa
                 sock.startTLS([kCFStreamSSLPeerName: self.host])
             #endif
         } else {
-            let frame = CocoaMQTTFrameConnect(client: self)
-            send(frame)
-            reader!.start()
+            sendConnectFrame()
         }
-        
-        delegate?.mqtt(self, didConnect: host, port: Int(port))
     }
     
     public func socket(sock: GCDAsyncSocket!, didReceiveTrust trust: SecTrust!, completionHandler: ((Bool) -> Void)!) {
@@ -314,9 +317,7 @@ public class CocoaMQTT: NSObject, CocoaMQTTClient, GCDAsyncSocketDelegate, Cocoa
         #if DEBUG
             NSLog("CocoaMQTT: socketDidSecure")
         #endif
-        let frame = CocoaMQTTFrameConnect(client: self)
-        send(frame)
-        reader!.start()
+        sendConnectFrame()
     }
 
     public func socket(sock: GCDAsyncSocket!, didWriteDataWithTag tag: Int) {
