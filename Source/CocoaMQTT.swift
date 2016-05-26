@@ -287,7 +287,6 @@ public class CocoaMQTT: NSObject, CocoaMQTTClient, GCDAsyncSocketDelegate, Cocoa
         #if DEBUG
             NSLog("CocoaMQTT: connected to \(host) : \(port)")
         #endif
-        connState = CocoaMQTTConnState.CONNECTED
         
         #if TARGET_OS_IPHONE
         if backgroundOnSocket {
