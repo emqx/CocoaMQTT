@@ -582,7 +582,7 @@ public class CocoaMQTTReader {
         case .PINGRESP:
             delegate.didReceivePong(self)
         default:
-            assert(false)
+            break
         }
         readHeader()
     }
