@@ -395,7 +395,7 @@ public class CocoaMQTT: NSObject, CocoaMQTTClient, GCDAsyncSocketDelegate, Cocoa
         case .PUBREC: descr = "PUBREC"
         case .PUBREL: descr = "PUBREL"
         case .PUBCOMP: descr = "PUBCOMP"
-        default: assert(false)
+        default: break
         }
         #if DEBUG
         if descr != nil {
