@@ -461,11 +461,13 @@ public class CocoaMQTT: NSObject, CocoaMQTTClient, GCDAsyncSocketDelegate, Cocoa
         #endif
         delegate?.mqttDidReceivePong(self)
     }
-
+    
     func _nextMessageId() -> UInt16 {
-        let id = self.gmid++
-        if id >= UInt16.max { gmid = 1 }
-        return id
+        if gmid == UInt16.max {
+            gmid = 0
+        }
+        gmid += 1
+        return gmid
     }
 
 }
