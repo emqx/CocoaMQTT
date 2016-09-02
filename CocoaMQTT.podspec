@@ -13,6 +13,6 @@ Pod::Spec.new do |s|
   # s.tvos.deployment_target = "9.0"
   s.source   = { :git => "https://github.com/emqtt/CocoaMQTT.git", :tag => "1.0.7"}
   s.source_files = "Source/{*.h}", "Source/*.swift"
-  s.dependency "CocoaAsyncSocket", "~> 7.4.2"
+  s.dependency "CocoaAsyncSocket", "~> 7.5.0"
   s.dependency "MSWeakTimer", "~> 1.1.0"
 end

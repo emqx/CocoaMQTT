@@ -283,7 +283,7 @@ public class CocoaMQTT: NSObject, CocoaMQTTClient, GCDAsyncSocketDelegate, Cocoa
 
     //AsyncSocket Delegate
 
-    public func socket(sock: GCDAsyncSocket!, didConnectToHost host: String!, port: UInt16) {
+    public func socket(sock: GCDAsyncSocket, didConnectToHost host: String, port: UInt16) {
         #if DEBUG
             NSLog("CocoaMQTT: connected to \(host) : \(port)")
         #endif
@@ -295,37 +295,38 @@ public class CocoaMQTT: NSObject, CocoaMQTTClient, GCDAsyncSocketDelegate, Cocoa
         #endif
         
         if secureMQTT {
+            
             #if DEBUG
-                sock.startTLS(["GCDAsyncSocketManuallyEvaluateTrust": true, kCFStreamSSLPeerName: self.host])
+                sock.startTLS([GCDAsyncSocketManuallyEvaluateTrust: true])
             #else
-                sock.startTLS([kCFStreamSSLPeerName: self.host])
+                sock.startTLS(nil)
             #endif
         } else {
             sendConnectFrame()
         }
     }
     
-    public func socket(sock: GCDAsyncSocket!, didReceiveTrust trust: SecTrust!, completionHandler: ((Bool) -> Void)!) {
+    public func socket(sock: GCDAsyncSocket, didReceiveTrust trust: SecTrust, completionHandler: ((Bool) -> Void)) {
         #if DEBUG
             NSLog("CocoaMQTT: didReceiveTrust")
         #endif
         completionHandler(true)
     }
     
-    public func socketDidSecure(sock: GCDAsyncSocket!) {
+    public func socketDidSecure(sock: GCDAsyncSocket) {
         #if DEBUG
             NSLog("CocoaMQTT: socketDidSecure")
         #endif
         sendConnectFrame()
     }
 
-    public func socket(sock: GCDAsyncSocket!, didWriteDataWithTag tag: Int) {
+    public func socket(sock: GCDAsyncSocket, didWriteDataWithTag tag: Int) {
         #if DEBUG
         NSLog("CocoaMQTT: Socket write message with tag: \(tag)")
         #endif
     }
 
-    public func socket(sock: GCDAsyncSocket!, didReadData data: NSData!, withTag tag: Int) {
+    public func socket(sock: GCDAsyncSocket, didReadData data: NSData, withTag tag: Int) {
         let etag: CocoaMQTTReadTag = CocoaMQTTReadTag(rawValue: tag)!
         var bytes = [UInt8]([0])
         switch etag {
@@ -340,7 +341,7 @@ public class CocoaMQTT: NSObject, CocoaMQTTClient, GCDAsyncSocketDelegate, Cocoa
         }
     }
 
-    public func socketDidDisconnect(sock: GCDAsyncSocket!, withError err: NSError!) {
+    public func socketDidDisconnect(sock: GCDAsyncSocket, withError err: NSError?) {
         connState = CocoaMQTTConnState.DISCONNECTED
         delegate?.mqttDidDisconnect(self, withError: err)
     }

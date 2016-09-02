@@ -44,8 +44,8 @@ class ViewController: UIViewController {
         let clientIdPid = "CocoaMQTT-\(animal!)-" + String(NSProcessInfo().processIdentifier)
         mqtt = CocoaMQTT(clientId: clientIdPid, host: "localhost", port: 1883)
         //mqtts
-        //let mqtt = CocoaMQTT(clientId: clientIdPid, host: "localhost", port: 8883)
-        //mqtt.secureMQTT = true
+        //mqtt = CocoaMQTT(clientId: clientIdPid, host: "localhost", port: 8883)
+        //mqtt!.secureMQTT = true
         if let mqtt = mqtt {
             mqtt.username = "test"
             mqtt.password = "public"

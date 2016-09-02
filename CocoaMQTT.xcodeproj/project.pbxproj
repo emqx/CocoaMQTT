@@ -1,1767 +1,916 @@
-<?xml version="1.0" encoding="UTF-8"?>
-<!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
-<plist version="1.0">
-<dict>
-	<key>archiveVersion</key>
-	<string>1</string>
-	<key>classes</key>
-	<dict/>
-	<key>objectVersion</key>
-	<string>46</string>
-	<key>objects</key>
-	<dict>
-		<key>040997051C1B0B96006B5A6D</key>
-		<dict>
-			<key>children</key>
-			<array>
-				<string>040997701C1B1070006B5A6D</string>
-				<string>040997101C1B0B96006B5A6D</string>
-				<string>0409971D1C1B0B96006B5A6D</string>
-				<string>940EA8E21009BE5A549662D5</string>
-				<string>C68B087463924483F8568675</string>
-			</array>
-			<key>isa</key>
-			<string>PBXGroup</string>
-			<key>sourceTree</key>
-			<string>&lt;group&gt;</string>
-		</dict>
-		<key>040997061C1B0B96006B5A6D</key>
-		<dict>
-			<key>attributes</key>
-			<dict>
-				<key>LastSwiftUpdateCheck</key>
-				<string>0710</string>
-				<key>LastUpgradeCheck</key>
-				<string>0710</string>
-				<key>ORGANIZATIONNAME</key>
-				<string>emqtt.io</string>
-				<key>TargetAttributes</key>
-				<dict>
-					<key>0409970E1C1B0B96006B5A6D</key>
-					<dict>
-						<key>CreatedOnToolsVersion</key>
-						<string>7.1.1</string>
-					</dict>
-					<key>040997181C1B0B96006B5A6D</key>
-					<dict>
-						<key>CreatedOnToolsVersion</key>
-						<string>7.1.1</string>
-					</dict>
-					<key>0409972F1C1B0E06006B5A6D</key>
-					<dict>
-						<key>CreatedOnToolsVersion</key>
-						<string>7.1.1</string>
-					</dict>
-					<key>040997381C1B0E06006B5A6D</key>
-					<dict>
-						<key>CreatedOnToolsVersion</key>
-						<string>7.1.1</string>
-					</dict>
-					<key>040997581C1B0F7E006B5A6D</key>
-					<dict>
-						<key>CreatedOnToolsVersion</key>
-						<string>7.1.1</string>
-					</dict>
-					<key>040997611C1B0F7E006B5A6D</key>
-					<dict>
-						<key>CreatedOnToolsVersion</key>
-						<string>7.1.1</string>
-					</dict>
-				</dict>
-			</dict>
-			<key>buildConfigurationList</key>
-			<string>040997091C1B0B96006B5A6D</string>
-			<key>compatibilityVersion</key>
-			<string>Xcode 3.2</string>
-			<key>developmentRegion</key>
-			<string>English</string>
-			<key>hasScannedForEncodings</key>
-			<string>0</string>
-			<key>isa</key>
-			<string>PBXProject</string>
-			<key>knownRegions</key>
-			<array>
-				<string>en</string>
-				<string>Base</string>
-			</array>
-			<key>mainGroup</key>
-			<string>040997051C1B0B96006B5A6D</string>
-			<key>productRefGroup</key>
-			<string>040997101C1B0B96006B5A6D</string>
-			<key>projectDirPath</key>
-			<string></string>
-			<key>projectReferences</key>
-			<array/>
-			<key>projectRoot</key>
-			<string></string>
-			<key>targets</key>
-			<array>
-				<string>0409970E1C1B0B96006B5A6D</string>
-				<string>040997181C1B0B96006B5A6D</string>
-				<string>0409972F1C1B0E06006B5A6D</string>
-				<string>040997381C1B0E06006B5A6D</string>
-				<string>040997581C1B0F7E006B5A6D</string>
-				<string>040997611C1B0F7E006B5A6D</string>
-			</array>
-		</dict>
-		<key>040997091C1B0B96006B5A6D</key>
-		<dict>
-			<key>buildConfigurations</key>
-			<array>
-				<string>040997211C1B0B96006B5A6D</string>
-				<string>040997221C1B0B96006B5A6D</string>
-			</array>
-			<key>defaultConfigurationIsVisible</key>
-			<string>0</string>
-			<key>defaultConfigurationName</key>
-			<string>Release</string>
-			<key>isa</key>
-			<string>XCConfigurationList</string>
-		</dict>
-		<key>0409970A1C1B0B96006B5A6D</key>
-		<dict>
-			<key>buildActionMask</key>
-			<string>2147483647</string>
-			<key>files</key>
-			<array>
-				<string>0409977D1C1B1529006B5A6D</string>
-				<string>040997851C1B1529006B5A6D</string>
-				<string>040997811C1B1529006B5A6D</string>
-			</array>
-			<key>isa</key>
-			<string>PBXSourcesBuildPhase</string>
-			<key>runOnlyForDeploymentPostprocessing</key>
-			<string>0</string>
-		</dict>
-		<key>0409970B1C1B0B96006B5A6D</key>
-		<dict>
-			<key>buildActionMask</key>
-			<string>2147483647</string>
-			<key>files</key>
-			<array>
-				<string>B4F72F54000A1AC69942C85D</string>
-			</array>
-			<key>isa</key>
-			<string>PBXFrameworksBuildPhase</string>
-			<key>runOnlyForDeploymentPostprocessing</key>
-			<string>0</string>
-		</dict>
-		<key>0409970C1C1B0B96006B5A6D</key>
-		<dict>
-			<key>buildActionMask</key>
-			<string>2147483647</string>
-			<key>files</key>
-			<array>
-				<string>040997741C1B10AF006B5A6D</string>
-			</array>
-			<key>isa</key>
-			<string>PBXHeadersBuildPhase</string>
-			<key>runOnlyForDeploymentPostprocessing</key>
-			<string>0</string>
-		</dict>
-		<key>0409970D1C1B0B96006B5A6D</key>
-		<dict>
-			<key>buildActionMask</key>
-			<string>2147483647</string>
-			<key>files</key>
-			<array/>
-			<key>isa</key>
-			<string>PBXResourcesBuildPhase</string>
-			<key>runOnlyForDeploymentPostprocessing</key>
-			<string>0</string>
-		</dict>
-		<key>0409970E1C1B0B96006B5A6D</key>
-		<dict>
-			<key>buildConfigurationList</key>
-			<string>040997231C1B0B96006B5A6D</string>
-			<key>buildPhases</key>
-			<array>
-				<string>720B1FA37E58BF68349D79C3</string>
-				<string>0409970A1C1B0B96006B5A6D</string>
-				<string>0409970B1C1B0B96006B5A6D</string>
-				<string>0409970C1C1B0B96006B5A6D</string>
-				<string>0409970D1C1B0B96006B5A6D</string>
-				<string>A4BD5C21F777F2B8D3274E0B</string>
-			</array>
-			<key>buildRules</key>
-			<array/>
-			<key>dependencies</key>
-			<array/>
-			<key>isa</key>
-			<string>PBXNativeTarget</string>
-			<key>name</key>
-			<string>CocoaMQTT iOS</string>
-			<key>productName</key>
-			<string>CocoaMQTT</string>
-			<key>productReference</key>
-			<string>0409970F1C1B0B96006B5A6D</string>
-			<key>productType</key>
-			<string>com.apple.product-type.framework</string>
-		</dict>
-		<key>0409970F1C1B0B96006B5A6D</key>
-		<dict>
-			<key>explicitFileType</key>
-			<string>wrapper.framework</string>
-			<key>includeInIndex</key>
-			<string>0</string>
-			<key>isa</key>
-			<string>PBXFileReference</string>
-			<key>path</key>
-			<string>CocoaMQTT.framework</string>
-			<key>sourceTree</key>
-			<string>BUILT_PRODUCTS_DIR</string>
-		</dict>
-		<key>040997101C1B0B96006B5A6D</key>
-		<dict>
-			<key>children</key>
-			<array>
-				<string>0409970F1C1B0B96006B5A6D</string>
-				<string>040997191C1B0B96006B5A6D</string>
-				<string>040997301C1B0E06006B5A6D</string>
-				<string>040997391C1B0E06006B5A6D</string>
-				<string>040997591C1B0F7E006B5A6D</string>
-				<string>040997621C1B0F7E006B5A6D</string>
-			</array>
-			<key>isa</key>
-			<string>PBXGroup</string>
-			<key>name</key>
-			<string>Products</string>
-			<key>sourceTree</key>
-			<string>&lt;group&gt;</string>
-		</dict>
-		<key>040997151C1B0B96006B5A6D</key>
-		<dict>
-			<key>buildActionMask</key>
-			<string>2147483647</string>
-			<key>files</key>
-			<array>
-				<string>0409971F1C1B0B96006B5A6D</string>
-			</array>
-			<key>isa</key>
-			<string>PBXSourcesBuildPhase</string>
-			<key>runOnlyForDeploymentPostprocessing</key>
-			<string>0</string>
-		</dict>
-		<key>040997161C1B0B96006B5A6D</key>
-		<dict>
-			<key>buildActionMask</key>
-			<string>2147483647</string>
-			<key>files</key>
-			<array>
-				<string>0409971A1C1B0B96006B5A6D</string>
-			</array>
-			<key>isa</key>
-			<string>PBXFrameworksBuildPhase</string>
-			<key>runOnlyForDeploymentPostprocessing</key>
-			<string>0</string>
-		</dict>
-		<key>040997171C1B0B96006B5A6D</key>
-		<dict>
-			<key>buildActionMask</key>
-			<string>2147483647</string>
-			<key>files</key>
-			<array/>
-			<key>isa</key>
-			<string>PBXResourcesBuildPhase</string>
-			<key>runOnlyForDeploymentPostprocessing</key>
-			<string>0</string>
-		</dict>
-		<key>040997181C1B0B96006B5A6D</key>
-		<dict>
-			<key>buildConfigurationList</key>
-			<string>040997261C1B0B96006B5A6D</string>
-			<key>buildPhases</key>
-			<array>
-				<string>040997151C1B0B96006B5A6D</string>
-				<string>040997161C1B0B96006B5A6D</string>
-				<string>040997171C1B0B96006B5A6D</string>
-			</array>
-			<key>buildRules</key>
-			<array/>
-			<key>dependencies</key>
-			<array>
-				<string>0409971C1C1B0B96006B5A6D</string>
-			</array>
-			<key>isa</key>
-			<string>PBXNativeTarget</string>
-			<key>name</key>
-			<string>CocoaMQTT iOSTests</string>
-			<key>productName</key>
-			<string>CocoaMQTTTests</string>
-			<key>productReference</key>
-			<string>040997191C1B0B96006B5A6D</string>
-			<key>productType</key>
-			<string>com.apple.product-type.bundle.unit-test</string>
-		</dict>
-		<key>040997191C1B0B96006B5A6D</key>
-		<dict>
-			<key>explicitFileType</key>
-			<string>wrapper.cfbundle</string>
-			<key>includeInIndex</key>
-			<string>0</string>
-			<key>isa</key>
-			<string>PBXFileReference</string>
-			<key>path</key>
-			<string>CocoaMQTT iOSTests.xctest</string>
-			<key>sourceTree</key>
-			<string>BUILT_PRODUCTS_DIR</string>
-		</dict>
-		<key>0409971A1C1B0B96006B5A6D</key>
-		<dict>
-			<key>fileRef</key>
-			<string>0409970F1C1B0B96006B5A6D</string>
-			<key>isa</key>
-			<string>PBXBuildFile</string>
-		</dict>
-		<key>0409971B1C1B0B96006B5A6D</key>
-		<dict>
-			<key>containerPortal</key>
-			<string>040997061C1B0B96006B5A6D</string>
-			<key>isa</key>
-			<string>PBXContainerItemProxy</string>
-			<key>proxyType</key>
-			<string>1</string>
-			<key>remoteGlobalIDString</key>
-			<string>0409970E1C1B0B96006B5A6D</string>
-			<key>remoteInfo</key>
-			<string>CocoaMQTT</string>
-		</dict>
-		<key>0409971C1C1B0B96006B5A6D</key>
-		<dict>
-			<key>isa</key>
-			<string>PBXTargetDependency</string>
-			<key>target</key>
-			<string>0409970E1C1B0B96006B5A6D</string>
-			<key>targetProxy</key>
-			<string>0409971B1C1B0B96006B5A6D</string>
-		</dict>
-		<key>0409971D1C1B0B96006B5A6D</key>
-		<dict>
-			<key>children</key>
-			<array>
-				<string>0409971E1C1B0B96006B5A6D</string>
-				<string>040997201C1B0B96006B5A6D</string>
-			</array>
-			<key>isa</key>
-			<string>PBXGroup</string>
-			<key>path</key>
-			<string>CocoaMQTTTests</string>
-			<key>sourceTree</key>
-			<string>&lt;group&gt;</string>
-		</dict>
-		<key>0409971E1C1B0B96006B5A6D</key>
-		<dict>
-			<key>isa</key>
-			<string>PBXFileReference</string>
-			<key>lastKnownFileType</key>
-			<string>sourcecode.swift</string>
-			<key>path</key>
-			<string>CocoaMQTTTests.swift</string>
-			<key>sourceTree</key>
-			<string>&lt;group&gt;</string>
-		</dict>
-		<key>0409971F1C1B0B96006B5A6D</key>
-		<dict>
-			<key>fileRef</key>
-			<string>0409971E1C1B0B96006B5A6D</string>
-			<key>isa</key>
-			<string>PBXBuildFile</string>
-		</dict>
-		<key>040997201C1B0B96006B5A6D</key>
-		<dict>
-			<key>isa</key>
-			<string>PBXFileReference</string>
-			<key>lastKnownFileType</key>
-			<string>text.plist.xml</string>
-			<key>path</key>
-			<string>Info.plist</string>
-			<key>sourceTree</key>
-			<string>&lt;group&gt;</string>
-		</dict>
-		<key>040997211C1B0B96006B5A6D</key>
-		<dict>
-			<key>buildSettings</key>
-			<dict>
-				<key>ALWAYS_SEARCH_USER_PATHS</key>
-				<string>NO</string>
-				<key>CLANG_CXX_LANGUAGE_STANDARD</key>
-				<string>gnu++0x</string>
-				<key>CLANG_CXX_LIBRARY</key>
-				<string>libc++</string>
-				<key>CLANG_ENABLE_MODULES</key>
-				<string>YES</string>
-				<key>CLANG_ENABLE_OBJC_ARC</key>
-				<string>YES</string>
-				<key>CLANG_WARN_BOOL_CONVERSION</key>
-				<string>YES</string>
-				<key>CLANG_WARN_CONSTANT_CONVERSION</key>
-				<string>YES</string>
-				<key>CLANG_WARN_DIRECT_OBJC_ISA_USAGE</key>
-				<string>YES_ERROR</string>
-				<key>CLANG_WARN_EMPTY_BODY</key>
-				<string>YES</string>
-				<key>CLANG_WARN_ENUM_CONVERSION</key>
-				<string>YES</string>
-				<key>CLANG_WARN_INT_CONVERSION</key>
-				<string>YES</string>
-				<key>CLANG_WARN_OBJC_ROOT_CLASS</key>
-				<string>YES_ERROR</string>
-				<key>CLANG_WARN_UNREACHABLE_CODE</key>
-				<string>YES</string>
-				<key>CLANG_WARN__DUPLICATE_METHOD_MATCH</key>
-				<string>YES</string>
-				<key>CODE_SIGN_IDENTITY[sdk=iphoneos*]</key>
-				<string>iPhone Developer</string>
-				<key>COPY_PHASE_STRIP</key>
-				<string>NO</string>
-				<key>CURRENT_PROJECT_VERSION</key>
-				<string>1</string>
-				<key>DEBUG_INFORMATION_FORMAT</key>
-				<string>dwarf</string>
-				<key>ENABLE_STRICT_OBJC_MSGSEND</key>
-				<string>YES</string>
-				<key>ENABLE_TESTABILITY</key>
-				<string>YES</string>
-				<key>GCC_C_LANGUAGE_STANDARD</key>
-				<string>gnu99</string>
-				<key>GCC_DYNAMIC_NO_PIC</key>
-				<string>NO</string>
-				<key>GCC_NO_COMMON_BLOCKS</key>
-				<string>YES</string>
-				<key>GCC_OPTIMIZATION_LEVEL</key>
-				<string>0</string>
-				<key>GCC_PREPROCESSOR_DEFINITIONS</key>
-				<array>
-					<string>DEBUG=1</string>
-					<string>$(inherited)</string>
-				</array>
-				<key>GCC_WARN_64_TO_32_BIT_CONVERSION</key>
-				<string>YES</string>
-				<key>GCC_WARN_ABOUT_RETURN_TYPE</key>
-				<string>YES_ERROR</string>
-				<key>GCC_WARN_UNDECLARED_SELECTOR</key>
-				<string>YES</string>
-				<key>GCC_WARN_UNINITIALIZED_AUTOS</key>
-				<string>YES_AGGRESSIVE</string>
-				<key>GCC_WARN_UNUSED_FUNCTION</key>
-				<string>YES</string>
-				<key>GCC_WARN_UNUSED_VARIABLE</key>
-				<string>YES</string>
-				<key>IPHONEOS_DEPLOYMENT_TARGET</key>
-				<string>8.0</string>
-				<key>MACOSX_DEPLOYMENT_TARGET</key>
-				<string>10.9</string>
-				<key>MTL_ENABLE_DEBUG_INFO</key>
-				<string>YES</string>
-				<key>ONLY_ACTIVE_ARCH</key>
-				<string>YES</string>
-				<key>SDKROOT</key>
-				<string>iphoneos</string>
-				<key>SWIFT_OBJC_BRIDGING_HEADER</key>
-				<string>CocoaMQTT/CocoaMQTT-Bridging-Header.h</string>
-				<key>SWIFT_OPTIMIZATION_LEVEL</key>
-				<string>-Onone</string>
-				<key>TARGETED_DEVICE_FAMILY</key>
-				<string>1,2</string>
-				<key>VERSIONING_SYSTEM</key>
-				<string>apple-generic</string>
-				<key>VERSION_INFO_PREFIX</key>
-				<string></string>
-			</dict>
-			<key>isa</key>
-			<string>XCBuildConfiguration</string>
-			<key>name</key>
-			<string>Debug</string>
-		</dict>
-		<key>040997221C1B0B96006B5A6D</key>
-		<dict>
-			<key>buildSettings</key>
-			<dict>
-				<key>ALWAYS_SEARCH_USER_PATHS</key>
-				<string>NO</string>
-				<key>CLANG_CXX_LANGUAGE_STANDARD</key>
-				<string>gnu++0x</string>
-				<key>CLANG_CXX_LIBRARY</key>
-				<string>libc++</string>
-				<key>CLANG_ENABLE_MODULES</key>
-				<string>YES</string>
-				<key>CLANG_ENABLE_OBJC_ARC</key>
-				<string>YES</string>
-				<key>CLANG_WARN_BOOL_CONVERSION</key>
-				<string>YES</string>
-				<key>CLANG_WARN_CONSTANT_CONVERSION</key>
-				<string>YES</string>
-				<key>CLANG_WARN_DIRECT_OBJC_ISA_USAGE</key>
-				<string>YES_ERROR</string>
-				<key>CLANG_WARN_EMPTY_BODY</key>
-				<string>YES</string>
-				<key>CLANG_WARN_ENUM_CONVERSION</key>
-				<string>YES</string>
-				<key>CLANG_WARN_INT_CONVERSION</key>
-				<string>YES</string>
-				<key>CLANG_WARN_OBJC_ROOT_CLASS</key>
-				<string>YES_ERROR</string>
-				<key>CLANG_WARN_UNREACHABLE_CODE</key>
-				<string>YES</string>
-				<key>CLANG_WARN__DUPLICATE_METHOD_MATCH</key>
-				<string>YES</string>
-				<key>CODE_SIGN_IDENTITY[sdk=iphoneos*]</key>
-				<string>iPhone Developer</string>
-				<key>COPY_PHASE_STRIP</key>
-				<string>NO</string>
-				<key>CURRENT_PROJECT_VERSION</key>
-				<string>1</string>
-				<key>DEBUG_INFORMATION_FORMAT</key>
-				<string>dwarf-with-dsym</string>
-				<key>ENABLE_NS_ASSERTIONS</key>
-				<string>NO</string>
-				<key>ENABLE_STRICT_OBJC_MSGSEND</key>
-				<string>YES</string>
-				<key>GCC_C_LANGUAGE_STANDARD</key>
-				<string>gnu99</string>
-				<key>GCC_NO_COMMON_BLOCKS</key>
-				<string>YES</string>
-				<key>GCC_WARN_64_TO_32_BIT_CONVERSION</key>
-				<string>YES</string>
-				<key>GCC_WARN_ABOUT_RETURN_TYPE</key>
-				<string>YES_ERROR</string>
-				<key>GCC_WARN_UNDECLARED_SELECTOR</key>
-				<string>YES</string>
-				<key>GCC_WARN_UNINITIALIZED_AUTOS</key>
-				<string>YES_AGGRESSIVE</string>
-				<key>GCC_WARN_UNUSED_FUNCTION</key>
-				<string>YES</string>
-				<key>GCC_WARN_UNUSED_VARIABLE</key>
-				<string>YES</string>
-				<key>IPHONEOS_DEPLOYMENT_TARGET</key>
-				<string>8.0</string>
-				<key>MACOSX_DEPLOYMENT_TARGET</key>
-				<string>10.9</string>
-				<key>MTL_ENABLE_DEBUG_INFO</key>
-				<string>NO</string>
-				<key>SDKROOT</key>
-				<string>iphoneos</string>
-				<key>SWIFT_OBJC_BRIDGING_HEADER</key>
-				<string>CocoaMQTT/CocoaMQTT-Bridging-Header.h</string>
-				<key>TARGETED_DEVICE_FAMILY</key>
-				<string>1,2</string>
-				<key>VALIDATE_PRODUCT</key>
-				<string>YES</string>
-				<key>VERSIONING_SYSTEM</key>
-				<string>apple-generic</string>
-				<key>VERSION_INFO_PREFIX</key>
-				<string></string>
-			</dict>
-			<key>isa</key>
-			<string>XCBuildConfiguration</string>
-			<key>name</key>
-			<string>Release</string>
-		</dict>
-		<key>040997231C1B0B96006B5A6D</key>
-		<dict>
-			<key>buildConfigurations</key>
-			<array>
-				<string>040997241C1B0B96006B5A6D</string>
-				<string>040997251C1B0B96006B5A6D</string>
-			</array>
-			<key>defaultConfigurationIsVisible</key>
-			<string>0</string>
-			<key>defaultConfigurationName</key>
-			<string>Release</string>
-			<key>isa</key>
-			<string>XCConfigurationList</string>
-		</dict>
-		<key>040997241C1B0B96006B5A6D</key>
-		<dict>
-			<key>baseConfigurationReference</key>
-			<string>5F88BA0AA7281D3AB695161B</string>
-			<key>buildSettings</key>
-			<dict>
-				<key>CLANG_ALLOW_NON_MODULAR_INCLUDES_IN_FRAMEWORK_MODULES</key>
-				<string>NO</string>
-				<key>CLANG_ENABLE_MODULES</key>
-				<string>YES</string>
-				<key>DEFINES_MODULE</key>
-				<string>YES</string>
-				<key>DYLIB_COMPATIBILITY_VERSION</key>
-				<string>1</string>
-				<key>DYLIB_CURRENT_VERSION</key>
-				<string>1</string>
-				<key>DYLIB_INSTALL_NAME_BASE</key>
-				<string>@rpath</string>
-				<key>INFOPLIST_FILE</key>
-				<string>Source/Info.plist</string>
-				<key>INSTALL_PATH</key>
-				<string>$(LOCAL_LIBRARY_DIR)/Frameworks</string>
-				<key>IPHONEOS_DEPLOYMENT_TARGET</key>
-				<string>8.0</string>
-				<key>LD_RUNPATH_SEARCH_PATHS</key>
-				<string>$(inherited) @executable_path/Frameworks @loader_path/Frameworks</string>
-				<key>PRODUCT_BUNDLE_IDENTIFIER</key>
-				<string>io.emqtt.CocoaMQTT</string>
-				<key>PRODUCT_NAME</key>
-				<string>CocoaMQTT</string>
-				<key>SKIP_INSTALL</key>
-				<string>YES</string>
-				<key>SWIFT_OBJC_BRIDGING_HEADER</key>
-				<string></string>
-				<key>SWIFT_OBJC_INTERFACE_HEADER_NAME</key>
-				<string></string>
-				<key>SWIFT_OPTIMIZATION_LEVEL</key>
-				<string>-Onone</string>
-			</dict>
-			<key>isa</key>
-			<string>XCBuildConfiguration</string>
-			<key>name</key>
-			<string>Debug</string>
-		</dict>
-		<key>040997251C1B0B96006B5A6D</key>
-		<dict>
-			<key>baseConfigurationReference</key>
-			<string>5A3BD51F8EC0061320CF4E24</string>
-			<key>buildSettings</key>
-			<dict>
-				<key>CLANG_ALLOW_NON_MODULAR_INCLUDES_IN_FRAMEWORK_MODULES</key>
-				<string>NO</string>
-				<key>CLANG_ENABLE_MODULES</key>
-				<string>YES</string>
-				<key>DEFINES_MODULE</key>
-				<string>YES</string>
-				<key>DYLIB_COMPATIBILITY_VERSION</key>
-				<string>1</string>
-				<key>DYLIB_CURRENT_VERSION</key>
-				<string>1</string>
-				<key>DYLIB_INSTALL_NAME_BASE</key>
-				<string>@rpath</string>
-				<key>INFOPLIST_FILE</key>
-				<string>Source/Info.plist</string>
-				<key>INSTALL_PATH</key>
-				<string>$(LOCAL_LIBRARY_DIR)/Frameworks</string>
-				<key>IPHONEOS_DEPLOYMENT_TARGET</key>
-				<string>8.0</string>
-				<key>LD_RUNPATH_SEARCH_PATHS</key>
-				<string>$(inherited) @executable_path/Frameworks @loader_path/Frameworks</string>
-				<key>PRODUCT_BUNDLE_IDENTIFIER</key>
-				<string>io.emqtt.CocoaMQTT</string>
-				<key>PRODUCT_NAME</key>
-				<string>CocoaMQTT</string>
-				<key>SKIP_INSTALL</key>
-				<string>YES</string>
-				<key>SWIFT_OBJC_BRIDGING_HEADER</key>
-				<string></string>
-				<key>SWIFT_OBJC_INTERFACE_HEADER_NAME</key>
-				<string></string>
-			</dict>
-			<key>isa</key>
-			<string>XCBuildConfiguration</string>
-			<key>name</key>
-			<string>Release</string>
-		</dict>
-		<key>040997261C1B0B96006B5A6D</key>
-		<dict>
-			<key>buildConfigurations</key>
-			<array>
-				<string>040997271C1B0B96006B5A6D</string>
-				<string>040997281C1B0B96006B5A6D</string>
-			</array>
-			<key>defaultConfigurationIsVisible</key>
-			<string>0</string>
-			<key>defaultConfigurationName</key>
-			<string>Release</string>
-			<key>isa</key>
-			<string>XCConfigurationList</string>
-		</dict>
-		<key>040997271C1B0B96006B5A6D</key>
-		<dict>
-			<key>buildSettings</key>
-			<dict>
-				<key>INFOPLIST_FILE</key>
-				<string>CocoaMQTTTests/Info.plist</string>
-				<key>LD_RUNPATH_SEARCH_PATHS</key>
-				<string>$(inherited) @executable_path/Frameworks @loader_path/Frameworks</string>
-				<key>PRODUCT_BUNDLE_IDENTIFIER</key>
-				<string>io.emqtt.CocoaMQTTTests</string>
-				<key>PRODUCT_NAME</key>
-				<string>$(TARGET_NAME)</string>
-			</dict>
-			<key>isa</key>
-			<string>XCBuildConfiguration</string>
-			<key>name</key>
-			<string>Debug</string>
-		</dict>
-		<key>040997281C1B0B96006B5A6D</key>
-		<dict>
-			<key>buildSettings</key>
-			<dict>
-				<key>INFOPLIST_FILE</key>
-				<string>CocoaMQTTTests/Info.plist</string>
-				<key>LD_RUNPATH_SEARCH_PATHS</key>
-				<string>$(inherited) @executable_path/Frameworks @loader_path/Frameworks</string>
-				<key>PRODUCT_BUNDLE_IDENTIFIER</key>
-				<string>io.emqtt.CocoaMQTTTests</string>
-				<key>PRODUCT_NAME</key>
-				<string>$(TARGET_NAME)</string>
-			</dict>
-			<key>isa</key>
-			<string>XCBuildConfiguration</string>
-			<key>name</key>
-			<string>Release</string>
-		</dict>
-		<key>0409972B1C1B0E06006B5A6D</key>
-		<dict>
-			<key>buildActionMask</key>
-			<string>2147483647</string>
-			<key>files</key>
-			<array>
-				<string>0409977E1C1B1529006B5A6D</string>
-				<string>040997861C1B1529006B5A6D</string>
-				<string>040997821C1B1529006B5A6D</string>
-			</array>
-			<key>isa</key>
-			<string>PBXSourcesBuildPhase</string>
-			<key>runOnlyForDeploymentPostprocessing</key>
-			<string>0</string>
-		</dict>
-		<key>0409972C1C1B0E06006B5A6D</key>
-		<dict>
-			<key>buildActionMask</key>
-			<string>2147483647</string>
-			<key>files</key>
-			<array/>
-			<key>isa</key>
-			<string>PBXFrameworksBuildPhase</string>
-			<key>runOnlyForDeploymentPostprocessing</key>
-			<string>0</string>
-		</dict>
-		<key>0409972D1C1B0E06006B5A6D</key>
-		<dict>
-			<key>buildActionMask</key>
-			<string>2147483647</string>
-			<key>files</key>
-			<array>
-				<string>040997751C1B10B3006B5A6D</string>
-			</array>
-			<key>isa</key>
-			<string>PBXHeadersBuildPhase</string>
-			<key>runOnlyForDeploymentPostprocessing</key>
-			<string>0</string>
-		</dict>
-		<key>0409972E1C1B0E06006B5A6D</key>
-		<dict>
-			<key>buildActionMask</key>
-			<string>2147483647</string>
-			<key>files</key>
-			<array/>
-			<key>isa</key>
-			<string>PBXResourcesBuildPhase</string>
-			<key>runOnlyForDeploymentPostprocessing</key>
-			<string>0</string>
-		</dict>
-		<key>0409972F1C1B0E06006B5A6D</key>
-		<dict>
-			<key>buildConfigurationList</key>
-			<string>040997411C1B0E06006B5A6D</string>
-			<key>buildPhases</key>
-			<array>
-				<string>0409972B1C1B0E06006B5A6D</string>
-				<string>0409972C1C1B0E06006B5A6D</string>
-				<string>0409972D1C1B0E06006B5A6D</string>
-				<string>0409972E1C1B0E06006B5A6D</string>
-			</array>
-			<key>buildRules</key>
-			<array/>
-			<key>dependencies</key>
-			<array/>
-			<key>isa</key>
-			<string>PBXNativeTarget</string>
-			<key>name</key>
-			<string>CocoaMQTT OSX</string>
-			<key>productName</key>
-			<string>CocoaMQTT OSX</string>
-			<key>productReference</key>
-			<string>040997301C1B0E06006B5A6D</string>
-			<key>productType</key>
-			<string>com.apple.product-type.framework</string>
-		</dict>
-		<key>040997301C1B0E06006B5A6D</key>
-		<dict>
-			<key>explicitFileType</key>
-			<string>wrapper.framework</string>
-			<key>includeInIndex</key>
-			<string>0</string>
-			<key>isa</key>
-			<string>PBXFileReference</string>
-			<key>path</key>
-			<string>CocoaMQTT.framework</string>
-			<key>sourceTree</key>
-			<string>BUILT_PRODUCTS_DIR</string>
-		</dict>
-		<key>040997351C1B0E06006B5A6D</key>
-		<dict>
-			<key>buildActionMask</key>
-			<string>2147483647</string>
-			<key>files</key>
-			<array/>
-			<key>isa</key>
-			<string>PBXSourcesBuildPhase</string>
-			<key>runOnlyForDeploymentPostprocessing</key>
-			<string>0</string>
-		</dict>
-		<key>040997361C1B0E06006B5A6D</key>
-		<dict>
-			<key>buildActionMask</key>
-			<string>2147483647</string>
-			<key>files</key>
-			<array>
-				<string>0409973A1C1B0E06006B5A6D</string>
-			</array>
-			<key>isa</key>
-			<string>PBXFrameworksBuildPhase</string>
-			<key>runOnlyForDeploymentPostprocessing</key>
-			<string>0</string>
-		</dict>
-		<key>040997371C1B0E06006B5A6D</key>
-		<dict>
-			<key>buildActionMask</key>
-			<string>2147483647</string>
-			<key>files</key>
-			<array/>
-			<key>isa</key>
-			<string>PBXResourcesBuildPhase</string>
-			<key>runOnlyForDeploymentPostprocessing</key>
-			<string>0</string>
-		</dict>
-		<key>040997381C1B0E06006B5A6D</key>
-		<dict>
-			<key>buildConfigurationList</key>
-			<string>040997441C1B0E06006B5A6D</string>
-			<key>buildPhases</key>
-			<array>
-				<string>040997351C1B0E06006B5A6D</string>
-				<string>040997361C1B0E06006B5A6D</string>
-				<string>040997371C1B0E06006B5A6D</string>
-			</array>
-			<key>buildRules</key>
-			<array/>
-			<key>dependencies</key>
-			<array>
-				<string>0409973C1C1B0E06006B5A6D</string>
-			</array>
-			<key>isa</key>
-			<string>PBXNativeTarget</string>
-			<key>name</key>
-			<string>CocoaMQTT OSXTests</string>
-			<key>productName</key>
-			<string>CocoaMQTT OSXTests</string>
-			<key>productReference</key>
-			<string>040997391C1B0E06006B5A6D</string>
-			<key>productType</key>
-			<string>com.apple.product-type.bundle.unit-test</string>
-		</dict>
-		<key>040997391C1B0E06006B5A6D</key>
-		<dict>
-			<key>explicitFileType</key>
-			<string>wrapper.cfbundle</string>
-			<key>includeInIndex</key>
-			<string>0</string>
-			<key>isa</key>
-			<string>PBXFileReference</string>
-			<key>path</key>
-			<string>CocoaMQTT OSXTests.xctest</string>
-			<key>sourceTree</key>
-			<string>BUILT_PRODUCTS_DIR</string>
-		</dict>
-		<key>0409973A1C1B0E06006B5A6D</key>
-		<dict>
-			<key>fileRef</key>
-			<string>040997301C1B0E06006B5A6D</string>
-			<key>isa</key>
-			<string>PBXBuildFile</string>
-		</dict>
-		<key>0409973B1C1B0E06006B5A6D</key>
-		<dict>
-			<key>containerPortal</key>
-			<string>040997061C1B0B96006B5A6D</string>
-			<key>isa</key>
-			<string>PBXContainerItemProxy</string>
-			<key>proxyType</key>
-			<string>1</string>
-			<key>remoteGlobalIDString</key>
-			<string>0409972F1C1B0E06006B5A6D</string>
-			<key>remoteInfo</key>
-			<string>CocoaMQTT OSX</string>
-		</dict>
-		<key>0409973C1C1B0E06006B5A6D</key>
-		<dict>
-			<key>isa</key>
-			<string>PBXTargetDependency</string>
-			<key>target</key>
-			<string>0409972F1C1B0E06006B5A6D</string>
-			<key>targetProxy</key>
-			<string>0409973B1C1B0E06006B5A6D</string>
-		</dict>
-		<key>040997411C1B0E06006B5A6D</key>
-		<dict>
-			<key>buildConfigurations</key>
-			<array>
-				<string>040997421C1B0E06006B5A6D</string>
-				<string>040997431C1B0E06006B5A6D</string>
-			</array>
-			<key>defaultConfigurationIsVisible</key>
-			<string>0</string>
-			<key>defaultConfigurationName</key>
-			<string>Release</string>
-			<key>isa</key>
-			<string>XCConfigurationList</string>
-		</dict>
-		<key>040997421C1B0E06006B5A6D</key>
-		<dict>
-			<key>buildSettings</key>
-			<dict>
-				<key>CLANG_ALLOW_NON_MODULAR_INCLUDES_IN_FRAMEWORK_MODULES</key>
-				<string>NO</string>
-				<key>CLANG_ENABLE_MODULES</key>
-				<string>YES</string>
-				<key>CODE_SIGN_IDENTITY</key>
-				<string>-</string>
-				<key>COMBINE_HIDPI_IMAGES</key>
-				<string>YES</string>
-				<key>DEFINES_MODULE</key>
-				<string>YES</string>
-				<key>DYLIB_COMPATIBILITY_VERSION</key>
-				<string>1</string>
-				<key>DYLIB_CURRENT_VERSION</key>
-				<string>1</string>
-				<key>DYLIB_INSTALL_NAME_BASE</key>
-				<string>@rpath</string>
-				<key>FRAMEWORK_VERSION</key>
-				<string>A</string>
-				<key>INFOPLIST_FILE</key>
-				<string>Source/Info.plist</string>
-				<key>INSTALL_PATH</key>
-				<string>$(LOCAL_LIBRARY_DIR)/Frameworks</string>
-				<key>LD_RUNPATH_SEARCH_PATHS</key>
-				<string>$(inherited) @executable_path/../Frameworks @loader_path/Frameworks</string>
-				<key>MACOSX_DEPLOYMENT_TARGET</key>
-				<string>10.9</string>
-				<key>PRODUCT_BUNDLE_IDENTIFIER</key>
-				<string>io.emqtt.CocoaMQTT</string>
-				<key>PRODUCT_NAME</key>
-				<string>CocoaMQTT</string>
-				<key>SDKROOT</key>
-				<string>macosx</string>
-				<key>SKIP_INSTALL</key>
-				<string>YES</string>
-				<key>SWIFT_OBJC_BRIDGING_HEADER</key>
-				<string></string>
-				<key>SWIFT_OBJC_INTERFACE_HEADER_NAME</key>
-				<string></string>
-				<key>SWIFT_OPTIMIZATION_LEVEL</key>
-				<string>-Onone</string>
-			</dict>
-			<key>isa</key>
-			<string>XCBuildConfiguration</string>
-			<key>name</key>
-			<string>Debug</string>
-		</dict>
-		<key>040997431C1B0E06006B5A6D</key>
-		<dict>
-			<key>buildSettings</key>
-			<dict>
-				<key>CLANG_ALLOW_NON_MODULAR_INCLUDES_IN_FRAMEWORK_MODULES</key>
-				<string>NO</string>
-				<key>CLANG_ENABLE_MODULES</key>
-				<string>YES</string>
-				<key>CODE_SIGN_IDENTITY</key>
-				<string>-</string>
-				<key>COMBINE_HIDPI_IMAGES</key>
-				<string>YES</string>
-				<key>DEFINES_MODULE</key>
-				<string>YES</string>
-				<key>DYLIB_COMPATIBILITY_VERSION</key>
-				<string>1</string>
-				<key>DYLIB_CURRENT_VERSION</key>
-				<string>1</string>
-				<key>DYLIB_INSTALL_NAME_BASE</key>
-				<string>@rpath</string>
-				<key>FRAMEWORK_VERSION</key>
-				<string>A</string>
-				<key>INFOPLIST_FILE</key>
-				<string>Source/Info.plist</string>
-				<key>INSTALL_PATH</key>
-				<string>$(LOCAL_LIBRARY_DIR)/Frameworks</string>
-				<key>LD_RUNPATH_SEARCH_PATHS</key>
-				<string>$(inherited) @executable_path/../Frameworks @loader_path/Frameworks</string>
-				<key>MACOSX_DEPLOYMENT_TARGET</key>
-				<string>10.9</string>
-				<key>PRODUCT_BUNDLE_IDENTIFIER</key>
-				<string>io.emqtt.CocoaMQTT</string>
-				<key>PRODUCT_NAME</key>
-				<string>CocoaMQTT</string>
-				<key>SDKROOT</key>
-				<string>macosx</string>
-				<key>SKIP_INSTALL</key>
-				<string>YES</string>
-				<key>SWIFT_OBJC_BRIDGING_HEADER</key>
-				<string></string>
-				<key>SWIFT_OBJC_INTERFACE_HEADER_NAME</key>
-				<string></string>
-			</dict>
-			<key>isa</key>
-			<string>XCBuildConfiguration</string>
-			<key>name</key>
-			<string>Release</string>
-		</dict>
-		<key>040997441C1B0E06006B5A6D</key>
-		<dict>
-			<key>buildConfigurations</key>
-			<array>
-				<string>040997451C1B0E06006B5A6D</string>
-				<string>040997461C1B0E06006B5A6D</string>
-			</array>
-			<key>defaultConfigurationIsVisible</key>
-			<string>0</string>
-			<key>defaultConfigurationName</key>
-			<string>Release</string>
-			<key>isa</key>
-			<string>XCConfigurationList</string>
-		</dict>
-		<key>040997451C1B0E06006B5A6D</key>
-		<dict>
-			<key>buildSettings</key>
-			<dict>
-				<key>CODE_SIGN_IDENTITY</key>
-				<string>-</string>
-				<key>COMBINE_HIDPI_IMAGES</key>
-				<string>YES</string>
-				<key>INFOPLIST_FILE</key>
-				<string>CocoaMQTTTests/Info.plist</string>
-				<key>LD_RUNPATH_SEARCH_PATHS</key>
-				<string>$(inherited) @executable_path/../Frameworks @loader_path/../Frameworks</string>
-				<key>MACOSX_DEPLOYMENT_TARGET</key>
-				<string>10.11</string>
-				<key>PRODUCT_BUNDLE_IDENTIFIER</key>
-				<string>io.emqtt.CocoaMQTT-OSXTests</string>
-				<key>PRODUCT_NAME</key>
-				<string>$(TARGET_NAME)</string>
-				<key>SDKROOT</key>
-				<string>macosx</string>
-			</dict>
-			<key>isa</key>
-			<string>XCBuildConfiguration</string>
-			<key>name</key>
-			<string>Debug</string>
-		</dict>
-		<key>040997461C1B0E06006B5A6D</key>
-		<dict>
-			<key>buildSettings</key>
-			<dict>
-				<key>CODE_SIGN_IDENTITY</key>
-				<string>-</string>
-				<key>COMBINE_HIDPI_IMAGES</key>
-				<string>YES</string>
-				<key>INFOPLIST_FILE</key>
-				<string>CocoaMQTTTests/Info.plist</string>
-				<key>LD_RUNPATH_SEARCH_PATHS</key>
-				<string>$(inherited) @executable_path/../Frameworks @loader_path/../Frameworks</string>
-				<key>MACOSX_DEPLOYMENT_TARGET</key>
-				<string>10.11</string>
-				<key>PRODUCT_BUNDLE_IDENTIFIER</key>
-				<string>io.emqtt.CocoaMQTT-OSXTests</string>
-				<key>PRODUCT_NAME</key>
-				<string>$(TARGET_NAME)</string>
-				<key>SDKROOT</key>
-				<string>macosx</string>
-			</dict>
-			<key>isa</key>
-			<string>XCBuildConfiguration</string>
-			<key>name</key>
-			<string>Release</string>
-		</dict>
-		<key>040997541C1B0F7E006B5A6D</key>
-		<dict>
-			<key>buildActionMask</key>
-			<string>2147483647</string>
-			<key>files</key>
-			<array>
-				<string>040997801C1B1529006B5A6D</string>
-				<string>040997881C1B1529006B5A6D</string>
-				<string>040997841C1B1529006B5A6D</string>
-			</array>
-			<key>isa</key>
-			<string>PBXSourcesBuildPhase</string>
-			<key>runOnlyForDeploymentPostprocessing</key>
-			<string>0</string>
-		</dict>
-		<key>040997551C1B0F7E006B5A6D</key>
-		<dict>
-			<key>buildActionMask</key>
-			<string>2147483647</string>
-			<key>files</key>
-			<array/>
-			<key>isa</key>
-			<string>PBXFrameworksBuildPhase</string>
-			<key>runOnlyForDeploymentPostprocessing</key>
-			<string>0</string>
-		</dict>
-		<key>040997561C1B0F7E006B5A6D</key>
-		<dict>
-			<key>buildActionMask</key>
-			<string>2147483647</string>
-			<key>files</key>
-			<array>
-				<string>040997771C1B10B8006B5A6D</string>
-			</array>
-			<key>isa</key>
-			<string>PBXHeadersBuildPhase</string>
-			<key>runOnlyForDeploymentPostprocessing</key>
-			<string>0</string>
-		</dict>
-		<key>040997571C1B0F7E006B5A6D</key>
-		<dict>
-			<key>buildActionMask</key>
-			<string>2147483647</string>
-			<key>files</key>
-			<array/>
-			<key>isa</key>
-			<string>PBXResourcesBuildPhase</string>
-			<key>runOnlyForDeploymentPostprocessing</key>
-			<string>0</string>
-		</dict>
-		<key>040997581C1B0F7E006B5A6D</key>
-		<dict>
-			<key>buildConfigurationList</key>
-			<string>0409976A1C1B0F7E006B5A6D</string>
-			<key>buildPhases</key>
-			<array>
-				<string>040997541C1B0F7E006B5A6D</string>
-				<string>040997551C1B0F7E006B5A6D</string>
-				<string>040997561C1B0F7E006B5A6D</string>
-				<string>040997571C1B0F7E006B5A6D</string>
-			</array>
-			<key>buildRules</key>
-			<array/>
-			<key>dependencies</key>
-			<array/>
-			<key>isa</key>
-			<string>PBXNativeTarget</string>
-			<key>name</key>
-			<string>CocoaMQTT tvOS</string>
-			<key>productName</key>
-			<string>CocoaMQTT tvOS</string>
-			<key>productReference</key>
-			<string>040997591C1B0F7E006B5A6D</string>
-			<key>productType</key>
-			<string>com.apple.product-type.framework</string>
-		</dict>
-		<key>040997591C1B0F7E006B5A6D</key>
-		<dict>
-			<key>explicitFileType</key>
-			<string>wrapper.framework</string>
-			<key>includeInIndex</key>
-			<string>0</string>
-			<key>isa</key>
-			<string>PBXFileReference</string>
-			<key>path</key>
-			<string>CocoaMQTT.framework</string>
-			<key>sourceTree</key>
-			<string>BUILT_PRODUCTS_DIR</string>
-		</dict>
-		<key>0409975E1C1B0F7E006B5A6D</key>
-		<dict>
-			<key>buildActionMask</key>
-			<string>2147483647</string>
-			<key>files</key>
-			<array/>
-			<key>isa</key>
-			<string>PBXSourcesBuildPhase</string>
-			<key>runOnlyForDeploymentPostprocessing</key>
-			<string>0</string>
-		</dict>
-		<key>0409975F1C1B0F7E006B5A6D</key>
-		<dict>
-			<key>buildActionMask</key>
-			<string>2147483647</string>
-			<key>files</key>
-			<array>
-				<string>040997631C1B0F7E006B5A6D</string>
-			</array>
-			<key>isa</key>
-			<string>PBXFrameworksBuildPhase</string>
-			<key>runOnlyForDeploymentPostprocessing</key>
-			<string>0</string>
-		</dict>
-		<key>040997601C1B0F7E006B5A6D</key>
-		<dict>
-			<key>buildActionMask</key>
-			<string>2147483647</string>
-			<key>files</key>
-			<array/>
-			<key>isa</key>
-			<string>PBXResourcesBuildPhase</string>
-			<key>runOnlyForDeploymentPostprocessing</key>
-			<string>0</string>
-		</dict>
-		<key>040997611C1B0F7E006B5A6D</key>
-		<dict>
-			<key>buildConfigurationList</key>
-			<string>0409976D1C1B0F7E006B5A6D</string>
-			<key>buildPhases</key>
-			<array>
-				<string>0409975E1C1B0F7E006B5A6D</string>
-				<string>0409975F1C1B0F7E006B5A6D</string>
-				<string>040997601C1B0F7E006B5A6D</string>
-			</array>
-			<key>buildRules</key>
-			<array/>
-			<key>dependencies</key>
-			<array>
-				<string>040997651C1B0F7E006B5A6D</string>
-			</array>
-			<key>isa</key>
-			<string>PBXNativeTarget</string>
-			<key>name</key>
-			<string>CocoaMQTT tvOSTests</string>
-			<key>productName</key>
-			<string>CocoaMQTT tvOSTests</string>
-			<key>productReference</key>
-			<string>040997621C1B0F7E006B5A6D</string>
-			<key>productType</key>
-			<string>com.apple.product-type.bundle.unit-test</string>
-		</dict>
-		<key>040997621C1B0F7E006B5A6D</key>
-		<dict>
-			<key>explicitFileType</key>
-			<string>wrapper.cfbundle</string>
-			<key>includeInIndex</key>
-			<string>0</string>
-			<key>isa</key>
-			<string>PBXFileReference</string>
-			<key>path</key>
-			<string>CocoaMQTT tvOSTests.xctest</string>
-			<key>sourceTree</key>
-			<string>BUILT_PRODUCTS_DIR</string>
-		</dict>
-		<key>040997631C1B0F7E006B5A6D</key>
-		<dict>
-			<key>fileRef</key>
-			<string>040997591C1B0F7E006B5A6D</string>
-			<key>isa</key>
-			<string>PBXBuildFile</string>
-		</dict>
-		<key>040997641C1B0F7E006B5A6D</key>
-		<dict>
-			<key>containerPortal</key>
-			<string>040997061C1B0B96006B5A6D</string>
-			<key>isa</key>
-			<string>PBXContainerItemProxy</string>
-			<key>proxyType</key>
-			<string>1</string>
-			<key>remoteGlobalIDString</key>
-			<string>040997581C1B0F7E006B5A6D</string>
-			<key>remoteInfo</key>
-			<string>CocoaMQTT tvOS</string>
-		</dict>
-		<key>040997651C1B0F7E006B5A6D</key>
-		<dict>
-			<key>isa</key>
-			<string>PBXTargetDependency</string>
-			<key>target</key>
-			<string>040997581C1B0F7E006B5A6D</string>
-			<key>targetProxy</key>
-			<string>040997641C1B0F7E006B5A6D</string>
-		</dict>
-		<key>0409976A1C1B0F7E006B5A6D</key>
-		<dict>
-			<key>buildConfigurations</key>
-			<array>
-				<string>0409976B1C1B0F7E006B5A6D</string>
-				<string>0409976C1C1B0F7E006B5A6D</string>
-			</array>
-			<key>defaultConfigurationIsVisible</key>
-			<string>0</string>
-			<key>defaultConfigurationName</key>
-			<string>Release</string>
-			<key>isa</key>
-			<string>XCConfigurationList</string>
-		</dict>
-		<key>0409976B1C1B0F7E006B5A6D</key>
-		<dict>
-			<key>buildSettings</key>
-			<dict>
-				<key>CLANG_ALLOW_NON_MODULAR_INCLUDES_IN_FRAMEWORK_MODULES</key>
-				<string>YES</string>
-				<key>CLANG_ENABLE_MODULES</key>
-				<string>YES</string>
-				<key>DEFINES_MODULE</key>
-				<string>YES</string>
-				<key>DYLIB_COMPATIBILITY_VERSION</key>
-				<string>1</string>
-				<key>DYLIB_CURRENT_VERSION</key>
-				<string>1</string>
-				<key>DYLIB_INSTALL_NAME_BASE</key>
-				<string>@rpath</string>
-				<key>INFOPLIST_FILE</key>
-				<string>Source/Info.plist</string>
-				<key>INSTALL_PATH</key>
-				<string>$(LOCAL_LIBRARY_DIR)/Frameworks</string>
-				<key>LD_RUNPATH_SEARCH_PATHS</key>
-				<string>$(inherited) @executable_path/Frameworks @loader_path/Frameworks</string>
-				<key>PRODUCT_BUNDLE_IDENTIFIER</key>
-				<string>io.emqtt.CocoaMQTT</string>
-				<key>PRODUCT_NAME</key>
-				<string>CocoaMQTT</string>
-				<key>SDKROOT</key>
-				<string>appletvos</string>
-				<key>SKIP_INSTALL</key>
-				<string>YES</string>
-				<key>SWIFT_OBJC_BRIDGING_HEADER</key>
-				<string></string>
-				<key>SWIFT_OBJC_INTERFACE_HEADER_NAME</key>
-				<string></string>
-				<key>SWIFT_OPTIMIZATION_LEVEL</key>
-				<string>-Onone</string>
-				<key>TARGETED_DEVICE_FAMILY</key>
-				<string>3</string>
-				<key>TVOS_DEPLOYMENT_TARGET</key>
-				<string>9.0</string>
-			</dict>
-			<key>isa</key>
-			<string>XCBuildConfiguration</string>
-			<key>name</key>
-			<string>Debug</string>
-		</dict>
-		<key>0409976C1C1B0F7E006B5A6D</key>
-		<dict>
-			<key>buildSettings</key>
-			<dict>
-				<key>CLANG_ALLOW_NON_MODULAR_INCLUDES_IN_FRAMEWORK_MODULES</key>
-				<string>YES</string>
-				<key>CLANG_ENABLE_MODULES</key>
-				<string>YES</string>
-				<key>DEFINES_MODULE</key>
-				<string>YES</string>
-				<key>DYLIB_COMPATIBILITY_VERSION</key>
-				<string>1</string>
-				<key>DYLIB_CURRENT_VERSION</key>
-				<string>1</string>
-				<key>DYLIB_INSTALL_NAME_BASE</key>
-				<string>@rpath</string>
-				<key>INFOPLIST_FILE</key>
-				<string>Source/Info.plist</string>
-				<key>INSTALL_PATH</key>
-				<string>$(LOCAL_LIBRARY_DIR)/Frameworks</string>
-				<key>LD_RUNPATH_SEARCH_PATHS</key>
-				<string>$(inherited) @executable_path/Frameworks @loader_path/Frameworks</string>
-				<key>PRODUCT_BUNDLE_IDENTIFIER</key>
-				<string>io.emqtt.CocoaMQTT</string>
-				<key>PRODUCT_NAME</key>
-				<string>CocoaMQTT</string>
-				<key>SDKROOT</key>
-				<string>appletvos</string>
-				<key>SKIP_INSTALL</key>
-				<string>YES</string>
-				<key>SWIFT_OBJC_BRIDGING_HEADER</key>
-				<string></string>
-				<key>SWIFT_OBJC_INTERFACE_HEADER_NAME</key>
-				<string></string>
-				<key>TARGETED_DEVICE_FAMILY</key>
-				<string>3</string>
-				<key>TVOS_DEPLOYMENT_TARGET</key>
-				<string>9.0</string>
-			</dict>
-			<key>isa</key>
-			<string>XCBuildConfiguration</string>
-			<key>name</key>
-			<string>Release</string>
-		</dict>
-		<key>0409976D1C1B0F7E006B5A6D</key>
-		<dict>
-			<key>buildConfigurations</key>
-			<array>
-				<string>0409976E1C1B0F7E006B5A6D</string>
-				<string>0409976F1C1B0F7E006B5A6D</string>
-			</array>
-			<key>defaultConfigurationIsVisible</key>
-			<string>0</string>
-			<key>defaultConfigurationName</key>
-			<string>Release</string>
-			<key>isa</key>
-			<string>XCConfigurationList</string>
-		</dict>
-		<key>0409976E1C1B0F7E006B5A6D</key>
-		<dict>
-			<key>buildSettings</key>
-			<dict>
-				<key>INFOPLIST_FILE</key>
-				<string>CocoaMQTTTests/Info.plist</string>
-				<key>LD_RUNPATH_SEARCH_PATHS</key>
-				<string>$(inherited) @executable_path/Frameworks @loader_path/Frameworks</string>
-				<key>PRODUCT_BUNDLE_IDENTIFIER</key>
-				<string>io.emqtt.CocoaMQTT-tvOSTests</string>
-				<key>PRODUCT_NAME</key>
-				<string>$(TARGET_NAME)</string>
-				<key>SDKROOT</key>
-				<string>appletvos</string>
-				<key>TVOS_DEPLOYMENT_TARGET</key>
-				<string>9.0</string>
-			</dict>
-			<key>isa</key>
-			<string>XCBuildConfiguration</string>
-			<key>name</key>
-			<string>Debug</string>
-		</dict>
-		<key>0409976F1C1B0F7E006B5A6D</key>
-		<dict>
-			<key>buildSettings</key>
-			<dict>
-				<key>INFOPLIST_FILE</key>
-				<string>CocoaMQTTTests/Info.plist</string>
-				<key>LD_RUNPATH_SEARCH_PATHS</key>
-				<string>$(inherited) @executable_path/Frameworks @loader_path/Frameworks</string>
-				<key>PRODUCT_BUNDLE_IDENTIFIER</key>
-				<string>io.emqtt.CocoaMQTT-tvOSTests</string>
-				<key>PRODUCT_NAME</key>
-				<string>$(TARGET_NAME)</string>
-				<key>SDKROOT</key>
-				<string>appletvos</string>
-				<key>TVOS_DEPLOYMENT_TARGET</key>
-				<string>9.0</string>
-			</dict>
-			<key>isa</key>
-			<string>XCBuildConfiguration</string>
-			<key>name</key>
-			<string>Release</string>
-		</dict>
-		<key>040997701C1B1070006B5A6D</key>
-		<dict>
-			<key>children</key>
-			<array>
-				<string>0409977A1C1B1529006B5A6D</string>
-				<string>0409977B1C1B1529006B5A6D</string>
-				<string>0409977C1C1B1529006B5A6D</string>
-				<string>040997791C1B14F0006B5A6D</string>
-			</array>
-			<key>isa</key>
-			<string>PBXGroup</string>
-			<key>path</key>
-			<string>Source</string>
-			<key>sourceTree</key>
-			<string>&lt;group&gt;</string>
-		</dict>
-		<key>040997711C1B1070006B5A6D</key>
-		<dict>
-			<key>isa</key>
-			<string>PBXFileReference</string>
-			<key>lastKnownFileType</key>
-			<string>sourcecode.c.h</string>
-			<key>path</key>
-			<string>CocoaMQTT.h</string>
-			<key>sourceTree</key>
-			<string>&lt;group&gt;</string>
-		</dict>
-		<key>040997721C1B1070006B5A6D</key>
-		<dict>
-			<key>isa</key>
-			<string>PBXFileReference</string>
-			<key>lastKnownFileType</key>
-			<string>text.plist.xml</string>
-			<key>path</key>
-			<string>Info.plist</string>
-			<key>sourceTree</key>
-			<string>&lt;group&gt;</string>
-		</dict>
-		<key>040997741C1B10AF006B5A6D</key>
-		<dict>
-			<key>fileRef</key>
-			<string>040997711C1B1070006B5A6D</string>
-			<key>isa</key>
-			<string>PBXBuildFile</string>
-			<key>settings</key>
-			<dict>
-				<key>ATTRIBUTES</key>
-				<array>
-					<string>Public</string>
-				</array>
-			</dict>
-		</dict>
-		<key>040997751C1B10B3006B5A6D</key>
-		<dict>
-			<key>fileRef</key>
-			<string>040997711C1B1070006B5A6D</string>
-			<key>isa</key>
-			<string>PBXBuildFile</string>
-			<key>settings</key>
-			<dict>
-				<key>ATTRIBUTES</key>
-				<array>
-					<string>Public</string>
-				</array>
-			</dict>
-		</dict>
-		<key>040997771C1B10B8006B5A6D</key>
-		<dict>
-			<key>fileRef</key>
-			<string>040997711C1B1070006B5A6D</string>
-			<key>isa</key>
-			<string>PBXBuildFile</string>
-			<key>settings</key>
-			<dict>
-				<key>ATTRIBUTES</key>
-				<array>
-					<string>Public</string>
-				</array>
-			</dict>
-		</dict>
-		<key>040997791C1B14F0006B5A6D</key>
-		<dict>
-			<key>children</key>
-			<array>
-				<string>040997711C1B1070006B5A6D</string>
-				<string>040997721C1B1070006B5A6D</string>
-			</array>
-			<key>isa</key>
-			<string>PBXGroup</string>
-			<key>name</key>
-			<string>Supporting Files</string>
-			<key>sourceTree</key>
-			<string>&lt;group&gt;</string>
-		</dict>
-		<key>0409977A1C1B1529006B5A6D</key>
-		<dict>
-			<key>fileEncoding</key>
-			<string>4</string>
-			<key>isa</key>
-			<string>PBXFileReference</string>
-			<key>lastKnownFileType</key>
-			<string>sourcecode.swift</string>
-			<key>path</key>
-			<string>CocoaMQTT.swift</string>
-			<key>sourceTree</key>
-			<string>&lt;group&gt;</string>
-		</dict>
-		<key>0409977B1C1B1529006B5A6D</key>
-		<dict>
-			<key>fileEncoding</key>
-			<string>4</string>
-			<key>isa</key>
-			<string>PBXFileReference</string>
-			<key>lastKnownFileType</key>
-			<string>sourcecode.swift</string>
-			<key>path</key>
-			<string>CocoaMQTTFrame.swift</string>
-			<key>sourceTree</key>
-			<string>&lt;group&gt;</string>
-		</dict>
-		<key>0409977C1C1B1529006B5A6D</key>
-		<dict>
-			<key>fileEncoding</key>
-			<string>4</string>
-			<key>isa</key>
-			<string>PBXFileReference</string>
-			<key>lastKnownFileType</key>
-			<string>sourcecode.swift</string>
-			<key>path</key>
-			<string>CocoaMQTTMessage.swift</string>
-			<key>sourceTree</key>
-			<string>&lt;group&gt;</string>
-		</dict>
-		<key>0409977D1C1B1529006B5A6D</key>
-		<dict>
-			<key>fileRef</key>
-			<string>0409977A1C1B1529006B5A6D</string>
-			<key>isa</key>
-			<string>PBXBuildFile</string>
-		</dict>
-		<key>0409977E1C1B1529006B5A6D</key>
-		<dict>
-			<key>fileRef</key>
-			<string>0409977A1C1B1529006B5A6D</string>
-			<key>isa</key>
-			<string>PBXBuildFile</string>
-		</dict>
-		<key>040997801C1B1529006B5A6D</key>
-		<dict>
-			<key>fileRef</key>
-			<string>0409977A1C1B1529006B5A6D</string>
-			<key>isa</key>
-			<string>PBXBuildFile</string>
-		</dict>
-		<key>040997811C1B1529006B5A6D</key>
-		<dict>
-			<key>fileRef</key>
-			<string>0409977B1C1B1529006B5A6D</string>
-			<key>isa</key>
-			<string>PBXBuildFile</string>
-		</dict>
-		<key>040997821C1B1529006B5A6D</key>
-		<dict>
-			<key>fileRef</key>
-			<string>0409977B1C1B1529006B5A6D</string>
-			<key>isa</key>
-			<string>PBXBuildFile</string>
-		</dict>
-		<key>040997841C1B1529006B5A6D</key>
-		<dict>
-			<key>fileRef</key>
-			<string>0409977B1C1B1529006B5A6D</string>
-			<key>isa</key>
-			<string>PBXBuildFile</string>
-		</dict>
-		<key>040997851C1B1529006B5A6D</key>
-		<dict>
-			<key>fileRef</key>
-			<string>0409977C1C1B1529006B5A6D</string>
-			<key>isa</key>
-			<string>PBXBuildFile</string>
-		</dict>
-		<key>040997861C1B1529006B5A6D</key>
-		<dict>
-			<key>fileRef</key>
-			<string>0409977C1C1B1529006B5A6D</string>
-			<key>isa</key>
-			<string>PBXBuildFile</string>
-		</dict>
-		<key>040997881C1B1529006B5A6D</key>
-		<dict>
-			<key>fileRef</key>
-			<string>0409977C1C1B1529006B5A6D</string>
-			<key>isa</key>
-			<string>PBXBuildFile</string>
-		</dict>
-		<key>5A3BD51F8EC0061320CF4E24</key>
-		<dict>
-			<key>includeInIndex</key>
-			<string>1</string>
-			<key>isa</key>
-			<string>PBXFileReference</string>
-			<key>lastKnownFileType</key>
-			<string>text.xcconfig</string>
-			<key>name</key>
-			<string>Pods.release.xcconfig</string>
-			<key>path</key>
-			<string>Pods/Target Support Files/Pods/Pods.release.xcconfig</string>
-			<key>sourceTree</key>
-			<string>&lt;group&gt;</string>
-		</dict>
-		<key>5F88BA0AA7281D3AB695161B</key>
-		<dict>
-			<key>includeInIndex</key>
-			<string>1</string>
-			<key>isa</key>
-			<string>PBXFileReference</string>
-			<key>lastKnownFileType</key>
-			<string>text.xcconfig</string>
-			<key>name</key>
-			<string>Pods.debug.xcconfig</string>
-			<key>path</key>
-			<string>Pods/Target Support Files/Pods/Pods.debug.xcconfig</string>
-			<key>sourceTree</key>
-			<string>&lt;group&gt;</string>
-		</dict>
-		<key>69A85837F1F8A1779A8681C3</key>
-		<dict>
-			<key>explicitFileType</key>
-			<string>wrapper.framework</string>
-			<key>includeInIndex</key>
-			<string>0</string>
-			<key>isa</key>
-			<string>PBXFileReference</string>
-			<key>path</key>
-			<string>Pods.framework</string>
-			<key>sourceTree</key>
-			<string>BUILT_PRODUCTS_DIR</string>
-		</dict>
-		<key>720B1FA37E58BF68349D79C3</key>
-		<dict>
-			<key>buildActionMask</key>
-			<string>2147483647</string>
-			<key>files</key>
-			<array/>
-			<key>inputPaths</key>
-			<array/>
-			<key>isa</key>
-			<string>PBXShellScriptBuildPhase</string>
-			<key>name</key>
-			<string>Check Pods Manifest.lock</string>
-			<key>outputPaths</key>
-			<array/>
-			<key>runOnlyForDeploymentPostprocessing</key>
-			<string>0</string>
-			<key>shellPath</key>
-			<string>/bin/sh</string>
-			<key>shellScript</key>
-			<string>diff "${PODS_ROOT}/../Podfile.lock" "${PODS_ROOT}/Manifest.lock" &gt; /dev/null
-if [[ $? != 0 ]] ; then
-    cat &lt;&lt; EOM
-error: The sandbox is not in sync with the Podfile.lock. Run 'pod install' or update your CocoaPods installation.
-EOM
-    exit 1
-fi
-</string>
-			<key>showEnvVarsInLog</key>
-			<string>0</string>
-		</dict>
-		<key>940EA8E21009BE5A549662D5</key>
-		<dict>
-			<key>children</key>
-			<array>
-				<string>5F88BA0AA7281D3AB695161B</string>
-				<string>5A3BD51F8EC0061320CF4E24</string>
-			</array>
-			<key>isa</key>
-			<string>PBXGroup</string>
-			<key>name</key>
-			<string>Pods</string>
-			<key>sourceTree</key>
-			<string>&lt;group&gt;</string>
-		</dict>
-		<key>A4BD5C21F777F2B8D3274E0B</key>
-		<dict>
-			<key>buildActionMask</key>
-			<string>2147483647</string>
-			<key>files</key>
-			<array/>
-			<key>inputPaths</key>
-			<array/>
-			<key>isa</key>
-			<string>PBXShellScriptBuildPhase</string>
-			<key>name</key>
-			<string>Copy Pods Resources</string>
-			<key>outputPaths</key>
-			<array/>
-			<key>runOnlyForDeploymentPostprocessing</key>
-			<string>0</string>
-			<key>shellPath</key>
-			<string>/bin/sh</string>
-			<key>shellScript</key>
-			<string>"${SRCROOT}/Pods/Target Support Files/Pods/Pods-resources.sh"
-</string>
-			<key>showEnvVarsInLog</key>
-			<string>0</string>
-		</dict>
-		<key>B4F72F54000A1AC69942C85D</key>
-		<dict>
-			<key>fileRef</key>
-			<string>69A85837F1F8A1779A8681C3</string>
-			<key>isa</key>
-			<string>PBXBuildFile</string>
-		</dict>
-		<key>C68B087463924483F8568675</key>
-		<dict>
-			<key>children</key>
-			<array>
-				<string>69A85837F1F8A1779A8681C3</string>
-			</array>
-			<key>isa</key>
-			<string>PBXGroup</string>
-			<key>name</key>
-			<string>Frameworks</string>
-			<key>sourceTree</key>
-			<string>&lt;group&gt;</string>
-		</dict>
-	</dict>
-	<key>rootObject</key>
-	<string>040997061C1B0B96006B5A6D</string>
-</dict>
-</plist>
+// !$*UTF8*$!
+{
+	archiveVersion = 1;
+	classes = {
+	};
+	objectVersion = 46;
+	objects = {
+
+/* Begin PBXBuildFile section */
+		0409971A1C1B0B96006B5A6D /* CocoaMQTT.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = 0409970F1C1B0B96006B5A6D /* CocoaMQTT.framework */; };
+		0409971F1C1B0B96006B5A6D /* CocoaMQTTTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 0409971E1C1B0B96006B5A6D /* CocoaMQTTTests.swift */; };
+		0409973A1C1B0E06006B5A6D /* CocoaMQTT.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = 040997301C1B0E06006B5A6D /* CocoaMQTT.framework */; };
+		040997631C1B0F7E006B5A6D /* CocoaMQTT.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = 040997591C1B0F7E006B5A6D /* CocoaMQTT.framework */; };
+		040997741C1B10AF006B5A6D /* CocoaMQTT.h in Headers */ = {isa = PBXBuildFile; fileRef = 040997711C1B1070006B5A6D /* CocoaMQTT.h */; settings = {ATTRIBUTES = (Public, ); }; };
+		040997751C1B10B3006B5A6D /* CocoaMQTT.h in Headers */ = {isa = PBXBuildFile; fileRef = 040997711C1B1070006B5A6D /* CocoaMQTT.h */; settings = {ATTRIBUTES = (Public, ); }; };
+		040997771C1B10B8006B5A6D /* CocoaMQTT.h in Headers */ = {isa = PBXBuildFile; fileRef = 040997711C1B1070006B5A6D /* CocoaMQTT.h */; settings = {ATTRIBUTES = (Public, ); }; };
+		0409977D1C1B1529006B5A6D /* CocoaMQTT.swift in Sources */ = {isa = PBXBuildFile; fileRef = 0409977A1C1B1529006B5A6D /* CocoaMQTT.swift */; };
+		0409977E1C1B1529006B5A6D /* CocoaMQTT.swift in Sources */ = {isa = PBXBuildFile; fileRef = 0409977A1C1B1529006B5A6D /* CocoaMQTT.swift */; };
+		040997801C1B1529006B5A6D /* CocoaMQTT.swift in Sources */ = {isa = PBXBuildFile; fileRef = 0409977A1C1B1529006B5A6D /* CocoaMQTT.swift */; };
+		040997811C1B1529006B5A6D /* CocoaMQTTFrame.swift in Sources */ = {isa = PBXBuildFile; fileRef = 0409977B1C1B1529006B5A6D /* CocoaMQTTFrame.swift */; };
+		040997821C1B1529006B5A6D /* CocoaMQTTFrame.swift in Sources */ = {isa = PBXBuildFile; fileRef = 0409977B1C1B1529006B5A6D /* CocoaMQTTFrame.swift */; };
+		040997841C1B1529006B5A6D /* CocoaMQTTFrame.swift in Sources */ = {isa = PBXBuildFile; fileRef = 0409977B1C1B1529006B5A6D /* CocoaMQTTFrame.swift */; };
+		040997851C1B1529006B5A6D /* CocoaMQTTMessage.swift in Sources */ = {isa = PBXBuildFile; fileRef = 0409977C1C1B1529006B5A6D /* CocoaMQTTMessage.swift */; };
+		040997861C1B1529006B5A6D /* CocoaMQTTMessage.swift in Sources */ = {isa = PBXBuildFile; fileRef = 0409977C1C1B1529006B5A6D /* CocoaMQTTMessage.swift */; };
+		040997881C1B1529006B5A6D /* CocoaMQTTMessage.swift in Sources */ = {isa = PBXBuildFile; fileRef = 0409977C1C1B1529006B5A6D /* CocoaMQTTMessage.swift */; };
+		4005C4097C59021E90C8AC06 /* Pods_CocoaMQTT_iOS.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = B993FBFB01D0C4E090CDCC5B /* Pods_CocoaMQTT_iOS.framework */; };
+/* End PBXBuildFile section */
+
+/* Begin PBXContainerItemProxy section */
+		0409971B1C1B0B96006B5A6D /* PBXContainerItemProxy */ = {
+			isa = PBXContainerItemProxy;
+			containerPortal = 040997061C1B0B96006B5A6D /* Project object */;
+			proxyType = 1;
+			remoteGlobalIDString = 0409970E1C1B0B96006B5A6D;
+			remoteInfo = CocoaMQTT;
+		};
+		0409973B1C1B0E06006B5A6D /* PBXContainerItemProxy */ = {
+			isa = PBXContainerItemProxy;
+			containerPortal = 040997061C1B0B96006B5A6D /* Project object */;
+			proxyType = 1;
+			remoteGlobalIDString = 0409972F1C1B0E06006B5A6D;
+			remoteInfo = "CocoaMQTT OSX";
+		};
+		040997641C1B0F7E006B5A6D /* PBXContainerItemProxy */ = {
+			isa = PBXContainerItemProxy;
+			containerPortal = 040997061C1B0B96006B5A6D /* Project object */;
+			proxyType = 1;
+			remoteGlobalIDString = 040997581C1B0F7E006B5A6D;
+			remoteInfo = "CocoaMQTT tvOS";
+		};
+/* End PBXContainerItemProxy section */
+
+/* Begin PBXFileReference section */
+		0409970F1C1B0B96006B5A6D /* CocoaMQTT.framework */ = {isa = PBXFileReference; explicitFileType = wrapper.framework; includeInIndex = 0; path = CocoaMQTT.framework; sourceTree = BUILT_PRODUCTS_DIR; };
+		040997191C1B0B96006B5A6D /* CocoaMQTT iOSTests.xctest */ = {isa = PBXFileReference; explicitFileType = wrapper.cfbundle; includeInIndex = 0; path = "CocoaMQTT iOSTests.xctest"; sourceTree = BUILT_PRODUCTS_DIR; };
+		0409971E1C1B0B96006B5A6D /* CocoaMQTTTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CocoaMQTTTests.swift; sourceTree = "<group>"; };
+		040997201C1B0B96006B5A6D /* Info.plist */ = {isa = PBXFileReference; lastKnownFileType = text.plist.xml; path = Info.plist; sourceTree = "<group>"; };
+		040997301C1B0E06006B5A6D /* CocoaMQTT.framework */ = {isa = PBXFileReference; explicitFileType = wrapper.framework; includeInIndex = 0; path = CocoaMQTT.framework; sourceTree = BUILT_PRODUCTS_DIR; };
+		040997391C1B0E06006B5A6D /* CocoaMQTT OSXTests.xctest */ = {isa = PBXFileReference; explicitFileType = wrapper.cfbundle; includeInIndex = 0; path = "CocoaMQTT OSXTests.xctest"; sourceTree = BUILT_PRODUCTS_DIR; };
+		040997591C1B0F7E006B5A6D /* CocoaMQTT.framework */ = {isa = PBXFileReference; explicitFileType = wrapper.framework; includeInIndex = 0; path = CocoaMQTT.framework; sourceTree = BUILT_PRODUCTS_DIR; };
+		040997621C1B0F7E006B5A6D /* CocoaMQTT tvOSTests.xctest */ = {isa = PBXFileReference; explicitFileType = wrapper.cfbundle; includeInIndex = 0; path = "CocoaMQTT tvOSTests.xctest"; sourceTree = BUILT_PRODUCTS_DIR; };
+		040997711C1B1070006B5A6D /* CocoaMQTT.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = CocoaMQTT.h; sourceTree = "<group>"; };
+		040997721C1B1070006B5A6D /* Info.plist */ = {isa = PBXFileReference; lastKnownFileType = text.plist.xml; path = Info.plist; sourceTree = "<group>"; };
+		0409977A1C1B1529006B5A6D /* CocoaMQTT.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = CocoaMQTT.swift; sourceTree = "<group>"; };
+		0409977B1C1B1529006B5A6D /* CocoaMQTTFrame.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = CocoaMQTTFrame.swift; sourceTree = "<group>"; };
+		0409977C1C1B1529006B5A6D /* CocoaMQTTMessage.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = CocoaMQTTMessage.swift; sourceTree = "<group>"; };
+		2F98FB32C0CDED04D3232846 /* Pods-CocoaMQTT iOS.release.xcconfig */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = text.xcconfig; name = "Pods-CocoaMQTT iOS.release.xcconfig"; path = "Pods/Target Support Files/Pods-CocoaMQTT iOS/Pods-CocoaMQTT iOS.release.xcconfig"; sourceTree = "<group>"; };
+		69A85837F1F8A1779A8681C3 /* Pods.framework */ = {isa = PBXFileReference; explicitFileType = wrapper.framework; includeInIndex = 0; path = Pods.framework; sourceTree = BUILT_PRODUCTS_DIR; };
+		A34B7D01953BD0898E9771C2 /* Pods-CocoaMQTT iOS.debug.xcconfig */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = text.xcconfig; name = "Pods-CocoaMQTT iOS.debug.xcconfig"; path = "Pods/Target Support Files/Pods-CocoaMQTT iOS/Pods-CocoaMQTT iOS.debug.xcconfig"; sourceTree = "<group>"; };
+		B993FBFB01D0C4E090CDCC5B /* Pods_CocoaMQTT_iOS.framework */ = {isa = PBXFileReference; explicitFileType = wrapper.framework; includeInIndex = 0; path = Pods_CocoaMQTT_iOS.framework; sourceTree = BUILT_PRODUCTS_DIR; };
+/* End PBXFileReference section */
+
+/* Begin PBXFrameworksBuildPhase section */
+		0409970B1C1B0B96006B5A6D /* Frameworks */ = {
+			isa = PBXFrameworksBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+				4005C4097C59021E90C8AC06 /* Pods_CocoaMQTT_iOS.framework in Frameworks */,
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+		040997161C1B0B96006B5A6D /* Frameworks */ = {
+			isa = PBXFrameworksBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+				0409971A1C1B0B96006B5A6D /* CocoaMQTT.framework in Frameworks */,
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+		0409972C1C1B0E06006B5A6D /* Frameworks */ = {
+			isa = PBXFrameworksBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+		040997361C1B0E06006B5A6D /* Frameworks */ = {
+			isa = PBXFrameworksBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+				0409973A1C1B0E06006B5A6D /* CocoaMQTT.framework in Frameworks */,
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+		040997551C1B0F7E006B5A6D /* Frameworks */ = {
+			isa = PBXFrameworksBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+		0409975F1C1B0F7E006B5A6D /* Frameworks */ = {
+			isa = PBXFrameworksBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+				040997631C1B0F7E006B5A6D /* CocoaMQTT.framework in Frameworks */,
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+/* End PBXFrameworksBuildPhase section */
+
+/* Begin PBXGroup section */
+		040997051C1B0B96006B5A6D = {
+			isa = PBXGroup;
+			children = (
+				040997701C1B1070006B5A6D /* Source */,
+				040997101C1B0B96006B5A6D /* Products */,
+				0409971D1C1B0B96006B5A6D /* CocoaMQTTTests */,
+				C68B087463924483F8568675 /* Frameworks */,
+				9B87AC9AED51914C5EC68D82 /* Pods */,
+			);
+			sourceTree = "<group>";
+		};
+		040997101C1B0B96006B5A6D /* Products */ = {
+			isa = PBXGroup;
+			children = (
+				0409970F1C1B0B96006B5A6D /* CocoaMQTT.framework */,
+				040997191C1B0B96006B5A6D /* CocoaMQTT iOSTests.xctest */,
+				040997301C1B0E06006B5A6D /* CocoaMQTT.framework */,
+				040997391C1B0E06006B5A6D /* CocoaMQTT OSXTests.xctest */,
+				040997591C1B0F7E006B5A6D /* CocoaMQTT.framework */,
+				040997621C1B0F7E006B5A6D /* CocoaMQTT tvOSTests.xctest */,
+			);
+			name = Products;
+			sourceTree = "<group>";
+		};
+		0409971D1C1B0B96006B5A6D /* CocoaMQTTTests */ = {
+			isa = PBXGroup;
+			children = (
+				0409971E1C1B0B96006B5A6D /* CocoaMQTTTests.swift */,
+				040997201C1B0B96006B5A6D /* Info.plist */,
+			);
+			path = CocoaMQTTTests;
+			sourceTree = "<group>";
+		};
+		040997701C1B1070006B5A6D /* Source */ = {
+			isa = PBXGroup;
+			children = (
+				0409977A1C1B1529006B5A6D /* CocoaMQTT.swift */,
+				0409977B1C1B1529006B5A6D /* CocoaMQTTFrame.swift */,
+				0409977C1C1B1529006B5A6D /* CocoaMQTTMessage.swift */,
+				040997791C1B14F0006B5A6D /* Supporting Files */,
+			);
+			path = Source;
+			sourceTree = "<group>";
+		};
+		040997791C1B14F0006B5A6D /* Supporting Files */ = {
+			isa = PBXGroup;
+			children = (
+				040997711C1B1070006B5A6D /* CocoaMQTT.h */,
+				040997721C1B1070006B5A6D /* Info.plist */,
+			);
+			name = "Supporting Files";
+			sourceTree = "<group>";
+		};
+		9B87AC9AED51914C5EC68D82 /* Pods */ = {
+			isa = PBXGroup;
+			children = (
+				A34B7D01953BD0898E9771C2 /* Pods-CocoaMQTT iOS.debug.xcconfig */,
+				2F98FB32C0CDED04D3232846 /* Pods-CocoaMQTT iOS.release.xcconfig */,
+			);
+			name = Pods;
+			sourceTree = "<group>";
+		};
+		C68B087463924483F8568675 /* Frameworks */ = {
+			isa = PBXGroup;
+			children = (
+				69A85837F1F8A1779A8681C3 /* Pods.framework */,
+				B993FBFB01D0C4E090CDCC5B /* Pods_CocoaMQTT_iOS.framework */,
+			);
+			name = Frameworks;
+			sourceTree = "<group>";
+		};
+/* End PBXGroup section */
+
+/* Begin PBXHeadersBuildPhase section */
+		0409970C1C1B0B96006B5A6D /* Headers */ = {
+			isa = PBXHeadersBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+				040997741C1B10AF006B5A6D /* CocoaMQTT.h in Headers */,
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+		0409972D1C1B0E06006B5A6D /* Headers */ = {
+			isa = PBXHeadersBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+				040997751C1B10B3006B5A6D /* CocoaMQTT.h in Headers */,
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+		040997561C1B0F7E006B5A6D /* Headers */ = {
+			isa = PBXHeadersBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+				040997771C1B10B8006B5A6D /* CocoaMQTT.h in Headers */,
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+/* End PBXHeadersBuildPhase section */
+
+/* Begin PBXNativeTarget section */
+		0409970E1C1B0B96006B5A6D /* CocoaMQTT iOS */ = {
+			isa = PBXNativeTarget;
+			buildConfigurationList = 040997231C1B0B96006B5A6D /* Build configuration list for PBXNativeTarget "CocoaMQTT iOS" */;
+			buildPhases = (
+				CB494D50B8844FAC78BB7465 /* [CP] Check Pods Manifest.lock */,
+				0409970A1C1B0B96006B5A6D /* Sources */,
+				0409970B1C1B0B96006B5A6D /* Frameworks */,
+				0409970C1C1B0B96006B5A6D /* Headers */,
+				0409970D1C1B0B96006B5A6D /* Resources */,
+				63CB873580212CDAD9D413C6 /* [CP] Copy Pods Resources */,
+			);
+			buildRules = (
+			);
+			dependencies = (
+			);
+			name = "CocoaMQTT iOS";
+			productName = CocoaMQTT;
+			productReference = 0409970F1C1B0B96006B5A6D /* CocoaMQTT.framework */;
+			productType = "com.apple.product-type.framework";
+		};
+		040997181C1B0B96006B5A6D /* CocoaMQTT iOSTests */ = {
+			isa = PBXNativeTarget;
+			buildConfigurationList = 040997261C1B0B96006B5A6D /* Build configuration list for PBXNativeTarget "CocoaMQTT iOSTests" */;
+			buildPhases = (
+				040997151C1B0B96006B5A6D /* Sources */,
+				040997161C1B0B96006B5A6D /* Frameworks */,
+				040997171C1B0B96006B5A6D /* Resources */,
+			);
+			buildRules = (
+			);
+			dependencies = (
+				0409971C1C1B0B96006B5A6D /* PBXTargetDependency */,
+			);
+			name = "CocoaMQTT iOSTests";
+			productName = CocoaMQTTTests;
+			productReference = 040997191C1B0B96006B5A6D /* CocoaMQTT iOSTests.xctest */;
+			productType = "com.apple.product-type.bundle.unit-test";
+		};
+		0409972F1C1B0E06006B5A6D /* CocoaMQTT OSX */ = {
+			isa = PBXNativeTarget;
+			buildConfigurationList = 040997411C1B0E06006B5A6D /* Build configuration list for PBXNativeTarget "CocoaMQTT OSX" */;
+			buildPhases = (
+				0409972B1C1B0E06006B5A6D /* Sources */,
+				0409972C1C1B0E06006B5A6D /* Frameworks */,
+				0409972D1C1B0E06006B5A6D /* Headers */,
+				0409972E1C1B0E06006B5A6D /* Resources */,
+			);
+			buildRules = (
+			);
+			dependencies = (
+			);
+			name = "CocoaMQTT OSX";
+			productName = "CocoaMQTT OSX";
+			productReference = 040997301C1B0E06006B5A6D /* CocoaMQTT.framework */;
+			productType = "com.apple.product-type.framework";
+		};
+		040997381C1B0E06006B5A6D /* CocoaMQTT OSXTests */ = {
+			isa = PBXNativeTarget;
+			buildConfigurationList = 040997441C1B0E06006B5A6D /* Build configuration list for PBXNativeTarget "CocoaMQTT OSXTests" */;
+			buildPhases = (
+				040997351C1B0E06006B5A6D /* Sources */,
+				040997361C1B0E06006B5A6D /* Frameworks */,
+				040997371C1B0E06006B5A6D /* Resources */,
+			);
+			buildRules = (
+			);
+			dependencies = (
+				0409973C1C1B0E06006B5A6D /* PBXTargetDependency */,
+			);
+			name = "CocoaMQTT OSXTests";
+			productName = "CocoaMQTT OSXTests";
+			productReference = 040997391C1B0E06006B5A6D /* CocoaMQTT OSXTests.xctest */;
+			productType = "com.apple.product-type.bundle.unit-test";
+		};
+		040997581C1B0F7E006B5A6D /* CocoaMQTT tvOS */ = {
+			isa = PBXNativeTarget;
+			buildConfigurationList = 0409976A1C1B0F7E006B5A6D /* Build configuration list for PBXNativeTarget "CocoaMQTT tvOS" */;
+			buildPhases = (
+				040997541C1B0F7E006B5A6D /* Sources */,
+				040997551C1B0F7E006B5A6D /* Frameworks */,
+				040997561C1B0F7E006B5A6D /* Headers */,
+				040997571C1B0F7E006B5A6D /* Resources */,
+			);
+			buildRules = (
+			);
+			dependencies = (
+			);
+			name = "CocoaMQTT tvOS";
+			productName = "CocoaMQTT tvOS";
+			productReference = 040997591C1B0F7E006B5A6D /* CocoaMQTT.framework */;
+			productType = "com.apple.product-type.framework";
+		};
+		040997611C1B0F7E006B5A6D /* CocoaMQTT tvOSTests */ = {
+			isa = PBXNativeTarget;
+			buildConfigurationList = 0409976D1C1B0F7E006B5A6D /* Build configuration list for PBXNativeTarget "CocoaMQTT tvOSTests" */;
+			buildPhases = (
+				0409975E1C1B0F7E006B5A6D /* Sources */,
+				0409975F1C1B0F7E006B5A6D /* Frameworks */,
+				040997601C1B0F7E006B5A6D /* Resources */,
+			);
+			buildRules = (
+			);
+			dependencies = (
+				040997651C1B0F7E006B5A6D /* PBXTargetDependency */,
+			);
+			name = "CocoaMQTT tvOSTests";
+			productName = "CocoaMQTT tvOSTests";
+			productReference = 040997621C1B0F7E006B5A6D /* CocoaMQTT tvOSTests.xctest */;
+			productType = "com.apple.product-type.bundle.unit-test";
+		};
+/* End PBXNativeTarget section */
+
+/* Begin PBXProject section */
+		040997061C1B0B96006B5A6D /* Project object */ = {
+			isa = PBXProject;
+			attributes = {
+				LastSwiftUpdateCheck = 0710;
+				LastUpgradeCheck = 0710;
+				ORGANIZATIONNAME = emqtt.io;
+				TargetAttributes = {
+					0409970E1C1B0B96006B5A6D = {
+						CreatedOnToolsVersion = 7.1.1;
+					};
+					040997181C1B0B96006B5A6D = {
+						CreatedOnToolsVersion = 7.1.1;
+					};
+					0409972F1C1B0E06006B5A6D = {
+						CreatedOnToolsVersion = 7.1.1;
+					};
+					040997381C1B0E06006B5A6D = {
+						CreatedOnToolsVersion = 7.1.1;
+					};
+					040997581C1B0F7E006B5A6D = {
+						CreatedOnToolsVersion = 7.1.1;
+					};
+					040997611C1B0F7E006B5A6D = {
+						CreatedOnToolsVersion = 7.1.1;
+					};
+				};
+			};
+			buildConfigurationList = 040997091C1B0B96006B5A6D /* Build configuration list for PBXProject "CocoaMQTT" */;
+			compatibilityVersion = "Xcode 3.2";
+			developmentRegion = English;
+			hasScannedForEncodings = 0;
+			knownRegions = (
+				en,
+				Base,
+			);
+			mainGroup = 040997051C1B0B96006B5A6D;
+			productRefGroup = 040997101C1B0B96006B5A6D /* Products */;
+			projectDirPath = "";
+			projectRoot = "";
+			targets = (
+				0409970E1C1B0B96006B5A6D /* CocoaMQTT iOS */,
+				040997181C1B0B96006B5A6D /* CocoaMQTT iOSTests */,
+				0409972F1C1B0E06006B5A6D /* CocoaMQTT OSX */,
+				040997381C1B0E06006B5A6D /* CocoaMQTT OSXTests */,
+				040997581C1B0F7E006B5A6D /* CocoaMQTT tvOS */,
+				040997611C1B0F7E006B5A6D /* CocoaMQTT tvOSTests */,
+			);
+		};
+/* End PBXProject section */
+
+/* Begin PBXResourcesBuildPhase section */
+		0409970D1C1B0B96006B5A6D /* Resources */ = {
+			isa = PBXResourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+		040997171C1B0B96006B5A6D /* Resources */ = {
+			isa = PBXResourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+		0409972E1C1B0E06006B5A6D /* Resources */ = {
+			isa = PBXResourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+		040997371C1B0E06006B5A6D /* Resources */ = {
+			isa = PBXResourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+		040997571C1B0F7E006B5A6D /* Resources */ = {
+			isa = PBXResourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+		040997601C1B0F7E006B5A6D /* Resources */ = {
+			isa = PBXResourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+/* End PBXResourcesBuildPhase section */
+
+/* Begin PBXShellScriptBuildPhase section */
+		63CB873580212CDAD9D413C6 /* [CP] Copy Pods Resources */ = {
+			isa = PBXShellScriptBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+			);
+			inputPaths = (
+			);
+			name = "[CP] Copy Pods Resources";
+			outputPaths = (
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+			shellPath = /bin/sh;
+			shellScript = "\"${SRCROOT}/Pods/Target Support Files/Pods-CocoaMQTT iOS/Pods-CocoaMQTT iOS-resources.sh\"\n";
+			showEnvVarsInLog = 0;
+		};
+		CB494D50B8844FAC78BB7465 /* [CP] Check Pods Manifest.lock */ = {
+			isa = PBXShellScriptBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+			);
+			inputPaths = (
+			);
+			name = "[CP] Check Pods Manifest.lock";
+			outputPaths = (
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+			shellPath = /bin/sh;
+			shellScript = "diff \"${PODS_ROOT}/../Podfile.lock\" \"${PODS_ROOT}/Manifest.lock\" > /dev/null\nif [[ $? != 0 ]] ; then\n    cat << EOM\nerror: The sandbox is not in sync with the Podfile.lock. Run 'pod install' or update your CocoaPods installation.\nEOM\n    exit 1\nfi\n";
+			showEnvVarsInLog = 0;
+		};
+/* End PBXShellScriptBuildPhase section */
+
+/* Begin PBXSourcesBuildPhase section */
+		0409970A1C1B0B96006B5A6D /* Sources */ = {
+			isa = PBXSourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+				0409977D1C1B1529006B5A6D /* CocoaMQTT.swift in Sources */,
+				040997851C1B1529006B5A6D /* CocoaMQTTMessage.swift in Sources */,
+				040997811C1B1529006B5A6D /* CocoaMQTTFrame.swift in Sources */,
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+		040997151C1B0B96006B5A6D /* Sources */ = {
+			isa = PBXSourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+				0409971F1C1B0B96006B5A6D /* CocoaMQTTTests.swift in Sources */,
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+		0409972B1C1B0E06006B5A6D /* Sources */ = {
+			isa = PBXSourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+				0409977E1C1B1529006B5A6D /* CocoaMQTT.swift in Sources */,
+				040997861C1B1529006B5A6D /* CocoaMQTTMessage.swift in Sources */,
+				040997821C1B1529006B5A6D /* CocoaMQTTFrame.swift in Sources */,
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+		040997351C1B0E06006B5A6D /* Sources */ = {
+			isa = PBXSourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+		040997541C1B0F7E006B5A6D /* Sources */ = {
+			isa = PBXSourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+				040997801C1B1529006B5A6D /* CocoaMQTT.swift in Sources */,
+				040997881C1B1529006B5A6D /* CocoaMQTTMessage.swift in Sources */,
+				040997841C1B1529006B5A6D /* CocoaMQTTFrame.swift in Sources */,
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+		0409975E1C1B0F7E006B5A6D /* Sources */ = {
+			isa = PBXSourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+/* End PBXSourcesBuildPhase section */
+
+/* Begin PBXTargetDependency section */
+		0409971C1C1B0B96006B5A6D /* PBXTargetDependency */ = {
+			isa = PBXTargetDependency;
+			target = 0409970E1C1B0B96006B5A6D /* CocoaMQTT iOS */;
+			targetProxy = 0409971B1C1B0B96006B5A6D /* PBXContainerItemProxy */;
+		};
+		0409973C1C1B0E06006B5A6D /* PBXTargetDependency */ = {
+			isa = PBXTargetDependency;
+			target = 0409972F1C1B0E06006B5A6D /* CocoaMQTT OSX */;
+			targetProxy = 0409973B1C1B0E06006B5A6D /* PBXContainerItemProxy */;
+		};
+		040997651C1B0F7E006B5A6D /* PBXTargetDependency */ = {
+			isa = PBXTargetDependency;
+			target = 040997581C1B0F7E006B5A6D /* CocoaMQTT tvOS */;
+			targetProxy = 040997641C1B0F7E006B5A6D /* PBXContainerItemProxy */;
+		};
+/* End PBXTargetDependency section */
+
+/* Begin XCBuildConfiguration section */
+		040997211C1B0B96006B5A6D /* Debug */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				ALWAYS_SEARCH_USER_PATHS = NO;
+				CLANG_CXX_LANGUAGE_STANDARD = "gnu++0x";
+				CLANG_CXX_LIBRARY = "libc++";
+				CLANG_ENABLE_MODULES = YES;
+				CLANG_ENABLE_OBJC_ARC = YES;
+				CLANG_WARN_BOOL_CONVERSION = YES;
+				CLANG_WARN_CONSTANT_CONVERSION = YES;
+				CLANG_WARN_DIRECT_OBJC_ISA_USAGE = YES_ERROR;
+				CLANG_WARN_EMPTY_BODY = YES;
+				CLANG_WARN_ENUM_CONVERSION = YES;
+				CLANG_WARN_INT_CONVERSION = YES;
+				CLANG_WARN_OBJC_ROOT_CLASS = YES_ERROR;
+				CLANG_WARN_UNREACHABLE_CODE = YES;
+				CLANG_WARN__DUPLICATE_METHOD_MATCH = YES;
+				"CODE_SIGN_IDENTITY[sdk=iphoneos*]" = "iPhone Developer";
+				COPY_PHASE_STRIP = NO;
+				CURRENT_PROJECT_VERSION = 1;
+				DEBUG_INFORMATION_FORMAT = dwarf;
+				ENABLE_STRICT_OBJC_MSGSEND = YES;
+				ENABLE_TESTABILITY = YES;
+				GCC_C_LANGUAGE_STANDARD = gnu99;
+				GCC_DYNAMIC_NO_PIC = NO;
+				GCC_NO_COMMON_BLOCKS = YES;
+				GCC_OPTIMIZATION_LEVEL = 0;
+				GCC_PREPROCESSOR_DEFINITIONS = (
+					"DEBUG=1",
+					"$(inherited)",
+				);
+				GCC_WARN_64_TO_32_BIT_CONVERSION = YES;
+				GCC_WARN_ABOUT_RETURN_TYPE = YES_ERROR;
+				GCC_WARN_UNDECLARED_SELECTOR = YES;
+				GCC_WARN_UNINITIALIZED_AUTOS = YES_AGGRESSIVE;
+				GCC_WARN_UNUSED_FUNCTION = YES;
+				GCC_WARN_UNUSED_VARIABLE = YES;
+				IPHONEOS_DEPLOYMENT_TARGET = 8.0;
+				MACOSX_DEPLOYMENT_TARGET = 10.9;
+				MTL_ENABLE_DEBUG_INFO = YES;
+				ONLY_ACTIVE_ARCH = YES;
+				SDKROOT = iphoneos;
+				SWIFT_OBJC_BRIDGING_HEADER = "CocoaMQTT/CocoaMQTT-Bridging-Header.h";
+				SWIFT_OPTIMIZATION_LEVEL = "-Onone";
+				TARGETED_DEVICE_FAMILY = "1,2";
+				VERSIONING_SYSTEM = "apple-generic";
+				VERSION_INFO_PREFIX = "";
+			};
+			name = Debug;
+		};
+		040997221C1B0B96006B5A6D /* Release */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				ALWAYS_SEARCH_USER_PATHS = NO;
+				CLANG_CXX_LANGUAGE_STANDARD = "gnu++0x";
+				CLANG_CXX_LIBRARY = "libc++";
+				CLANG_ENABLE_MODULES = YES;
+				CLANG_ENABLE_OBJC_ARC = YES;
+				CLANG_WARN_BOOL_CONVERSION = YES;
+				CLANG_WARN_CONSTANT_CONVERSION = YES;
+				CLANG_WARN_DIRECT_OBJC_ISA_USAGE = YES_ERROR;
+				CLANG_WARN_EMPTY_BODY = YES;
+				CLANG_WARN_ENUM_CONVERSION = YES;
+				CLANG_WARN_INT_CONVERSION = YES;
+				CLANG_WARN_OBJC_ROOT_CLASS = YES_ERROR;
+				CLANG_WARN_UNREACHABLE_CODE = YES;
+				CLANG_WARN__DUPLICATE_METHOD_MATCH = YES;
+				"CODE_SIGN_IDENTITY[sdk=iphoneos*]" = "iPhone Developer";
+				COPY_PHASE_STRIP = NO;
+				CURRENT_PROJECT_VERSION = 1;
+				DEBUG_INFORMATION_FORMAT = "dwarf-with-dsym";
+				ENABLE_NS_ASSERTIONS = NO;
+				ENABLE_STRICT_OBJC_MSGSEND = YES;
+				GCC_C_LANGUAGE_STANDARD = gnu99;
+				GCC_NO_COMMON_BLOCKS = YES;
+				GCC_WARN_64_TO_32_BIT_CONVERSION = YES;
+				GCC_WARN_ABOUT_RETURN_TYPE = YES_ERROR;
+				GCC_WARN_UNDECLARED_SELECTOR = YES;
+				GCC_WARN_UNINITIALIZED_AUTOS = YES_AGGRESSIVE;
+				GCC_WARN_UNUSED_FUNCTION = YES;
+				GCC_WARN_UNUSED_VARIABLE = YES;
+				IPHONEOS_DEPLOYMENT_TARGET = 8.0;
+				MACOSX_DEPLOYMENT_TARGET = 10.9;
+				MTL_ENABLE_DEBUG_INFO = NO;
+				SDKROOT = iphoneos;
+				SWIFT_OBJC_BRIDGING_HEADER = "CocoaMQTT/CocoaMQTT-Bridging-Header.h";
+				TARGETED_DEVICE_FAMILY = "1,2";
+				VALIDATE_PRODUCT = YES;
+				VERSIONING_SYSTEM = "apple-generic";
+				VERSION_INFO_PREFIX = "";
+			};
+			name = Release;
+		};
+		040997241C1B0B96006B5A6D /* Debug */ = {
+			isa = XCBuildConfiguration;
+			baseConfigurationReference = A34B7D01953BD0898E9771C2 /* Pods-CocoaMQTT iOS.debug.xcconfig */;
+			buildSettings = {
+				CLANG_ALLOW_NON_MODULAR_INCLUDES_IN_FRAMEWORK_MODULES = NO;
+				CLANG_ENABLE_MODULES = YES;
+				DEFINES_MODULE = YES;
+				DYLIB_COMPATIBILITY_VERSION = 1;
+				DYLIB_CURRENT_VERSION = 1;
+				DYLIB_INSTALL_NAME_BASE = "@rpath";
+				INFOPLIST_FILE = Source/Info.plist;
+				INSTALL_PATH = "$(LOCAL_LIBRARY_DIR)/Frameworks";
+				IPHONEOS_DEPLOYMENT_TARGET = 8.0;
+				LD_RUNPATH_SEARCH_PATHS = "$(inherited) @executable_path/Frameworks @loader_path/Frameworks";
+				PRODUCT_BUNDLE_IDENTIFIER = io.emqtt.CocoaMQTT;
+				PRODUCT_NAME = CocoaMQTT;
+				SKIP_INSTALL = YES;
+				SWIFT_OBJC_BRIDGING_HEADER = "";
+				SWIFT_OBJC_INTERFACE_HEADER_NAME = "";
+				SWIFT_OPTIMIZATION_LEVEL = "-Onone";
+			};
+			name = Debug;
+		};
+		040997251C1B0B96006B5A6D /* Release */ = {
+			isa = XCBuildConfiguration;
+			baseConfigurationReference = 2F98FB32C0CDED04D3232846 /* Pods-CocoaMQTT iOS.release.xcconfig */;
+			buildSettings = {
+				CLANG_ALLOW_NON_MODULAR_INCLUDES_IN_FRAMEWORK_MODULES = NO;
+				CLANG_ENABLE_MODULES = YES;
+				DEFINES_MODULE = YES;
+				DYLIB_COMPATIBILITY_VERSION = 1;
+				DYLIB_CURRENT_VERSION = 1;
+				DYLIB_INSTALL_NAME_BASE = "@rpath";
+				INFOPLIST_FILE = Source/Info.plist;
+				INSTALL_PATH = "$(LOCAL_LIBRARY_DIR)/Frameworks";
+				IPHONEOS_DEPLOYMENT_TARGET = 8.0;
+				LD_RUNPATH_SEARCH_PATHS = "$(inherited) @executable_path/Frameworks @loader_path/Frameworks";
+				PRODUCT_BUNDLE_IDENTIFIER = io.emqtt.CocoaMQTT;
+				PRODUCT_NAME = CocoaMQTT;
+				SKIP_INSTALL = YES;
+				SWIFT_OBJC_BRIDGING_HEADER = "";
+				SWIFT_OBJC_INTERFACE_HEADER_NAME = "";
+			};
+			name = Release;
+		};
+		040997271C1B0B96006B5A6D /* Debug */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				INFOPLIST_FILE = CocoaMQTTTests/Info.plist;
+				LD_RUNPATH_SEARCH_PATHS = "$(inherited) @executable_path/Frameworks @loader_path/Frameworks";
+				PRODUCT_BUNDLE_IDENTIFIER = io.emqtt.CocoaMQTTTests;
+				PRODUCT_NAME = "$(TARGET_NAME)";
+			};
+			name = Debug;
+		};
+		040997281C1B0B96006B5A6D /* Release */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				INFOPLIST_FILE = CocoaMQTTTests/Info.plist;
+				LD_RUNPATH_SEARCH_PATHS = "$(inherited) @executable_path/Frameworks @loader_path/Frameworks";
+				PRODUCT_BUNDLE_IDENTIFIER = io.emqtt.CocoaMQTTTests;
+				PRODUCT_NAME = "$(TARGET_NAME)";
+			};
+			name = Release;
+		};
+		040997421C1B0E06006B5A6D /* Debug */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				CLANG_ALLOW_NON_MODULAR_INCLUDES_IN_FRAMEWORK_MODULES = NO;
+				CLANG_ENABLE_MODULES = YES;
+				CODE_SIGN_IDENTITY = "-";
+				COMBINE_HIDPI_IMAGES = YES;
+				DEFINES_MODULE = YES;
+				DYLIB_COMPATIBILITY_VERSION = 1;
+				DYLIB_CURRENT_VERSION = 1;
+				DYLIB_INSTALL_NAME_BASE = "@rpath";
+				FRAMEWORK_VERSION = A;
+				INFOPLIST_FILE = Source/Info.plist;
+				INSTALL_PATH = "$(LOCAL_LIBRARY_DIR)/Frameworks";
+				LD_RUNPATH_SEARCH_PATHS = "$(inherited) @executable_path/../Frameworks @loader_path/Frameworks";
+				MACOSX_DEPLOYMENT_TARGET = 10.9;
+				PRODUCT_BUNDLE_IDENTIFIER = io.emqtt.CocoaMQTT;
+				PRODUCT_NAME = CocoaMQTT;
+				SDKROOT = macosx;
+				SKIP_INSTALL = YES;
+				SWIFT_OBJC_BRIDGING_HEADER = "";
+				SWIFT_OBJC_INTERFACE_HEADER_NAME = "";
+				SWIFT_OPTIMIZATION_LEVEL = "-Onone";
+			};
+			name = Debug;
+		};
+		040997431C1B0E06006B5A6D /* Release */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				CLANG_ALLOW_NON_MODULAR_INCLUDES_IN_FRAMEWORK_MODULES = NO;
+				CLANG_ENABLE_MODULES = YES;
+				CODE_SIGN_IDENTITY = "-";
+				COMBINE_HIDPI_IMAGES = YES;
+				DEFINES_MODULE = YES;
+				DYLIB_COMPATIBILITY_VERSION = 1;
+				DYLIB_CURRENT_VERSION = 1;
+				DYLIB_INSTALL_NAME_BASE = "@rpath";
+				FRAMEWORK_VERSION = A;
+				INFOPLIST_FILE = Source/Info.plist;
+				INSTALL_PATH = "$(LOCAL_LIBRARY_DIR)/Frameworks";
+				LD_RUNPATH_SEARCH_PATHS = "$(inherited) @executable_path/../Frameworks @loader_path/Frameworks";
+				MACOSX_DEPLOYMENT_TARGET = 10.9;
+				PRODUCT_BUNDLE_IDENTIFIER = io.emqtt.CocoaMQTT;
+				PRODUCT_NAME = CocoaMQTT;
+				SDKROOT = macosx;
+				SKIP_INSTALL = YES;
+				SWIFT_OBJC_BRIDGING_HEADER = "";
+				SWIFT_OBJC_INTERFACE_HEADER_NAME = "";
+			};
+			name = Release;
+		};
+		040997451C1B0E06006B5A6D /* Debug */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				CODE_SIGN_IDENTITY = "-";
+				COMBINE_HIDPI_IMAGES = YES;
+				INFOPLIST_FILE = CocoaMQTTTests/Info.plist;
+				LD_RUNPATH_SEARCH_PATHS = "$(inherited) @executable_path/../Frameworks @loader_path/../Frameworks";
+				MACOSX_DEPLOYMENT_TARGET = 10.11;
+				PRODUCT_BUNDLE_IDENTIFIER = "io.emqtt.CocoaMQTT-OSXTests";
+				PRODUCT_NAME = "$(TARGET_NAME)";
+				SDKROOT = macosx;
+			};
+			name = Debug;
+		};
+		040997461C1B0E06006B5A6D /* Release */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				CODE_SIGN_IDENTITY = "-";
+				COMBINE_HIDPI_IMAGES = YES;
+				INFOPLIST_FILE = CocoaMQTTTests/Info.plist;
+				LD_RUNPATH_SEARCH_PATHS = "$(inherited) @executable_path/../Frameworks @loader_path/../Frameworks";
+				MACOSX_DEPLOYMENT_TARGET = 10.11;
+				PRODUCT_BUNDLE_IDENTIFIER = "io.emqtt.CocoaMQTT-OSXTests";
+				PRODUCT_NAME = "$(TARGET_NAME)";
+				SDKROOT = macosx;
+			};
+			name = Release;
+		};
+		0409976B1C1B0F7E006B5A6D /* Debug */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				CLANG_ALLOW_NON_MODULAR_INCLUDES_IN_FRAMEWORK_MODULES = YES;
+				CLANG_ENABLE_MODULES = YES;
+				DEFINES_MODULE = YES;
+				DYLIB_COMPATIBILITY_VERSION = 1;
+				DYLIB_CURRENT_VERSION = 1;
+				DYLIB_INSTALL_NAME_BASE = "@rpath";
+				INFOPLIST_FILE = Source/Info.plist;
+				INSTALL_PATH = "$(LOCAL_LIBRARY_DIR)/Frameworks";
+				LD_RUNPATH_SEARCH_PATHS = "$(inherited) @executable_path/Frameworks @loader_path/Frameworks";
+				PRODUCT_BUNDLE_IDENTIFIER = io.emqtt.CocoaMQTT;
+				PRODUCT_NAME = CocoaMQTT;
+				SDKROOT = appletvos;
+				SKIP_INSTALL = YES;
+				SWIFT_OBJC_BRIDGING_HEADER = "";
+				SWIFT_OBJC_INTERFACE_HEADER_NAME = "";
+				SWIFT_OPTIMIZATION_LEVEL = "-Onone";
+				TARGETED_DEVICE_FAMILY = 3;
+				TVOS_DEPLOYMENT_TARGET = 9.0;
+			};
+			name = Debug;
+		};
+		0409976C1C1B0F7E006B5A6D /* Release */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				CLANG_ALLOW_NON_MODULAR_INCLUDES_IN_FRAMEWORK_MODULES = YES;
+				CLANG_ENABLE_MODULES = YES;
+				DEFINES_MODULE = YES;
+				DYLIB_COMPATIBILITY_VERSION = 1;
+				DYLIB_CURRENT_VERSION = 1;
+				DYLIB_INSTALL_NAME_BASE = "@rpath";
+				INFOPLIST_FILE = Source/Info.plist;
+				INSTALL_PATH = "$(LOCAL_LIBRARY_DIR)/Frameworks";
+				LD_RUNPATH_SEARCH_PATHS = "$(inherited) @executable_path/Frameworks @loader_path/Frameworks";
+				PRODUCT_BUNDLE_IDENTIFIER = io.emqtt.CocoaMQTT;
+				PRODUCT_NAME = CocoaMQTT;
+				SDKROOT = appletvos;
+				SKIP_INSTALL = YES;
+				SWIFT_OBJC_BRIDGING_HEADER = "";
+				SWIFT_OBJC_INTERFACE_HEADER_NAME = "";
+				TARGETED_DEVICE_FAMILY = 3;
+				TVOS_DEPLOYMENT_TARGET = 9.0;
+			};
+			name = Release;
+		};
+		0409976E1C1B0F7E006B5A6D /* Debug */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				INFOPLIST_FILE = CocoaMQTTTests/Info.plist;
+				LD_RUNPATH_SEARCH_PATHS = "$(inherited) @executable_path/Frameworks @loader_path/Frameworks";
+				PRODUCT_BUNDLE_IDENTIFIER = "io.emqtt.CocoaMQTT-tvOSTests";
+				PRODUCT_NAME = "$(TARGET_NAME)";
+				SDKROOT = appletvos;
+				TVOS_DEPLOYMENT_TARGET = 9.0;
+			};
+			name = Debug;
+		};
+		0409976F1C1B0F7E006B5A6D /* Release */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				INFOPLIST_FILE = CocoaMQTTTests/Info.plist;
+				LD_RUNPATH_SEARCH_PATHS = "$(inherited) @executable_path/Frameworks @loader_path/Frameworks";
+				PRODUCT_BUNDLE_IDENTIFIER = "io.emqtt.CocoaMQTT-tvOSTests";
+				PRODUCT_NAME = "$(TARGET_NAME)";
+				SDKROOT = appletvos;
+				TVOS_DEPLOYMENT_TARGET = 9.0;
+			};
+			name = Release;
+		};
+/* End XCBuildConfiguration section */
+
+/* Begin XCConfigurationList section */
+		040997091C1B0B96006B5A6D /* Build configuration list for PBXProject "CocoaMQTT" */ = {
+			isa = XCConfigurationList;
+			buildConfigurations = (
+				040997211C1B0B96006B5A6D /* Debug */,
+				040997221C1B0B96006B5A6D /* Release */,
+			);
+			defaultConfigurationIsVisible = 0;
+			defaultConfigurationName = Release;
+		};
+		040997231C1B0B96006B5A6D /* Build configuration list for PBXNativeTarget "CocoaMQTT iOS" */ = {
+			isa = XCConfigurationList;
+			buildConfigurations = (
+				040997241C1B0B96006B5A6D /* Debug */,
+				040997251C1B0B96006B5A6D /* Release */,
+			);
+			defaultConfigurationIsVisible = 0;
+			defaultConfigurationName = Release;
+		};
+		040997261C1B0B96006B5A6D /* Build configuration list for PBXNativeTarget "CocoaMQTT iOSTests" */ = {
+			isa = XCConfigurationList;
+			buildConfigurations = (
+				040997271C1B0B96006B5A6D /* Debug */,
+				040997281C1B0B96006B5A6D /* Release */,
+			);
+			defaultConfigurationIsVisible = 0;
+			defaultConfigurationName = Release;
+		};
+		040997411C1B0E06006B5A6D /* Build configuration list for PBXNativeTarget "CocoaMQTT OSX" */ = {
+			isa = XCConfigurationList;
+			buildConfigurations = (
+				040997421C1B0E06006B5A6D /* Debug */,
+				040997431C1B0E06006B5A6D /* Release */,
+			);
+			defaultConfigurationIsVisible = 0;
+			defaultConfigurationName = Release;
+		};
+		040997441C1B0E06006B5A6D /* Build configuration list for PBXNativeTarget "CocoaMQTT OSXTests" */ = {
+			isa = XCConfigurationList;
+			buildConfigurations = (
+				040997451C1B0E06006B5A6D /* Debug */,
+				040997461C1B0E06006B5A6D /* Release */,
+			);
+			defaultConfigurationIsVisible = 0;
+			defaultConfigurationName = Release;
+		};
+		0409976A1C1B0F7E006B5A6D /* Build configuration list for PBXNativeTarget "CocoaMQTT tvOS" */ = {
+			isa = XCConfigurationList;
+			buildConfigurations = (
+				0409976B1C1B0F7E006B5A6D /* Debug */,
+				0409976C1C1B0F7E006B5A6D /* Release */,
+			);
+			defaultConfigurationIsVisible = 0;
+			defaultConfigurationName = Release;
+		};
+		0409976D1C1B0F7E006B5A6D /* Build configuration list for PBXNativeTarget "CocoaMQTT tvOSTests" */ = {
+			isa = XCConfigurationList;
+			buildConfigurations = (
+				0409976E1C1B0F7E006B5A6D /* Debug */,
+				0409976F1C1B0F7E006B5A6D /* Release */,
+			);
+			defaultConfigurationIsVisible = 0;
+			defaultConfigurationName = Release;
+		};
+/* End XCConfigurationList section */
+	};
+	rootObject = 040997061C1B0B96006B5A6D /* Project object */;
+}
