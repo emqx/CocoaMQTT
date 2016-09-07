@@ -425,10 +425,6 @@ public class CocoaMQTT: NSObject, CocoaMQTTClient, GCDAsyncSocketDelegate, Cocoa
         #if DEBUG
         NSLog("CocoaMQTT: PUBREL Received: \(msgid)")
         #endif
-        if let message = messages[msgid] {
-            messages.removeValueForKey(msgid)
-            delegate?.mqtt(self, didPublishMessage: message, id: msgid)
-        }
         _puback(CocoaMQTTFrameType.PUBCOMP, msgid: msgid)
     }
 
@@ -436,6 +432,7 @@ public class CocoaMQTT: NSObject, CocoaMQTTClient, GCDAsyncSocketDelegate, Cocoa
         #if DEBUG
         NSLog("CocoaMQTT: PUBCOMP Received: \(msgid)")
         #endif
+        messages.removeValueForKey(msgid)
     }
 
     func didReceiveSubAck(reader: CocoaMQTTReader, msgid: UInt16) {
