@@ -23,10 +23,10 @@ public class CocoaMQTTMessage: NSObject {
             return NSString(bytes: payload, length: payload.count, encoding: NSUTF8StringEncoding) as? String
         }
     }
+    
+    public var retained: Bool = false
 
     var qos: CocoaMQTTQOS = .QOS1
-
-    var retained: Bool = false
 
     var dup: Bool = false
 
