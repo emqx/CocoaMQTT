@@ -14,63 +14,10 @@
 		04DB765D1C1E7BB900776B4C /* Main.storyboard in Resources */ = {isa = PBXBuildFile; fileRef = 04DB765B1C1E7BB900776B4C /* Main.storyboard */; };
 		04DB765F1C1E7BB900776B4C /* Assets.xcassets in Resources */ = {isa = PBXBuildFile; fileRef = 04DB765E1C1E7BB900776B4C /* Assets.xcassets */; };
 		04DB76621C1E7BB900776B4C /* LaunchScreen.storyboard in Resources */ = {isa = PBXBuildFile; fileRef = 04DB76601C1E7BB900776B4C /* LaunchScreen.storyboard */; };
-		04DB76BD1C1E82F900776B4C /* CocoaMQTT.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = 04DB76B01C1E82F200776B4C /* CocoaMQTT.framework */; };
-		04DB76BE1C1E82F900776B4C /* CocoaMQTT.framework in Embed Frameworks */ = {isa = PBXBuildFile; fileRef = 04DB76B01C1E82F200776B4C /* CocoaMQTT.framework */; settings = {ATTRIBUTES = (CodeSignOnCopy, RemoveHeadersOnCopy, ); }; };
 		04FE64871C2C41AE001E8F43 /* ChatViewController.swift in Sources */ = {isa = PBXBuildFile; fileRef = 04FE64861C2C41AE001E8F43 /* ChatViewController.swift */; };
 		04FE64A71C2D9F75001E8F43 /* ChatLeftMessageCell.swift in Sources */ = {isa = PBXBuildFile; fileRef = 04FE64A61C2D9F75001E8F43 /* ChatLeftMessageCell.swift */; };
+		DCA13C3025287722DD66DEF5 /* Pods_Example.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = 7C2B190C3FBF2EC15466198C /* Pods_Example.framework */; };
 /* End PBXBuildFile section */
-
-/* Begin PBXContainerItemProxy section */
-		04DB76AF1C1E82F200776B4C /* PBXContainerItemProxy */ = {
-			isa = PBXContainerItemProxy;
-			containerPortal = 04DB767D1C1E7C6100776B4C /* CocoaMQTT.xcodeproj */;
-			proxyType = 2;
-			remoteGlobalIDString = 0409970F1C1B0B96006B5A6D;
-			remoteInfo = "CocoaMQTT iOS";
-		};
-		04DB76B11C1E82F200776B4C /* PBXContainerItemProxy */ = {
-			isa = PBXContainerItemProxy;
-			containerPortal = 04DB767D1C1E7C6100776B4C /* CocoaMQTT.xcodeproj */;
-			proxyType = 2;
-			remoteGlobalIDString = 040997191C1B0B96006B5A6D;
-			remoteInfo = "CocoaMQTT iOSTests";
-		};
-		04DB76B31C1E82F200776B4C /* PBXContainerItemProxy */ = {
-			isa = PBXContainerItemProxy;
-			containerPortal = 04DB767D1C1E7C6100776B4C /* CocoaMQTT.xcodeproj */;
-			proxyType = 2;
-			remoteGlobalIDString = 040997301C1B0E06006B5A6D;
-			remoteInfo = "CocoaMQTT OSX";
-		};
-		04DB76B51C1E82F200776B4C /* PBXContainerItemProxy */ = {
-			isa = PBXContainerItemProxy;
-			containerPortal = 04DB767D1C1E7C6100776B4C /* CocoaMQTT.xcodeproj */;
-			proxyType = 2;
-			remoteGlobalIDString = 040997391C1B0E06006B5A6D;
-			remoteInfo = "CocoaMQTT OSXTests";
-		};
-		04DB76B91C1E82F200776B4C /* PBXContainerItemProxy */ = {
-			isa = PBXContainerItemProxy;
-			containerPortal = 04DB767D1C1E7C6100776B4C /* CocoaMQTT.xcodeproj */;
-			proxyType = 2;
-			remoteGlobalIDString = 040997591C1B0F7E006B5A6D;
-			remoteInfo = "CocoaMQTT tvOS";
-		};
-		04DB76BB1C1E82F200776B4C /* PBXContainerItemProxy */ = {
-			isa = PBXContainerItemProxy;
-			containerPortal = 04DB767D1C1E7C6100776B4C /* CocoaMQTT.xcodeproj */;
-			proxyType = 2;
-			remoteGlobalIDString = 040997621C1B0F7E006B5A6D;
-			remoteInfo = "CocoaMQTT tvOSTests";
-		};
-		04DB76BF1C1E82F900776B4C /* PBXContainerItemProxy */ = {
-			isa = PBXContainerItemProxy;
-			containerPortal = 04DB767D1C1E7C6100776B4C /* CocoaMQTT.xcodeproj */;
-			proxyType = 1;
-			remoteGlobalIDString = 0409970E1C1B0B96006B5A6D;
-			remoteInfo = "CocoaMQTT iOS";
-		};
-/* End PBXContainerItemProxy section */
 
 /* Begin PBXCopyFilesBuildPhase section */
 		04DB76C11C1E82F900776B4C /* Embed Frameworks */ = {
@@ -79,7 +26,6 @@
 			dstPath = "";
 			dstSubfolderSpec = 10;
 			files = (
-				04DB76BE1C1E82F900776B4C /* CocoaMQTT.framework in Embed Frameworks */,
 			);
 			name = "Embed Frameworks";
 			runOnlyForDeploymentPostprocessing = 0;
@@ -96,9 +42,11 @@
 		04DB765E1C1E7BB900776B4C /* Assets.xcassets */ = {isa = PBXFileReference; lastKnownFileType = folder.assetcatalog; path = Assets.xcassets; sourceTree = "<group>"; };
 		04DB76611C1E7BB900776B4C /* Base */ = {isa = PBXFileReference; lastKnownFileType = file.storyboard; name = Base; path = Base.lproj/LaunchScreen.storyboard; sourceTree = "<group>"; };
 		04DB76631C1E7BB900776B4C /* Info.plist */ = {isa = PBXFileReference; lastKnownFileType = text.plist.xml; path = Info.plist; sourceTree = "<group>"; };
-		04DB767D1C1E7C6100776B4C /* CocoaMQTT.xcodeproj */ = {isa = PBXFileReference; lastKnownFileType = "wrapper.pb-project"; name = CocoaMQTT.xcodeproj; path = ../CocoaMQTT.xcodeproj; sourceTree = "<group>"; };
 		04FE64861C2C41AE001E8F43 /* ChatViewController.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = ChatViewController.swift; sourceTree = "<group>"; };
 		04FE64A61C2D9F75001E8F43 /* ChatLeftMessageCell.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = ChatLeftMessageCell.swift; sourceTree = "<group>"; };
+		7C2B190C3FBF2EC15466198C /* Pods_Example.framework */ = {isa = PBXFileReference; explicitFileType = wrapper.framework; includeInIndex = 0; path = Pods_Example.framework; sourceTree = BUILT_PRODUCTS_DIR; };
+		A632A27CCA3C31D8F8120C8A /* Pods-Example.debug.xcconfig */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = text.xcconfig; name = "Pods-Example.debug.xcconfig"; path = "Pods/Target Support Files/Pods-Example/Pods-Example.debug.xcconfig"; sourceTree = "<group>"; };
+		F464F97160EF63D352C6F1BC /* Pods-Example.release.xcconfig */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = text.xcconfig; name = "Pods-Example.release.xcconfig"; path = "Pods/Target Support Files/Pods-Example/Pods-Example.release.xcconfig"; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
 /* Begin PBXFrameworksBuildPhase section */
@@ -106,7 +54,7 @@
 			isa = PBXFrameworksBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
-				04DB76BD1C1E82F900776B4C /* CocoaMQTT.framework in Frameworks */,
+				DCA13C3025287722DD66DEF5 /* Pods_Example.framework in Frameworks */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -118,7 +66,8 @@
 			children = (
 				04DB76561C1E7BB900776B4C /* Example */,
 				04DB76551C1E7BB900776B4C /* Products */,
-				04DB767D1C1E7C6100776B4C /* CocoaMQTT.xcodeproj */,
+				DD8DF426A25B5A196C4976C1 /* Pods */,
+				E3D87B0BAFD8697B373C36BD /* Frameworks */,
 			);
 			sourceTree = "<group>";
 		};
@@ -155,17 +104,21 @@
 			name = "Supporting Files";
 			sourceTree = "<group>";
 		};
-		04DB76A61C1E82F200776B4C /* Products */ = {
+		DD8DF426A25B5A196C4976C1 /* Pods */ = {
 			isa = PBXGroup;
 			children = (
-				04DB76B01C1E82F200776B4C /* CocoaMQTT.framework */,
-				04DB76B21C1E82F200776B4C /* CocoaMQTT iOSTests.xctest */,
-				04DB76B41C1E82F200776B4C /* CocoaMQTT.framework */,
-				04DB76B61C1E82F200776B4C /* CocoaMQTT OSXTests.xctest */,
-				04DB76BA1C1E82F200776B4C /* CocoaMQTT.framework */,
-				04DB76BC1C1E82F200776B4C /* CocoaMQTT tvOSTests.xctest */,
+				A632A27CCA3C31D8F8120C8A /* Pods-Example.debug.xcconfig */,
+				F464F97160EF63D352C6F1BC /* Pods-Example.release.xcconfig */,
 			);
-			name = Products;
+			name = Pods;
+			sourceTree = "<group>";
+		};
+		E3D87B0BAFD8697B373C36BD /* Frameworks */ = {
+			isa = PBXGroup;
+			children = (
+				7C2B190C3FBF2EC15466198C /* Pods_Example.framework */,
+			);
+			name = Frameworks;
 			sourceTree = "<group>";
 		};
 /* End PBXGroup section */
@@ -175,15 +128,17 @@
 			isa = PBXNativeTarget;
 			buildConfigurationList = 04DB76661C1E7BB900776B4C /* Build configuration list for PBXNativeTarget "Example" */;
 			buildPhases = (
+				B8B6F59ED9B3CFAB8AA29288 /* [CP] Check Pods Manifest.lock */,
 				04DB76501C1E7BB900776B4C /* Sources */,
 				04DB76511C1E7BB900776B4C /* Frameworks */,
 				04DB76521C1E7BB900776B4C /* Resources */,
 				04DB76C11C1E82F900776B4C /* Embed Frameworks */,
+				E0F8AAEF93B4208443D3BB24 /* [CP] Embed Pods Frameworks */,
+				B7657B971EAE8359B74B4EF1 /* [CP] Copy Pods Resources */,
 			);
 			buildRules = (
 			);
 			dependencies = (
-				04DB76C01C1E82F900776B4C /* PBXTargetDependency */,
 			);
 			name = Example;
 			productName = Example;
@@ -217,63 +172,12 @@
 			mainGroup = 04DB764B1C1E7BB800776B4C;
 			productRefGroup = 04DB76551C1E7BB900776B4C /* Products */;
 			projectDirPath = "";
-			projectReferences = (
-				{
-					ProductGroup = 04DB76A61C1E82F200776B4C /* Products */;
-					ProjectRef = 04DB767D1C1E7C6100776B4C /* CocoaMQTT.xcodeproj */;
-				},
-			);
 			projectRoot = "";
 			targets = (
 				04DB76531C1E7BB900776B4C /* Example */,
 			);
 		};
 /* End PBXProject section */
-
-/* Begin PBXReferenceProxy section */
-		04DB76B01C1E82F200776B4C /* CocoaMQTT.framework */ = {
-			isa = PBXReferenceProxy;
-			fileType = wrapper.framework;
-			path = CocoaMQTT.framework;
-			remoteRef = 04DB76AF1C1E82F200776B4C /* PBXContainerItemProxy */;
-			sourceTree = BUILT_PRODUCTS_DIR;
-		};
-		04DB76B21C1E82F200776B4C /* CocoaMQTT iOSTests.xctest */ = {
-			isa = PBXReferenceProxy;
-			fileType = wrapper.cfbundle;
-			path = "CocoaMQTT iOSTests.xctest";
-			remoteRef = 04DB76B11C1E82F200776B4C /* PBXContainerItemProxy */;
-			sourceTree = BUILT_PRODUCTS_DIR;
-		};
-		04DB76B41C1E82F200776B4C /* CocoaMQTT.framework */ = {
-			isa = PBXReferenceProxy;
-			fileType = wrapper.framework;
-			path = CocoaMQTT.framework;
-			remoteRef = 04DB76B31C1E82F200776B4C /* PBXContainerItemProxy */;
-			sourceTree = BUILT_PRODUCTS_DIR;
-		};
-		04DB76B61C1E82F200776B4C /* CocoaMQTT OSXTests.xctest */ = {
-			isa = PBXReferenceProxy;
-			fileType = wrapper.cfbundle;
-			path = "CocoaMQTT OSXTests.xctest";
-			remoteRef = 04DB76B51C1E82F200776B4C /* PBXContainerItemProxy */;
-			sourceTree = BUILT_PRODUCTS_DIR;
-		};
-		04DB76BA1C1E82F200776B4C /* CocoaMQTT.framework */ = {
-			isa = PBXReferenceProxy;
-			fileType = wrapper.framework;
-			path = CocoaMQTT.framework;
-			remoteRef = 04DB76B91C1E82F200776B4C /* PBXContainerItemProxy */;
-			sourceTree = BUILT_PRODUCTS_DIR;
-		};
-		04DB76BC1C1E82F200776B4C /* CocoaMQTT tvOSTests.xctest */ = {
-			isa = PBXReferenceProxy;
-			fileType = wrapper.cfbundle;
-			path = "CocoaMQTT tvOSTests.xctest";
-			remoteRef = 04DB76BB1C1E82F200776B4C /* PBXContainerItemProxy */;
-			sourceTree = BUILT_PRODUCTS_DIR;
-		};
-/* End PBXReferenceProxy section */
 
 /* Begin PBXResourcesBuildPhase section */
 		04DB76521C1E7BB900776B4C /* Resources */ = {
@@ -287,6 +191,54 @@
 			runOnlyForDeploymentPostprocessing = 0;
 		};
 /* End PBXResourcesBuildPhase section */
+
+/* Begin PBXShellScriptBuildPhase section */
+		B7657B971EAE8359B74B4EF1 /* [CP] Copy Pods Resources */ = {
+			isa = PBXShellScriptBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+			);
+			inputPaths = (
+			);
+			name = "[CP] Copy Pods Resources";
+			outputPaths = (
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+			shellPath = /bin/sh;
+			shellScript = "\"${SRCROOT}/Pods/Target Support Files/Pods-Example/Pods-Example-resources.sh\"\n";
+			showEnvVarsInLog = 0;
+		};
+		B8B6F59ED9B3CFAB8AA29288 /* [CP] Check Pods Manifest.lock */ = {
+			isa = PBXShellScriptBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+			);
+			inputPaths = (
+			);
+			name = "[CP] Check Pods Manifest.lock";
+			outputPaths = (
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+			shellPath = /bin/sh;
+			shellScript = "diff \"${PODS_ROOT}/../Podfile.lock\" \"${PODS_ROOT}/Manifest.lock\" > /dev/null\nif [[ $? != 0 ]] ; then\n    cat << EOM\nerror: The sandbox is not in sync with the Podfile.lock. Run 'pod install' or update your CocoaPods installation.\nEOM\n    exit 1\nfi\n";
+			showEnvVarsInLog = 0;
+		};
+		E0F8AAEF93B4208443D3BB24 /* [CP] Embed Pods Frameworks */ = {
+			isa = PBXShellScriptBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+			);
+			inputPaths = (
+			);
+			name = "[CP] Embed Pods Frameworks";
+			outputPaths = (
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+			shellPath = /bin/sh;
+			shellScript = "\"${SRCROOT}/Pods/Target Support Files/Pods-Example/Pods-Example-frameworks.sh\"\n";
+			showEnvVarsInLog = 0;
+		};
+/* End PBXShellScriptBuildPhase section */
 
 /* Begin PBXSourcesBuildPhase section */
 		04DB76501C1E7BB900776B4C /* Sources */ = {
@@ -303,14 +255,6 @@
 			runOnlyForDeploymentPostprocessing = 0;
 		};
 /* End PBXSourcesBuildPhase section */
-
-/* Begin PBXTargetDependency section */
-		04DB76C01C1E82F900776B4C /* PBXTargetDependency */ = {
-			isa = PBXTargetDependency;
-			name = "CocoaMQTT iOS";
-			targetProxy = 04DB76BF1C1E82F900776B4C /* PBXContainerItemProxy */;
-		};
-/* End PBXTargetDependency section */
 
 /* Begin PBXVariantGroup section */
 		04DB765B1C1E7BB900776B4C /* Main.storyboard */ = {
@@ -415,6 +359,7 @@
 		};
 		04DB76671C1E7BB900776B4C /* Debug */ = {
 			isa = XCBuildConfiguration;
+			baseConfigurationReference = A632A27CCA3C31D8F8120C8A /* Pods-Example.debug.xcconfig */;
 			buildSettings = {
 				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
 				CODE_SIGN_IDENTITY = "iPhone Developer";
@@ -431,6 +376,7 @@
 		};
 		04DB76681C1E7BB900776B4C /* Release */ = {
 			isa = XCBuildConfiguration;
+			baseConfigurationReference = F464F97160EF63D352C6F1BC /* Pods-Example.release.xcconfig */;
 			buildSettings = {
 				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
 				CODE_SIGN_IDENTITY = "iPhone Developer";
