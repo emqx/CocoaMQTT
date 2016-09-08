@@ -26,4 +26,4 @@ xcuserdata
 *.moved-aside
 DerivedData
 *.xcuserstate
-Pods
+Example/Pods
