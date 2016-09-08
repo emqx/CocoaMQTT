@@ -1,0 +1,17 @@
+PODS:
+  - CocoaAsyncSocket (7.5.0):
+    - CocoaAsyncSocket/GCD (= 7.5.0)
+  - CocoaAsyncSocket/GCD (7.5.0)
+  - MSWeakTimer (1.1.0)
+
+DEPENDENCIES:
+  - CocoaAsyncSocket
+  - MSWeakTimer
+
+SPEC CHECKSUMS:
+  CocoaAsyncSocket: 3baeb1ddd969f81cf9fca81053ae49ef2d1cbbfa
+  MSWeakTimer: 9426150f933b80ed3acf3f6d228e4b61f0e303c8
+
+PODFILE CHECKSUM: 023f322721dcf930f6c8943485e460e659fbbec7
+
+COCOAPODS: 1.0.1

@@ -27,4 +27,3 @@ xcuserdata
 DerivedData
 *.xcuserstate
 Pods
-Podfile.lock
