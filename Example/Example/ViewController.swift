@@ -39,7 +39,7 @@ class ViewController: UIViewController {
         navigationController?.navigationBar.isHidden = false
     }
     
-
+    
     func mqttSetting() {
         let clientIdPid = "CocoaMQTT-\(animal!)-" + String(ProcessInfo().processIdentifier)
         mqtt = CocoaMQTT(clientId: clientIdPid, host: "localhost", port: 1883)
@@ -66,10 +66,10 @@ extension ViewController: CocoaMQTTDelegate {
     
     func mqtt(_ mqtt: CocoaMQTT, didConnectAck ack: CocoaMQTTConnAck) {
         //print("didConnectAck \(ack.rawValue)")
-        if ack == .ACCEPT {
-            mqtt.subscribe("chat/room/animals/client/+", qos: CocoaMQTTQOS.QOS1)
+        if ack == .accept {
+            mqtt.subscribe("chat/room/animals/client/+", qos: CocoaMQTTQOS.qos1)
             mqtt.ping()
-
+            
             let chatViewController = storyboard?.instantiateViewController(withIdentifier: "ChatViewController") as? ChatViewController
             chatViewController?.mqtt = mqtt
             navigationController!.pushViewController(chatViewController!, animated: true)
@@ -87,7 +87,8 @@ extension ViewController: CocoaMQTTDelegate {
     
     func mqtt(_ mqtt: CocoaMQTT, didReceiveMessage message: CocoaMQTTMessage, id: UInt16 ) {
         print("didReceivedMessage: \(message.string) with id \(id)")
-        NotificationCenter.defaultCenter().postNotificationName("MQTTMessageNotification" + animal!, object: self, userInfo: ["message": message.string!, "topic": message.topic])
+        let name = NSNotification.Name(rawValue: "MQTTMessageNotification" + animal!)
+        NotificationCenter.default.post(name: name, object: self, userInfo: ["message": message.string!, "topic": message.topic])
     }
     
     func mqtt(_ mqtt: CocoaMQTT, didSubscribeTopic topic: String) {
@@ -106,7 +107,7 @@ extension ViewController: CocoaMQTTDelegate {
         _console("didReceivePong")
     }
     
-    func mqttDidDisconnect(_ mqtt: CocoaMQTT, withError err: NSError?) {
+    func mqttDidDisconnect(_ mqtt: CocoaMQTT, withError err: Error?) {
         _console("mqttDidDisconnect")
     }
     

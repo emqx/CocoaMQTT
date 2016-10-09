@@ -57,9 +57,9 @@ class ChatViewController: UIViewController {
     @IBAction func sendMessage() {
         let message = messageTextView.text
         if let client = animal {
-            mqtt!.publish("chat/room/animals/client/" + client, withString: message, qos: .QOS1)
+            mqtt!.publish("chat/room/animals/client/" + client, withString: message!, qos: .qos1)
         }
-    
+        
         messageTextView.text = ""
         sendMessageButton.isEnabled = false
         messageTextViewHeightConstraint.constant = messageTextView.contentSize.height
@@ -68,7 +68,7 @@ class ChatViewController: UIViewController {
     }
     @IBAction func disconnect() {
         mqtt!.disconnect()
-        navigationController?.popViewController(animated: true)
+        _ = navigationController?.popViewController(animated: true)
     }
     
     
@@ -82,8 +82,10 @@ class ChatViewController: UIViewController {
         tableView.dataSource = self
         tableView.rowHeight = UITableViewAutomaticDimension
         tableView.estimatedRowHeight = 50
-        NotificationCenter.default.addObserver(self, selector: #selector(ChatViewController.receivedMessage(_:)), name: "MQTTMessageNotification" + animal!, object: nil)
-        NotificationCenter.default.addObserver(self, selector: #selector(ChatViewController.keyboardChanged(_:)), name: NSNotification.Name.UIKeyboardWillChangeFrame, object: nil)
+        
+        let name = NSNotification.Name(rawValue: "MQTTMessageNotification" + animal!)
+        NotificationCenter.default.addObserver(self, selector: #selector(ChatViewController.receivedMessage(notification:)), name: name, object: nil)
+        NotificationCenter.default.addObserver(self, selector: #selector(ChatViewController.keyboardChanged(notification:)), name: NSNotification.Name.UIKeyboardWillChangeFrame, object: nil)
     }
     
     deinit {
@@ -103,7 +105,7 @@ class ChatViewController: UIViewController {
         }
         view.layoutIfNeeded()
     }
-
+    
     func receivedMessage(notification: NSNotification) {
         let userInfo = notification.userInfo as! [String: AnyObject]
         let content = userInfo["message"] as! String
@@ -112,7 +114,7 @@ class ChatViewController: UIViewController {
         let chatMessage = ChatMessage(sender: sender, content: content)
         messages.append(chatMessage)
     }
-
+    
     func scrollToBottom() {
         let count = messages.count
         if count > 3 {
