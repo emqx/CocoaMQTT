@@ -51,7 +51,7 @@ extension Bool {
  */
 extension UInt8 {
 
-    func bitAt(offset: UInt8) -> UInt8 {
+    func bitAt(_ offset: UInt8) -> UInt8 {
         return (self >> offset) & 0x01
     }
 
@@ -62,35 +62,35 @@ extension UInt8 {
  */
 enum CocoaMQTTFrameType: UInt8 {
 
-    case RESERVED = 0x00
+    case reserved = 0x00
 
-    case CONNECT = 0x10
+    case connect = 0x10
 
-    case CONNACK = 0x20
+    case connack = 0x20
 
-    case PUBLISH = 0x30
+    case publish = 0x30
 
-    case PUBACK = 0x40
+    case puback = 0x40
 
-    case PUBREC = 0x50
+    case pubrec = 0x50
 
-    case PUBREL = 0x60
+    case pubrel = 0x60
 
-    case PUBCOMP = 0x70
+    case pubcomp = 0x70
 
-    case SUBSCRIBE = 0x80
+    case subscribe = 0x80
 
-    case SUBACK = 0x90
+    case suback = 0x90
 
-    case UNSUBSCRIBE = 0xA0
+    case unsubscribe = 0xA0
 
-    case UNSUBACK = 0xB0
+    case unsuback = 0xB0
 
-    case PINGREQ = 0xC0
+    case pingreq = 0xC0
 
-    case PINGRESP = 0xD0
+    case pingresp = 0xD0
 
-    case DISCONNECT = 0xE0
+    case disconnect = 0xE0
 
 }
 
@@ -244,7 +244,7 @@ class CocoaMQTTFrameConnect: CocoaMQTTFrame {
 
     init(client: CocoaMQTT) {
         self.client = client
-        super.init(type: CocoaMQTTFrameType.CONNECT)
+        super.init(type: CocoaMQTTFrameType.connect)
     }
 
     override func pack() {
@@ -293,7 +293,7 @@ class CocoaMQTTFramePublish: CocoaMQTTFrame {
     var data: [UInt8]?
 
     init(msgid: UInt16, topic: String, payload: [UInt8]) {
-        super.init(type: CocoaMQTTFrameType.PUBLISH, payload: payload)
+        super.init(type: CocoaMQTTFrameType.publish, payload: payload)
         self.msgid = msgid
         self.topic = topic
     }
@@ -308,7 +308,7 @@ class CocoaMQTTFramePublish: CocoaMQTTFrame {
         var msb = data![0], lsb = data![1]
         let len = UInt16(msb) << 8 + UInt16(lsb)
         var pos: Int = 2 + Int(len)
-        topic = NSString(bytes: [UInt8](data![2...(pos-1)]), length: Int(len), encoding: NSUTF8StringEncoding) as? String
+        topic = NSString(bytes: [UInt8](data![2...(pos-1)]), length: Int(len), encoding: String.Encoding.utf8.rawValue) as? String
 
         //msgid
         if qos == 0 {
@@ -348,8 +348,8 @@ class CocoaMQTTFramePubAck: CocoaMQTTFrame {
 
     init(type: CocoaMQTTFrameType, msgid: UInt16) {
         super.init(type: type)
-        if type == CocoaMQTTFrameType.PUBREL {
-            qos = CocoaMQTTQOS.QOS1.rawValue
+        if type == CocoaMQTTFrameType.pubrel {
+            qos = CocoaMQTTQOS.qos1.rawValue
         }
         self.msgid = msgid
     }
@@ -369,14 +369,14 @@ class CocoaMQTTFrameSubscribe: CocoaMQTTFrame {
 
     var topic: String?
 
-    var reqos: UInt8 = CocoaMQTTQOS.QOS0.rawValue
+    var reqos: UInt8 = CocoaMQTTQOS.qos0.rawValue
 
     init(msgid: UInt16, topic: String, reqos: UInt8) {
-        super.init(type: CocoaMQTTFrameType.SUBSCRIBE)
+        super.init(type: CocoaMQTTFrameType.subscribe)
         self.msgid = msgid
         self.topic = topic
         self.reqos = reqos
-        self.qos = CocoaMQTTQOS.QOS1.rawValue
+        self.qos = CocoaMQTTQOS.qos1.rawValue
     }
 
     override func pack() {
@@ -397,10 +397,10 @@ class CocoaMQTTFrameUnsubscribe: CocoaMQTTFrame {
     var topic: String?
 
     init(msgid: UInt16, topic: String) {
-        super.init(type: CocoaMQTTFrameType.UNSUBSCRIBE)
+        super.init(type: CocoaMQTTFrameType.unsubscribe)
         self.msgid = msgid
         self.topic = topic
-        qos = CocoaMQTTQOS.QOS1.rawValue
+        qos = CocoaMQTTQOS.qos1.rawValue
     }
 
     override func pack() {
