@@ -207,6 +207,7 @@ open class CocoaMQTT: NSObject, CocoaMQTTClient, GCDAsyncSocketDelegate, CocoaMQ
 
     //API Functions
 
+    @discardableResult
     open func connect() -> Bool {
         socket = GCDAsyncSocket(delegate: self, delegateQueue: DispatchQueue.main)
         reader = CocoaMQTTReader(socket: socket!, delegate: self)
@@ -222,11 +223,13 @@ open class CocoaMQTT: NSObject, CocoaMQTTClient, GCDAsyncSocketDelegate, CocoaMQ
         }
     }
 
+    @discardableResult
     open func publish(_ topic: String, withString string: String, qos: CocoaMQTTQOS = .qos1, retained: Bool = false, dup: Bool = false) -> UInt16 {
         let message = CocoaMQTTMessage(topic: topic, string: string, qos: qos, retained: retained, dup: dup)
         return publish(message)
     }
 
+    @discardableResult
     open func publish(_ message: CocoaMQTTMessage) -> UInt16 {
         let msgId: UInt16 = _nextMessageId()
         let frame = CocoaMQTTFramePublish(msgid: msgId, topic: message.topic, payload: message.payload)
@@ -243,6 +246,7 @@ open class CocoaMQTT: NSObject, CocoaMQTTClient, GCDAsyncSocketDelegate, CocoaMQ
         return msgId
     }
 
+    @discardableResult
     open func subscribe(_ topic: String, qos: CocoaMQTTQOS = .qos1) -> UInt16 {
         let msgId = _nextMessageId()
         let frame = CocoaMQTTFrameSubscribe(msgid: msgId, topic: topic, reqos: qos.rawValue)
@@ -251,6 +255,7 @@ open class CocoaMQTT: NSObject, CocoaMQTTClient, GCDAsyncSocketDelegate, CocoaMQ
         return msgId
     }
 
+    @discardableResult
     open func unsubscribe(_ topic: String) -> UInt16 {
         let msgId = _nextMessageId()
         let frame = CocoaMQTTFrameUnsubscribe(msgid: msgId, topic: topic)
