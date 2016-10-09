@@ -50,7 +50,7 @@ class ChatViewController: UIViewController {
     
     @IBOutlet weak var sendMessageButton: UIButton! {
         didSet {
-            sendMessageButton.enabled = false
+            sendMessageButton.isEnabled = false
         }
     }
     
@@ -61,20 +61,20 @@ class ChatViewController: UIViewController {
         }
     
         messageTextView.text = ""
-        sendMessageButton.enabled = false
+        sendMessageButton.isEnabled = false
         messageTextViewHeightConstraint.constant = messageTextView.contentSize.height
         messageTextView.layoutIfNeeded()
         view.endEditing(true)
     }
     @IBAction func disconnect() {
         mqtt!.disconnect()
-        navigationController?.popViewControllerAnimated(true)
+        navigationController?.popViewController(animated: true)
     }
     
     
     override func viewDidLoad() {
         super.viewDidLoad()
-        navigationController?.navigationBar.hidden = true
+        navigationController?.navigationBar.isHidden = true
         animal = tabBarController?.selectedViewController?.tabBarItem.title
         automaticallyAdjustsScrollViewInsets = false
         messageTextView.delegate = self
@@ -82,19 +82,19 @@ class ChatViewController: UIViewController {
         tableView.dataSource = self
         tableView.rowHeight = UITableViewAutomaticDimension
         tableView.estimatedRowHeight = 50
-        NSNotificationCenter.defaultCenter().addObserver(self, selector: #selector(ChatViewController.receivedMessage(_:)), name: "MQTTMessageNotification" + animal!, object: nil)
-        NSNotificationCenter.defaultCenter().addObserver(self, selector: #selector(ChatViewController.keyboardChanged(_:)), name: UIKeyboardWillChangeFrameNotification, object: nil)
+        NotificationCenter.default.addObserver(self, selector: #selector(ChatViewController.receivedMessage(_:)), name: "MQTTMessageNotification" + animal!, object: nil)
+        NotificationCenter.default.addObserver(self, selector: #selector(ChatViewController.keyboardChanged(_:)), name: NSNotification.Name.UIKeyboardWillChangeFrame, object: nil)
     }
     
     deinit {
-        NSNotificationCenter.defaultCenter().removeObserver(self)
+        NotificationCenter.default.removeObserver(self)
     }
     
     
     func keyboardChanged(notification: NSNotification) {
         let userInfo = notification.userInfo as! [String: AnyObject]
         let keyboardValue = userInfo["UIKeyboardFrameEndUserInfoKey"]
-        let bottomDistance = UIScreen.mainScreen().bounds.size.height - (navigationController?.navigationBar.frame.height)! - keyboardValue!.CGRectValue.origin.y
+        let bottomDistance = UIScreen.main.bounds.size.height - (navigationController?.navigationBar.frame.height)! - keyboardValue!.cgRectValue.origin.y
         
         if bottomDistance > 0 {
             inputViewBottomConstraint.constant = bottomDistance
@@ -108,7 +108,7 @@ class ChatViewController: UIViewController {
         let userInfo = notification.userInfo as! [String: AnyObject]
         let content = userInfo["message"] as! String
         let topic = userInfo["topic"] as! String
-        let sender = topic.stringByReplacingOccurrencesOfString("chat/room/animals/client/", withString: "")
+        let sender = topic.replacingOccurrences(of: "chat/room/animals/client/", with: "")
         let chatMessage = ChatMessage(sender: sender, content: content)
         messages.append(chatMessage)
     }
@@ -116,8 +116,8 @@ class ChatViewController: UIViewController {
     func scrollToBottom() {
         let count = messages.count
         if count > 3 {
-            let indexPath = NSIndexPath(forRow: count - 1, inSection: 0)
-            tableView.scrollToRowAtIndexPath(indexPath, atScrollPosition: .Bottom, animated: true)
+            let indexPath = IndexPath(row: count - 1, section: 0)
+            tableView.scrollToRow(at: indexPath, at: .bottom, animated: true)
         }
     }
 }
@@ -125,7 +125,7 @@ class ChatViewController: UIViewController {
 
 extension ChatViewController: UITextViewDelegate {
     
-    func textViewDidChange(textView: UITextView) {
+    func textViewDidChange(_ textView: UITextView) {
         if textView.contentSize.height != textView.frame.size.height {
             let textViewHeight = textView.contentSize.height
             if textViewHeight < 100 {
@@ -135,9 +135,9 @@ extension ChatViewController: UITextViewDelegate {
         }
         
         if textView.text == "" {
-            sendMessageButton.enabled = false
+            sendMessageButton.isEnabled = false
         } else {
-            sendMessageButton.enabled = true
+            sendMessageButton.isEnabled = true
         }
     }
     
@@ -145,26 +145,26 @@ extension ChatViewController: UITextViewDelegate {
 
 extension ChatViewController: UITableViewDataSource, UITableViewDelegate {
     
-    func tableView(tableView: UITableView, numberOfRowsInSection section: Int) -> Int {
+    func tableView(_ tableView: UITableView, numberOfRowsInSection section: Int) -> Int {
         return messages.count
     }
     
-    func tableView(tableView: UITableView, cellForRowAtIndexPath indexPath: NSIndexPath) -> UITableViewCell {
+    func tableView(_ tableView: UITableView, cellForRowAt indexPath: IndexPath) -> UITableViewCell {
         let message = messages[indexPath.row]
         if message.sender == animal {
-            let cell = tableView.dequeueReusableCellWithIdentifier("rightMessageCell", forIndexPath: indexPath) as! ChatRightMessageCell
+            let cell = tableView.dequeueReusableCell(withIdentifier: "rightMessageCell", for: indexPath) as! ChatRightMessageCell
             cell.contentLabel.text = messages[indexPath.row].content
             cell.avatarImageView.image = UIImage(named: animal!)
             return cell
         } else {
-            let cell = tableView.dequeueReusableCellWithIdentifier("leftMessageCell", forIndexPath: indexPath) as! ChatLeftMessageCell
+            let cell = tableView.dequeueReusableCell(withIdentifier: "leftMessageCell", for: indexPath) as! ChatLeftMessageCell
             cell.contentLabel.text = messages[indexPath.row].content
             cell.avatarImageView.image = UIImage(named: message.sender)
             return cell
         }
     }
     
-    func tableView(tableView: UITableView, didSelectRowAtIndexPath indexPath: NSIndexPath) {
+    func tableView(_ tableView: UITableView, didSelectRowAt indexPath: IndexPath) {
         view.endEditing(true)
     }
 }

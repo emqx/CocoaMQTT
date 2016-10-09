@@ -29,19 +29,19 @@ class ViewController: UIViewController {
     
     override func viewDidLoad() {
         super.viewDidLoad()
-        navigationController?.interactivePopGestureRecognizer?.enabled = false
+        navigationController?.interactivePopGestureRecognizer?.isEnabled = false
         tabBarController?.delegate = self
         animal = tabBarController?.selectedViewController?.tabBarItem.title
         mqttSetting()
     }
     
-    override func viewWillAppear(animated: Bool) {
-        navigationController?.navigationBar.hidden = false
+    override func viewWillAppear(_ animated: Bool) {
+        navigationController?.navigationBar.isHidden = false
     }
     
 
     func mqttSetting() {
-        let clientIdPid = "CocoaMQTT-\(animal!)-" + String(NSProcessInfo().processIdentifier)
+        let clientIdPid = "CocoaMQTT-\(animal!)-" + String(ProcessInfo().processIdentifier)
         mqtt = CocoaMQTT(clientId: clientIdPid, host: "localhost", port: 1883)
         //mqtts
         //mqtt = CocoaMQTT(clientId: clientIdPid, host: "localhost", port: 8883)
@@ -60,57 +60,57 @@ class ViewController: UIViewController {
 
 extension ViewController: CocoaMQTTDelegate {
     
-    func mqtt(mqtt: CocoaMQTT, didConnect host: String, port: Int) {
+    func mqtt(_ mqtt: CocoaMQTT, didConnect host: String, port: Int) {
         print("didConnect \(host):\(port)")
     }
     
-    func mqtt(mqtt: CocoaMQTT, didConnectAck ack: CocoaMQTTConnAck) {
+    func mqtt(_ mqtt: CocoaMQTT, didConnectAck ack: CocoaMQTTConnAck) {
         //print("didConnectAck \(ack.rawValue)")
         if ack == .ACCEPT {
             mqtt.subscribe("chat/room/animals/client/+", qos: CocoaMQTTQOS.QOS1)
             mqtt.ping()
 
-            let chatViewController = storyboard?.instantiateViewControllerWithIdentifier("ChatViewController") as? ChatViewController
+            let chatViewController = storyboard?.instantiateViewController(withIdentifier: "ChatViewController") as? ChatViewController
             chatViewController?.mqtt = mqtt
             navigationController!.pushViewController(chatViewController!, animated: true)
         }
         
     }
     
-    func mqtt(mqtt: CocoaMQTT, didPublishMessage message: CocoaMQTTMessage, id: UInt16) {
+    func mqtt(_ mqtt: CocoaMQTT, didPublishMessage message: CocoaMQTTMessage, id: UInt16) {
         print("didPublishMessage with message: \(message.string)")
     }
     
-    func mqtt(mqtt: CocoaMQTT, didPublishAck id: UInt16) {
+    func mqtt(_ mqtt: CocoaMQTT, didPublishAck id: UInt16) {
         print("didPublishAck with id: \(id)")
     }
     
-    func mqtt(mqtt: CocoaMQTT, didReceiveMessage message: CocoaMQTTMessage, id: UInt16 ) {
+    func mqtt(_ mqtt: CocoaMQTT, didReceiveMessage message: CocoaMQTTMessage, id: UInt16 ) {
         print("didReceivedMessage: \(message.string) with id \(id)")
-        NSNotificationCenter.defaultCenter().postNotificationName("MQTTMessageNotification" + animal!, object: self, userInfo: ["message": message.string!, "topic": message.topic])
+        NotificationCenter.defaultCenter().postNotificationName("MQTTMessageNotification" + animal!, object: self, userInfo: ["message": message.string!, "topic": message.topic])
     }
     
-    func mqtt(mqtt: CocoaMQTT, didSubscribeTopic topic: String) {
+    func mqtt(_ mqtt: CocoaMQTT, didSubscribeTopic topic: String) {
         print("didSubscribeTopic to \(topic)")
     }
     
-    func mqtt(mqtt: CocoaMQTT, didUnsubscribeTopic topic: String) {
+    func mqtt(_ mqtt: CocoaMQTT, didUnsubscribeTopic topic: String) {
         print("didUnsubscribeTopic to \(topic)")
     }
     
-    func mqttDidPing(mqtt: CocoaMQTT) {
+    func mqttDidPing(_ mqtt: CocoaMQTT) {
         print("didPing")
     }
     
-    func mqttDidReceivePong(mqtt: CocoaMQTT) {
+    func mqttDidReceivePong(_ mqtt: CocoaMQTT) {
         _console("didReceivePong")
     }
     
-    func mqttDidDisconnect(mqtt: CocoaMQTT, withError err: NSError?) {
+    func mqttDidDisconnect(_ mqtt: CocoaMQTT, withError err: NSError?) {
         _console("mqttDidDisconnect")
     }
     
-    func _console(info: String) {
+    func _console(_ info: String) {
         print("Delegate: \(info)")
     }
     
@@ -118,7 +118,7 @@ extension ViewController: CocoaMQTTDelegate {
 
 extension ViewController: UITabBarControllerDelegate {
     // Prevent automatic popToRootViewController on double-tap of UITabBarController
-    func tabBarController(tabBarController: UITabBarController, shouldSelectViewController viewController: UIViewController) -> Bool {
+    func tabBarController(_ tabBarController: UITabBarController, shouldSelect viewController: UIViewController) -> Bool {
         return viewController != tabBarController.selectedViewController
     }
 }
