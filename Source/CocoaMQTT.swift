@@ -563,7 +563,7 @@ open class CocoaMQTTReader {
         let frameType = CocoaMQTTFrameType(rawValue: UInt8(header & 0xF0))!
         switch frameType {
         case .connack:
-           delegate.didReceiveConnAck(self, connack: data[1])
+            delegate.didReceiveConnAck(self, connack: data[1])
         case .publish:
             let (msgId, message) = unpackPublish()
             delegate.didReceivePublish(self, message: message, id: msgId)
