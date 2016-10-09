@@ -1,13 +1,13 @@
 CocoaMQTT
 =========
 
-MQTT v3.1.1 client library for iOS and OS X written with Swift 2
+MQTT v3.1.1 client library for iOS and OS X written with Swift 3
 
 
 Build
 =====
 
-Build with Xcode 7.0 / Swift 2
+Build with Xcode 8.0 / Swift 3
 
 
 Installation
@@ -71,7 +71,6 @@ mqtt.keepAlive = 90
 mqtt.delegate = mqttCli
 mqtt.connect()
 
-dispatch_main()
 ```
 
 
