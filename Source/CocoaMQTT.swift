@@ -37,7 +37,7 @@ public protocol CocoaMQTTDelegate: class {
 
     func mqttDidReceivePong(_ mqtt: CocoaMQTT)
 
-    func mqttDidDisconnect(_ mqtt: CocoaMQTT, withError err: NSError?)
+    func mqttDidDisconnect(_ mqtt: CocoaMQTT, withError err: Error?)
 
 }
 
@@ -282,8 +282,8 @@ open class CocoaMQTT: NSObject, CocoaMQTTClient, GCDAsyncSocketDelegate, CocoaMQ
     }
 
     //AsyncSocket Delegate
-
-    open func socket(_ sock: GCDAsyncSocket, didConnectToHost host: String, port: UInt16) {
+    
+    public func socket(_ sock: GCDAsyncSocket, didConnectToHost host: String, port: UInt16) {
         #if DEBUG
             NSLog("CocoaMQTT: connected to \(host) : \(port)")
         #endif
@@ -306,27 +306,27 @@ open class CocoaMQTT: NSObject, CocoaMQTTClient, GCDAsyncSocketDelegate, CocoaMQ
         }
     }
     
-    @nonobjc open func socket(_ sock: GCDAsyncSocket, didReceiveTrust trust: SecTrust, completionHandler: ((Bool) -> Void)) {
+    public func socket(_ sock: GCDAsyncSocket, didReceive trust: SecTrust, completionHandler: @escaping (Bool) -> Swift.Void) {
         #if DEBUG
             NSLog("CocoaMQTT: didReceiveTrust")
         #endif
         completionHandler(true)
     }
     
-    open func socketDidSecure(_ sock: GCDAsyncSocket) {
+    public func socketDidSecure(_ sock: GCDAsyncSocket) {
         #if DEBUG
             NSLog("CocoaMQTT: socketDidSecure")
         #endif
         sendConnectFrame()
     }
 
-    open func socket(_ sock: GCDAsyncSocket, didWriteDataWithTag tag: Int) {
+    public func socket(_ sock: GCDAsyncSocket, didWriteDataWithTag tag: Int) {
         #if DEBUG
         NSLog("CocoaMQTT: Socket write message with tag: \(tag)")
         #endif
     }
     
-    @nonobjc open func socket(_ sock: GCDAsyncSocket, didReadData data: Data, withTag tag: Int) {
+    public func socket(_ sock: GCDAsyncSocket, didRead data: Data, withTag tag: Int) {
         let etag: CocoaMQTTReadTag = CocoaMQTTReadTag(rawValue: tag)!
         var bytes = [UInt8]([0])
         switch etag {
@@ -340,8 +340,8 @@ open class CocoaMQTT: NSObject, CocoaMQTTClient, GCDAsyncSocketDelegate, CocoaMQ
             reader!.payloadReady(data)
         }
     }
-
-    @nonobjc open func socketDidDisconnect(_ sock: GCDAsyncSocket, withError err: NSError?) {
+    
+    public func socketDidDisconnect(_ sock: GCDAsyncSocket, withError err: Error?) {
         connState = CocoaMQTTConnState.disconnected
         delegate?.mqttDidDisconnect(self, withError: err)
     }
