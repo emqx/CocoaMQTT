@@ -2,7 +2,7 @@ PODS:
   - CocoaAsyncSocket (7.5.0):
     - CocoaAsyncSocket/GCD (= 7.5.0)
   - CocoaAsyncSocket/GCD (7.5.0)
-  - CocoaMQTT (1.0.9):
+  - CocoaMQTT (1.0.10):
     - CocoaAsyncSocket (~> 7.5.0)
     - MSWeakTimer (~> 1.1.0)
   - MSWeakTimer (1.1.0)
@@ -12,9 +12,9 @@ DEPENDENCIES:
 
 SPEC CHECKSUMS:
   CocoaAsyncSocket: 3baeb1ddd969f81cf9fca81053ae49ef2d1cbbfa
-  CocoaMQTT: 15585c953de917ec4357dfb57ad48519f74bc348
+  CocoaMQTT: ac6730349bebc7ceb42a62297eaf8291fce8aa93
   MSWeakTimer: 9426150f933b80ed3acf3f6d228e4b61f0e303c8
 
 PODFILE CHECKSUM: 721d1a65fa937d14ca5e7137550d226225542393
 
-COCOAPODS: 1.0.1
+COCOAPODS: 1.1.0.rc.2
