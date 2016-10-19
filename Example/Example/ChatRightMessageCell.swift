@@ -8,8 +8,8 @@
 
 import UIKit
 
+
 class ChatRightMessageCell: UITableViewCell {
-    
     @IBOutlet weak var contentLabel: UILabel! {
         didSet {
             contentLabel.numberOfLines = 0
@@ -21,5 +21,4 @@ class ChatRightMessageCell: UITableViewCell {
         super.awakeFromNib()
         selectionStyle = UITableViewCellSelectionStyle.none
     }
-
 }

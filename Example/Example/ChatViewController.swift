@@ -71,7 +71,6 @@ class ChatViewController: UIViewController {
         _ = navigationController?.popViewController(animated: true)
     }
     
-    
     override func viewDidLoad() {
         super.viewDidLoad()
         navigationController?.navigationBar.isHidden = true
@@ -91,7 +90,6 @@ class ChatViewController: UIViewController {
     deinit {
         NotificationCenter.default.removeObserver(self)
     }
-    
     
     func keyboardChanged(notification: NSNotification) {
         let userInfo = notification.userInfo as! [String: AnyObject]
@@ -126,7 +124,6 @@ class ChatViewController: UIViewController {
 
 
 extension ChatViewController: UITextViewDelegate {
-    
     func textViewDidChange(_ textView: UITextView) {
         if textView.contentSize.height != textView.frame.size.height {
             let textViewHeight = textView.contentSize.height
@@ -142,11 +139,9 @@ extension ChatViewController: UITextViewDelegate {
             sendMessageButton.isEnabled = true
         }
     }
-    
 }
 
 extension ChatViewController: UITableViewDataSource, UITableViewDelegate {
-    
     func tableView(_ tableView: UITableView, numberOfRowsInSection section: Int) -> Int {
         return messages.count
     }
