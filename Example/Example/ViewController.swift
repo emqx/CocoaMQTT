@@ -9,6 +9,7 @@
 import UIKit
 import CocoaMQTT
 
+
 class ViewController: UIViewController {
     var mqtt: CocoaMQTT?
     var animal: String?
@@ -26,7 +27,6 @@ class ViewController: UIViewController {
         mqtt!.connect()
     }
     
-    
     override func viewDidLoad() {
         super.viewDidLoad()
         navigationController?.interactivePopGestureRecognizer?.isEnabled = false
@@ -39,13 +39,12 @@ class ViewController: UIViewController {
         navigationController?.navigationBar.isHidden = false
     }
     
-    
     func mqttSetting() {
-        let clientIdPid = "CocoaMQTT-\(animal!)-" + String(ProcessInfo().processIdentifier)
-        mqtt = CocoaMQTT(clientId: clientIdPid, host: "localhost", port: 1883)
-        //mqtts
-        //mqtt = CocoaMQTT(clientId: clientIdPid, host: "localhost", port: 8883)
-        //mqtt!.secureMQTT = true
+        let clientId = "CocoaMQTT-\(animal!)-" + String(ProcessInfo().processIdentifier)
+        mqtt = CocoaMQTT(clientId: clientId, host: "localhost", port: 1883)
+        // mqtts
+        // mqtt = CocoaMQTT(clientId: clientId, host: "localhost", port: 8883)
+        // mqtt!.secureMQTT = true
         if let mqtt = mqtt {
             mqtt.username = "test"
             mqtt.password = "public"
@@ -54,18 +53,15 @@ class ViewController: UIViewController {
             mqtt.delegate = self
         }
     }
-    
 }
 
-
 extension ViewController: CocoaMQTTDelegate {
-    
     func mqtt(_ mqtt: CocoaMQTT, didConnect host: String, port: Int) {
         print("didConnect \(host):\(port)")
     }
     
     func mqtt(_ mqtt: CocoaMQTT, didConnectAck ack: CocoaMQTTConnAck) {
-        //print("didConnectAck \(ack.rawValue)")
+        // print("didConnectAck \(ack.rawValue)")
         if ack == .accept {
             mqtt.subscribe("chat/room/animals/client/+", qos: CocoaMQTTQOS.qos1)
             mqtt.ping()
@@ -114,7 +110,6 @@ extension ViewController: CocoaMQTTDelegate {
     func _console(_ info: String) {
         print("Delegate: \(info)")
     }
-    
 }
 
 extension ViewController: UITabBarControllerDelegate {
