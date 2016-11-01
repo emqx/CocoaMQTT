@@ -36,11 +36,12 @@ public enum CocoaMQTTConnState: UInt8 {
  */
 public enum CocoaMQTTConnAck: UInt8 {
     case accept  = 0
-    case protocolVersion
-    case invalidID
-    case server
-    case credentials
-    case auth
+    case unacceptableProtocolVersion
+    case identifierRejected
+    case serverUnavailable
+    case badUsernameOrPassword
+    case notAuthorized
+    case reserved
 }
 
 /**
@@ -156,7 +157,7 @@ open class CocoaMQTT: NSObject, CocoaMQTTClient {
     }
 
     @objc fileprivate func aliveTimerFired() {
-        if connState == CocoaMQTTConnState.connected {
+        if connState == .connected {
             ping()
         } else {
             aliveTimer?.invalidate()
@@ -200,7 +201,7 @@ open class CocoaMQTT: NSObject, CocoaMQTTClient {
         reader = CocoaMQTTReader(socket: socket!, delegate: self)
         do {
             try socket!.connect(toHost: self.host, onPort: self.port)
-            connState = CocoaMQTTConnState.connecting
+            connState = .connecting
             return true
         } catch let error as NSError {
             #if DEBUG
@@ -323,7 +324,7 @@ extension CocoaMQTT: GCDAsyncSocketDelegate {
     }
 
     public func socketDidDisconnect(_ sock: GCDAsyncSocket, withError err: Error?) {
-        connState = CocoaMQTTConnState.disconnected
+        connState = .disconnected
         delegate?.mqttDidDisconnect(self, withError: err)
     }
 }
@@ -335,8 +336,22 @@ extension CocoaMQTT: CocoaMQTTReaderDelegate {
             NSLog("CocoaMQTT: CONNACK Received: \(connack)")
         #endif
 
-        connState = CocoaMQTTConnState.connected
-        let ack = CocoaMQTTConnAck(rawValue: connack)!
+        let ack: CocoaMQTTConnAck
+        switch connack {
+        case 0:
+            ack = .accept
+            connState = .connected
+        case 1...5:
+            ack = CocoaMQTTConnAck(rawValue: connack)!
+            disconnect()
+        case _ where connack > 5:
+            ack = .reserved
+            disconnect()
+        default:
+            disconnect()
+            return
+        }
+
         delegate?.mqtt(self, didConnectAck: ack)
 
         // keep alive
