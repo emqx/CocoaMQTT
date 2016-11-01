@@ -40,16 +40,16 @@ class ViewController: UIViewController {
     }
     
     func mqttSetting() {
-        let clientId = "CocoaMQTT-\(animal!)-" + String(ProcessInfo().processIdentifier)
-        mqtt = CocoaMQTT(clientId: clientId, host: "localhost", port: 1883)
+        let clientID = "CocoaMQTT-\(animal!)-" + String(ProcessInfo().processIdentifier)
+        mqtt = CocoaMQTT(clientID: clientID, host: "localhost", port: 1883)
         // mqtts
-        // mqtt = CocoaMQTT(clientId: clientId, host: "localhost", port: 8883)
+        // mqtt = CocoaMQTT(clientID: clientID, host: "localhost", port: 8883)
         // mqtt!.secureMQTT = true
         if let mqtt = mqtt {
             mqtt.username = "test"
             mqtt.password = "public"
             mqtt.willMessage = CocoaMQTTWill(topic: "/will", message: "dieout")
-            mqtt.keepAlive = 90
+            mqtt.keepAlive = 60
             mqtt.delegate = self
         }
     }
@@ -61,10 +61,10 @@ extension ViewController: CocoaMQTTDelegate {
     }
     
     func mqtt(_ mqtt: CocoaMQTT, didConnectAck ack: CocoaMQTTConnAck) {
-        // print("didConnectAck \(ack.rawValue)")
+        print("didConnectAck: \(ack)，rawValue: \(ack.rawValue)")
+        
         if ack == .accept {
             mqtt.subscribe("chat/room/animals/client/+", qos: CocoaMQTTQOS.qos1)
-            mqtt.ping()
             
             let chatViewController = storyboard?.instantiateViewController(withIdentifier: "ChatViewController") as? ChatViewController
             chatViewController?.mqtt = mqtt
