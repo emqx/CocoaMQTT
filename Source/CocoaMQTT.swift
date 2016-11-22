@@ -30,11 +30,10 @@ public enum CocoaMQTTConnState: UInt8 {
     case disconnected
 }
 
-
 /**
  * Conn Ack
  */
-public enum CocoaMQTTConnAck: UInt8 {
+@objc public enum CocoaMQTTConnAck: UInt8 {
     case accept  = 0
     case unacceptableProtocolVersion
     case identifierRejected
@@ -56,7 +55,7 @@ fileprivate enum CocoaMQTTReadTag: Int {
 /**
  * MQTT Delegate
  */
-public protocol CocoaMQTTDelegate: class {
+@objc public protocol CocoaMQTTDelegate {
     /// MQTT connected with server
     func mqtt(_ mqtt: CocoaMQTT, didConnect host: String, port: Int)
     func mqtt(_ mqtt: CocoaMQTT, didConnectAck ack: CocoaMQTTConnAck)
@@ -68,6 +67,7 @@ public protocol CocoaMQTTDelegate: class {
     func mqttDidPing(_ mqtt: CocoaMQTT)
     func mqttDidReceivePong(_ mqtt: CocoaMQTT)
     func mqttDidDisconnect(_ mqtt: CocoaMQTT, withError err: Error?)
+    @objc optional func mqtt(_ mqtt: CocoaMQTT, didReceive trust: SecTrust, completionHandler: @escaping (Bool) -> Void)
 }
 
 /**
@@ -79,7 +79,6 @@ protocol CocoaMQTTClient {
     var clientID: String { get }
     var username: String? {get set}
     var password: String? {get set}
-    var secureMQTT: Bool {get set}
     var cleanSession: Bool {get set}
     var keepAlive: UInt16 {get set}
     var willMessage: CocoaMQTTWill? {get set}
@@ -123,10 +122,14 @@ open class CocoaMQTT: NSObject, CocoaMQTTClient {
     open var cleanSession = true
     open var keepAlive: UInt16 = 60
     open var willMessage: CocoaMQTTWill?
-
     open weak var delegate: CocoaMQTTDelegate?
     open var backgroundOnSocket = false
     open var connState = CocoaMQTTConnState.initial
+    
+    // ssl
+    open var enableSSL = false
+    open var sslSettings: [String: NSObject]?
+    
     // published messages
     open var messages: [UInt16: CocoaMQTTMessage] = [:]
     // subscribed topics
@@ -276,13 +279,14 @@ extension CocoaMQTT: GCDAsyncSocketDelegate {
                 sock.performBlock { sock.enableBackgroundingOnSocket() }
             }
         #endif
-
-        if secureMQTT {
-            #if DEBUG
-                sock.startTLS([GCDAsyncSocketManuallyEvaluateTrust: true])
-            #else
+        
+        if enableSSL {
+            if sslSettings == nil {
                 sock.startTLS(nil)
-            #endif
+            } else {
+                sslSettings![GCDAsyncSocketManuallyEvaluateTrust as String] = NSNumber(value: true)
+                sock.startTLS(sslSettings!)
+            }
         } else {
             sendConnectFrame()
         }
@@ -292,7 +296,8 @@ extension CocoaMQTT: GCDAsyncSocketDelegate {
         #if DEBUG
             NSLog("CocoaMQTT: didReceiveTrust")
         #endif
-        completionHandler(true)
+        
+        delegate?.mqtt!(self, didReceive: trust, completionHandler: completionHandler)
     }
 
     public func socketDidSecure(_ sock: GCDAsyncSocket) {
