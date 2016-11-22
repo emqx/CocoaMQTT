@@ -32,7 +32,7 @@ class ViewController: UIViewController {
         navigationController?.interactivePopGestureRecognizer?.isEnabled = false
         tabBarController?.delegate = self
         animal = tabBarController?.selectedViewController?.tabBarItem.title
-        mqttSetting()
+        selfSignedSSLSetting()
     }
     
     override func viewWillAppear(_ animated: Bool) {
@@ -41,23 +41,101 @@ class ViewController: UIViewController {
     
     func mqttSetting() {
         let clientID = "CocoaMQTT-\(animal!)-" + String(ProcessInfo().processIdentifier)
-        mqtt = CocoaMQTT(clientID: clientID, host: "localhost", port: 1883)
-        // mqtts
-        // mqtt = CocoaMQTT(clientID: clientID, host: "localhost", port: 8883)
-        // mqtt!.secureMQTT = true
-        if let mqtt = mqtt {
-            mqtt.username = "test"
-            mqtt.password = "public"
-            mqtt.willMessage = CocoaMQTTWill(topic: "/will", message: "dieout")
-            mqtt.keepAlive = 60
-            mqtt.delegate = self
-        }
+        mqtt = CocoaMQTT(clientID: clientID, host: "127.0.0.1", port: 1883)
+        mqtt!.username = ""
+        mqtt!.password = ""
+        mqtt!.willMessage = CocoaMQTTWill(topic: "/will", message: "dieout")
+        mqtt!.keepAlive = 60
+        mqtt!.delegate = self
     }
+    
+    func simpleSSLSetting() {
+        let clientID = "CocoaMQTT-\(animal!)-" + String(ProcessInfo().processIdentifier)
+        mqtt = CocoaMQTT(clientID: clientID, host: "127.0.0.1", port: 8883)
+        mqtt!.username = ""
+        mqtt!.password = ""
+        mqtt!.willMessage = CocoaMQTTWill(topic: "/will", message: "dieout")
+        mqtt!.keepAlive = 60
+        mqtt!.delegate = self
+        mqtt!.enableSSL = true
+    }
+    
+    func selfSignedSSLSetting() {
+        let clientID = "CocoaMQTT-\(animal!)-" + String(ProcessInfo().processIdentifier)
+        mqtt = CocoaMQTT(clientID: clientID, host: "127.0.0.1", port: 8883)
+        mqtt!.username = ""
+        mqtt!.password = ""
+        mqtt!.willMessage = CocoaMQTTWill(topic: "/will", message: "dieout")
+        mqtt!.keepAlive = 60
+        mqtt!.delegate = self
+        mqtt!.enableSSL = true
+        
+        let clientCertArray = getClientCertFromP12File(certName: "client-keycert", certPassword: "MySecretPassword")
+        
+        var sslSettings: [String: NSObject] = [:]
+        sslSettings[GCDAsyncSocketManuallyEvaluateTrust as String] = NSNumber(value: true)
+        sslSettings[kCFStreamSSLCertificates as String] = clientCertArray
+        
+        mqtt!.sslSettings = sslSettings
+    }
+    
+    func getClientCertFromP12File(certName: String, certPassword: String) -> CFArray? {
+        // get p12 file path
+        let resourcePath = Bundle.main.path(forResource: certName, ofType: "p12")
+        
+        guard let filePath = resourcePath, let p12Data = NSData(contentsOfFile: filePath) else {
+            print("Failed to open the certificate file: \(certName).p12")
+            return nil
+        }
+        
+        // create key dictionary for reading p12 file
+        let key = kSecImportExportPassphrase as String
+        let options : NSDictionary = [key: certPassword]
+        
+        var items : CFArray?
+        let securityError = SecPKCS12Import(p12Data, options, &items)
+        
+        guard securityError == errSecSuccess else {
+            if securityError == errSecAuthFailed {
+                print("ERROR: SecPKCS12Import returned errSecAuthFailed. Incorrect password?")
+            } else {
+                print("Failed to open the certificate file: \(certName).p12")
+            }
+            return nil
+        }
+        
+        guard let theArray = items, CFArrayGetCount(theArray) > 0 else {
+            return nil
+        }
+        
+        let dictionary = (theArray as NSArray).object(at: 0)
+        guard let identity = (dictionary as AnyObject).value(forKey: kSecImportItemIdentity as String) else {
+            return nil
+        }
+        let certArray = [identity] as CFArray
+        
+        return certArray
+    }
+
 }
 
 extension ViewController: CocoaMQTTDelegate {
     func mqtt(_ mqtt: CocoaMQTT, didConnect host: String, port: Int) {
         print("didConnect \(host):\(port)")
+    }
+    
+    // Optional ssl CocoaMQTTDelegate
+    func mqtt(_ mqtt: CocoaMQTT, didReceive trust: SecTrust, completionHandler: @escaping (Bool) -> Void) {
+        /// Validate the server certificate
+        ///
+        /// Some custom validation...
+        ///
+        /// if validatePassed {
+        ///     completionHandler(true)
+        /// } else {
+        ///     completionHandler(false)
+        /// }
+        completionHandler(true)
     }
     
     func mqtt(_ mqtt: CocoaMQTT, didConnectAck ack: CocoaMQTTConnAck) {
