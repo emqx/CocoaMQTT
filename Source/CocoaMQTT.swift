@@ -284,6 +284,7 @@ extension CocoaMQTT: GCDAsyncSocketDelegate {
             if sslSettings == nil {
                 sock.startTLS(nil)
             } else {
+                sslSettings![GCDAsyncSocketManuallyEvaluateTrust as String] = NSNumber(value: true)
                 sock.startTLS(sslSettings!)
             }
         } else {

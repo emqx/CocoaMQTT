@@ -73,7 +73,6 @@ class ViewController: UIViewController {
         let clientCertArray = getClientCertFromP12File(certName: "client-keycert", certPassword: "MySecretPassword")
         
         var sslSettings: [String: NSObject] = [:]
-        sslSettings[GCDAsyncSocketManuallyEvaluateTrust as String] = NSNumber(value: true)
         sslSettings[kCFStreamSSLCertificates as String] = clientCertArray
         
         mqtt!.sslSettings = sslSettings
