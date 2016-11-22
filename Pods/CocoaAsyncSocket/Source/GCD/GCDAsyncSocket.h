@@ -348,7 +348,7 @@ typedef NS_ENUM(NSInteger, GCDAsyncSocketError) {
  * Returns whether the socket is disconnected or connected.
  * 
  * A disconnected socket may be recycled.
- * That is, it can used again for connecting or listening.
+ * That is, it can be used again for connecting or listening.
  * 
  * If a socket is in the process of connecting, it may be neither disconnected nor connected.
 **/
@@ -788,7 +788,7 @@ typedef NS_ENUM(NSInteger, GCDAsyncSocketError) {
  * 
  * You can also perform additional validation in socketDidSecure.
 **/
-- (void)startTLS:(nullable NSDictionary <NSString*,NSNumber*>*)tlsSettings;
+- (void)startTLS:(nullable NSDictionary <NSString*,NSObject*>*)tlsSettings;
 
 #pragma mark Advanced
 
@@ -962,8 +962,8 @@ typedef NS_ENUM(NSInteger, GCDAsyncSocketError) {
  * 
  * See also: (BOOL)enableBackgroundingOnSocket
 **/
-- (CFReadStreamRef)readStream;
-- (CFWriteStreamRef)writeStream;
+- (nullable CFReadStreamRef)readStream;
+- (nullable CFWriteStreamRef)writeStream;
 
 /**
  * This method is only available from within the context of a performBlock: invocation.
@@ -1000,7 +1000,7 @@ typedef NS_ENUM(NSInteger, GCDAsyncSocketError) {
  * 
  * Provides access to the socket's SSLContext, if SSL/TLS has been started on the socket.
 **/
-- (SSLContextRef)sslContext;
+- (nullable SSLContextRef)sslContext;
 
 #pragma mark Utilities
 
@@ -1045,7 +1045,7 @@ typedef NS_ENUM(NSInteger, GCDAsyncSocketError) {
 #pragma mark -
 ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 
-@protocol GCDAsyncSocketDelegate
+@protocol GCDAsyncSocketDelegate <NSObject>
 @optional
 
 /**
