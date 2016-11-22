@@ -7,6 +7,7 @@
 	objects = {
 
 /* Begin PBXBuildFile section */
+		04029F191DE3F183004513DD /* client-keycert.p12 in Resources */ = {isa = PBXBuildFile; fileRef = 04029F181DE3F176004513DD /* client-keycert.p12 */; };
 		042448B31C366F2300F6A33E /* ChatMessage.swift in Sources */ = {isa = PBXBuildFile; fileRef = 042448B21C366F2300F6A33E /* ChatMessage.swift */; };
 		04A7EAA01C362BC4004A40EF /* ChatRightMessageCell.swift in Sources */ = {isa = PBXBuildFile; fileRef = 04A7EA9F1C362BC4004A40EF /* ChatRightMessageCell.swift */; };
 		04DB76581C1E7BB900776B4C /* AppDelegate.swift in Sources */ = {isa = PBXBuildFile; fileRef = 04DB76571C1E7BB900776B4C /* AppDelegate.swift */; };
@@ -33,6 +34,7 @@
 /* End PBXCopyFilesBuildPhase section */
 
 /* Begin PBXFileReference section */
+		04029F181DE3F176004513DD /* client-keycert.p12 */ = {isa = PBXFileReference; lastKnownFileType = file; path = "client-keycert.p12"; sourceTree = "<group>"; };
 		042448B21C366F2300F6A33E /* ChatMessage.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = ChatMessage.swift; sourceTree = "<group>"; };
 		04A7EA9F1C362BC4004A40EF /* ChatRightMessageCell.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = ChatRightMessageCell.swift; sourceTree = "<group>"; };
 		04DB76541C1E7BB900776B4C /* Example.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = Example.app; sourceTree = BUILT_PRODUCTS_DIR; };
@@ -96,6 +98,7 @@
 		04DB767C1C1E7C2D00776B4C /* Supporting Files */ = {
 			isa = PBXGroup;
 			children = (
+				04029F181DE3F176004513DD /* client-keycert.p12 */,
 				04DB765E1C1E7BB900776B4C /* Assets.xcassets */,
 				04DB76571C1E7BB900776B4C /* AppDelegate.swift */,
 				04DB76601C1E7BB900776B4C /* LaunchScreen.storyboard */,
@@ -185,6 +188,7 @@
 			isa = PBXResourcesBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
+				04029F191DE3F183004513DD /* client-keycert.p12 in Resources */,
 				04DB76621C1E7BB900776B4C /* LaunchScreen.storyboard in Resources */,
 				04DB765F1C1E7BB900776B4C /* Assets.xcassets in Resources */,
 				04DB765D1C1E7BB900776B4C /* Main.storyboard in Resources */,

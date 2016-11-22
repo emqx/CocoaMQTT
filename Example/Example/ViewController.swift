@@ -32,7 +32,9 @@ class ViewController: UIViewController {
         navigationController?.interactivePopGestureRecognizer?.isEnabled = false
         tabBarController?.delegate = self
         animal = tabBarController?.selectedViewController?.tabBarItem.title
-        selfSignedSSLSetting()
+        mqttSetting()
+        // selfSignedSSLSetting()
+        // simpleSSLSetting()
     }
     
     override func viewWillAppear(_ animated: Bool) {

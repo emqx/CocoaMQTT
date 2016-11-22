@@ -2,5 +2,5 @@ platform :ios, 9.0
 use_frameworks!
 
 target 'Example' do
-    pod 'CocoaMQTT'
+    pod 'CocoaMQTT', '~>1.0.11'
 end
