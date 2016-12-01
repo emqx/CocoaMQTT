@@ -68,6 +68,7 @@ fileprivate enum CocoaMQTTReadTag: Int {
     func mqttDidReceivePong(_ mqtt: CocoaMQTT)
     func mqttDidDisconnect(_ mqtt: CocoaMQTT, withError err: Error?)
     @objc optional func mqtt(_ mqtt: CocoaMQTT, didReceive trust: SecTrust, completionHandler: @escaping (Bool) -> Void)
+    @objc optional func mqtt(_ mqtt: CocoaMQTT, didPublishComplete id: UInt16)
 }
 
 /**
@@ -414,6 +415,7 @@ extension CocoaMQTT: CocoaMQTTReaderDelegate {
         #endif
 
         messages.removeValue(forKey: msgid)
+        delegate?.mqtt?(self, didPublishComplete: msgid)
     }
 
     func didReceiveSubAck(_ reader: CocoaMQTTReader, msgid: UInt16) {
