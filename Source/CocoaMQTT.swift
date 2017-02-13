@@ -14,7 +14,7 @@ import MSWeakTimer
 /**
  * QOS
  */
-public enum CocoaMQTTQOS: UInt8 {
+@objc public enum CocoaMQTTQOS: UInt8 {
     case qos0 = 0
     case qos1
     case qos2
