@@ -14,7 +14,7 @@ import MSWeakTimer
 /**
  * QOS
  */
-public enum CocoaMQTTQOS: UInt8 {
+@objc public enum CocoaMQTTQOS: UInt8 {
     case qos0 = 0
     case qos1
     case qos2
@@ -68,6 +68,7 @@ fileprivate enum CocoaMQTTReadTag: Int {
     func mqttDidReceivePong(_ mqtt: CocoaMQTT)
     func mqttDidDisconnect(_ mqtt: CocoaMQTT, withError err: Error?)
     @objc optional func mqtt(_ mqtt: CocoaMQTT, didReceive trust: SecTrust, completionHandler: @escaping (Bool) -> Void)
+    @objc optional func mqtt(_ mqtt: CocoaMQTT, didPublishComplete id: UInt16)
 }
 
 /**
@@ -456,6 +457,7 @@ extension CocoaMQTT: CocoaMQTTReaderDelegate {
         #endif
 
         messages.removeValue(forKey: msgid)
+        delegate?.mqtt?(self, didPublishComplete: msgid)
     }
 
     func didReceiveSubAck(_ reader: CocoaMQTTReader, msgid: UInt16) {
