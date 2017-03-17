@@ -133,8 +133,11 @@ open class CocoaMQTT: NSObject, CocoaMQTTClient {
     
     // published messages
     open var messages: [UInt16: CocoaMQTTMessage] = [:]
-    // subscribed topics
-    open var subscriptions: [UInt16: String] = [:]
+    
+    // subscribed topics. (dictionary structure -> [msgid: [topicString: QoS]])
+    open var subscriptions: [UInt16: [String: CocoaMQTTQOS]] = [:]
+    var subscriptionsWaitingAck: [UInt16: [String: CocoaMQTTQOS]] = [:]
+    var unsubscriptionsWaitingAck: [UInt16: [String: CocoaMQTTQOS]] = [:]
 
     // global message id
     var gmid: UInt16 = 1
@@ -244,7 +247,7 @@ open class CocoaMQTT: NSObject, CocoaMQTTClient {
         let msgid = nextMessageID()
         let frame = CocoaMQTTFrameSubscribe(msgid: msgid, topic: topic, reqos: qos.rawValue)
         send(frame, tag: Int(msgid))
-        subscriptions[msgid] = topic
+        subscriptionsWaitingAck[msgid] = [topic:qos]
         return msgid
     }
 
@@ -252,7 +255,7 @@ open class CocoaMQTT: NSObject, CocoaMQTTClient {
     open func unsubscribe(_ topic: String) -> UInt16 {
         let msgid = nextMessageID()
         let frame = CocoaMQTTFrameUnsubscribe(msgid: msgid, topic: topic)
-        subscriptions[msgid] = topic
+        unsubscriptionsWaitingAck[msgid] = [topic:CocoaMQTTQOS.qos0]
         send(frame, tag: Int(msgid))
         return msgid
     }
@@ -422,9 +425,15 @@ extension CocoaMQTT: CocoaMQTTReaderDelegate {
         #if DEBUG
             NSLog("CocoaMQTT: SUBACK Received: \(msgid)")
         #endif
-
-        if let topic = subscriptions.removeValue(forKey: msgid) {
+        
+        if let topicDict = subscriptionsWaitingAck.removeValue(forKey: msgid) {
+            let topic = topicDict.first!.key
+            subscriptions[msgid] = topicDict
             delegate?.mqtt(self, didSubscribeTopic: topic)
+        } else {
+            #if DEBUG
+                NSLog("CocoaMQTT: UNEXPECT SUBACK Received: \(msgid)")
+            #endif
         }
     }
 
@@ -432,9 +441,22 @@ extension CocoaMQTT: CocoaMQTTReaderDelegate {
         #if DEBUG
             NSLog("CocoaMQTT: UNSUBACK Received: \(msgid)")
         #endif
-
-        if let topic = subscriptions.removeValue(forKey: msgid) {
+        
+        
+        if let topicDict = unsubscriptionsWaitingAck.removeValue(forKey: msgid) {
+            let topic = topicDict.first!.key
+            
+            for (key, value) in subscriptions {
+                if value.first!.key == topic {
+                    subscriptions.removeValue(forKey: key)
+                }
+            }
+            
             delegate?.mqtt(self, didUnsubscribeTopic: topic)
+        } else {
+            #if DEBUG
+                NSLog("CocoaMQTT: UNEXPECT UNSUBACK Received: \(msgid)")
+            #endif
         }
     }
 
