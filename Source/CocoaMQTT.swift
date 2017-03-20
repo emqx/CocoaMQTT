@@ -428,6 +428,14 @@ extension CocoaMQTT: CocoaMQTTReaderDelegate {
         
         if let topicDict = subscriptionsWaitingAck.removeValue(forKey: msgid) {
             let topic = topicDict.first!.key
+            
+            // remove subscription with same topic
+            for (key, value) in subscriptions {
+                if value.first!.key == topic {
+                    subscriptions.removeValue(forKey: key)
+                }
+            }
+            
             subscriptions[msgid] = topicDict
             delegate?.mqtt(self, didSubscribeTopic: topic)
         } else {
