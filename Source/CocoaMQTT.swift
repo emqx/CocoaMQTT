@@ -126,6 +126,7 @@ open class CocoaMQTT: NSObject, CocoaMQTTClient {
     open weak var delegate: CocoaMQTTDelegate?
     open var backgroundOnSocket = false
     open var connState = CocoaMQTTConnState.initial
+    open var dispatchQueue = DispatchQueue.main
     
     // ssl
     open var enableSSL = false
@@ -204,7 +205,7 @@ open class CocoaMQTT: NSObject, CocoaMQTTClient {
 
     @discardableResult
     open func connect() -> Bool {
-        socket = GCDAsyncSocket(delegate: self, delegateQueue: DispatchQueue.main)
+        socket = GCDAsyncSocket(delegate: self, delegateQueue: dispatchQueue)
         reader = CocoaMQTTReader(socket: socket!, delegate: self)
         do {
             try socket!.connect(toHost: self.host, onPort: self.port)
@@ -371,7 +372,7 @@ extension CocoaMQTT: CocoaMQTTReaderDelegate {
                 selector: #selector(CocoaMQTT.aliveTimerFired),
                 userInfo: nil,
                 repeats: true,
-                dispatchQueue: DispatchQueue.main)
+                dispatchQueue: dispatchQueue)
         }
     }
 
