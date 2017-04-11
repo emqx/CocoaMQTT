@@ -547,7 +547,9 @@ class CocoaMQTTReader {
             delegate.didReceiveConnAck(self, connack: data[1])
         case .publish:
             let (msgid, message) = unpackPublish()
-            delegate.didReceivePublish(self, message: message, id: msgid)
+            if message != nil {
+                delegate.didReceivePublish(self, message: message!, id: msgid)
+            }
         case .puback:
             delegate.didReceivePubAck(self, msgid: msgid(data))
         case .pubrec:
@@ -569,9 +571,13 @@ class CocoaMQTTReader {
         readHeader()
     }
 
-    private func unpackPublish() -> (UInt16, CocoaMQTTMessage) {
+    private func unpackPublish() -> (UInt16, CocoaMQTTMessage?) {
         let frame = CocoaMQTTFramePublish(header: header, data: data)
         frame.unpack()
+        // if unpack fail
+        if frame.msgid == nil {
+            return (0, nil)
+        }
         let msgid = frame.msgid!
         let qos = CocoaMQTTQOS(rawValue: frame.qos)!
         let message = CocoaMQTTMessage(topic: frame.topic!, payload: frame.payload, qos: qos, retained: frame.retained, dup: frame.dup)

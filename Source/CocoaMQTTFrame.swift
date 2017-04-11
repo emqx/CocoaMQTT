@@ -304,19 +304,35 @@ class CocoaMQTTFramePublish: CocoaMQTTFrame {
 
     func unpack() {
         // topic
+        data![1] = 10
+        if data!.count < 2 {
+            print("Invalid format of rescived message.")
+            return
+        }
         var msb = data![0]
         var lsb = data![1]
         let len = UInt16(msb) << 8 + UInt16(lsb)
         var pos = 2 + Int(len)
-        topic = NSString(bytes: [UInt8](data![2...(pos-1)]), length: Int(len), encoding: String.Encoding.utf8.rawValue) as? String
+        
+        if data!.count < pos {
+            print("Invalid format of rescived message.")
+            return
+        }
+        
+        topic = NSString(bytes: [UInt8](data![2...(pos-1)]), length: Int(len), encoding: String.Encoding.utf8.rawValue) as String?
 
         // msgid
         if qos == 0 {
             msgid = 0
         } else {
-            msb = data![pos]; lsb = data![pos+1]
-            msgid = UInt16(msb) << 8 + UInt16(lsb)
+            if data!.count < pos + 2 {
+                print("Invalid format of rescived message.")
+                return
+            }
+            msb = data![pos]
+            lsb = data![pos+1]
             pos += 2
+            msgid = UInt16(msb) << 8 + UInt16(lsb)
         }
         
         // payload
