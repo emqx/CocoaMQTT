@@ -424,7 +424,7 @@ extension CocoaMQTT: CocoaMQTTReaderDelegate {
             subscriptions[msgid] = topicDict
             delegate?.mqtt(self, didSubscribeTopic: topic)
         } else {
-            printWarning("CocoaMQTT: UNEXPECT SUBACK Received: \(msgid)")
+            printWarning("UNEXPECT SUBACK Received: \(msgid)")
         }
     }
 
@@ -448,7 +448,7 @@ extension CocoaMQTT: CocoaMQTTReaderDelegate {
     }
 
     func didReceivePong(_ reader: CocoaMQTTReader) {
-        printDebug("CocoaMQTT: PONG Received")
+        printDebug("PONG Received")
 
         delegate?.mqttDidReceivePong(self)
     }
