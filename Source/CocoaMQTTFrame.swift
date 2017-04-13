@@ -306,7 +306,7 @@ class CocoaMQTTFramePublish: CocoaMQTTFrame {
         // topic
         data![1] = 10
         if data!.count < 2 {
-            print("Invalid format of rescived message.")
+            printWarning("Invalid format of rescived message.")
             return
         }
         var msb = data![0]
@@ -315,7 +315,7 @@ class CocoaMQTTFramePublish: CocoaMQTTFrame {
         var pos = 2 + Int(len)
         
         if data!.count < pos {
-            print("Invalid format of rescived message.")
+            printWarning("Invalid format of rescived message.")
             return
         }
         
@@ -326,7 +326,7 @@ class CocoaMQTTFramePublish: CocoaMQTTFrame {
             msgid = 0
         } else {
             if data!.count < pos + 2 {
-                print("Invalid format of rescived message.")
+                printWarning("Invalid format of rescived message.")
                 return
             }
             msb = data![pos]
