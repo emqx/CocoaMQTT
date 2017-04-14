@@ -304,7 +304,6 @@ class CocoaMQTTFramePublish: CocoaMQTTFrame {
 
     func unpack() {
         // topic
-        data![1] = 10
         if data!.count < 2 {
             printWarning("Invalid format of rescived message.")
             return
