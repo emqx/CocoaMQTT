@@ -1,5 +1,9 @@
 CocoaMQTT
 =========
+![PodVersion](https://img.shields.io/cocoapods/v/CocoaMQTT.svg)
+![Platforms](https://img.shields.io/cocoapods/p/CocoaMQTT.svg)
+![License](https://img.shields.io/cocoapods/l/BadgeSwift.svg?style=flat)
+![Swift version](https://img.shields.io/badge/swift-3.1-orange.svg)
 
 MQTT v3.1.1 client library for iOS and OS X written with Swift 3
 
