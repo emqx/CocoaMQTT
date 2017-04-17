@@ -8,7 +8,7 @@
 
 import Foundation
 import CocoaAsyncSocket
-import MSWeakTimer
+import SwiftyTimer
 
 
 /**
@@ -151,7 +151,6 @@ open class CocoaMQTT: NSObject, CocoaMQTTClient {
 
     // global message id
     var gmid: UInt16 = 1
-    var aliveTimer: MSWeakTimer?
     var socket: GCDAsyncSocket?
     var reader: CocoaMQTTReader?
 
@@ -171,14 +170,6 @@ open class CocoaMQTT: NSObject, CocoaMQTTClient {
         send(frame)
         reader!.start()
         delegate?.mqtt(self, didConnect: host, port: Int(port))
-    }
-
-    @objc fileprivate func aliveTimerFired() {
-        if connState == .connected {
-            ping()
-        } else {
-            aliveTimer?.invalidate()
-        }
     }
 
     fileprivate func nextMessageID() -> UInt16 {
@@ -361,13 +352,13 @@ extension CocoaMQTT: CocoaMQTTReaderDelegate {
 
         // keep alive
         if ack == CocoaMQTTConnAck.accept && keepAlive > 0 {
-            aliveTimer = MSWeakTimer.scheduledTimer(
-                withTimeInterval: TimeInterval(keepAlive),
-                target: self,
-                selector: #selector(CocoaMQTT.aliveTimerFired),
-                userInfo: nil,
-                repeats: true,
-                dispatchQueue: dispatchQueue)
+            Timer.every(Double(keepAlive).seconds) { (timer: Timer) in
+                if self.connState == .connected {
+                    self.ping()
+                } else {
+                    timer.invalidate()
+                }
+            }
         }
     }
 
