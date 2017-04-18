@@ -16,7 +16,7 @@ Build with Xcode 8.3.1 / Swift 3.1
 
 Installation
 =====
-###CocoaPods
+### CocoaPods
 Install using [CocoaPods](http://cocoapods.org) by adding this line to your Podfile:
 
 ````ruby
@@ -29,7 +29,7 @@ Then, run the following command:
 $ pod install
 ```
 
-###Carthage
+### Carthage
 Install using [Carthage](https://github.com/Carthage/Carthage) by adding the following lines to your Cartfile:
 
 ````
