@@ -121,13 +121,24 @@ open class CocoaMQTT: NSObject, CocoaMQTTClient {
     open var password: String?
     open var secureMQTT = false
     open var cleanSession = true
-    open var keepAlive: UInt16 = 60
     open var willMessage: CocoaMQTTWill?
     open weak var delegate: CocoaMQTTDelegate?
     open var backgroundOnSocket = false
     open var connState = CocoaMQTTConnState.initial
     open var dispatchQueue = DispatchQueue.main
     
+    
+    // heart beat
+    open var keepAlive: UInt16 = 60
+    fileprivate var aliveTimer: Timer?
+    
+    // auto reconnect
+    open var autoReconnect = false
+    open var autoReconnectTimeInterval: UInt16 = 20
+    fileprivate var autoReconnTimer: Timer?
+    fileprivate var disconnectExpectedly = false
+    
+    // log
     open var logLevel: CocoaMQTTLoggerLevel {
         get {
             return CocoaMQTTLogger.logger.minLevel
@@ -153,11 +164,18 @@ open class CocoaMQTT: NSObject, CocoaMQTTClient {
     var gmid: UInt16 = 1
     var socket: GCDAsyncSocket?
     var reader: CocoaMQTTReader?
+    
 
+    // MARK: init
     public init(clientID: String, host: String = "localhost", port: UInt16 = 1883) {
         self.clientID = clientID
         self.host = host
         self.port = port
+    }
+    
+    deinit {
+        aliveTimer?.invalidate()
+        autoReconnTimer?.invalidate()
     }
 
     fileprivate func send(_ frame: CocoaMQTTFrame, tag: Int = 0) {
@@ -258,11 +276,20 @@ open class CocoaMQTT: NSObject, CocoaMQTTClient {
     }
 
     open func ping() {
+        printDebug("ping")
         send(CocoaMQTTFrame(type: CocoaMQTTFrameType.pingreq), tag: -0xC0)
         self.delegate?.mqttDidPing(self)
     }
 
+    /// Only can be called from outside. If you want to disconnect from inside framwork, call internal_disconnect()
+    /// disconnect expectedly
     open func disconnect() {
+        disconnectExpectedly = true
+        internal_disconnect()
+    }
+    
+    /// disconnect unexpectedly
+    open func internal_disconnect() {
         send(CocoaMQTTFrame(type: CocoaMQTTFrameType.disconnect), tag: -0xE0)
         socket!.disconnect()
     }
@@ -324,6 +351,14 @@ extension CocoaMQTT: GCDAsyncSocketDelegate {
     public func socketDidDisconnect(_ sock: GCDAsyncSocket, withError err: Error?) {
         connState = .disconnected
         delegate?.mqttDidDisconnect(self, withError: err)
+        
+        autoReconnTimer?.invalidate()
+        if !disconnectExpectedly && autoReconnect && autoReconnectTimeInterval > 0 {
+            autoReconnTimer = Timer.every(Double(autoReconnectTimeInterval).seconds, { [weak self] (timer: Timer) in
+                printDebug("try reconnect")
+                self?.connect()
+            })
+        }
     }
 }
 
@@ -339,22 +374,29 @@ extension CocoaMQTT: CocoaMQTTReaderDelegate {
             connState = .connected
         case 1...5:
             ack = CocoaMQTTConnAck(rawValue: connack)!
-            disconnect()
+            internal_disconnect()
         case _ where connack > 5:
             ack = .reserved
-            disconnect()
+            internal_disconnect()
         default:
-            disconnect()
+            internal_disconnect()
             return
         }
 
         delegate?.mqtt(self, didConnectAck: ack)
+        
+        // auto reconnect
+        if ack == CocoaMQTTConnAck.accept {
+            autoReconnTimer?.invalidate()
+            disconnectExpectedly = false
+        }
 
         // keep alive
         if ack == CocoaMQTTConnAck.accept && keepAlive > 0 {
-            Timer.every(Double(keepAlive).seconds) { (timer: Timer) in
-                if self.connState == .connected {
-                    self.ping()
+            aliveTimer?.invalidate()
+            aliveTimer = Timer.every(Double(keepAlive).seconds) { [weak self] (timer: Timer) in
+                if self?.connState == .connected {
+                    self?.ping()
                 } else {
                     timer.invalidate()
                 }
