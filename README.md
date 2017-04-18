@@ -5,13 +5,13 @@ CocoaMQTT
 ![License](https://img.shields.io/cocoapods/l/BadgeSwift.svg?style=flat)
 ![Swift version](https://img.shields.io/badge/swift-3.1-orange.svg)
 
-MQTT v3.1.1 client library for iOS and OS X written with Swift 3
+MQTT v3.1.1 client library for iOS/macOS/tvOS  written with Swift 3.1
 
 
 Build
 =====
 
-Build with Xcode 8.0 / Swift 3
+Build with Xcode 8.3.1 / Swift 3.1
 
 
 Installation
@@ -134,8 +134,8 @@ AsyncSocket and Timer
 
 These third-party functions are used:
 
-* [GCDAsyncSocket.h](https://github.com/robbiehanson/CocoaAsyncSocket)
-* [MSWeakTimer.h](https://github.com/mindsnacks/MSWeakTimer)
+* [GCDAsyncSocket](https://github.com/robbiehanson/CocoaAsyncSocket)
+* [SwiftyTimer](https://github.com/radex/SwiftyTimer)
 
 
 LICENSE
@@ -152,7 +152,9 @@ MIT License (see `LICENSE`)
 Author
 ======
 
-Feng Lee <feng@emqtt.io>
+- Feng Lee <feng@emqtt.io>
+- CrazyWisdom <zh.whong@gmail.com>
+- Alex Yu" <alexyu.dc@gmail.com>
 
 
 Twitter
