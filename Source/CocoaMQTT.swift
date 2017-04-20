@@ -108,12 +108,18 @@ protocol CocoaMQTTReaderDelegate {
     func didReceivePong(_ reader: CocoaMQTTReader)
 }
 
+extension Int {
+    var MB: Int {
+        return self * 1024 * 1024
+    }
+}
+
 /**
  * Main CocoaMQTT Class
  *
  * Notice: GCDAsyncSocket need delegate to extend NSObject
  */
-open class CocoaMQTT: NSObject, CocoaMQTTClient {
+open class CocoaMQTT: NSObject, CocoaMQTTClient, CocoaMQTTFrameBufferProtocol {
     open var host = "localhost"
     open var port: UInt16 = 1883
     open var clientID: String
@@ -126,6 +132,9 @@ open class CocoaMQTT: NSObject, CocoaMQTTClient {
     open var backgroundOnSocket = false
     open var connState = CocoaMQTTConnState.initial
     open var dispatchQueue = DispatchQueue.main
+    
+    // flow control
+    var buffer = CocoaMQTTFrameBuffer()
     
     
     // heart beat
@@ -152,9 +161,6 @@ open class CocoaMQTT: NSObject, CocoaMQTTClient {
     open var enableSSL = false
     open var sslSettings: [String: NSObject]?
     
-    // published messages
-    open var messages: [UInt16: CocoaMQTTMessage] = [:]
-    
     // subscribed topics. (dictionary structure -> [msgid: [topicString: QoS]])
     open var subscriptions: [UInt16: [String: CocoaMQTTQOS]] = [:]
     var subscriptionsWaitingAck: [UInt16: [String: CocoaMQTTQOS]] = [:]
@@ -171,11 +177,17 @@ open class CocoaMQTT: NSObject, CocoaMQTTClient {
         self.clientID = clientID
         self.host = host
         self.port = port
+        super.init()
+        buffer.delegate = self
     }
     
     deinit {
         aliveTimer?.invalidate()
         autoReconnTimer?.invalidate()
+    }
+    
+    public func buffer(_ buffer: CocoaMQTTFrameBuffer, sendPublishFrame frame: CocoaMQTTFramePublish) {
+        send(frame, tag: Int(frame.msgid!))
     }
 
     fileprivate func send(_ frame: CocoaMQTTFrame, tag: Int = 0) {
@@ -246,11 +258,15 @@ open class CocoaMQTT: NSObject, CocoaMQTTClient {
         frame.qos = message.qos.rawValue
         frame.retained = message.retained
         frame.dup = message.dup
-        send(frame, tag: Int(msgid))
+//        send(frame, tag: Int(msgid))
+        _ = buffer.add(frame)
+        
+        
 
         if message.qos != CocoaMQTTQOS.qos0 {
-            messages[msgid] = message //cache
+            
         }
+        
 
         delegate?.mqtt(self, didPublishMessage: message, id: msgid)
 
@@ -416,9 +432,9 @@ extension CocoaMQTT: CocoaMQTTReaderDelegate {
     }
 
     func didReceivePubAck(_ reader: CocoaMQTTReader, msgid: UInt16) {
-            printDebug("PUBACK Received: \(msgid)")
-
-        messages.removeValue(forKey: msgid)
+        printDebug("PUBACK Received: \(msgid)")
+        
+        buffer.sendSuccess(withMsgid: msgid)
         delegate?.mqtt(self, didPublishAck: msgid)
     }
     
@@ -437,7 +453,7 @@ extension CocoaMQTT: CocoaMQTTReaderDelegate {
     func didReceivePubComp(_ reader: CocoaMQTTReader, msgid: UInt16) {
         printDebug("PUBCOMP Received: \(msgid)")
 
-        messages.removeValue(forKey: msgid)
+        buffer.sendSuccess(withMsgid: msgid)
         delegate?.mqtt?(self, didPublishComplete: msgid)
     }
 
