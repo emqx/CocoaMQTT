@@ -192,6 +192,9 @@ open class CocoaMQTT: NSObject, CocoaMQTTClient, CocoaMQTTFrameBufferProtocol {
 
     fileprivate func send(_ frame: CocoaMQTTFrame, tag: Int = 0) {
         let data = frame.data()
+        guard socket != nil else {
+            return
+        }
         socket!.write(Data(bytes: data, count: data.count), withTimeout: -1, tag: tag)
     }
 
@@ -307,7 +310,9 @@ open class CocoaMQTT: NSObject, CocoaMQTTClient, CocoaMQTTFrameBufferProtocol {
     /// disconnect unexpectedly
     open func internal_disconnect() {
         send(CocoaMQTTFrame(type: CocoaMQTTFrameType.disconnect), tag: -0xE0)
+        socket?.delegate = nil
         socket!.disconnect()
+        socket = nil
     }
 }
 
