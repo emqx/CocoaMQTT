@@ -250,6 +250,12 @@ open class CocoaMQTT: NSObject, CocoaMQTTClient, CocoaMQTTFrameBufferProtocol {
         let message = CocoaMQTTMessage(topic: topic, string: string, qos: qos, retained: retained, dup: dup)
         return publish(message)
     }
+    
+    @discardableResult
+    open func publish(_ topic: String, msgid:UInt16, withString string: String, qos: CocoaMQTTQOS = .qos1, retained: Bool = false, dup: Bool = false) -> UInt16 {
+        let message = CocoaMQTTMessage(topic: topic, string: string, qos: qos, retained: retained, dup: dup)
+        return publish(message,msgid:msgid)
+    }
 
     @discardableResult
     open func publish(_ message: CocoaMQTTMessage) -> UInt16 {
@@ -272,6 +278,24 @@ open class CocoaMQTT: NSObject, CocoaMQTTClient, CocoaMQTTFrameBufferProtocol {
 
         return msgid
     }
+    
+    @discardableResult
+    open func publish(_ message: CocoaMQTTMessage, msgid:UInt16) -> UInt16 {
+        gmid = msgid
+        let frame = CocoaMQTTFramePublish(msgid: msgid, topic: message.topic, payload: message.payload)
+        frame.qos = message.qos.rawValue
+        frame.retained = message.retained
+        frame.dup = message.dup
+        send(frame, tag: Int(msgid))
+        
+        if message.qos != CocoaMQTTQOS.qos0 {
+            messages[msgid] = message //cache
+        }
+        
+        delegate?.mqtt(self, didPublishMessage: message, id: msgid)
+        
+        return msgid
+    }
 
     @discardableResult
     open func subscribe(_ topic: String, qos: CocoaMQTTQOS = .qos1) -> UInt16 {
@@ -281,12 +305,30 @@ open class CocoaMQTT: NSObject, CocoaMQTTClient, CocoaMQTTFrameBufferProtocol {
         subscriptionsWaitingAck[msgid] = [topic:qos]
         return msgid
     }
+    
+    @discardableResult
+    open func subscribe(_ topic: String, msgid:UInt16, qos: CocoaMQTTQOS = .qos1) -> UInt16 {
+        gmid = msgid
+        let frame = CocoaMQTTFrameSubscribe(msgid: msgid, topic: topic, reqos: qos.rawValue)
+        send(frame, tag: Int(msgid))
+        subscriptions[msgid] = topic
+        return msgid
+    }
 
     @discardableResult
     open func unsubscribe(_ topic: String) -> UInt16 {
         let msgid = nextMessageID()
         let frame = CocoaMQTTFrameUnsubscribe(msgid: msgid, topic: topic)
         unsubscriptionsWaitingAck[msgid] = [topic:CocoaMQTTQOS.qos0]
+        send(frame, tag: Int(msgid))
+        return msgid
+    }
+    
+    @discardableResult
+    open func unsubscribe(_ topic: String, msgid:UInt16) -> UInt16 {
+        gmid = msgid
+        let frame = CocoaMQTTFrameUnsubscribe(msgid: msgid, topic: topic)
+        subscriptions[msgid] = topic
         send(frame, tag: Int(msgid))
         return msgid
     }
