@@ -305,7 +305,7 @@ open class CocoaMQTTFramePublish: CocoaMQTTFrame {
     func unpack() {
         // topic
         if data!.count < 2 {
-            printWarning("Invalid format of rescived message.")
+            printWarning("Invalid format of received message.")
             return
         }
         var msb = data![0]
@@ -314,7 +314,7 @@ open class CocoaMQTTFramePublish: CocoaMQTTFrame {
         var pos = 2 + Int(len)
         
         if data!.count < pos {
-            printWarning("Invalid format of rescived message.")
+            printWarning("Invalid format of received message.")
             return
         }
         
@@ -325,7 +325,7 @@ open class CocoaMQTTFramePublish: CocoaMQTTFrame {
             msgid = 0
         } else {
             if data!.count < pos + 2 {
-                printWarning("Invalid format of rescived message.")
+                printWarning("Invalid format of received message.")
                 return
             }
             msb = data![pos]
