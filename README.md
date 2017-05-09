@@ -34,7 +34,7 @@ Install using [Carthage](https://github.com/Carthage/Carthage) by adding the fol
 
 ````
 github "robbiehanson/CocoaAsyncSocket" "master"
-github "CrazyWisdom/MSWeakTimer" "master"
+github "radex/SwiftyTimer" "master"
 github "emqtt/CocoaMQTT" "master"
 ````
 Then, run the following command:
