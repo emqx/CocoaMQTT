@@ -162,6 +162,7 @@ open class CocoaMQTT: NSObject, CocoaMQTTClient, CocoaMQTTFrameBufferProtocol {
     // ssl
     open var enableSSL = false
     open var sslSettings: [String: NSObject]?
+    open var allowUntrustCACertificate = false
     
     // subscribed topics. (dictionary structure -> [msgid: [topicString: QoS]])
     open var subscriptions: [UInt16: [String: CocoaMQTTQOS]] = [:]
@@ -329,7 +330,11 @@ extension CocoaMQTT: GCDAsyncSocketDelegate {
         
         if enableSSL {
             if sslSettings == nil {
-                sock.startTLS(nil)
+                if allowUntrustCACertificate {
+                    sock.startTLS([GCDAsyncSocketManuallyEvaluateTrust: true as NSObject]) }
+                else {
+                    sock.startTLS(nil)
+                }
             } else {
                 sslSettings![GCDAsyncSocketManuallyEvaluateTrust as String] = NSNumber(value: true)
                 sock.startTLS(sslSettings!)
