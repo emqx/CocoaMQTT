@@ -379,12 +379,14 @@ extension CocoaMQTT: GCDAsyncSocketDelegate {
         connState = .disconnected
         delegate?.mqttDidDisconnect(self, withError: err)
 
-        autoReconnTimer?.invalidate()
-        if !disconnectExpectedly && autoReconnect && autoReconnectTimeInterval > 0 {
-            autoReconnTimer = Timer.every(Double(autoReconnectTimeInterval).seconds, { [weak self] (timer: Timer) in
-                printDebug("try reconnect")
-                self?.connect()
-            })
+        DispatchQueue.main.async {
+            self.autoReconnTimer?.invalidate()
+            if !self.disconnectExpectedly && self.autoReconnect && self.autoReconnectTimeInterval > 0 {
+                self.autoReconnTimer = Timer.every(Double(self.autoReconnectTimeInterval).seconds, { [weak self] (timer: Timer) in
+                    printDebug("try reconnect")
+                    self?.connect()
+                })
+            }
         }
     }
 }
@@ -420,12 +422,14 @@ extension CocoaMQTT: CocoaMQTTReaderDelegate {
 
         // keep alive
         if ack == CocoaMQTTConnAck.accept && keepAlive > 0 {
-            aliveTimer?.invalidate()
-            aliveTimer = Timer.every(Double(keepAlive).seconds) { [weak self] (timer: Timer) in
-                if self?.connState == .connected {
-                    self?.ping()
-                } else {
-                    timer.invalidate()
+            DispatchQueue.main.async {
+                self.aliveTimer?.invalidate()
+                self.aliveTimer = Timer.every(Double(self.keepAlive / 2 + 1).seconds) { [weak self] (timer: Timer) in
+                    if self?.connState == .connected {
+                        self?.ping()
+                    } else {
+                        timer.invalidate()
+                    }
                 }
             }
         }
