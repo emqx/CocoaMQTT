@@ -483,8 +483,10 @@ open class CocoaMQTTFrameBuffer: NSObject {
     }
     
     open func sendSuccess(withMsgid msgid: UInt16) {
-        _ = removeFrameFromSilos(withMsgid: msgid)
-        printDebug("sendMessageSuccess:\(msgid)")
+        DispatchQueue.main.async { [weak self] in
+            _ = self?.removeFrameFromSilos(withMsgid: msgid)
+            printDebug("sendMessageSuccess:\(msgid)")
+        }
     }
     
     func removeFrameFromSilos(withMsgid msgid: UInt16) -> Bool {
