@@ -427,16 +427,17 @@ open class CocoaMQTTFrameBuffer: NSObject {
     
     // flow control
     fileprivate var silos = [CocoaMQTTFramePublish]()
-    fileprivate var silosMaxNumber = 10
     fileprivate var buffer = [CocoaMQTTFramePublish]()
     fileprivate var bufferSize = 1000
+    var silosMaxNumber: UInt = 10
+    var timeout: Double = 60
     //TODO: bufferCapacity
     //fileprivate var bufferCapacity = 50.MB // unit: byte
     
     //
     var isBufferEmpty: Bool { get { return buffer.count == 0 }}
     var isBufferFull : Bool { get { return buffer.count > bufferSize }}
-    var isSilosFull  : Bool { get { return silos.count >= silosMaxNumber }}
+    var isSilosFull  : Bool { get { return silos.count >= Int(silosMaxNumber) }}
     
     
     // return false means the frame is rejected because of the buffer is full
@@ -460,7 +461,7 @@ open class CocoaMQTTFrameBuffer: NSObject {
         
         send(frame)
         
-        Timer.after(60.seconds) {
+        Timer.after(timeout.seconds) {
             let msgid = frame.msgid!
             if self.removeFrameFromSilos(withMsgid: msgid) {
                 printDebug("timeout of frame:\(msgid)")

@@ -136,7 +136,15 @@ open class CocoaMQTT: NSObject, CocoaMQTTClient, CocoaMQTTFrameBufferProtocol {
     open var dispatchQueue = DispatchQueue.main
     
     // flow control
-    var buffer = CocoaMQTTFrameBuffer()
+    fileprivate var buffer = CocoaMQTTFrameBuffer()
+    open var bufferSilosTimeout: Double {
+        get { return buffer.timeout }
+        set { buffer.timeout = newValue }
+    }
+    open var bufferSilosMaxNumber: UInt {
+        get { return buffer.silosMaxNumber }
+        set { buffer.silosMaxNumber = newValue }
+    }
     
     
     // heart beat
@@ -192,6 +200,7 @@ open class CocoaMQTT: NSObject, CocoaMQTTClient, CocoaMQTTFrameBufferProtocol {
         socket.disconnect()
     }
     
+    // MARK: CocoaMQTTFrameBufferProtocol
     public func buffer(_ buffer: CocoaMQTTFrameBuffer, sendPublishFrame frame: CocoaMQTTFramePublish) {
         send(frame, tag: Int(frame.msgid!))
     }
