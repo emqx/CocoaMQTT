@@ -121,10 +121,6 @@ class ViewController: UIViewController {
 }
 
 extension ViewController: CocoaMQTTDelegate {
-    func mqtt(_ mqtt: CocoaMQTT, didConnect host: String, port: Int) {
-        print("didConnect \(host):\(port)")
-    }
-    
     // Optional ssl CocoaMQTTDelegate
     func mqtt(_ mqtt: CocoaMQTT, didReceive trust: SecTrust, completionHandler: @escaping (Bool) -> Void) {
         /// Validate the server certificate

@@ -57,7 +57,8 @@ fileprivate enum CocoaMQTTReadTag: Int {
  */
 @objc public protocol CocoaMQTTDelegate {
     /// MQTT connected with server
-    func mqtt(_ mqtt: CocoaMQTT, didConnect host: String, port: Int)
+    // deprecated: use mqtt(_ mqtt: CocoaMQTT, didConnectAck ack: CocoaMQTTConnAck) to tell if connect to the server successfully
+    // func mqtt(_ mqtt: CocoaMQTT, didConnect host: String, port: Int)
     func mqtt(_ mqtt: CocoaMQTT, didConnectAck ack: CocoaMQTTConnAck)
     func mqtt(_ mqtt: CocoaMQTT, didPublishMessage message: CocoaMQTTMessage, id: UInt16)
     func mqtt(_ mqtt: CocoaMQTT, didPublishAck id: UInt16)
@@ -214,7 +215,6 @@ open class CocoaMQTT: NSObject, CocoaMQTTClient, CocoaMQTTFrameBufferProtocol {
         let frame = CocoaMQTTFrameConnect(client: self)
         send(frame)
         reader!.start()
-        delegate?.mqtt(self, didConnect: host, port: Int(port))
     }
 
     fileprivate func nextMessageID() -> UInt16 {
