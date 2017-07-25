@@ -174,7 +174,7 @@ Author
 
 - Feng Lee <feng@emqtt.io>
 - CrazyWisdom <zh.whong@gmail.com>
-- Alex Yu" <alexyu.dc@gmail.com>
+- Alex Yu <alexyu.dc@gmail.com>
 
 
 Twitter
