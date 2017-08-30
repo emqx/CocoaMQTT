@@ -656,7 +656,7 @@ public enum CocoaMQTTLoggerLevel {
 public class CocoaMQTTLogger: NSObject {
     
     // Singleton
-    static let logger = CocoaMQTTLogger()
+    public static let logger = CocoaMQTTLogger()
     private override init() {}
     
     // min level
