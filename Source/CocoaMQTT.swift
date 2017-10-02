@@ -99,7 +99,7 @@ protocol CocoaMQTTClient {
 /**
  * MQTT Reader Delegate
  */
-protocol CocoaMQTTReaderDelegate {
+protocol CocoaMQTTReaderDelegate: class {
     func didReceiveConnAck(_ reader: CocoaMQTTReader, connack: UInt8)
     func didReceivePublish(_ reader: CocoaMQTTReader, message: CocoaMQTTMessage, id: UInt16)
     func didReceivePubAck(_ reader: CocoaMQTTReader, msgid: UInt16)
@@ -533,10 +533,10 @@ class CocoaMQTTReader {
     private var length: UInt = 0
     private var data: [UInt8] = []
     private var multiply = 1
-    private var delegate: CocoaMQTTReaderDelegate
+    private weak var delegate: CocoaMQTTReaderDelegate?
     private var timeout = 30000
 
-    init(socket: GCDAsyncSocket, delegate: CocoaMQTTReaderDelegate) {
+    init(socket: GCDAsyncSocket, delegate: CocoaMQTTReaderDelegate?) {
         self.socket = socket
         self.delegate = delegate
     }
@@ -592,26 +592,26 @@ class CocoaMQTTReader {
         let frameType = CocoaMQTTFrameType(rawValue: UInt8(header & 0xF0))!
         switch frameType {
         case .connack:
-            delegate.didReceiveConnAck(self, connack: data[1])
+            delegate?.didReceiveConnAck(self, connack: data[1])
         case .publish:
             let (msgid, message) = unpackPublish()
             if message != nil {
-                delegate.didReceivePublish(self, message: message!, id: msgid)
+                delegate?.didReceivePublish(self, message: message!, id: msgid)
             }
         case .puback:
-            delegate.didReceivePubAck(self, msgid: msgid(data))
+            delegate?.didReceivePubAck(self, msgid: msgid(data))
         case .pubrec:
-            delegate.didReceivePubRec(self, msgid: msgid(data))
+            delegate?.didReceivePubRec(self, msgid: msgid(data))
         case .pubrel:
-            delegate.didReceivePubRel(self, msgid: msgid(data))
+            delegate?.didReceivePubRel(self, msgid: msgid(data))
         case .pubcomp:
-            delegate.didReceivePubComp(self, msgid: msgid(data))
+            delegate?.didReceivePubComp(self, msgid: msgid(data))
         case .suback:
-            delegate.didReceiveSubAck(self, msgid: msgid(data))
+            delegate?.didReceiveSubAck(self, msgid: msgid(data))
         case .unsuback:
-            delegate.didReceiveUnsubAck(self, msgid: msgid(data))
+            delegate?.didReceiveUnsubAck(self, msgid: msgid(data))
         case .pingresp:
-            delegate.didReceivePong(self)
+            delegate?.didReceivePong(self)
         default:
             break
         }
