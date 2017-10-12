@@ -86,6 +86,7 @@ protocol CocoaMQTTClient {
     var willMessage: CocoaMQTTWill? {get set}
 
     func connect() -> Bool
+    func connect(timeout:TimeInterval) -> Bool
     func disconnect()
     func ping()
     
@@ -248,10 +249,18 @@ open class CocoaMQTT: NSObject, CocoaMQTTClient, CocoaMQTTFrameBufferProtocol {
 
     @discardableResult
     open func connect() -> Bool {
+        return connect(timeout: -1)
+    }
+    
+    open func connect(timeout: TimeInterval) -> Bool {
         socket.setDelegate(self, delegateQueue: dispatchQueue)
         reader = CocoaMQTTReader(socket: socket, delegate: self)
         do {
-            try socket.connect(toHost: self.host, onPort: self.port)
+            if timeout > 0 {
+                try socket.connect(toHost: self.host, onPort: self.port, withTimeout: timeout)
+            } else {
+                try socket.connect(toHost: self.host, onPort: self.port)
+            }
             connState = .connecting
             return true
         } catch let error as NSError {
@@ -392,8 +401,13 @@ extension CocoaMQTT: GCDAsyncSocketDelegate {
             self.autoReconnTimer?.invalidate()
             if !self.disconnectExpectedly && self.autoReconnect && self.autoReconnectTimeInterval > 0 {
                 self.autoReconnTimer = Timer.every(Double(self.autoReconnectTimeInterval).seconds, { [weak self] (timer: Timer) in
-                    printDebug("try reconnect")
-                    self?.connect()
+                    
+                    if self?.connState != CocoaMQTTConnState.connected && self?.connState != CocoaMQTTConnState.connecting {
+                        printDebug("try reconnect")
+                        self?.connect()
+                    } else {
+                        printDebug("already trying reconnect")
+                    }
                 })
             }
         }
