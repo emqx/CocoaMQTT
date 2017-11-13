@@ -11,7 +11,7 @@ Pod::Spec.new do |s|
   s.ios.deployment_target = "8.0"
   s.tvos.deployment_target = "9.0"
   # s.watchos.deployment_target = "2.0"
-  s.source   = { :git => "https://github.com/filippocamillo/CocoaMQTT.git", :tag => "1.0.20"}
+  s.source   = { :git => "https://github.com/filippocamillo/CocoaMQTT.git", :tag => "1.0.21"}
   s.source_files = "Source/{*.h}", "Source/*.swift"
   s.dependency "CocoaAsyncSocket", "~> 7.5.1"
   s.dependency "SwiftyTimer", "~> 2.0.0"
