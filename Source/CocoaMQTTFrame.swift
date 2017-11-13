@@ -22,7 +22,7 @@ extension UInt16 {
         return UInt8(self & 0x00FF)
     }
 
-    fileprivate var hlBytes: [UInt8] {
+    var hlBytes: [UInt8] {
         return [highByte, lowByte]
     }
 }

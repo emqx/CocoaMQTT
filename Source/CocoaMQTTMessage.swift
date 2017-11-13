@@ -51,4 +51,10 @@ open class CocoaMQTTWill: CocoaMQTTMessage {
     public init(topic: String, message: String) {
         super.init(topic: topic, payload: message.bytesWithLength)
     }
+    
+    public init(topic: String, payload: [UInt8]) {
+        let endian = UInt16(payload.count).hlBytes
+        let payloadCoded = endian + payload as [UInt8]
+        super.init(topic: topic, payload: payloadCoded)
+    }
 }
