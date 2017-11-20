@@ -9,7 +9,6 @@
 /* Begin PBXBuildFile section */
 		0409971A1C1B0B96006B5A6D /* CocoaMQTT.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = 0409970F1C1B0B96006B5A6D /* CocoaMQTT.framework */; };
 		0409971F1C1B0B96006B5A6D /* CocoaMQTTTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 0409971E1C1B0B96006B5A6D /* CocoaMQTTTests.swift */; };
-		0409973A1C1B0E06006B5A6D /* CocoaMQTT.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = 040997301C1B0E06006B5A6D /* CocoaMQTT.framework */; };
 		040997631C1B0F7E006B5A6D /* CocoaMQTT.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = 040997591C1B0F7E006B5A6D /* CocoaMQTT.framework */; };
 		040997741C1B10AF006B5A6D /* CocoaMQTT.h in Headers */ = {isa = PBXBuildFile; fileRef = 040997711C1B1070006B5A6D /* CocoaMQTT.h */; settings = {ATTRIBUTES = (Public, ); }; };
 		040997751C1B10B3006B5A6D /* CocoaMQTT.h in Headers */ = {isa = PBXBuildFile; fileRef = 040997711C1B1070006B5A6D /* CocoaMQTT.h */; settings = {ATTRIBUTES = (Public, ); }; };
@@ -24,6 +23,7 @@
 		040997861C1B1529006B5A6D /* CocoaMQTTMessage.swift in Sources */ = {isa = PBXBuildFile; fileRef = 0409977C1C1B1529006B5A6D /* CocoaMQTTMessage.swift */; };
 		040997881C1B1529006B5A6D /* CocoaMQTTMessage.swift in Sources */ = {isa = PBXBuildFile; fileRef = 0409977C1C1B1529006B5A6D /* CocoaMQTTMessage.swift */; };
 		80BD51E168A6B155915C179D /* Pods_CocoaMQTT_iOS.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = B993FBFB01D0C4E090CDCC5B /* Pods_CocoaMQTT_iOS.framework */; };
+		8261B4E71FC2E2EB0004B834 /* CocoaMQTT.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = 040997301C1B0E06006B5A6D /* CocoaMQTT.framework */; };
 		92468D4EB16AA2ACC73F0E35 /* Pods_CocoaMQTT_tvOS.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = 121F0E4C312D0CBA5D614955 /* Pods_CocoaMQTT_tvOS.framework */; };
 		B9991969FA03B64D90E5853B /* Pods_CocoaMQTT_iOSTests.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = 8F648BD3F9221FAF79144A87 /* Pods_CocoaMQTT_iOSTests.framework */; };
 		C1454F516F7712F165A320C2 /* Pods_CocoaMQTT_OSX.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = 255DA32BA897A233D6442109 /* Pods_CocoaMQTT_OSX.framework */; };
@@ -111,7 +111,7 @@
 			isa = PBXFrameworksBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
-				0409973A1C1B0E06006B5A6D /* CocoaMQTT.framework in Frameworks */,
+				8261B4E71FC2E2EB0004B834 /* CocoaMQTT.framework in Frameworks */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -380,16 +380,18 @@
 					};
 					0409972F1C1B0E06006B5A6D = {
 						CreatedOnToolsVersion = 7.1.1;
-						LastSwiftMigration = 0800;
+						LastSwiftMigration = 0910;
 					};
 					040997381C1B0E06006B5A6D = {
 						CreatedOnToolsVersion = 7.1.1;
 					};
 					040997581C1B0F7E006B5A6D = {
 						CreatedOnToolsVersion = 7.1.1;
+						LastSwiftMigration = 0910;
 					};
 					040997611C1B0F7E006B5A6D = {
 						CreatedOnToolsVersion = 7.1.1;
+						LastSwiftMigration = 0910;
 					};
 				};
 			};
@@ -823,7 +825,6 @@
 				SWIFT_OBJC_BRIDGING_HEADER = "";
 				SWIFT_OBJC_INTERFACE_HEADER_NAME = "";
 				SWIFT_OPTIMIZATION_LEVEL = "-Onone";
-				SWIFT_SWIFT3_OBJC_INFERENCE = Default;
 				SWIFT_VERSION = 4.0;
 			};
 			name = Debug;
@@ -848,7 +849,6 @@
 				SKIP_INSTALL = YES;
 				SWIFT_OBJC_BRIDGING_HEADER = "";
 				SWIFT_OBJC_INTERFACE_HEADER_NAME = "";
-				SWIFT_SWIFT3_OBJC_INFERENCE = Default;
 				SWIFT_VERSION = 4.0;
 			};
 			name = Release;
@@ -903,7 +903,7 @@
 				SWIFT_OBJC_BRIDGING_HEADER = "";
 				SWIFT_OBJC_INTERFACE_HEADER_NAME = "";
 				SWIFT_OPTIMIZATION_LEVEL = "-Onone";
-				SWIFT_VERSION = 3.0;
+				SWIFT_VERSION = 4.0;
 			};
 			name = Debug;
 		};
@@ -930,7 +930,7 @@
 				SKIP_INSTALL = YES;
 				SWIFT_OBJC_BRIDGING_HEADER = "";
 				SWIFT_OBJC_INTERFACE_HEADER_NAME = "";
-				SWIFT_VERSION = 3.0;
+				SWIFT_VERSION = 4.0;
 			};
 			name = Release;
 		};
@@ -983,6 +983,7 @@
 				SWIFT_OBJC_BRIDGING_HEADER = "";
 				SWIFT_OBJC_INTERFACE_HEADER_NAME = "";
 				SWIFT_OPTIMIZATION_LEVEL = "-Onone";
+				SWIFT_VERSION = 4.0;
 				TARGETED_DEVICE_FAMILY = 3;
 				TVOS_DEPLOYMENT_TARGET = 9.0;
 			};
@@ -1008,6 +1009,7 @@
 				SKIP_INSTALL = YES;
 				SWIFT_OBJC_BRIDGING_HEADER = "";
 				SWIFT_OBJC_INTERFACE_HEADER_NAME = "";
+				SWIFT_VERSION = 4.0;
 				TARGETED_DEVICE_FAMILY = 3;
 				TVOS_DEPLOYMENT_TARGET = 9.0;
 			};
