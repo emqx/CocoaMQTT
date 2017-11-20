@@ -13,6 +13,6 @@ Pod::Spec.new do |s|
   # s.watchos.deployment_target = "2.0"
   s.source   = { :git => "https://github.com/emqtt/CocoaMQTT.git", :tag => "1.0.19"}
   s.source_files = "Source/{*.h}", "Source/*.swift"
-  s.dependency "CocoaAsyncSocket", "~> 7.5.1"
+  s.dependency "CocoaAsyncSocket", "~> 7.6.1"
   s.dependency "SwiftyTimer", "~> 2.0.0"
 end
