@@ -1,6 +1,0 @@
-framework module SwiftyTimer {
-  umbrella header "SwiftyTimer-tvOS-umbrella.h"
-
-  export *
-  module * { export * }
-}

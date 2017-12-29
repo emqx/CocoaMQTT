@@ -27,3 +27,6 @@ xcuserdata
 DerivedData
 *.xcuserstate
 Example/Pods
+Example/Podfile.lock
+Pods/
+Podfile.lock
