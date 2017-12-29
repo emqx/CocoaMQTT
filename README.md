@@ -5,13 +5,13 @@ CocoaMQTT
 ![License](https://img.shields.io/cocoapods/l/BadgeSwift.svg?style=flat)
 ![Swift version](https://img.shields.io/badge/swift-3.1-orange.svg)
 
-MQTT v3.1.1 client library for iOS/macOS/tvOS  written with Swift 3.1
+MQTT v3.1.1 client library for iOS/macOS/tvOS  written with Swift 4.0
 
 
 Build
 =====
 
-Build with Xcode 8.3.1 / Swift 3.1
+Build with Xcode 9.1 / Swift 4.0
 
 
 Installation

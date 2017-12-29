@@ -91,7 +91,7 @@ class ChatViewController: UIViewController {
         NotificationCenter.default.removeObserver(self)
     }
     
-    func keyboardChanged(notification: NSNotification) {
+    @objc func keyboardChanged(notification: NSNotification) {
         let userInfo = notification.userInfo as! [String: AnyObject]
         let keyboardValue = userInfo["UIKeyboardFrameEndUserInfoKey"]
         let bottomDistance = UIScreen.main.bounds.size.height - (navigationController?.navigationBar.frame.height)! - keyboardValue!.cgRectValue.origin.y
@@ -104,7 +104,7 @@ class ChatViewController: UIViewController {
         view.layoutIfNeeded()
     }
     
-    func receivedMessage(notification: NSNotification) {
+    @objc func receivedMessage(notification: NSNotification) {
         let userInfo = notification.userInfo as! [String: AnyObject]
         let content = userInfo["message"] as! String
         let topic = userInfo["topic"] as! String

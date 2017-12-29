@@ -1,5 +1,5 @@
 framework module SwiftyTimer {
-  umbrella header "SwiftyTimer-OSX-umbrella.h"
+  umbrella header "SwiftyTimer-macOS-umbrella.h"
 
   export *
   module * { export * }
