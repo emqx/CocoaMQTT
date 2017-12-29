@@ -3,7 +3,7 @@ CocoaMQTT
 ![PodVersion](https://img.shields.io/cocoapods/v/CocoaMQTT.svg)
 ![Platforms](https://img.shields.io/cocoapods/p/CocoaMQTT.svg)
 ![License](https://img.shields.io/cocoapods/l/BadgeSwift.svg?style=flat)
-![Swift version](https://img.shields.io/badge/swift-3.1-orange.svg)
+![Swift version](https://img.shields.io/badge/swift-4.0-orange.svg)
 
 MQTT v3.1.1 client library for iOS/macOS/tvOS  written with Swift 4.0
 
@@ -134,7 +134,8 @@ CocoaMQTTDelegate
  */
 @objc public protocol CocoaMQTTDelegate {
     /// MQTT connected with server
-    func mqtt(_ mqtt: CocoaMQTT, didConnect host: String, port: Int)
+    // deprecated: use mqtt(_ mqtt: CocoaMQTT, didConnectAck ack: CocoaMQTTConnAck) to tell if connect to the server successfully
+    // func mqtt(_ mqtt: CocoaMQTT, didConnect host: String, port: Int)
     func mqtt(_ mqtt: CocoaMQTT, didConnectAck ack: CocoaMQTTConnAck)
     func mqtt(_ mqtt: CocoaMQTT, didPublishMessage message: CocoaMQTTMessage, id: UInt16)
     func mqtt(_ mqtt: CocoaMQTT, didPublishAck id: UInt16)
@@ -145,6 +146,7 @@ CocoaMQTTDelegate
     func mqttDidReceivePong(_ mqtt: CocoaMQTT)
     func mqttDidDisconnect(_ mqtt: CocoaMQTT, withError err: Error?)
     @objc optional func mqtt(_ mqtt: CocoaMQTT, didReceive trust: SecTrust, completionHandler: @escaping (Bool) -> Void)
+    @objc optional func mqtt(_ mqtt: CocoaMQTT, didPublishComplete id: UInt16)
 }
 ```
 
@@ -181,5 +183,4 @@ Twitter
 ======
 
 https://twitter.com/emqtt
-
 
