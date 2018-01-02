@@ -11,6 +11,8 @@ import CocoaMQTT
 
 
 class ViewController: UIViewController {
+    let defaultHost = "127.0.0.1"
+
     var mqtt: CocoaMQTT?
     var animal: String?
     
@@ -43,7 +45,7 @@ class ViewController: UIViewController {
     
     func mqttSetting() {
         let clientID = "CocoaMQTT-\(animal!)-" + String(ProcessInfo().processIdentifier)
-        mqtt = CocoaMQTT(clientID: clientID, host: "127.0.0.1", port: 1883)
+        mqtt = CocoaMQTT(clientID: clientID, host: defaultHost, port: 1883)
         mqtt!.username = ""
         mqtt!.password = ""
         mqtt!.willMessage = CocoaMQTTWill(topic: "/will", message: "dieout")
@@ -53,7 +55,7 @@ class ViewController: UIViewController {
     
     func simpleSSLSetting() {
         let clientID = "CocoaMQTT-\(animal!)-" + String(ProcessInfo().processIdentifier)
-        mqtt = CocoaMQTT(clientID: clientID, host: "127.0.0.1", port: 8883)
+        mqtt = CocoaMQTT(clientID: clientID, host: defaultHost, port: 8883)
         mqtt!.username = ""
         mqtt!.password = ""
         mqtt!.willMessage = CocoaMQTTWill(topic: "/will", message: "dieout")
@@ -64,7 +66,7 @@ class ViewController: UIViewController {
     
     func selfSignedSSLSetting() {
         let clientID = "CocoaMQTT-\(animal!)-" + String(ProcessInfo().processIdentifier)
-        mqtt = CocoaMQTT(clientID: clientID, host: "127.0.0.1", port: 8883)
+        mqtt = CocoaMQTT(clientID: clientID, host: defaultHost, port: 8883)
         mqtt!.username = ""
         mqtt!.password = ""
         mqtt!.willMessage = CocoaMQTTWill(topic: "/will", message: "dieout")
@@ -123,6 +125,7 @@ class ViewController: UIViewController {
 extension ViewController: CocoaMQTTDelegate {
     // Optional ssl CocoaMQTTDelegate
     func mqtt(_ mqtt: CocoaMQTT, didReceive trust: SecTrust, completionHandler: @escaping (Bool) -> Void) {
+        TRACE("trust: \(trust)")
         /// Validate the server certificate
         ///
         /// Some custom validation...
@@ -136,8 +139,8 @@ extension ViewController: CocoaMQTTDelegate {
     }
     
     func mqtt(_ mqtt: CocoaMQTT, didConnectAck ack: CocoaMQTTConnAck) {
-        print("didConnectAck: \(ack)，rawValue: \(ack.rawValue)")
-        
+        TRACE("ack: \(ack)")
+
         if ack == .accept {
             mqtt.subscribe("chat/room/animals/client/+", qos: CocoaMQTTQOS.qos1)
             
@@ -145,45 +148,41 @@ extension ViewController: CocoaMQTTDelegate {
             chatViewController?.mqtt = mqtt
             navigationController!.pushViewController(chatViewController!, animated: true)
         }
-        
     }
     
     func mqtt(_ mqtt: CocoaMQTT, didPublishMessage message: CocoaMQTTMessage, id: UInt16) {
-        print("didPublishMessage with message: \(message.string ?? "")")
+        TRACE("message: \(message.string.description), id: \(id)")
     }
     
     func mqtt(_ mqtt: CocoaMQTT, didPublishAck id: UInt16) {
-        print("didPublishAck with id: \(id)")
+        TRACE("id: \(id)")
     }
     
     func mqtt(_ mqtt: CocoaMQTT, didReceiveMessage message: CocoaMQTTMessage, id: UInt16 ) {
-        print("didReceivedMessage: \(message.string ?? "") with id \(id)")
+        TRACE("message: \(message), id: \(id)")
+
         let name = NSNotification.Name(rawValue: "MQTTMessageNotification" + animal!)
         NotificationCenter.default.post(name: name, object: self, userInfo: ["message": message.string!, "topic": message.topic])
     }
     
     func mqtt(_ mqtt: CocoaMQTT, didSubscribeTopic topic: String) {
-        print("didSubscribeTopic to \(topic)")
+        TRACE("topic: \(topic)")
     }
     
     func mqtt(_ mqtt: CocoaMQTT, didUnsubscribeTopic topic: String) {
-        print("didUnsubscribeTopic to \(topic)")
+        TRACE("topic: \(topic)")
     }
     
     func mqttDidPing(_ mqtt: CocoaMQTT) {
-        print("didPing")
+        TRACE()
     }
     
     func mqttDidReceivePong(_ mqtt: CocoaMQTT) {
-        _console("didReceivePong")
+        TRACE()
     }
-    
+
     func mqttDidDisconnect(_ mqtt: CocoaMQTT, withError err: Error?) {
-        _console("mqttDidDisconnect")
-    }
-    
-    func _console(_ info: String) {
-        print("Delegate: \(info)")
+        TRACE("\(err.description)")
     }
 }
 
@@ -191,5 +190,28 @@ extension ViewController: UITabBarControllerDelegate {
     // Prevent automatic popToRootViewController on double-tap of UITabBarController
     func tabBarController(_ tabBarController: UITabBarController, shouldSelect viewController: UIViewController) -> Bool {
         return viewController != tabBarController.selectedViewController
+    }
+}
+
+extension ViewController {
+    func TRACE(_ message: String = "", fun: String = #function) {
+        let names = fun.components(separatedBy: ":")
+        var prettyName: String
+        if names.count == 1 {
+            prettyName = names[0]
+        } else {
+            prettyName = names[1]
+        }
+
+        print("[TRACE] [\(prettyName)]: \(message)")
+    }
+}
+
+extension Optional {
+    var description: String {
+        if let warped = self {
+            return "\(warped)"
+        }
+        return ""
     }
 }
