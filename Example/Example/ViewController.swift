@@ -150,6 +150,10 @@ extension ViewController: CocoaMQTTDelegate {
         }
     }
     
+    func mqtt(_ mqtt: CocoaMQTT, didStateChangeTo state: CocoaMQTTConnState) {
+        TRACE("new state: \(state)")
+    }
+    
     func mqtt(_ mqtt: CocoaMQTT, didPublishMessage message: CocoaMQTTMessage, id: UInt16) {
         TRACE("message: \(message.string.description), id: \(id)")
     }
@@ -159,7 +163,7 @@ extension ViewController: CocoaMQTTDelegate {
     }
     
     func mqtt(_ mqtt: CocoaMQTT, didReceiveMessage message: CocoaMQTTMessage, id: UInt16 ) {
-        TRACE("message: \(message), id: \(id)")
+        TRACE("message: \(message.string.description), id: \(id)")
 
         let name = NSNotification.Name(rawValue: "MQTTMessageNotification" + animal!)
         NotificationCenter.default.post(name: name, object: self, userInfo: ["message": message.string!, "topic": message.topic])
@@ -208,6 +212,7 @@ extension ViewController {
 }
 
 extension Optional {
+    // Unwarp optional value for printing log only
     var description: String {
         if let warped = self {
             return "\(warped)"

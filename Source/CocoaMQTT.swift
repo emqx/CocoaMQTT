@@ -14,26 +14,43 @@ import SwiftyTimer
 /**
  * QOS
  */
-@objc public enum CocoaMQTTQOS: UInt8 {
+@objc public enum CocoaMQTTQOS: UInt8, CustomStringConvertible {
     case qos0 = 0
     case qos1
     case qos2
+    
+    public var description: String {
+        switch self {
+            case .qos0: return "qos0"
+            case .qos1: return "qos1"
+            case .qos2: return "qos2"
+        }
+    }
 }
 
 /**
  * Connection State
  */
-public enum CocoaMQTTConnState: UInt8 {
+@objc public enum CocoaMQTTConnState: UInt8, CustomStringConvertible {
     case initial = 0
     case connecting
     case connected
     case disconnected
+    
+    public var description: String {
+        switch self {
+            case .initial:      return "initial"
+            case .connecting:   return "connecting"
+            case .connected:    return "connected"
+            case .disconnected: return "disconnected"
+        }
+    }
 }
 
 /**
  * Conn Ack
  */
-@objc public enum CocoaMQTTConnAck: UInt8 {
+@objc public enum CocoaMQTTConnAck: UInt8, CustomStringConvertible {
     case accept  = 0
     case unacceptableProtocolVersion
     case identifierRejected
@@ -41,6 +58,18 @@ public enum CocoaMQTTConnState: UInt8 {
     case badUsernameOrPassword
     case notAuthorized
     case reserved
+    
+    public var description: String {
+        switch self {
+            case .accept:                       return "accept"
+            case .unacceptableProtocolVersion:  return "unacceptableProtocolVersion"
+            case .identifierRejected:           return "identifierRejected"
+            case .serverUnavailable:            return "serverUnavailable"
+            case .badUsernameOrPassword:        return "badUsernameOrPassword"
+            case .notAuthorized:                return "notAuthorized"
+            case .reserved:                     return "reserved"
+        }
+    }
 }
 
 /**
@@ -70,6 +99,7 @@ fileprivate enum CocoaMQTTReadTag: Int {
     func mqttDidDisconnect(_ mqtt: CocoaMQTT, withError err: Error?)
     @objc optional func mqtt(_ mqtt: CocoaMQTT, didReceive trust: SecTrust, completionHandler: @escaping (Bool) -> Void)
     @objc optional func mqtt(_ mqtt: CocoaMQTT, didPublishComplete id: UInt16)
+    @objc optional func mqtt(_ mqtt: CocoaMQTT, didStateChangeTo state: CocoaMQTTConnState)
 }
 
 /**
@@ -133,8 +163,13 @@ open class CocoaMQTT: NSObject, CocoaMQTTClient, CocoaMQTTFrameBufferProtocol {
     open var willMessage: CocoaMQTTWill?
     open weak var delegate: CocoaMQTTDelegate?
     open var backgroundOnSocket = false
-    open var connState = CocoaMQTTConnState.initial
     open var dispatchQueue = DispatchQueue.main
+    
+    open var connState = CocoaMQTTConnState.initial {
+        didSet {
+            delegate?.mqtt?(self, didStateChangeTo: connState)
+        }
+    }
     
     // flow control
     fileprivate var buffer = CocoaMQTTFrameBuffer()
