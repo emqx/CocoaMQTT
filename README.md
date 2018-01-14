@@ -147,6 +147,7 @@ CocoaMQTTDelegate
     func mqttDidDisconnect(_ mqtt: CocoaMQTT, withError err: Error?)
     @objc optional func mqtt(_ mqtt: CocoaMQTT, didReceive trust: SecTrust, completionHandler: @escaping (Bool) -> Void)
     @objc optional func mqtt(_ mqtt: CocoaMQTT, didPublishComplete id: UInt16)
+    @objc optional func mqtt(_ mqtt: CocoaMQTT, didStateChangeTo state: CocoaMQTTConnState)
 }
 ```
 

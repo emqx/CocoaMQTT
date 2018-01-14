@@ -206,6 +206,10 @@ extension ViewController {
         } else {
             prettyName = names[1]
         }
+        
+        if fun == "mqttDidDisconnect(_:withError:)" {
+            prettyName = "didDisconect"
+        }
 
         print("[TRACE] [\(prettyName)]: \(message)")
     }
