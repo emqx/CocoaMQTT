@@ -161,7 +161,7 @@ open class CocoaMQTT: NSObject, CocoaMQTTClient, CocoaMQTTFrameBufferProtocol {
     open var secureMQTT = false
     open var cleanSession = true
     open var willMessage: CocoaMQTTWill?
-    open weak var delegate: CocoaMQTTDelegate?
+    open var delegate: CocoaMQTTDelegate?
     open var backgroundOnSocket = false
     open var dispatchQueue = DispatchQueue.main
     
@@ -568,7 +568,7 @@ class CocoaMQTTReader {
     private var length: UInt = 0
     private var data: [UInt8] = []
     private var multiply = 1
-    private weak var delegate: CocoaMQTTReaderDelegate?
+    private var delegate: CocoaMQTTReaderDelegate?
     private var timeout = 30000
 
     init(socket: GCDAsyncSocket, delegate: CocoaMQTTReaderDelegate?) {
