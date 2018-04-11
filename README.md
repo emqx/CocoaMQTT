@@ -76,6 +76,14 @@ mqtt.connect()
 
 ```
 
+Now you can use clousures instead of `CocoaMQTTDelegate`:
+
+```swift 
+mqtt.didReceiveMessage = { mqtt, message, id in
+	print("Message received in topic \(message.topic) with payload \(message.string!)")           
+}
+```
+
 ## SSL Secure
 
 1. One-way certification

@@ -168,6 +168,7 @@ open class CocoaMQTT: NSObject, CocoaMQTTClient, CocoaMQTTFrameBufferProtocol {
     open var connState = CocoaMQTTConnState.initial {
         didSet {
             delegate?.mqtt?(self, didStateChangeTo: connState)
+            didChangeState(self, connState)
         }
     }
     
@@ -217,6 +218,21 @@ open class CocoaMQTT: NSObject, CocoaMQTTClient, CocoaMQTTFrameBufferProtocol {
     var gmid: UInt16 = 1
     var socket = GCDAsyncSocket()
     var reader: CocoaMQTTReader?
+    
+    // Clousures
+    open var didConnectAck: (CocoaMQTT, CocoaMQTTConnAck) -> Void = { _, _ in }
+    open var didPublishMessage: (CocoaMQTT, CocoaMQTTMessage, UInt16) -> Void = { _, _, _ in }
+    open var didPublishAck: (CocoaMQTT, UInt16) -> Void = { _, _ in }
+    open var didReceiveMessage: (CocoaMQTT, CocoaMQTTMessage, UInt16) -> Void = { _, _, _ in }
+    open var didSubscribeTopic: (CocoaMQTT, String) -> Void = { _, _ in }
+    open var didUnsubscribeTopic: (CocoaMQTT, String) -> Void = { _, _ in }
+    open var didPing: (CocoaMQTT) -> Void = { _ in }
+    open var didReceivePong: (CocoaMQTT) -> Void = { _ in }
+    open var didDisconnect: (CocoaMQTT, Error?) -> Void = { _, _ in }
+    open var didReceiveTrust: (CocoaMQTT, SecTrust) -> Void = { _, _ in }
+    open var didCompletePublish: (CocoaMQTT, UInt16) -> Void = { _, _ in }
+    open var didChangeState: (CocoaMQTT, CocoaMQTTConnState) -> Void = { _, _ in }
+    
     
 
     // MARK: init
@@ -312,6 +328,7 @@ open class CocoaMQTT: NSObject, CocoaMQTTClient, CocoaMQTTFrameBufferProtocol {
         printDebug("ping")
         send(CocoaMQTTFrame(type: CocoaMQTTFrameType.pingreq), tag: -0xC0)
         self.delegate?.mqttDidPing(self)
+        didPing(self)
     }
 
     @discardableResult
@@ -338,7 +355,7 @@ open class CocoaMQTT: NSObject, CocoaMQTTClient, CocoaMQTTFrameBufferProtocol {
         
 
         delegate?.mqtt(self, didPublishMessage: message, id: msgid)
-
+        didPublishMessage(self, message, msgid)
         return msgid
     }
 
@@ -392,6 +409,7 @@ extension CocoaMQTT: GCDAsyncSocketDelegate {
         printDebug("didReceiveTrust")
         
         delegate?.mqtt!(self, didReceive: trust, completionHandler: completionHandler)
+        didReceiveTrust(self, trust)
     }
 
     public func socketDidSecure(_ sock: GCDAsyncSocket) {
@@ -422,6 +440,7 @@ extension CocoaMQTT: GCDAsyncSocketDelegate {
         socket.delegate = nil
         connState = .disconnected
         delegate?.mqttDidDisconnect(self, withError: err)
+        didDisconnect(self, err)
 
         DispatchQueue.main.async {
             self.autoReconnTimer?.invalidate()
@@ -457,6 +476,7 @@ extension CocoaMQTT: CocoaMQTTReaderDelegate {
         }
 
         delegate?.mqtt(self, didConnectAck: ack)
+        didConnectAck(self, ack)
         
         // auto reconnect
         if ack == CocoaMQTTConnAck.accept {
@@ -483,6 +503,8 @@ extension CocoaMQTT: CocoaMQTTReaderDelegate {
         printDebug("PUBLISH Received from \(message.topic)")
         
         delegate?.mqtt(self, didReceiveMessage: message, id: id)
+        didReceiveMessage(self, message, id)
+        
         if message.qos == CocoaMQTTQOS.qos1 {
             puback(CocoaMQTTFrameType.puback, msgid: id)
         } else if message.qos == CocoaMQTTQOS.qos2 {
@@ -495,6 +517,7 @@ extension CocoaMQTT: CocoaMQTTReaderDelegate {
         
         buffer.sendSuccess(withMsgid: msgid)
         delegate?.mqtt(self, didPublishAck: msgid)
+        didPublishAck(self, msgid)
     }
     
     func didReceivePubRec(_ reader: CocoaMQTTReader, msgid: UInt16) {
@@ -514,6 +537,7 @@ extension CocoaMQTT: CocoaMQTTReaderDelegate {
 
         buffer.sendSuccess(withMsgid: msgid)
         delegate?.mqtt?(self, didPublishComplete: msgid)
+        didCompletePublish(self, msgid)
     }
 
     func didReceiveSubAck(_ reader: CocoaMQTTReader, msgid: UInt16) {
@@ -531,6 +555,8 @@ extension CocoaMQTT: CocoaMQTTReaderDelegate {
             
             subscriptions[msgid] = topicDict
             delegate?.mqtt(self, didSubscribeTopic: topic)
+            didSubscribeTopic(self, topic)
+            
         } else {
             printWarning("UNEXPECT SUBACK Received: \(msgid)")
         }
@@ -550,6 +576,8 @@ extension CocoaMQTT: CocoaMQTTReaderDelegate {
             }
             
             delegate?.mqtt(self, didUnsubscribeTopic: topic)
+            didUnsubscribeTopic(self, topic)
+            
         } else {
             printWarning("UNEXPECT UNSUBACK Received: \(msgid)")
         }
@@ -559,6 +587,7 @@ extension CocoaMQTT: CocoaMQTTReaderDelegate {
         printDebug("PONG Received")
 
         delegate?.mqttDidReceivePong(self)
+        didReceivePong(self)
     }
 }
 
