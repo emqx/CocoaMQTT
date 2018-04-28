@@ -442,7 +442,7 @@ extension CocoaMQTT: GCDAsyncSocketDelegate {
         delegate?.mqttDidDisconnect(self, withError: err)
         didDisconnect(self, err)
 
-        DispatchQueue.main.async {
+        dispatchQueue.async {
             self.autoReconnTimer?.invalidate()
             if !self.disconnectExpectedly && self.autoReconnect && self.autoReconnectTimeInterval > 0 {
                 self.autoReconnTimer = Timer.every(Double(self.autoReconnectTimeInterval).seconds, { [weak self] (timer: Timer) in
@@ -483,10 +483,10 @@ extension CocoaMQTT: CocoaMQTTReaderDelegate {
             autoReconnTimer?.invalidate()
             disconnectExpectedly = false
         }
-
+        
         // keep alive
         if ack == CocoaMQTTConnAck.accept && keepAlive > 0 {
-            DispatchQueue.main.async {
+            dispatchQueue.async{
                 self.aliveTimer?.invalidate()
                 self.aliveTimer = Timer.every(Double(self.keepAlive / 2 + 1).seconds) { [weak self] (timer: Timer) in
                     if self?.connState == .connected {
