@@ -383,9 +383,9 @@ extension CocoaMQTT: GCDAsyncSocketDelegate {
     public func socket(_ sock: GCDAsyncSocket, didConnectToHost host: String, port: UInt16) {
         printDebug("connected to \(host) : \(port)")
         
-        #if TARGET_OS_IPHONE
+        #if os(iOS)
             if backgroundOnSocket {
-                sock.performBlock { sock.enableBackgroundingOnSocket() }
+                sock.perform { sock.enableBackgroundingOnSocket() }
             }
         #endif
         
