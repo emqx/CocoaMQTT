@@ -92,7 +92,7 @@ No certificate is required locally.
 If you want to trust all untrust CA certificates, you can do this:
 
 ```swift
-mqtt.allowUntrustCACert = true
+mqtt.allowUntrustCACertificate = true
 ```
 
 2. Two-way certification
