@@ -457,6 +457,7 @@ open class CocoaMQTTFrameBuffer: NSObject {
         if isBufferEmpty || isSilosFull { return }
         
         // take out the earliest frame
+        if buffer.isEmpty { return }
         let frame = buffer.remove(at: 0)
         
         send(frame)
