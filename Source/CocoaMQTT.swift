@@ -408,7 +408,7 @@ extension CocoaMQTT: GCDAsyncSocketDelegate {
     public func socket(_ sock: GCDAsyncSocket, didReceive trust: SecTrust, completionHandler: @escaping (Bool) -> Swift.Void) {
         printDebug("didReceiveTrust")
         
-        delegate?.mqtt!(self, didReceive: trust, completionHandler: completionHandler)
+        delegate?.mqtt?(self, didReceive: trust, completionHandler: completionHandler)
         didReceiveTrust(self, trust)
     }
 
