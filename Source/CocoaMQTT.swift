@@ -183,7 +183,6 @@ open class CocoaMQTT: NSObject, CocoaMQTTClient, CocoaMQTTFrameBufferProtocol {
         set { buffer.silosMaxNumber = newValue }
     }
     
-    
     // heart beat
     open var keepAlive: UInt16 = 60
     fileprivate var aliveTimer: Timer?
@@ -340,19 +339,14 @@ open class CocoaMQTT: NSObject, CocoaMQTTClient, CocoaMQTTFrameBufferProtocol {
     @discardableResult
     open func publish(_ message: CocoaMQTTMessage) -> UInt16 {
         let msgid: UInt16 = nextMessageID()
+        // XXX: qos0 should not take msgid
         let frame = CocoaMQTTFramePublish(msgid: msgid, topic: message.topic, payload: message.payload)
         frame.qos = message.qos.rawValue
         frame.retained = message.retained
         frame.dup = message.dup
-//        send(frame, tag: Int(msgid))
+        
+        // Push frame to sending queue
         _ = buffer.add(frame)
-        
-        
-
-        if message.qos != CocoaMQTTQOS.qos0 {
-            
-        }
-        
 
         delegate?.mqtt(self, didPublishMessage: message, id: msgid)
         didPublishMessage(self, message, msgid)
@@ -475,6 +469,10 @@ extension CocoaMQTT: CocoaMQTTReaderDelegate {
             return
         }
 
+        // XXX: may casue message not acked miss
+        // clean silos (reset flow controll)
+        buffer.cleanSilos()
+
         delegate?.mqtt(self, didConnectAck: ack)
         didConnectAck(self, ack)
         
@@ -485,6 +483,7 @@ extension CocoaMQTT: CocoaMQTTReaderDelegate {
         }
         
         // keep alive
+        // FIXME: if keepalive == 0 --> not set keekalive timer???
         if ack == CocoaMQTTConnAck.accept && keepAlive > 0 {
             dispatchQueue.async{
                 self.aliveTimer?.invalidate()
