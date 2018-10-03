@@ -462,7 +462,9 @@ open class CocoaMQTTFrameBuffer: NSObject {
         send(frame)
         
          Timer.after(timeout.seconds) { [weak self, weak frame] in
-            guard let msgid = frame?.msgid else {return}
+            guard let msgid = frame?.msgid else {
+                return
+            }
             if self?.removeFrameFromSilos(withMsgid: msgid) == true {
                 printDebug("timeout of frame:\(msgid)")
             }
