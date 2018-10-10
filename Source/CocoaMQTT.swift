@@ -712,8 +712,8 @@ class CocoaMQTTReader {
 
 /// MARK - Logger
 
-public enum CocoaMQTTLoggerLevel {
-    case debug, warning, error, off
+public enum CocoaMQTTLoggerLevel: Int {
+    case debug = 0, warning, error, off
 }
 
 public class CocoaMQTTLogger: NSObject {
@@ -727,7 +727,7 @@ public class CocoaMQTTLogger: NSObject {
     
     // logs
     func log(level: CocoaMQTTLoggerLevel, message: String) {
-        guard level.hashValue >= minLevel.hashValue else { return }
+        guard level.rawValue >= minLevel.rawValue else { return }
         print("CocoaMQTT(\(level)): \(message)")
     }
     
