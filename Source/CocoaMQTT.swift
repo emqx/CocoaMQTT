@@ -8,7 +8,6 @@
 
 import Foundation
 import CocoaAsyncSocket
-import SwiftyTimer
 
 
 /**
@@ -439,7 +438,7 @@ extension CocoaMQTT: GCDAsyncSocketDelegate {
         dispatchQueue.async {
             self.autoReconnTimer?.invalidate()
             if !self.disconnectExpectedly && self.autoReconnect && self.autoReconnectTimeInterval > 0 {
-                self.autoReconnTimer = Timer.every(Double(self.autoReconnectTimeInterval).seconds, { [weak self] (timer: Timer) in
+                self.autoReconnTimer = Timer.every(Double(self.autoReconnectTimeInterval), { [weak self] (timer: Timer) in
                     printDebug("try reconnect")
                     self?.connect()
                 })
@@ -487,7 +486,7 @@ extension CocoaMQTT: CocoaMQTTReaderDelegate {
         if ack == CocoaMQTTConnAck.accept && keepAlive > 0 {
             dispatchQueue.async{
                 self.aliveTimer?.invalidate()
-                self.aliveTimer = Timer.every(Double(self.keepAlive / 2 + 1).seconds) { [weak self] (timer: Timer) in
+                self.aliveTimer = Timer.every(Double(self.keepAlive / 2 + 1)) { [weak self] (timer: Timer) in
                     if self?.connState == .connected {
                         self?.ping()
                     } else {
@@ -756,4 +755,55 @@ public func printWarning(_ message: String) {
 
 public func printError(_ message: String) {
     CocoaMQTTLogger.logger.error(message)
+}
+
+
+/// MARK - Timer
+/// From https://github.com/radex/SwiftyTimer
+extension Timer {
+    
+    /// Create and schedule a timer that will call `block` repeatedly in specified time intervals.
+    
+    @discardableResult
+    public class func every(_ interval: TimeInterval, _ block: @escaping (Timer) -> Void) -> Timer {
+        let timer = Timer.new(every: interval, block)
+        CFRunLoopAddTimer(CFRunLoopGetCurrent(), timer, .commonModes)
+        return timer
+    }
+    
+    /// Create and schedule a timer that will call `block` once after the specified time.
+    
+    @discardableResult
+    public class func after(_ interval: TimeInterval, _ block: @escaping () -> Void) -> Timer {
+        let timer = Timer.new(after: interval, block)
+        CFRunLoopAddTimer(CFRunLoopGetCurrent(), timer, .commonModes)
+        return timer
+    }
+    
+    /// Create a timer that will call `block` repeatedly in specified time intervals.
+    /// (This variant also passes the timer instance to the block)
+    ///
+    /// - Note: The timer won't fire until it's scheduled on the run loop.
+    ///         Use `NSTimer.every` to create and schedule a timer in one step.
+    /// - Note: The `new` class function is a workaround for a crashing bug when using convenience initializers (rdar://18720947)
+    
+    @nonobjc public class func new(every interval: TimeInterval, _ block: @escaping (Timer) -> Void) -> Timer {
+        var timer: Timer!
+        timer = CFRunLoopTimerCreateWithHandler(kCFAllocatorDefault, CFAbsoluteTimeGetCurrent() + interval, interval, 0, 0) { _ in
+            block(timer)
+        }
+        return timer
+    }
+    
+    /// Create a timer that will call `block` once after the specified time.
+    ///
+    /// - Note: The timer won't fire until it's scheduled on the run loop.
+    ///         Use `NSTimer.after` to create and schedule a timer in one step.
+    /// - Note: The `new` class function is a workaround for a crashing bug when using convenience initializers (rdar://18720947)
+    
+    public class func new(after interval: TimeInterval, _ block: @escaping () -> Void) -> Timer {
+        return CFRunLoopTimerCreateWithHandler(kCFAllocatorDefault, CFAbsoluteTimeGetCurrent() + interval, 0, 0, 0) { _ in
+            block()
+        }
+    }
 }
