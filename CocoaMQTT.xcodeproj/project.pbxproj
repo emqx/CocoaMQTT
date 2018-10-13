@@ -252,7 +252,6 @@
 				0409970B1C1B0B96006B5A6D /* Frameworks */,
 				0409970C1C1B0B96006B5A6D /* Headers */,
 				0409970D1C1B0B96006B5A6D /* Resources */,
-				63CB873580212CDAD9D413C6 /* [CP] Copy Pods Resources */,
 			);
 			buildRules = (
 			);
@@ -272,7 +271,6 @@
 				040997161C1B0B96006B5A6D /* Frameworks */,
 				040997171C1B0B96006B5A6D /* Resources */,
 				FBC42AF030F6410B64B3E473 /* [CP] Embed Pods Frameworks */,
-				5541FA7B868EC4A420C4E5BD /* [CP] Copy Pods Resources */,
 			);
 			buildRules = (
 			);
@@ -293,7 +291,6 @@
 				0409972C1C1B0E06006B5A6D /* Frameworks */,
 				0409972D1C1B0E06006B5A6D /* Headers */,
 				0409972E1C1B0E06006B5A6D /* Resources */,
-				4472D7FE2E9B528D3CAD93B1 /* [CP] Copy Pods Resources */,
 			);
 			buildRules = (
 			);
@@ -331,7 +328,6 @@
 				040997551C1B0F7E006B5A6D /* Frameworks */,
 				040997561C1B0F7E006B5A6D /* Headers */,
 				040997571C1B0F7E006B5A6D /* Resources */,
-				16DF88757111777FAD6CD77E /* [CP] Copy Pods Resources */,
 			);
 			buildRules = (
 			);
@@ -376,7 +372,7 @@
 					};
 					040997181C1B0B96006B5A6D = {
 						CreatedOnToolsVersion = 7.1.1;
-						LastSwiftMigration = 0900;
+						LastSwiftMigration = "";
 					};
 					0409972F1C1B0E06006B5A6D = {
 						CreatedOnToolsVersion = 7.1.1;
@@ -464,36 +460,6 @@
 /* End PBXResourcesBuildPhase section */
 
 /* Begin PBXShellScriptBuildPhase section */
-		16DF88757111777FAD6CD77E /* [CP] Copy Pods Resources */ = {
-			isa = PBXShellScriptBuildPhase;
-			buildActionMask = 2147483647;
-			files = (
-			);
-			inputPaths = (
-			);
-			name = "[CP] Copy Pods Resources";
-			outputPaths = (
-			);
-			runOnlyForDeploymentPostprocessing = 0;
-			shellPath = /bin/sh;
-			shellScript = "\"${SRCROOT}/Pods/Target Support Files/Pods-CocoaMQTT tvOS/Pods-CocoaMQTT tvOS-resources.sh\"\n";
-			showEnvVarsInLog = 0;
-		};
-		4472D7FE2E9B528D3CAD93B1 /* [CP] Copy Pods Resources */ = {
-			isa = PBXShellScriptBuildPhase;
-			buildActionMask = 2147483647;
-			files = (
-			);
-			inputPaths = (
-			);
-			name = "[CP] Copy Pods Resources";
-			outputPaths = (
-			);
-			runOnlyForDeploymentPostprocessing = 0;
-			shellPath = /bin/sh;
-			shellScript = "\"${SRCROOT}/Pods/Target Support Files/Pods-CocoaMQTT OSX/Pods-CocoaMQTT OSX-resources.sh\"\n";
-			showEnvVarsInLog = 0;
-		};
 		4B96620CD9D21E4B857BCB38 /* [CP] Check Pods Manifest.lock */ = {
 			isa = PBXShellScriptBuildPhase;
 			buildActionMask = 2147483647;
@@ -510,36 +476,6 @@
 			runOnlyForDeploymentPostprocessing = 0;
 			shellPath = /bin/sh;
 			shellScript = "diff \"${PODS_PODFILE_DIR_PATH}/Podfile.lock\" \"${PODS_ROOT}/Manifest.lock\" > /dev/null\nif [ $? != 0 ] ; then\n    # print error to STDERR\n    echo \"error: The sandbox is not in sync with the Podfile.lock. Run 'pod install' or update your CocoaPods installation.\" >&2\n    exit 1\nfi\n# This output is used by Xcode 'outputs' to avoid re-running this script phase.\necho \"SUCCESS\" > \"${SCRIPT_OUTPUT_FILE_0}\"\n";
-			showEnvVarsInLog = 0;
-		};
-		5541FA7B868EC4A420C4E5BD /* [CP] Copy Pods Resources */ = {
-			isa = PBXShellScriptBuildPhase;
-			buildActionMask = 2147483647;
-			files = (
-			);
-			inputPaths = (
-			);
-			name = "[CP] Copy Pods Resources";
-			outputPaths = (
-			);
-			runOnlyForDeploymentPostprocessing = 0;
-			shellPath = /bin/sh;
-			shellScript = "\"${SRCROOT}/Pods/Target Support Files/Pods-CocoaMQTT iOSTests/Pods-CocoaMQTT iOSTests-resources.sh\"\n";
-			showEnvVarsInLog = 0;
-		};
-		63CB873580212CDAD9D413C6 /* [CP] Copy Pods Resources */ = {
-			isa = PBXShellScriptBuildPhase;
-			buildActionMask = 2147483647;
-			files = (
-			);
-			inputPaths = (
-			);
-			name = "[CP] Copy Pods Resources";
-			outputPaths = (
-			);
-			runOnlyForDeploymentPostprocessing = 0;
-			shellPath = /bin/sh;
-			shellScript = "\"${SRCROOT}/Pods/Target Support Files/Pods-CocoaMQTT iOS/Pods-CocoaMQTT iOS-resources.sh\"\n";
 			showEnvVarsInLog = 0;
 		};
 		BCA9B455F6F848031D799736 /* [CP] Check Pods Manifest.lock */ = {
@@ -604,12 +540,10 @@
 			inputPaths = (
 				"${SRCROOT}/Pods/Target Support Files/Pods-CocoaMQTT iOSTests/Pods-CocoaMQTT iOSTests-frameworks.sh",
 				"${BUILT_PRODUCTS_DIR}/CocoaAsyncSocket-iOS/CocoaAsyncSocket.framework",
-				"${BUILT_PRODUCTS_DIR}/SwiftyTimer-iOS/SwiftyTimer.framework",
 			);
 			name = "[CP] Embed Pods Frameworks";
 			outputPaths = (
 				"${TARGET_BUILD_DIR}/${FRAMEWORKS_FOLDER_PATH}/CocoaAsyncSocket.framework",
-				"${TARGET_BUILD_DIR}/${FRAMEWORKS_FOLDER_PATH}/SwiftyTimer.framework",
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 			shellPath = /bin/sh;
@@ -829,7 +763,7 @@
 				SWIFT_OBJC_BRIDGING_HEADER = "";
 				SWIFT_OBJC_INTERFACE_HEADER_NAME = "";
 				SWIFT_OPTIMIZATION_LEVEL = "-Onone";
-				SWIFT_VERSION = 4.0;
+				SWIFT_VERSION = 4.2;
 			};
 			name = Debug;
 		};
@@ -853,7 +787,7 @@
 				SKIP_INSTALL = YES;
 				SWIFT_OBJC_BRIDGING_HEADER = "";
 				SWIFT_OBJC_INTERFACE_HEADER_NAME = "";
-				SWIFT_VERSION = 4.0;
+				SWIFT_VERSION = 4.2;
 			};
 			name = Release;
 		};
@@ -865,8 +799,7 @@
 				LD_RUNPATH_SEARCH_PATHS = "$(inherited) @executable_path/Frameworks @loader_path/Frameworks";
 				PRODUCT_BUNDLE_IDENTIFIER = io.emqtt.CocoaMQTTTests;
 				PRODUCT_NAME = "$(TARGET_NAME)";
-				SWIFT_SWIFT3_OBJC_INFERENCE = Default;
-				SWIFT_VERSION = 4.0;
+				SWIFT_VERSION = 4.2;
 			};
 			name = Debug;
 		};
@@ -878,8 +811,7 @@
 				LD_RUNPATH_SEARCH_PATHS = "$(inherited) @executable_path/Frameworks @loader_path/Frameworks";
 				PRODUCT_BUNDLE_IDENTIFIER = io.emqtt.CocoaMQTTTests;
 				PRODUCT_NAME = "$(TARGET_NAME)";
-				SWIFT_SWIFT3_OBJC_INFERENCE = Default;
-				SWIFT_VERSION = 4.0;
+				SWIFT_VERSION = 4.2;
 			};
 			name = Release;
 		};
