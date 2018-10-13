@@ -3,15 +3,15 @@ CocoaMQTT
 ![PodVersion](https://img.shields.io/cocoapods/v/CocoaMQTT.svg)
 ![Platforms](https://img.shields.io/cocoapods/p/CocoaMQTT.svg)
 ![License](https://img.shields.io/cocoapods/l/BadgeSwift.svg?style=flat)
-![Swift version](https://img.shields.io/badge/swift-4.0-orange.svg)
+![Swift version](https://img.shields.io/badge/swift-4.2-orange.svg)
 
-MQTT v3.1.1 client library for iOS/macOS/tvOS  written with Swift 4.0
+MQTT v3.1.1 client library for iOS/macOS/tvOS  written with Swift 4
 
 
 Build
 =====
 
-Build with Xcode 9.1 / Swift 4.0
+Build with Xcode 10 / Swift 4.2
 
 
 Installation
@@ -34,7 +34,6 @@ Install using [Carthage](https://github.com/Carthage/Carthage) by adding the fol
 
 ````
 github "robbiehanson/CocoaAsyncSocket" "master"
-github "radex/SwiftyTimer" "master"
 github "emqtt/CocoaMQTT" "master"
 ````
 Then, run the following command:
