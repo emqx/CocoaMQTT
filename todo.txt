@@ -1,1 +1,0 @@
-pod lib lint --sources=https://github.com/CocoaPods/Specs.git,ssh://texa-vsts-prod@texa-vsts-prod.visualstudio.com:22/127-eTRUCK-Mobile/_git/texa-podspecs --allow-warnings
