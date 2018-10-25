@@ -6,6 +6,7 @@ Pod::Spec.new do |s|
   s.license     = { :type => "MIT" }
   s.authors     = { "Feng Lee" => "feng@emqtt.io", "CrazyWisdom" => "zh.whong@gmail.com", "Alex Yu" => "alexyu.dc@gmail.com" }
 
+  s.swift_version = "4.2"
   s.requires_arc = true
   s.osx.deployment_target = "10.9"
   s.ios.deployment_target = "8.0"

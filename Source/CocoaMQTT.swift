@@ -157,7 +157,6 @@ open class CocoaMQTT: NSObject, CocoaMQTTClient, CocoaMQTTFrameBufferProtocol {
     open var clientID: String
     open var username: String?
     open var password: String?
-    open var secureMQTT = false
     open var cleanSession = true
     open var willMessage: CocoaMQTTWill?
     open weak var delegate: CocoaMQTTDelegate?
