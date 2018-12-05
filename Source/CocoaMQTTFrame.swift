@@ -443,7 +443,7 @@ open class CocoaMQTTFrameBuffer: NSObject {
     // return false means the frame is rejected because of the buffer is full
     open func add(_ frame: CocoaMQTTFramePublish) -> Bool {
         guard !isBufferFull else {
-            printDebug("Buffer is full, message(\(frame.msgid!)) was abandoned.")
+            printError("Buffer is full, message(\(String(describing: frame.msgid))) was abandoned.")
             return false
         }
         
@@ -455,28 +455,26 @@ open class CocoaMQTTFrameBuffer: NSObject {
     // try transport a frame from buffer to silo
     func tryTransport() {
         if isBufferEmpty || isSilosFull { return }
-        
+
         // take out the earliest frame
+        if buffer.isEmpty { return }
         let frame = buffer.remove(at: 0)
         
         send(frame)
-        
-        Timer.after(timeout.seconds) {
-            let msgid = frame.msgid!
-            if self.removeFrameFromSilos(withMsgid: msgid) {
-                printDebug("timeout of frame:\(msgid)")
-            }
-        }
-        
-        // keep trying after a transport
-        if frame.qos == 0 {
-            self.tryTransport()
-        } else {
+
+        if frame.qos != 0 {
             silos.append(frame)
-            if !isSilosFull {
-                self.tryTransport()
+            // XXX: When timeout arrived should resend it, not drop!
+            Timer.after(timeout) { [weak self, weak frame] in
+                guard let msgid = frame?.msgid else {return}
+                if self?.removeFrameFromSilos(withMsgid: msgid) == true {
+                    printDebug("timeout of frame:\(msgid)")
+                }
             }
         }
+
+        // keep trying after a transport
+        self.tryTransport()
     }
     
     func send(_ frame: CocoaMQTTFramePublish) {
@@ -501,5 +499,14 @@ open class CocoaMQTTFrameBuffer: NSObject {
             }
         }
         return success
+    }
+
+    /// Clean silos content to prevent message blocked, when next connection established
+    ///
+    /// !!Warning: it's a tempnary method for hotfix #221
+    func cleanSilos() {
+        DispatchQueue.main.async { [weak self] in
+            _ = self?.silos.removeAll()
+        }
     }
 }

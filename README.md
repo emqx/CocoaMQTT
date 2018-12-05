@@ -3,15 +3,15 @@ CocoaMQTT
 ![PodVersion](https://img.shields.io/cocoapods/v/CocoaMQTT.svg)
 ![Platforms](https://img.shields.io/cocoapods/p/CocoaMQTT.svg)
 ![License](https://img.shields.io/cocoapods/l/BadgeSwift.svg?style=flat)
-![Swift version](https://img.shields.io/badge/swift-3.1-orange.svg)
+![Swift version](https://img.shields.io/badge/swift-4.2-orange.svg)
 
-MQTT v3.1.1 client library for iOS/macOS/tvOS  written with Swift 3.1
+MQTT v3.1.1 client library for iOS/macOS/tvOS  written with Swift 4
 
 
 Build
 =====
 
-Build with Xcode 8.3.1 / Swift 3.1
+Build with Xcode 10 / Swift 4.2
 
 
 Installation
@@ -34,7 +34,6 @@ Install using [Carthage](https://github.com/Carthage/Carthage) by adding the fol
 
 ````
 github "robbiehanson/CocoaAsyncSocket" "master"
-github "radex/SwiftyTimer" "master"
 github "emqtt/CocoaMQTT" "master"
 ````
 Then, run the following command:
@@ -76,6 +75,14 @@ mqtt.connect()
 
 ```
 
+Now you can use clousures instead of `CocoaMQTTDelegate`:
+
+```swift 
+mqtt.didReceiveMessage = { mqtt, message, id in
+	print("Message received in topic \(message.topic) with payload \(message.string!)")           
+}
+```
+
 ## SSL Secure
 
 1. One-way certification
@@ -84,7 +91,7 @@ No certificate is required locally.
 If you want to trust all untrust CA certificates, you can do this:
 
 ```swift
-mqtt.allowUntrustCACert = true
+mqtt.allowUntrustCACertificate = true
 ```
 
 2. Two-way certification
@@ -134,7 +141,8 @@ CocoaMQTTDelegate
  */
 @objc public protocol CocoaMQTTDelegate {
     /// MQTT connected with server
-    func mqtt(_ mqtt: CocoaMQTT, didConnect host: String, port: Int)
+    // deprecated: use mqtt(_ mqtt: CocoaMQTT, didConnectAck ack: CocoaMQTTConnAck) to tell if connect to the server successfully
+    // func mqtt(_ mqtt: CocoaMQTT, didConnect host: String, port: Int)
     func mqtt(_ mqtt: CocoaMQTT, didConnectAck ack: CocoaMQTTConnAck)
     func mqtt(_ mqtt: CocoaMQTT, didPublishMessage message: CocoaMQTTMessage, id: UInt16)
     func mqtt(_ mqtt: CocoaMQTT, didPublishAck id: UInt16)
@@ -145,6 +153,8 @@ CocoaMQTTDelegate
     func mqttDidReceivePong(_ mqtt: CocoaMQTT)
     func mqttDidDisconnect(_ mqtt: CocoaMQTT, withError err: Error?)
     @objc optional func mqtt(_ mqtt: CocoaMQTT, didReceive trust: SecTrust, completionHandler: @escaping (Bool) -> Void)
+    @objc optional func mqtt(_ mqtt: CocoaMQTT, didPublishComplete id: UInt16)
+    @objc optional func mqtt(_ mqtt: CocoaMQTT, didStateChangeTo state: CocoaMQTTConnState)
 }
 ```
 
@@ -181,5 +191,4 @@ Twitter
 ======
 
 https://twitter.com/emqtt
-
 
