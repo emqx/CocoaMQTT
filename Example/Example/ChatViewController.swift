@@ -79,19 +79,19 @@ class ChatViewController: UIViewController {
         messageTextView.delegate = self
         tableView.delegate = self
         tableView.dataSource = self
-        tableView.rowHeight = UITableViewAutomaticDimension
+        tableView.rowHeight = UITableView.automaticDimension
         tableView.estimatedRowHeight = 50
         
         let name = NSNotification.Name(rawValue: "MQTTMessageNotification" + animal!)
         NotificationCenter.default.addObserver(self, selector: #selector(ChatViewController.receivedMessage(notification:)), name: name, object: nil)
-        NotificationCenter.default.addObserver(self, selector: #selector(ChatViewController.keyboardChanged(notification:)), name: NSNotification.Name.UIKeyboardWillChangeFrame, object: nil)
+        NotificationCenter.default.addObserver(self, selector: #selector(ChatViewController.keyboardChanged(notification:)), name: UIResponder.keyboardWillChangeFrameNotification, object: nil)
     }
     
     deinit {
         NotificationCenter.default.removeObserver(self)
     }
     
-    func keyboardChanged(notification: NSNotification) {
+    @objc func keyboardChanged(notification: NSNotification) {
         let userInfo = notification.userInfo as! [String: AnyObject]
         let keyboardValue = userInfo["UIKeyboardFrameEndUserInfoKey"]
         let bottomDistance = UIScreen.main.bounds.size.height - (navigationController?.navigationBar.frame.height)! - keyboardValue!.cgRectValue.origin.y
@@ -104,7 +104,7 @@ class ChatViewController: UIViewController {
         view.layoutIfNeeded()
     }
     
-    func receivedMessage(notification: NSNotification) {
+    @objc func receivedMessage(notification: NSNotification) {
         let userInfo = notification.userInfo as! [String: AnyObject]
         let content = userInfo["message"] as! String
         let topic = userInfo["topic"] as! String
