@@ -26,7 +26,7 @@ class ViewController: UIViewController {
     }
     
     @IBAction func connectToServer() {
-        mqtt!.connect()        
+        mqtt!.connect()
     }
     
     override func viewDidLoad() {

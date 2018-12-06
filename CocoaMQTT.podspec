@@ -4,7 +4,7 @@ Pod::Spec.new do |s|
   s.summary     = "MQTT v3.1.1 client library for iOS and OS X written with Swift 4"
   s.homepage    = "https://github.com/emqtt/CocoaMQTT"
   s.license     = { :type => "MIT" }
-  s.authors     = { "Feng Lee" => "feng@emqtt.io", "CrazyWisdom" => "zh.whong@gmail.com", "Alex Yu" => "alexyu.dc@gmail.com"}
+  s.authors     = { "Feng Lee" => "feng@emqtt.io", "CrazyWisdom" => "zh.whong@gmail.com", "Alex Yu" => "alexyu.dc@gmail.com" }
 
   s.swift_version = "4.2"
   s.requires_arc = true
