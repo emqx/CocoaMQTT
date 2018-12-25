@@ -659,7 +659,11 @@ class CocoaMQTTReader {
 
     private func frameReady() {
         // handle frame
-        let frameType = CocoaMQTTFrameType(rawValue: UInt8(header & 0xF0))!
+        guard let frameType = CocoaMQTTFrameType(rawValue: UInt8(header & 0xF0)) else {
+            printError("Abort! Received unknown frame type!")
+            return assert(false)
+        }
+        
         switch frameType {
         case .connack:
             delegate?.didReceiveConnAck(self, connack: data[1])
