@@ -115,6 +115,7 @@ protocol CocoaMQTTClient {
     var willMessage: CocoaMQTTWill? {get set}
 
     func connect() -> Bool
+    func connect(timeout:TimeInterval) -> Bool
     func disconnect()
     func ping()
     
@@ -157,7 +158,6 @@ open class CocoaMQTT: NSObject, CocoaMQTTClient, CocoaMQTTFrameBufferProtocol {
     open var clientID: String
     open var username: String?
     open var password: String?
-    open var secureMQTT = false
     open var cleanSession = true
     open var willMessage: CocoaMQTTWill?
     open weak var delegate: CocoaMQTTDelegate?
@@ -297,10 +297,18 @@ open class CocoaMQTT: NSObject, CocoaMQTTClient, CocoaMQTTFrameBufferProtocol {
 
     @discardableResult
     open func connect() -> Bool {
+        return connect(timeout: -1)
+    }
+    
+    open func connect(timeout: TimeInterval) -> Bool {
         socket.setDelegate(self, delegateQueue: dispatchQueue)
         reader = CocoaMQTTReader(socket: socket, delegate: self)
         do {
-            try socket.connect(toHost: self.host, onPort: self.port)
+            if timeout > 0 {
+                try socket.connect(toHost: self.host, onPort: self.port, withTimeout: timeout)
+            } else {
+                try socket.connect(toHost: self.host, onPort: self.port)
+            }
             connState = .connecting
             return true
         } catch let error as NSError {
