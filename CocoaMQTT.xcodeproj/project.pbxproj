@@ -24,6 +24,8 @@
 		040997881C1B1529006B5A6D /* CocoaMQTTMessage.swift in Sources */ = {isa = PBXBuildFile; fileRef = 0409977C1C1B1529006B5A6D /* CocoaMQTTMessage.swift */; };
 		80BD51E168A6B155915C179D /* Pods_CocoaMQTT_iOS.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = B993FBFB01D0C4E090CDCC5B /* Pods_CocoaMQTT_iOS.framework */; };
 		8261B4E71FC2E2EB0004B834 /* CocoaMQTT.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = 040997301C1B0E06006B5A6D /* CocoaMQTT.framework */; };
+		8270C4AB21DA6F6700C5D485 /* CocoaMQTTFrameTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 8270C4AA21DA6F6700C5D485 /* CocoaMQTTFrameTests.swift */; };
+		8270C4AC21DA6F6700C5D485 /* CocoaMQTTFrameTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 8270C4AA21DA6F6700C5D485 /* CocoaMQTTFrameTests.swift */; };
 		92468D4EB16AA2ACC73F0E35 /* Pods_CocoaMQTT_tvOS.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = 121F0E4C312D0CBA5D614955 /* Pods_CocoaMQTT_tvOS.framework */; };
 		B9991969FA03B64D90E5853B /* Pods_CocoaMQTT_iOSTests.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = 8F648BD3F9221FAF79144A87 /* Pods_CocoaMQTT_iOSTests.framework */; };
 		C1454F516F7712F165A320C2 /* Pods_CocoaMQTT_OSX.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = 255DA32BA897A233D6442109 /* Pods_CocoaMQTT_OSX.framework */; };
@@ -73,6 +75,7 @@
 		57B89D7711201609DDD0B004 /* Pods-CocoaMQTT OSX.debug.xcconfig */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = text.xcconfig; name = "Pods-CocoaMQTT OSX.debug.xcconfig"; path = "Pods/Target Support Files/Pods-CocoaMQTT OSX/Pods-CocoaMQTT OSX.debug.xcconfig"; sourceTree = "<group>"; };
 		75D1E098D3A385492D6CA7E7 /* Pods-CocoaMQTT tvOS.debug.xcconfig */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = text.xcconfig; name = "Pods-CocoaMQTT tvOS.debug.xcconfig"; path = "Pods/Target Support Files/Pods-CocoaMQTT tvOS/Pods-CocoaMQTT tvOS.debug.xcconfig"; sourceTree = "<group>"; };
 		7A5659D1D7A0DAE53D58BE07 /* Pods-CocoaMQTT iOSTests.release.xcconfig */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = text.xcconfig; name = "Pods-CocoaMQTT iOSTests.release.xcconfig"; path = "Pods/Target Support Files/Pods-CocoaMQTT iOSTests/Pods-CocoaMQTT iOSTests.release.xcconfig"; sourceTree = "<group>"; };
+		8270C4AA21DA6F6700C5D485 /* CocoaMQTTFrameTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CocoaMQTTFrameTests.swift; sourceTree = "<group>"; };
 		8F648BD3F9221FAF79144A87 /* Pods_CocoaMQTT_iOSTests.framework */ = {isa = PBXFileReference; explicitFileType = wrapper.framework; includeInIndex = 0; path = Pods_CocoaMQTT_iOSTests.framework; sourceTree = BUILT_PRODUCTS_DIR; };
 		A34B7D01953BD0898E9771C2 /* Pods-CocoaMQTT iOS.debug.xcconfig */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = text.xcconfig; name = "Pods-CocoaMQTT iOS.debug.xcconfig"; path = "Pods/Target Support Files/Pods-CocoaMQTT iOS/Pods-CocoaMQTT iOS.debug.xcconfig"; sourceTree = "<group>"; };
 		B993FBFB01D0C4E090CDCC5B /* Pods_CocoaMQTT_iOS.framework */ = {isa = PBXFileReference; explicitFileType = wrapper.framework; includeInIndex = 0; path = Pods_CocoaMQTT_iOS.framework; sourceTree = BUILT_PRODUCTS_DIR; };
@@ -162,6 +165,7 @@
 			isa = PBXGroup;
 			children = (
 				0409971E1C1B0B96006B5A6D /* CocoaMQTTTests.swift */,
+				8270C4AA21DA6F6700C5D485 /* CocoaMQTTFrameTests.swift */,
 				040997201C1B0B96006B5A6D /* Info.plist */,
 			);
 			path = CocoaMQTTTests;
@@ -380,6 +384,7 @@
 					};
 					040997381C1B0E06006B5A6D = {
 						CreatedOnToolsVersion = 7.1.1;
+						LastSwiftMigration = 1010;
 					};
 					040997581C1B0F7E006B5A6D = {
 						CreatedOnToolsVersion = 7.1.1;
@@ -568,6 +573,7 @@
 			buildActionMask = 2147483647;
 			files = (
 				0409971F1C1B0B96006B5A6D /* CocoaMQTTTests.swift in Sources */,
+				8270C4AB21DA6F6700C5D485 /* CocoaMQTTFrameTests.swift in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -585,6 +591,7 @@
 			isa = PBXSourcesBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
+				8270C4AC21DA6F6700C5D485 /* CocoaMQTTFrameTests.swift in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -873,6 +880,7 @@
 		040997451C1B0E06006B5A6D /* Debug */ = {
 			isa = XCBuildConfiguration;
 			buildSettings = {
+				CLANG_ENABLE_MODULES = YES;
 				CODE_SIGN_IDENTITY = "-";
 				COMBINE_HIDPI_IMAGES = YES;
 				INFOPLIST_FILE = CocoaMQTTTests/Info.plist;
@@ -881,12 +889,15 @@
 				PRODUCT_BUNDLE_IDENTIFIER = "io.emqtt.CocoaMQTT-OSXTests";
 				PRODUCT_NAME = "$(TARGET_NAME)";
 				SDKROOT = macosx;
+				SWIFT_OPTIMIZATION_LEVEL = "-Onone";
+				SWIFT_VERSION = 4.2;
 			};
 			name = Debug;
 		};
 		040997461C1B0E06006B5A6D /* Release */ = {
 			isa = XCBuildConfiguration;
 			buildSettings = {
+				CLANG_ENABLE_MODULES = YES;
 				CODE_SIGN_IDENTITY = "-";
 				COMBINE_HIDPI_IMAGES = YES;
 				INFOPLIST_FILE = CocoaMQTTTests/Info.plist;
@@ -895,6 +906,7 @@
 				PRODUCT_BUNDLE_IDENTIFIER = "io.emqtt.CocoaMQTT-OSXTests";
 				PRODUCT_NAME = "$(TARGET_NAME)";
 				SDKROOT = macosx;
+				SWIFT_VERSION = 4.2;
 			};
 			name = Release;
 		};

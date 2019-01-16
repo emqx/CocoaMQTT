@@ -101,18 +101,16 @@ open class CocoaMQTTFrame {
             return ((header & 0x08) >> 3) == 0 ? false : true
         }
         set {
-            header |= (newValue.bit << 3)
+            header = (header & 0xF7) | (newValue.bit  << 3)
         }
     }
 
     var qos: UInt8 {
-        // #define GETQOS(HDR) ((HDR & 0x06) >> 1)
         get {
             return (header & 0x06) >> 1
         }
-        // #define SETQOS(HDR, Q) (HDR | ((Q) << 1))
         set {
-            header |= (newValue << 1)
+            header = (header & 0xF9) | (newValue << 1)
         }
     }
 
@@ -121,7 +119,7 @@ open class CocoaMQTTFrame {
             return (header & 0x01) == 0 ? false : true
         }
         set {
-            header |= newValue.bit
+            header = (header & 0xFE) | newValue.bit
         }
     }
 
@@ -181,73 +179,69 @@ class CocoaMQTTFrameConnect: CocoaMQTTFrame {
     var flags: UInt8 = 0
 
     var flagUsername: Bool {
-        // #define FLAG_USERNAME(F, U)		(F | ((U) << 7))
         get {
             return Bool(bit: (flags >> 7) & 0x01)
         }
 
         set {
-            flags |= (newValue.bit << 7)
+            flags = (flags & 0x7F) | (newValue.bit << 7)
         }
     }
 
     var flagPassword: Bool {
-        // #define FLAG_PASSWD(F, P)		(F | ((P) << 6))
         get {
             return Bool(bit:(flags >> 6) & 0x01)
         }
 
         set {
-            flags |= (newValue.bit << 6)
+            flags = (flags & 0xBF) | (newValue.bit << 6)
         }
     }
 
     var flagWillRetain: Bool {
-        // #define FLAG_WILLRETAIN(F, R) 	(F | ((R) << 5))
         get {
             return Bool(bit: (flags >> 5) & 0x01)
         }
         
         set {
-            flags |= (newValue.bit << 5)
+            flags = (flags & 0xDF) | (newValue.bit << 5)
         }
     }
 
     var flagWillQOS: UInt8 {
-        // #define FLAG_WILLQOS(F, Q)		(F | ((Q) << 3))
         get {
             return (flags >> 3) & 0x03
         }
         
         set {
-            flags |= (newValue << 3)
+            flags = (flags & 0xE7) | (newValue << 3)
         }
     }
 
     var flagWill: Bool {
-        // #define FLAG_WILL(F, W)			(F | ((W) << 2))
         get {
             return Bool(bit:(flags >> 2) & 0x01)
         }
 
         set {
-            flags |= ((newValue.bit) << 2)
+            flags = (flags & 0xFB) | (newValue.bit << 2)
         }
     }
 
     var flagCleanSession: Bool {
-        // #define FLAG_CLEANSESS(F, C)	(F | ((C) << 1))
         get {
             return Bool(bit: (flags >> 1) & 0x01)
         }
 
         set {
-            flags |= ((newValue.bit) << 1)
+            flags = (flags & 0xFD) | (newValue.bit << 1)
+
         }
     }
 
     var client: CocoaMQTTClient
 
+    // TODO: refactor?
     init(client: CocoaMQTT) {
         self.client = client
         super.init(type: CocoaMQTTFrameType.connect)
