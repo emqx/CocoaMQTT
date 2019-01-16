@@ -85,13 +85,15 @@ fileprivate enum CocoaMQTTReadTag: Int {
  */
 @objc public protocol CocoaMQTTDelegate {
     /// MQTT connected with server
-    // deprecated: use mqtt(_ mqtt: CocoaMQTT, didConnectAck ack: CocoaMQTTConnAck) to tell if connect to the server successfully
+    // deprecated: instead of `mqtt(_ mqtt: CocoaMQTT, didConnectAck ack: CocoaMQTTConnAck)`
     // func mqtt(_ mqtt: CocoaMQTT, didConnect host: String, port: Int)
     func mqtt(_ mqtt: CocoaMQTT, didConnectAck ack: CocoaMQTTConnAck)
     func mqtt(_ mqtt: CocoaMQTT, didPublishMessage message: CocoaMQTTMessage, id: UInt16)
     func mqtt(_ mqtt: CocoaMQTT, didPublishAck id: UInt16)
     func mqtt(_ mqtt: CocoaMQTT, didReceiveMessage message: CocoaMQTTMessage, id: UInt16 )
-    func mqtt(_ mqtt: CocoaMQTT, didSubscribeTopic topic: String)
+    // deprecated!!! instead of `func mqtt(_ mqtt: CocoaMQTT, didSubscribeTopic topics: [String])`
+    //func mqtt(_ mqtt: CocoaMQTT, didSubscribeTopic topic: String)
+    func mqtt(_ mqtt: CocoaMQTT, didSubscribeTopic topics: [String])
     func mqtt(_ mqtt: CocoaMQTT, didUnsubscribeTopic topic: String)
     func mqttDidPing(_ mqtt: CocoaMQTT)
     func mqttDidReceivePong(_ mqtt: CocoaMQTT)
@@ -120,6 +122,8 @@ protocol CocoaMQTTClient {
     func ping()
     
     func subscribe(_ topic: String, qos: CocoaMQTTQOS) -> UInt16
+    func subscribe(_ topics: [(String, CocoaMQTTQOS)]) -> UInt16
+    
     func unsubscribe(_ topic: String) -> UInt16
     func publish(_ topic: String, withString string: String, qos: CocoaMQTTQOS, retained: Bool, dup: Bool) -> UInt16
     func publish(_ message: CocoaMQTTMessage) -> UInt16
@@ -152,19 +156,19 @@ extension Int {
  *
  * Notice: GCDAsyncSocket need delegate to extend NSObject
  */
-open class CocoaMQTT: NSObject, CocoaMQTTClient, CocoaMQTTFrameBufferProtocol {
-    open var host = "localhost"
-    open var port: UInt16 = 1883
-    open var clientID: String
-    open var username: String?
-    open var password: String?
-    open var cleanSession = true
-    open var willMessage: CocoaMQTTWill?
-    open weak var delegate: CocoaMQTTDelegate?
-    open var backgroundOnSocket = false
-    open var dispatchQueue = DispatchQueue.main
+public class CocoaMQTT: NSObject, CocoaMQTTClient, CocoaMQTTFrameBufferProtocol {
+    public var host = "localhost"
+    public var port: UInt16 = 1883
+    public var clientID: String
+    public var username: String?
+    public var password: String?
+    public var cleanSession = true
+    public var willMessage: CocoaMQTTWill?
+    public weak var delegate: CocoaMQTTDelegate?
+    public var backgroundOnSocket = false
+    public var dispatchQueue = DispatchQueue.main
     
-    open var connState = CocoaMQTTConnState.initial {
+    public var connState = CocoaMQTTConnState.initial {
         didSet {
             delegate?.mqtt?(self, didStateChangeTo: connState)
             didChangeState(self, connState)
@@ -173,27 +177,27 @@ open class CocoaMQTT: NSObject, CocoaMQTTClient, CocoaMQTTFrameBufferProtocol {
     
     // flow control
     fileprivate var buffer = CocoaMQTTFrameBuffer()
-    open var bufferSilosTimeout: Double {
+    public var bufferSilosTimeout: Double {
         get { return buffer.timeout }
         set { buffer.timeout = newValue }
     }
-    open var bufferSilosMaxNumber: UInt {
+    public var bufferSilosMaxNumber: UInt {
         get { return buffer.silosMaxNumber }
         set { buffer.silosMaxNumber = newValue }
     }
     
     // heart beat
-    open var keepAlive: UInt16 = 60
+    public var keepAlive: UInt16 = 60
     fileprivate var aliveTimer: Timer?
     
     // auto reconnect
-    open var autoReconnect = false
-    open var autoReconnectTimeInterval: UInt16 = 20
+    public var autoReconnect = false
+    public var autoReconnectTimeInterval: UInt16 = 20
     fileprivate var autoReconnTimer: Timer?
     fileprivate var disconnectExpectedly = false
     
     // log
-    open var logLevel: CocoaMQTTLoggerLevel {
+    public var logLevel: CocoaMQTTLoggerLevel {
         get {
             return CocoaMQTTLogger.logger.minLevel
         }
@@ -203,14 +207,14 @@ open class CocoaMQTT: NSObject, CocoaMQTTClient, CocoaMQTTFrameBufferProtocol {
     }
     
     // ssl
-    open var enableSSL = false
-    open var sslSettings: [String: NSObject]?
-    open var allowUntrustCACertificate = false
+    public var enableSSL = false
+    public var sslSettings: [String: NSObject]?
+    public var allowUntrustCACertificate = false
     
-    // subscribed topics. (dictionary structure -> [msgid: [topicString: QoS]])
-    open var subscriptions: [UInt16: [String: CocoaMQTTQOS]] = [:]
-    var subscriptionsWaitingAck: [UInt16: [String: CocoaMQTTQOS]] = [:]
-    var unsubscriptionsWaitingAck: [UInt16: [String: CocoaMQTTQOS]] = [:]
+    // the subscribed topics in current communication
+    public var subscriptions: [String: CocoaMQTTQOS] = [:]
+    var subscriptionsWaitingAck: [UInt16: [(String, CocoaMQTTQOS)]] = [:]
+    var unsubscriptionsWaitingAck: [UInt16: String] = [:]
 
     // global message id
     var gmid: UInt16 = 1
@@ -218,18 +222,18 @@ open class CocoaMQTT: NSObject, CocoaMQTTClient, CocoaMQTTFrameBufferProtocol {
     var reader: CocoaMQTTReader?
     
     // Clousures
-    open var didConnectAck: (CocoaMQTT, CocoaMQTTConnAck) -> Void = { _, _ in }
-    open var didPublishMessage: (CocoaMQTT, CocoaMQTTMessage, UInt16) -> Void = { _, _, _ in }
-    open var didPublishAck: (CocoaMQTT, UInt16) -> Void = { _, _ in }
-    open var didReceiveMessage: (CocoaMQTT, CocoaMQTTMessage, UInt16) -> Void = { _, _, _ in }
-    open var didSubscribeTopic: (CocoaMQTT, String) -> Void = { _, _ in }
-    open var didUnsubscribeTopic: (CocoaMQTT, String) -> Void = { _, _ in }
-    open var didPing: (CocoaMQTT) -> Void = { _ in }
-    open var didReceivePong: (CocoaMQTT) -> Void = { _ in }
-    open var didDisconnect: (CocoaMQTT, Error?) -> Void = { _, _ in }
-    open var didReceiveTrust: (CocoaMQTT, SecTrust) -> Void = { _, _ in }
-    open var didCompletePublish: (CocoaMQTT, UInt16) -> Void = { _, _ in }
-    open var didChangeState: (CocoaMQTT, CocoaMQTTConnState) -> Void = { _, _ in }
+    public var didConnectAck: (CocoaMQTT, CocoaMQTTConnAck) -> Void = { _, _ in }
+    public var didPublishMessage: (CocoaMQTT, CocoaMQTTMessage, UInt16) -> Void = { _, _, _ in }
+    public var didPublishAck: (CocoaMQTT, UInt16) -> Void = { _, _ in }
+    public var didReceiveMessage: (CocoaMQTT, CocoaMQTTMessage, UInt16) -> Void = { _, _, _ in }
+    public var didSubscribeTopic: (CocoaMQTT, [String]) -> Void = { _, _ in }
+    public var didUnsubscribeTopic: (CocoaMQTT, String) -> Void = { _, _ in }
+    public var didPing: (CocoaMQTT) -> Void = { _ in }
+    public var didReceivePong: (CocoaMQTT) -> Void = { _ in }
+    public var didDisconnect: (CocoaMQTT, Error?) -> Void = { _, _ in }
+    public var didReceiveTrust: (CocoaMQTT, SecTrust) -> Void = { _, _ in }
+    public var didCompletePublish: (CocoaMQTT, UInt16) -> Void = { _, _ in }
+    public var didChangeState: (CocoaMQTT, CocoaMQTTConnState) -> Void = { _, _ in }
     
     
 
@@ -251,7 +255,7 @@ open class CocoaMQTT: NSObject, CocoaMQTTClient, CocoaMQTTFrameBufferProtocol {
     }
     
     // MARK: CocoaMQTTFrameBufferProtocol
-    public func buffer(_ buffer: CocoaMQTTFrameBuffer, sendPublishFrame frame: CocoaMQTTFramePublish) {
+    func buffer(_ buffer: CocoaMQTTFrameBuffer, sendPublishFrame frame: CocoaMQTTFramePublish) {
         send(frame, tag: Int(frame.msgid!))
     }
 
@@ -296,11 +300,11 @@ open class CocoaMQTT: NSObject, CocoaMQTTClient, CocoaMQTTFrameBufferProtocol {
     }
 
     @discardableResult
-    open func connect() -> Bool {
+    public func connect() -> Bool {
         return connect(timeout: -1)
     }
     
-    open func connect(timeout: TimeInterval) -> Bool {
+    public func connect(timeout: TimeInterval) -> Bool {
         socket.setDelegate(self, delegateQueue: dispatchQueue)
         reader = CocoaMQTTReader(socket: socket, delegate: self)
         do {
@@ -319,18 +323,18 @@ open class CocoaMQTT: NSObject, CocoaMQTTClient, CocoaMQTTFrameBufferProtocol {
     
     /// Only can be called from outside. If you want to disconnect from inside framwork, call internal_disconnect()
     /// disconnect expectedly
-    open func disconnect() {
+    public func disconnect() {
         disconnectExpectedly = true
         internal_disconnect()
     }
     
     /// disconnect unexpectedly
-    open func internal_disconnect() {
+    public func internal_disconnect() {
         send(CocoaMQTTFrame(type: CocoaMQTTFrameType.disconnect), tag: -0xE0)
         socket.disconnect()
     }
     
-    open func ping() {
+    public func ping() {
         printDebug("ping")
         send(CocoaMQTTFrame(type: CocoaMQTTFrameType.pingreq), tag: -0xC0)
         self.delegate?.mqttDidPing(self)
@@ -338,13 +342,13 @@ open class CocoaMQTT: NSObject, CocoaMQTTClient, CocoaMQTTFrameBufferProtocol {
     }
 
     @discardableResult
-    open func publish(_ topic: String, withString string: String, qos: CocoaMQTTQOS = .qos1, retained: Bool = false, dup: Bool = false) -> UInt16 {
+    public func publish(_ topic: String, withString string: String, qos: CocoaMQTTQOS = .qos1, retained: Bool = false, dup: Bool = false) -> UInt16 {
         let message = CocoaMQTTMessage(topic: topic, string: string, qos: qos, retained: retained, dup: dup)
         return publish(message)
     }
 
     @discardableResult
-    open func publish(_ message: CocoaMQTTMessage) -> UInt16 {
+    public func publish(_ message: CocoaMQTTMessage) -> UInt16 {
         let msgid: UInt16 = nextMessageID()
         // XXX: qos0 should not take msgid
         let frame = CocoaMQTTFramePublish(msgid: msgid, topic: message.topic, payload: message.payload)
@@ -361,19 +365,24 @@ open class CocoaMQTT: NSObject, CocoaMQTTClient, CocoaMQTTFrameBufferProtocol {
     }
 
     @discardableResult
-    open func subscribe(_ topic: String, qos: CocoaMQTTQOS = .qos1) -> UInt16 {
+    public func subscribe(_ topic: String, qos: CocoaMQTTQOS = .qos1) -> UInt16 {
+        return subscribe([(topic, qos)])
+    }
+    
+    @discardableResult
+    public func subscribe(_ topics: [(String, CocoaMQTTQOS)]) -> UInt16 {
         let msgid = nextMessageID()
-        let frame = CocoaMQTTFrameSubscribe(msgid: msgid, topic: topic, reqos: qos.rawValue)
+        let frame = CocoaMQTTFrameSubscribe(msgid: msgid, topics: topics)
         send(frame, tag: Int(msgid))
-        subscriptionsWaitingAck[msgid] = [topic:qos]
+        subscriptionsWaitingAck[msgid] = topics
         return msgid
     }
 
     @discardableResult
-    open func unsubscribe(_ topic: String) -> UInt16 {
+    public func unsubscribe(_ topic: String) -> UInt16 {
         let msgid = nextMessageID()
         let frame = CocoaMQTTFrameUnsubscribe(msgid: msgid, topic: topic)
-        unsubscriptionsWaitingAck[msgid] = [topic:CocoaMQTTQOS.qos0]
+        unsubscriptionsWaitingAck[msgid] = topic
         send(frame, tag: Int(msgid))
         return msgid
     }
@@ -549,44 +558,38 @@ extension CocoaMQTT: CocoaMQTTReaderDelegate {
     func didReceiveSubAck(_ reader: CocoaMQTTReader, msgid: UInt16) {
         printDebug("SUBACK Received: \(msgid)")
         
-        if let topicDict = subscriptionsWaitingAck.removeValue(forKey: msgid) {
-            let topic = topicDict.first!.key
-            
-            // remove subscription with same topic
-            for (key, value) in subscriptions {
-                if value.first!.key == topic {
-                    subscriptions.removeValue(forKey: key)
-                }
-            }
-            
-            subscriptions[msgid] = topicDict
-            delegate?.mqtt(self, didSubscribeTopic: topic)
-            didSubscribeTopic(self, topic)
-            
-        } else {
+        guard let topicsAndQos = subscriptionsWaitingAck.removeValue(forKey: msgid) else {
             printWarning("UNEXPECT SUBACK Received: \(msgid)")
+            return
         }
+        
+        var topics: [String] = []
+        for (topic, qos) in topicsAndQos {
+            // FIXME: should update qos with server granted
+            subscriptions[topic] = qos
+            topics.append(topic)
+        }
+        
+        delegate?.mqtt(self, didSubscribeTopic: topics)
+        didSubscribeTopic(self, topics)
     }
 
     func didReceiveUnsubAck(_ reader: CocoaMQTTReader, msgid: UInt16) {
         printDebug("UNSUBACK Received: \(msgid)")
         
-        
-        if let topicDict = unsubscriptionsWaitingAck.removeValue(forKey: msgid) {
-            let topic = topicDict.first!.key
-            
-            for (key, value) in subscriptions {
-                if value.first!.key == topic {
-                    subscriptions.removeValue(forKey: key)
-                }
-            }
-            
-            delegate?.mqtt(self, didUnsubscribeTopic: topic)
-            didUnsubscribeTopic(self, topic)
-            
-        } else {
+        guard let topic = unsubscriptionsWaitingAck.removeValue(forKey: msgid) else {
             printWarning("UNEXPECT UNSUBACK Received: \(msgid)")
+            return
         }
+        
+        for (t, _) in subscriptions {
+            if t == topic {
+                subscriptions.removeValue(forKey: t)
+                break
+            }
+        }
+        delegate?.mqtt(self, didUnsubscribeTopic: topic)
+        didUnsubscribeTopic(self, topic)
     }
 
     func didReceivePong(_ reader: CocoaMQTTReader) {

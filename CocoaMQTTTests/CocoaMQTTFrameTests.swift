@@ -73,6 +73,8 @@ class CocoaMQTTFrameTests: XCTestCase {
         XCTAssertEqual(frame.retained, true)
         frame.retained = false
         XCTAssertEqual(frame.retained, false)
+        
+        // TODO: pack? unpack?
     }
     
     func testFrameConnect() {
@@ -124,6 +126,8 @@ class CocoaMQTTFrameTests: XCTestCase {
         XCTAssertEqual(f0.flagWillQOS, 0)
         XCTAssertEqual(f0.flagWill, false)
         XCTAssertEqual(f0.flagCleanSession, false)
+        
+        // TODO: pack? unpack?
     }
     
     func testFramePublish() {

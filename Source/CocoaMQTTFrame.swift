@@ -83,7 +83,7 @@ enum CocoaMQTTFrameType: UInt8 {
 /**
  * MQTT Frame
  */
-open class CocoaMQTTFrame {
+class CocoaMQTTFrame {
     /**
      * |--------------------------------------
      * | 7 6 5 4 |     3    |  2 1  | 0      |
@@ -280,7 +280,7 @@ class CocoaMQTTFrameConnect: CocoaMQTTFrame {
 /**
  * MQTT PUBLISH Frame
  */
-open class CocoaMQTTFramePublish: CocoaMQTTFrame {
+class CocoaMQTTFramePublish: CocoaMQTTFrame {
     var msgid: UInt16?
     var topic: String?
     var data: [UInt8]?
@@ -370,22 +370,26 @@ class CocoaMQTTFramePubAck: CocoaMQTTFrame {
  * MQTT SUBSCRIBE Frame
  */
 class CocoaMQTTFrameSubscribe: CocoaMQTTFrame {
-    var msgid: UInt16?
-    var topic: String?
-    var reqos: UInt8 = CocoaMQTTQOS.qos0.rawValue
+    var msgid: UInt16
+    var topics: [(String, CocoaMQTTQOS)]
 
-    init(msgid: UInt16, topic: String, reqos: UInt8) {
-        super.init(type: CocoaMQTTFrameType.subscribe)
+    convenience init(msgid: UInt16, topic: String, reqos: CocoaMQTTQOS) {
+        self.init(msgid: msgid, topics: [(topic, reqos)])
+    }
+    
+    init(msgid: UInt16, topics: [(String, CocoaMQTTQOS)]) {
         self.msgid = msgid
-        self.topic = topic
-        self.reqos = reqos
-        self.qos = CocoaMQTTQOS.qos1.rawValue
+        self.topics = topics
+        
+        super.init(type: .subscribe)
     }
 
     override func pack() {
-        variableHeader += msgid!.hlBytes
-        payload += topic!.bytesWithLength
-        payload.append(reqos)
+        variableHeader += msgid.hlBytes
+        for (topic, qos) in topics {
+            payload += topic.bytesWithLength
+            payload.append(qos.rawValue)
+        }
     }
 }
 
@@ -411,13 +415,13 @@ class CocoaMQTTFrameUnsubscribe: CocoaMQTTFrame {
 
 //MARK: - Buffer
 
-public protocol CocoaMQTTFrameBufferProtocol: class {
+protocol CocoaMQTTFrameBufferProtocol: class {
     func buffer(_ buffer: CocoaMQTTFrameBuffer, sendPublishFrame frame: CocoaMQTTFramePublish)
 }
 
-open class CocoaMQTTFrameBuffer: NSObject {
+class CocoaMQTTFrameBuffer: NSObject {
     
-    open weak var delegate: CocoaMQTTFrameBufferProtocol?
+    weak var delegate: CocoaMQTTFrameBufferProtocol?
     
     // flow control
     fileprivate var silos = [CocoaMQTTFramePublish]()
@@ -435,7 +439,7 @@ open class CocoaMQTTFrameBuffer: NSObject {
     
     
     // return false means the frame is rejected because of the buffer is full
-    open func add(_ frame: CocoaMQTTFramePublish) -> Bool {
+    func add(_ frame: CocoaMQTTFramePublish) -> Bool {
         guard !isBufferFull else {
             printError("Buffer is full, message(\(String(describing: frame.msgid))) was abandoned.")
             return false
@@ -475,7 +479,7 @@ open class CocoaMQTTFrameBuffer: NSObject {
         delegate?.buffer(self, sendPublishFrame: frame)
     }
     
-    open func sendSuccess(withMsgid msgid: UInt16) {
+    func sendSuccess(withMsgid msgid: UInt16) {
         DispatchQueue.main.async { [weak self] in
             _ = self?.removeFrameFromSilos(withMsgid: msgid)
             printDebug("sendMessageSuccess:\(msgid)")
