@@ -73,6 +73,7 @@ class ViewController: UIViewController {
         mqtt!.keepAlive = 60
         mqtt!.delegate = self
         mqtt!.enableSSL = true
+        mqtt!.allowUntrustCACertificate = true
         
         let clientCertArray = getClientCertFromP12File(certName: "client-keycert", certPassword: "MySecretPassword")
         
