@@ -400,16 +400,11 @@ extension CocoaMQTT: GCDAsyncSocketDelegate {
         #endif
         
         if enableSSL {
-            if sslSettings == nil {
-                if allowUntrustCACertificate {
-                    sock.startTLS([GCDAsyncSocketManuallyEvaluateTrust: true as NSObject]) }
-                else {
-                    sock.startTLS(nil)
-                }
-            } else {
-                sslSettings![GCDAsyncSocketManuallyEvaluateTrust as String] = NSNumber(value: true)
-                sock.startTLS(sslSettings!)
+            var setting = sslSettings ?? [:]
+            if allowUntrustCACertificate {
+                setting[GCDAsyncSocketManuallyEvaluateTrust as String] = NSNumber(value: true)
             }
+            sock.startTLS(setting)
         } else {
             sendConnectFrame()
         }
