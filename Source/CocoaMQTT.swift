@@ -187,12 +187,12 @@ public class CocoaMQTT: NSObject, CocoaMQTTClient, CocoaMQTTFrameBufferProtocol 
     }
     
     // heart beat
-    open var keepAlive: UInt16 = 60
+    public var keepAlive: UInt16 = 60
 	fileprivate var aliveTimer: CocoaMQTTTimer?
     
     // auto reconnect
-    open var autoReconnect = false
-    open var autoReconnectTimeInterval: UInt16 = 20
+    public var autoReconnect = false
+    public var autoReconnectTimeInterval: UInt16 = 20
     fileprivate var autoReconnTimer: CocoaMQTTTimer?
     fileprivate var disconnectExpectedly = false
     
@@ -449,7 +449,9 @@ extension CocoaMQTT: GCDAsyncSocketDelegate {
 
         dispatchQueue.async {
             self.autoReconnTimer = nil
-            if !self.disconnectExpectedly && self.autoReconnect && self.autoReconnectTimeInterval > 0 {
+            if self.disconnectExpectedly {
+                self.connState = .initial
+            } else if self.autoReconnect && self.autoReconnectTimeInterval > 0 {
                 self.autoReconnTimer = CocoaMQTTTimer.every(Double(self.autoReconnectTimeInterval), { [weak self] in
                     printDebug("try reconnect")
                     self?.connect()
