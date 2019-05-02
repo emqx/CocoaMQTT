@@ -23,6 +23,12 @@
 		040997861C1B1529006B5A6D /* CocoaMQTTMessage.swift in Sources */ = {isa = PBXBuildFile; fileRef = 0409977C1C1B1529006B5A6D /* CocoaMQTTMessage.swift */; };
 		040997881C1B1529006B5A6D /* CocoaMQTTMessage.swift in Sources */ = {isa = PBXBuildFile; fileRef = 0409977C1C1B1529006B5A6D /* CocoaMQTTMessage.swift */; };
 		80BD51E168A6B155915C179D /* Pods_CocoaMQTT_iOS.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = B993FBFB01D0C4E090CDCC5B /* Pods_CocoaMQTT_iOS.framework */; };
+		8225B4C9227B182200E4DB51 /* CocoaMQTTTimer.swift in Sources */ = {isa = PBXBuildFile; fileRef = 8225B4C8227B182200E4DB51 /* CocoaMQTTTimer.swift */; };
+		8225B4CA227B182200E4DB51 /* CocoaMQTTTimer.swift in Sources */ = {isa = PBXBuildFile; fileRef = 8225B4C8227B182200E4DB51 /* CocoaMQTTTimer.swift */; };
+		8225B4CB227B182200E4DB51 /* CocoaMQTTTimer.swift in Sources */ = {isa = PBXBuildFile; fileRef = 8225B4C8227B182200E4DB51 /* CocoaMQTTTimer.swift */; };
+		8225B4CD227B196F00E4DB51 /* CocoaMQTTLogger.swift in Sources */ = {isa = PBXBuildFile; fileRef = 8225B4CC227B196F00E4DB51 /* CocoaMQTTLogger.swift */; };
+		8225B4CE227B196F00E4DB51 /* CocoaMQTTLogger.swift in Sources */ = {isa = PBXBuildFile; fileRef = 8225B4CC227B196F00E4DB51 /* CocoaMQTTLogger.swift */; };
+		8225B4CF227B196F00E4DB51 /* CocoaMQTTLogger.swift in Sources */ = {isa = PBXBuildFile; fileRef = 8225B4CC227B196F00E4DB51 /* CocoaMQTTLogger.swift */; };
 		8261B4E71FC2E2EB0004B834 /* CocoaMQTT.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = 040997301C1B0E06006B5A6D /* CocoaMQTT.framework */; };
 		8270C4AB21DA6F6700C5D485 /* CocoaMQTTFrameTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 8270C4AA21DA6F6700C5D485 /* CocoaMQTTFrameTests.swift */; };
 		8270C4AC21DA6F6700C5D485 /* CocoaMQTTFrameTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 8270C4AA21DA6F6700C5D485 /* CocoaMQTTFrameTests.swift */; };
@@ -75,6 +81,8 @@
 		57B89D7711201609DDD0B004 /* Pods-CocoaMQTT OSX.debug.xcconfig */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = text.xcconfig; name = "Pods-CocoaMQTT OSX.debug.xcconfig"; path = "Pods/Target Support Files/Pods-CocoaMQTT OSX/Pods-CocoaMQTT OSX.debug.xcconfig"; sourceTree = "<group>"; };
 		75D1E098D3A385492D6CA7E7 /* Pods-CocoaMQTT tvOS.debug.xcconfig */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = text.xcconfig; name = "Pods-CocoaMQTT tvOS.debug.xcconfig"; path = "Pods/Target Support Files/Pods-CocoaMQTT tvOS/Pods-CocoaMQTT tvOS.debug.xcconfig"; sourceTree = "<group>"; };
 		7A5659D1D7A0DAE53D58BE07 /* Pods-CocoaMQTT iOSTests.release.xcconfig */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = text.xcconfig; name = "Pods-CocoaMQTT iOSTests.release.xcconfig"; path = "Pods/Target Support Files/Pods-CocoaMQTT iOSTests/Pods-CocoaMQTT iOSTests.release.xcconfig"; sourceTree = "<group>"; };
+		8225B4C8227B182200E4DB51 /* CocoaMQTTTimer.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CocoaMQTTTimer.swift; sourceTree = "<group>"; };
+		8225B4CC227B196F00E4DB51 /* CocoaMQTTLogger.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CocoaMQTTLogger.swift; sourceTree = "<group>"; };
 		8270C4AA21DA6F6700C5D485 /* CocoaMQTTFrameTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CocoaMQTTFrameTests.swift; sourceTree = "<group>"; };
 		8F648BD3F9221FAF79144A87 /* Pods_CocoaMQTT_iOSTests.framework */ = {isa = PBXFileReference; explicitFileType = wrapper.framework; includeInIndex = 0; path = Pods_CocoaMQTT_iOSTests.framework; sourceTree = BUILT_PRODUCTS_DIR; };
 		A34B7D01953BD0898E9771C2 /* Pods-CocoaMQTT iOS.debug.xcconfig */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = text.xcconfig; name = "Pods-CocoaMQTT iOS.debug.xcconfig"; path = "Pods/Target Support Files/Pods-CocoaMQTT iOS/Pods-CocoaMQTT iOS.debug.xcconfig"; sourceTree = "<group>"; };
@@ -177,6 +185,8 @@
 				0409977A1C1B1529006B5A6D /* CocoaMQTT.swift */,
 				0409977B1C1B1529006B5A6D /* CocoaMQTTFrame.swift */,
 				0409977C1C1B1529006B5A6D /* CocoaMQTTMessage.swift */,
+				8225B4C8227B182200E4DB51 /* CocoaMQTTTimer.swift */,
+				8225B4CC227B196F00E4DB51 /* CocoaMQTTLogger.swift */,
 				040997791C1B14F0006B5A6D /* Supporting Files */,
 			);
 			path = Source;
@@ -562,9 +572,11 @@
 			isa = PBXSourcesBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
+				8225B4CD227B196F00E4DB51 /* CocoaMQTTLogger.swift in Sources */,
 				0409977D1C1B1529006B5A6D /* CocoaMQTT.swift in Sources */,
 				040997851C1B1529006B5A6D /* CocoaMQTTMessage.swift in Sources */,
 				040997811C1B1529006B5A6D /* CocoaMQTTFrame.swift in Sources */,
+				8225B4C9227B182200E4DB51 /* CocoaMQTTTimer.swift in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -581,9 +593,11 @@
 			isa = PBXSourcesBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
+				8225B4CE227B196F00E4DB51 /* CocoaMQTTLogger.swift in Sources */,
 				0409977E1C1B1529006B5A6D /* CocoaMQTT.swift in Sources */,
 				040997861C1B1529006B5A6D /* CocoaMQTTMessage.swift in Sources */,
 				040997821C1B1529006B5A6D /* CocoaMQTTFrame.swift in Sources */,
+				8225B4CA227B182200E4DB51 /* CocoaMQTTTimer.swift in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -599,9 +613,11 @@
 			isa = PBXSourcesBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
+				8225B4CF227B196F00E4DB51 /* CocoaMQTTLogger.swift in Sources */,
 				040997801C1B1529006B5A6D /* CocoaMQTT.swift in Sources */,
 				040997881C1B1529006B5A6D /* CocoaMQTTMessage.swift in Sources */,
 				040997841C1B1529006B5A6D /* CocoaMQTTFrame.swift in Sources */,
+				8225B4CB227B182200E4DB51 /* CocoaMQTTTimer.swift in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
