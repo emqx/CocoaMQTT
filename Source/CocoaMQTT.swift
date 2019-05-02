@@ -274,7 +274,8 @@ public class CocoaMQTT: NSObject, CocoaMQTTClient, CocoaMQTTDeliverProtocol {
     }
 
     fileprivate func send(_ frame: CocoaMQTTFrame, tag: Int = 0) {
-        let data = frame.data()
+        var f = frame
+        let data = f.data()
         socket.write(Data(bytes: data, count: data.count), withTimeout: -1, tag: tag)
     }
 
@@ -344,13 +345,13 @@ public class CocoaMQTT: NSObject, CocoaMQTTClient, CocoaMQTTDeliverProtocol {
     
     /// disconnect unexpectedly
     public func internal_disconnect() {
-        send(CocoaMQTTFrame(type: CocoaMQTTFrameType.disconnect), tag: -0xE0)
+        send(CocoaMQTTFrameDisconnect(), tag: -0xE0)
         socket.disconnect()
     }
     
     public func ping() {
         printDebug("ping")
-        send(CocoaMQTTFrame(type: CocoaMQTTFrameType.pingreq), tag: -0xC0)
+        send(CocoaMQTTFramePing(), tag: -0xC0)
         self.delegate?.mqttDidPing(self)
         didPing(self)
     }
@@ -365,7 +366,7 @@ public class CocoaMQTT: NSObject, CocoaMQTTClient, CocoaMQTTDeliverProtocol {
     public func publish(_ message: CocoaMQTTMessage) -> UInt16 {
         let msgid: UInt16 = nextMessageID()
         // XXX: qos0 should not take msgid
-        let frame = CocoaMQTTFramePublish(msgid: msgid, topic: message.topic, payload: message.payload)
+        var frame = CocoaMQTTFramePublish(msgid: msgid, topic: message.topic, payload: message.payload)
         frame.qos = message.qos.rawValue
         frame.retained = message.retained
         frame.dup = message.dup
@@ -704,7 +705,7 @@ class CocoaMQTTReader {
     }
 
     private func unpackPublish() -> (UInt16, CocoaMQTTMessage?) {
-        let frame = CocoaMQTTFramePublish(header: header, data: data)
+        var frame = CocoaMQTTFramePublish(header: header, data: data)
         frame.unpack()
         // if unpack fail
         if frame.msgid == nil {

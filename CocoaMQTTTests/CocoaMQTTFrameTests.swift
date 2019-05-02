@@ -18,64 +18,6 @@ class CocoaMQTTFrameTests: XCTestCase {
     override func tearDown() {
         // Put teardown code here. This method is called after the invocation of each test method in the class.
     }
-
-    func testFrame() {
-        // CONNECT Frame
-        let f0 = CocoaMQTTFrame(header: 0x10)
-        XCTAssertEqual(f0.header, 0x10)
-        XCTAssertEqual(f0.type, CocoaMQTTFrameType.connect.rawValue)
-        XCTAssertEqual(f0.dup, false)
-        XCTAssertEqual(f0.qos, 0)
-        XCTAssertEqual(f0.retained, false)
-        
-        let f00 = CocoaMQTTFrame(type: .connect)
-        XCTAssertEqual(f00.header, 0x10)
-        XCTAssertEqual(f00.type, CocoaMQTTFrameType.connect.rawValue)
-        XCTAssertEqual(f00.dup, false)
-        XCTAssertEqual(f00.qos, 0)
-        XCTAssertEqual(f00.retained, false)
-        
-        // PUBLISH - QOS2 - DUP - RETAINED
-        let f1 = CocoaMQTTFrame(header: 0x3D)
-        XCTAssertEqual(f1.header, 0x3D)
-        XCTAssertEqual(f1.type, CocoaMQTTFrameType.publish.rawValue)
-        XCTAssertEqual(f1.dup, true)
-        XCTAssertEqual(f1.qos, 2)
-        XCTAssertEqual(f1.retained, true)
-        
-        let f11 = CocoaMQTTFrame(type: .publish)
-        XCTAssertEqual(f11.header, 0x30)
-        XCTAssertEqual(f11.type, CocoaMQTTFrameType.publish.rawValue)
-        XCTAssertEqual(f11.dup, false)
-        XCTAssertEqual(f11.qos, 0)
-        XCTAssertEqual(f11.retained, false)
-        
-        let frame = CocoaMQTTFrame(type: .connect)
-        
-        XCTAssertEqual(frame.dup, false)
-        frame.dup = true
-        XCTAssertEqual(frame.dup, true)
-        frame.dup = false
-        XCTAssertEqual(frame.dup, false)
-        
-        XCTAssertEqual(frame.qos, 0)
-        // FIXME: should use Qos Type???
-        frame.qos = CocoaMQTTQOS.qos1.rawValue
-        XCTAssertEqual(frame.qos, 1)
-        frame.qos = CocoaMQTTQOS.qos2.rawValue
-        XCTAssertEqual(frame.qos, 2)
-        frame.qos = CocoaMQTTQOS.qos0.rawValue
-        XCTAssertEqual(frame.qos, 0)
-        
-        
-        XCTAssertEqual(frame.retained, false)
-        frame.retained = true
-        XCTAssertEqual(frame.retained, true)
-        frame.retained = false
-        XCTAssertEqual(frame.retained, false)
-        
-        // TODO: pack? unpack?
-    }
     
     func testFrameConnect() {
         let client = CocoaMQTT(clientID: "sheep")
@@ -84,7 +26,14 @@ class CocoaMQTTFrameTests: XCTestCase {
         client.willMessage = nil
         client.cleanSession = false
         
-        let f0 = CocoaMQTTFrameConnect(client: client)
+        var f0 = CocoaMQTTFrameConnect(client: client)
+        
+        XCTAssertEqual(f0.header, 0x10)
+        XCTAssertEqual(f0.type, CocoaMQTTFrameType.connect.rawValue)
+        XCTAssertEqual(f0.dup, false)
+        XCTAssertEqual(f0.qos, 0)
+        XCTAssertEqual(f0.retained, false)
+        
         XCTAssertEqual(f0.flags, 0x00)
         XCTAssertEqual(f0.flagUsername, false)
         XCTAssertEqual(f0.flagPassword, false)
@@ -126,12 +75,41 @@ class CocoaMQTTFrameTests: XCTestCase {
         XCTAssertEqual(f0.flagWillQOS, 0)
         XCTAssertEqual(f0.flagWill, false)
         XCTAssertEqual(f0.flagCleanSession, false)
-        
-        // TODO: pack? unpack?
     }
     
     func testFramePublish() {
         
+        // PUBLISH - QOS2 - DUP - RETAINED
+        var f0 = CocoaMQTTFramePublish(header: 0x3D, data: [])
+        XCTAssertEqual(f0.header, 0x3D)
+        XCTAssertEqual(f0.type, CocoaMQTTFrameType.publish.rawValue)
+        XCTAssertEqual(f0.dup, true)
+        XCTAssertEqual(f0.qos, 2)
+        XCTAssertEqual(f0.retained, true)
+        
+        f0.dup = false
+        f0.qos = CocoaMQTTQOS.qos0.rawValue
+        f0.retained = false
+    
+        f0.dup = true
+        XCTAssertEqual(f0.dup, true)
+        f0.dup = false
+        XCTAssertEqual(f0.dup, false)
+        
+        XCTAssertEqual(f0.qos, 0)
+        // FIXME: should use Qos Type???
+        f0.qos = CocoaMQTTQOS.qos1.rawValue
+        XCTAssertEqual(f0.qos, 1)
+        f0.qos = CocoaMQTTQOS.qos2.rawValue
+        XCTAssertEqual(f0.qos, 2)
+        f0.qos = CocoaMQTTQOS.qos0.rawValue
+        XCTAssertEqual(f0.qos, 0)
+
+        XCTAssertEqual(f0.retained, false)
+        f0.retained = true
+        XCTAssertEqual(f0.retained, true)
+        f0.retained = false
+        XCTAssertEqual(f0.retained, false)
     }
     
     func testFramePubAck() {

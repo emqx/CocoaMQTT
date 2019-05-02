@@ -83,19 +83,29 @@ enum CocoaMQTTFrameType: UInt8 {
 /**
  * MQTT Frame
  */
-class CocoaMQTTFrame {
+protocol CocoaMQTTFrame {
     /**
      * |--------------------------------------
      * | 7 6 5 4 |     3    |  2 1  | 0      |
      * |  Type   | DUP flag |  QoS  | RETAIN |
      * |--------------------------------------
      */
-    var header: UInt8 = 0
+    var header: UInt8 {get set}
+    
+    var variableHeader: [UInt8] {get set}
+    var payload: [UInt8] {get set}
+    
+    // Pack the attribute to header/variableHeader/payload
+    mutating func pack()
+}
 
+extension CocoaMQTTFrame {
+
+    
     var type: UInt8 {
         return  UInt8(header & 0xF0)
     }
-
+    
     var dup: Bool {
         get {
             return ((header & 0x08) >> 3) == 0 ? false : true
@@ -104,7 +114,7 @@ class CocoaMQTTFrame {
             header = (header & 0xF7) | (newValue.bit  << 3)
         }
     }
-
+    
     var qos: UInt8 {
         get {
             return (header & 0x06) >> 1
@@ -113,7 +123,7 @@ class CocoaMQTTFrame {
             header = (header & 0xF9) | (newValue << 1)
         }
     }
-
+    
     var retained: Bool {
         get {
             return (header & 0x01) == 0 ? false : true
@@ -122,29 +132,17 @@ class CocoaMQTTFrame {
             header = (header & 0xFE) | newValue.bit
         }
     }
-
-    var variableHeader: [UInt8] = []
-    var payload: [UInt8] = []
-
-    init(header: UInt8) {
-        self.header = header
-    }
-
-    init(type: CocoaMQTTFrameType, payload: [UInt8] = []) {
-        self.header = type.rawValue
-        self.payload = payload
-    }
-
-    func data() -> [UInt8] {
+    
+    mutating func data() -> [UInt8] {
         self.pack()
         return [UInt8]([header]) + encodeLength() + variableHeader + payload
     }
-
+    
     func encodeLength() -> [UInt8] {
         var bytes: [UInt8] = []
         var digit: UInt8 = 0
         var len: UInt32 = UInt32(variableHeader.count+payload.count)
-
+        
         repeat {
             digit = UInt8(len % 128)
             len = len / 128
@@ -157,15 +155,19 @@ class CocoaMQTTFrame {
         
         return bytes
     }
-
-    // do nothing
-    func pack() { return; }
 }
 
 /**
  * MQTT CONNECT Frame
  */
-class CocoaMQTTFrameConnect: CocoaMQTTFrame {
+struct CocoaMQTTFrameConnect: CocoaMQTTFrame {
+    
+    var header: UInt8
+    
+    var variableHeader: [UInt8] = []
+    
+    var payload: [UInt8] = []
+    
     let PROTOCOL_LEVEL = UInt8(4)
     let PROTOCOL_VERSION: String  = "MQTT/3.1.1"
     let PROTOCOL_MAGIC: String = "MQTT"
@@ -244,10 +246,10 @@ class CocoaMQTTFrameConnect: CocoaMQTTFrame {
     // TODO: refactor?
     init(client: CocoaMQTT) {
         self.client = client
-        super.init(type: CocoaMQTTFrameType.connect)
+        self.header = CocoaMQTTFrameType.connect.rawValue
     }
 
-    override func pack() {
+    mutating func pack() {
         // variable header
         variableHeader += PROTOCOL_MAGIC.bytesWithLength
         variableHeader.append(PROTOCOL_LEVEL)
@@ -280,23 +282,32 @@ class CocoaMQTTFrameConnect: CocoaMQTTFrame {
 /**
  * MQTT PUBLISH Frame
  */
-class CocoaMQTTFramePublish: CocoaMQTTFrame {
+struct CocoaMQTTFramePublish: CocoaMQTTFrame {
+    
+    
+    var header: UInt8
+    
+    var variableHeader: [UInt8] = []
+    
+    var payload: [UInt8] = []
+    
     var msgid: UInt16?
     var topic: String?
     var data: [UInt8]?
 
     init(msgid: UInt16, topic: String, payload: [UInt8]) {
-        super.init(type: CocoaMQTTFrameType.publish, payload: payload)
+        header = CocoaMQTTFrameType.publish.rawValue
         self.msgid = msgid
         self.topic = topic
+        self.payload = payload
     }
 
     init(header: UInt8, data: [UInt8]) {
-        super.init(header: header)
+        self.header = header
         self.data = data
     }
 
-    func unpack() {
+    mutating func unpack() {
         // topic
         if data!.count < 2 {
             printWarning("Invalid format of received message.")
@@ -339,7 +350,7 @@ class CocoaMQTTFramePublish: CocoaMQTTFrame {
         }
     }
 
-    override func pack() {
+    mutating func pack() {
         variableHeader += topic!.bytesWithLength
         if qos > 0 {
             variableHeader += msgid!.hlBytes
@@ -357,18 +368,25 @@ extension CocoaMQTTFramePublish: CustomStringConvertible {
 /**
  * MQTT PUBACK Frame
  */
-class CocoaMQTTFramePubAck: CocoaMQTTFrame {
+struct CocoaMQTTFramePubAck: CocoaMQTTFrame {
+    var header: UInt8
+    
+    var variableHeader: [UInt8] = []
+    
+    var payload: [UInt8] = []
+    
     var msgid: UInt16?
 
     init(type: CocoaMQTTFrameType, msgid: UInt16) {
-        super.init(type: type)
+        header = type.rawValue
+        // XXX: pubrel??
         if type == CocoaMQTTFrameType.pubrel {
             qos = CocoaMQTTQOS.qos1.rawValue
         }
         self.msgid = msgid
     }
 
-    override func pack() {
+    mutating func pack() {
         variableHeader += msgid!.hlBytes
     }
 }
@@ -376,22 +394,28 @@ class CocoaMQTTFramePubAck: CocoaMQTTFrame {
 /**
  * MQTT SUBSCRIBE Frame
  */
-class CocoaMQTTFrameSubscribe: CocoaMQTTFrame {
+struct CocoaMQTTFrameSubscribe: CocoaMQTTFrame {
+    var header: UInt8
+    
+    var variableHeader: [UInt8] = []
+    
+    var payload: [UInt8] = []
+    
     var msgid: UInt16
     var topics: [(String, CocoaMQTTQOS)]
 
-    convenience init(msgid: UInt16, topic: String, reqos: CocoaMQTTQOS) {
+    init(msgid: UInt16, topic: String, reqos: CocoaMQTTQOS) {
         self.init(msgid: msgid, topics: [(topic, reqos)])
     }
     
     init(msgid: UInt16, topics: [(String, CocoaMQTTQOS)]) {
+        header = CocoaMQTTFrameType.subscribe.rawValue
+        
         self.msgid = msgid
         self.topics = topics
-        
-        super.init(type: .subscribe)
     }
 
-    override func pack() {
+    mutating func pack() {
         variableHeader += msgid.hlBytes
         for (topic, qos) in topics {
             payload += topic.bytesWithLength
@@ -403,19 +427,60 @@ class CocoaMQTTFrameSubscribe: CocoaMQTTFrame {
 /**
  * MQTT UNSUBSCRIBE Frame
  */
-class CocoaMQTTFrameUnsubscribe: CocoaMQTTFrame {
+struct CocoaMQTTFrameUnsubscribe: CocoaMQTTFrame {
+    var header: UInt8
+    
+    var variableHeader: [UInt8] = []
+    
+    var payload: [UInt8] = []
+    
     var msgid: UInt16?
     var topic: String?
 
     init(msgid: UInt16, topic: String) {
-        super.init(type: CocoaMQTTFrameType.unsubscribe)
+        self.header = CocoaMQTTFrameType.unsubscribe.rawValue
         self.msgid = msgid
         self.topic = topic
         qos = CocoaMQTTQOS.qos1.rawValue
     }
 
-    override func pack() {
+    mutating func pack() {
         variableHeader += msgid!.hlBytes
         payload += topic!.bytesWithLength
+    }
+}
+
+/// DISCONNECT Frame
+struct CocoaMQTTFrameDisconnect: CocoaMQTTFrame {
+    
+    var header: UInt8
+    
+    var variableHeader: [UInt8] = []
+    
+    var payload: [UInt8] = []
+    
+    init() {
+        header = CocoaMQTTFrameType.disconnect.rawValue
+    }
+    
+    func pack() {
+        // nothing to do
+    }
+}
+
+/// PING Frame
+struct CocoaMQTTFramePing: CocoaMQTTFrame {
+    var header: UInt8
+    
+    var variableHeader: [UInt8] = []
+    
+    var payload: [UInt8] = []
+    
+    init() {
+        header = CocoaMQTTFrameType.pingreq.rawValue
+    }
+    
+    func pack() {
+        // nothing to do
     }
 }
