@@ -187,13 +187,13 @@ public class CocoaMQTT: NSObject, CocoaMQTTClient, CocoaMQTTFrameBufferProtocol 
     }
     
     // heart beat
-    public var keepAlive: UInt16 = 60
-    fileprivate var aliveTimer: Timer?
+    open var keepAlive: UInt16 = 60
+	fileprivate var aliveTimer: CocoaMQTTTimer?
     
     // auto reconnect
-    public var autoReconnect = false
-    public var autoReconnectTimeInterval: UInt16 = 20
-    fileprivate var autoReconnTimer: Timer?
+    open var autoReconnect = false
+    open var autoReconnectTimeInterval: UInt16 = 20
+    fileprivate var autoReconnTimer: CocoaMQTTTimer?
     fileprivate var disconnectExpectedly = false
     
     // log
@@ -247,8 +247,8 @@ public class CocoaMQTT: NSObject, CocoaMQTTClient, CocoaMQTTFrameBufferProtocol 
     }
     
     deinit {
-        aliveTimer?.invalidate()
-        autoReconnTimer?.invalidate()
+		aliveTimer?.suspend()
+        autoReconnTimer?.suspend()
         
         socket.delegate = nil
         socket.disconnect()
@@ -448,9 +448,9 @@ extension CocoaMQTT: GCDAsyncSocketDelegate {
         didDisconnect(self, err)
 
         dispatchQueue.async {
-            self.autoReconnTimer?.invalidate()
+            self.autoReconnTimer = nil
             if !self.disconnectExpectedly && self.autoReconnect && self.autoReconnectTimeInterval > 0 {
-                self.autoReconnTimer = Timer.every(Double(self.autoReconnectTimeInterval), { [weak self] (timer: Timer) in
+                self.autoReconnTimer = CocoaMQTTTimer.every(Double(self.autoReconnectTimeInterval), { [weak self] in
                     printDebug("try reconnect")
                     self?.connect()
                 })
@@ -489,7 +489,7 @@ extension CocoaMQTT: CocoaMQTTReaderDelegate {
         
         // auto reconnect
         if ack == CocoaMQTTConnAck.accept {
-            autoReconnTimer?.invalidate()
+            autoReconnTimer = nil
             disconnectExpectedly = false
         }
         
@@ -497,12 +497,11 @@ extension CocoaMQTT: CocoaMQTTReaderDelegate {
         // FIXME: if keepalive == 0 --> not set keekalive timer???
         if ack == CocoaMQTTConnAck.accept && keepAlive > 0 {
             dispatchQueue.async{
-                self.aliveTimer?.invalidate()
-                self.aliveTimer = Timer.every(Double(self.keepAlive / 2 + 1)) { [weak self] (timer: Timer) in
+                self.aliveTimer = CocoaMQTTTimer.every(Double(self.keepAlive / 2 + 1)) { [weak self] in
                     if self?.connState == .connected {
                         self?.ping()
                     } else {
-                        timer.invalidate()
+						self?.aliveTimer = nil
                     }
                 }
             }
@@ -771,49 +770,133 @@ public func printError(_ message: String) {
 /// MARK - Timer
 /// From https://github.com/radex/SwiftyTimer
 extension Timer {
-    
-    /// Create and schedule a timer that will call `block` repeatedly in specified time intervals.
-    
-    @discardableResult
-    public class func every(_ interval: TimeInterval, _ block: @escaping (Timer) -> Void) -> Timer {
-        let timer = Timer.new(every: interval, block)
-        CFRunLoopAddTimer(CFRunLoopGetCurrent(), timer, .commonModes)
-        return timer
-    }
-    
-    /// Create and schedule a timer that will call `block` once after the specified time.
-    
-    @discardableResult
-    public class func after(_ interval: TimeInterval, _ block: @escaping () -> Void) -> Timer {
-        let timer = Timer.new(after: interval, block)
-        CFRunLoopAddTimer(CFRunLoopGetCurrent(), timer, .commonModes)
-        return timer
-    }
-    
-    /// Create a timer that will call `block` repeatedly in specified time intervals.
-    /// (This variant also passes the timer instance to the block)
-    ///
-    /// - Note: The timer won't fire until it's scheduled on the run loop.
-    ///         Use `NSTimer.every` to create and schedule a timer in one step.
-    /// - Note: The `new` class function is a workaround for a crashing bug when using convenience initializers (rdar://18720947)
-    
-    @nonobjc public class func new(every interval: TimeInterval, _ block: @escaping (Timer) -> Void) -> Timer {
-        var timer: Timer!
-        timer = CFRunLoopTimerCreateWithHandler(kCFAllocatorDefault, CFAbsoluteTimeGetCurrent() + interval, interval, 0, 0) { _ in
-            block(timer)
-        }
-        return timer
-    }
-    
-    /// Create a timer that will call `block` once after the specified time.
-    ///
-    /// - Note: The timer won't fire until it's scheduled on the run loop.
-    ///         Use `NSTimer.after` to create and schedule a timer in one step.
-    /// - Note: The `new` class function is a workaround for a crashing bug when using convenience initializers (rdar://18720947)
-    
-    public class func new(after interval: TimeInterval, _ block: @escaping () -> Void) -> Timer {
-        return CFRunLoopTimerCreateWithHandler(kCFAllocatorDefault, CFAbsoluteTimeGetCurrent() + interval, 0, 0, 0) { _ in
-            block()
-        }
-    }
+	
+	/// Create and schedule a timer that will call `block` repeatedly in specified time intervals.
+	
+	@discardableResult
+	public class func every(_ interval: TimeInterval, _ block: @escaping (Timer) -> Void) -> Timer {
+		let timer = Timer.new(every: interval, block)
+		CFRunLoopAddTimer(CFRunLoopGetCurrent(), timer, .commonModes)
+		return timer
+	}
+	
+	/// Create and schedule a timer that will call `block` once after the specified time.
+	
+	@discardableResult
+	public class func after(_ interval: TimeInterval, _ block: @escaping () -> Void) -> Timer {
+		let timer = Timer.new(after: interval, block)
+		CFRunLoopAddTimer(CFRunLoopGetCurrent(), timer, .commonModes)
+		return timer
+	}
+	
+	/// Create a timer that will call `block` repeatedly in specified time intervals.
+	/// (This variant also passes the timer instance to the block)
+	///
+	/// - Note: The timer won't fire until it's scheduled on the run loop.
+	///         Use `NSTimer.every` to create and schedule a timer in one step.
+	/// - Note: The `new` class function is a workaround for a crashing bug when using convenience initializers (rdar://18720947)
+	
+	@nonobjc public class func new(every interval: TimeInterval, _ block: @escaping (Timer) -> Void) -> Timer {
+		var timer: Timer!
+		timer = CFRunLoopTimerCreateWithHandler(kCFAllocatorDefault, CFAbsoluteTimeGetCurrent() + interval, interval, 0, 0) { _ in
+			block(timer)
+		}
+		return timer
+	}
+	
+	/// Create a timer that will call `block` once after the specified time.
+	///
+	/// - Note: The timer won't fire until it's scheduled on the run loop.
+	///         Use `NSTimer.after` to create and schedule a timer in one step.
+	/// - Note: The `new` class function is a workaround for a crashing bug when using convenience initializers (rdar://18720947)
+	
+	public class func new(after interval: TimeInterval, _ block: @escaping () -> Void) -> Timer {
+		return CFRunLoopTimerCreateWithHandler(kCFAllocatorDefault, CFAbsoluteTimeGetCurrent() + interval, 0, 0, 0) { _ in
+			block()
+		}
+	}
+}
+
+
+// modeled after RepeatingTimer by Daniel Galasko: https://medium.com/@danielgalasko/a-background-repeating-timer-in-swift-412cecfd2ef9
+/// RepeatingTimer mimics the API of DispatchSourceTimer but in a way that prevents
+/// crashes that occur from calling resume multiple times on a timer that is
+/// already resumed (noted by https://github.com/SiftScience/sift-ios/issues/52)
+class CocoaMQTTTimer {
+	
+	let timeInterval: TimeInterval
+	let startDelay: TimeInterval
+	
+	init(delay:TimeInterval?=nil, timeInterval: TimeInterval) {
+		self.timeInterval = timeInterval
+		if let delay = delay {
+			self.startDelay = delay
+		} else {
+			self.startDelay = timeInterval
+		}
+	}
+	
+	public class func every(_ interval: TimeInterval, _ block: @escaping () -> Void) -> CocoaMQTTTimer {
+		let timer = CocoaMQTTTimer(timeInterval: interval)
+		timer.eventHandler = block
+		timer.resume()
+		return timer
+	}
+
+	@discardableResult
+	public class func after(_ interval: TimeInterval, _ block: @escaping () -> Void) -> CocoaMQTTTimer {
+		var timer : CocoaMQTTTimer? = CocoaMQTTTimer(delay: interval, timeInterval:0)
+		timer?.eventHandler = {
+			block()
+			timer?.suspend()
+			timer = nil
+		}
+		timer?.resume()
+		return timer!
+	}
+
+	private lazy var timer: DispatchSourceTimer = {
+		let t = DispatchSource.makeTimerSource()
+		t.schedule(deadline: .now() + self.startDelay, repeating: self.timeInterval > 0 ? Double(self.timeInterval) : Double.infinity)
+		t.setEventHandler(handler: { [weak self] in
+			self?.eventHandler?()
+		})
+		return t
+	}()
+	
+	var eventHandler: (() -> Void)?
+	
+	private enum State {
+		case suspended
+		case resumed
+	}
+	
+	private var state: State = .suspended
+	
+	deinit {
+		timer.setEventHandler {}
+		timer.cancel()
+		/*
+		If the timer is suspended, calling cancel without resuming
+		triggers a crash. This is documented here https://forums.developer.apple.com/thread/15902
+		*/
+		resume()
+		eventHandler = nil
+	}
+	
+	func resume() {
+		if state == .resumed {
+			return
+		}
+		state = .resumed
+		timer.resume()
+	}
+	
+	func suspend() {
+		if state == .suspended {
+			return
+		}
+		state = .suspended
+		timer.suspend()
+	}
 }

@@ -463,8 +463,8 @@ class CocoaMQTTFrameBuffer: NSObject {
         if frame.qos != 0 {
             silos.append(frame)
             // XXX: When timeout arrived should resend it, not drop!
-            Timer.after(timeout) { [weak self] in
-                guard let msgid = frame.msgid else {return}
+            CocoaMQTTTimer.after(timeout) { [weak self, weak frame] in
+                guard let msgid = frame?.msgid else {return}
                 if self?.removeFrameFromSilos(withMsgid: msgid) == true {
                     printDebug("timeout of frame:\(msgid)")
                 }
