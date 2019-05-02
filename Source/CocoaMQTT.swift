@@ -156,7 +156,10 @@ extension Int {
  *
  * Notice: GCDAsyncSocket need delegate to extend NSObject
  */
-public class CocoaMQTT: NSObject, CocoaMQTTClient, CocoaMQTTFrameBufferProtocol {
+public class CocoaMQTT: NSObject, CocoaMQTTClient, CocoaMQTTDeliverProtocol {
+    
+    public weak var delegate: CocoaMQTTDelegate?
+    
     public var host = "localhost"
     public var port: UInt16 = 1883
     public var clientID: String
@@ -164,8 +167,7 @@ public class CocoaMQTT: NSObject, CocoaMQTTClient, CocoaMQTTFrameBufferProtocol 
     public var password: String?
     public var cleanSession = true
     public var willMessage: CocoaMQTTWill?
-    public weak var delegate: CocoaMQTTDelegate?
-    public var backgroundOnSocket = false
+    public var backgroundOnSocket = true
     public var dispatchQueue = DispatchQueue.main
     
     public var connState = CocoaMQTTConnState.initial {
@@ -175,18 +177,30 @@ public class CocoaMQTT: NSObject, CocoaMQTTClient, CocoaMQTTFrameBufferProtocol 
         }
     }
     
-    // flow control
-    fileprivate var buffer = CocoaMQTTFrameBuffer()
-    public var bufferSilosTimeout: Double {
-        get { return buffer.timeout }
-        set { buffer.timeout = newValue }
-    }
-    public var bufferSilosMaxNumber: UInt {
-        get { return buffer.silosMaxNumber }
-        set { buffer.silosMaxNumber = newValue }
+    // deliver
+    fileprivate var deliver = CocoaMQTTDeliver()
+    
+    /// Re-deliver the un-acked messages
+    public var deliverTimeout: Double {
+        get { return deliver.timeout }
+        set { deliver.timeout = newValue }
     }
     
-    // heart beat
+    /// Message queue size. default 1000
+    ///
+    /// The new publishing messages of Qos1/Qos2 will be drop, if the quene is full
+    public var messageQueueSize: UInt {
+        get { return deliver.mqueueSize }
+        set { deliver.mqueueSize = newValue }
+    }
+    
+    /// In-flight window size. default 10
+    public var inflightWindowSize: UInt {
+        get { return deliver.inflightWindowSize }
+        set { deliver.inflightWindowSize = newValue }
+    }
+    
+    // heartbeat
     public var keepAlive: UInt16 = 60
 	fileprivate var aliveTimer: CocoaMQTTTimer?
     
@@ -243,7 +257,7 @@ public class CocoaMQTT: NSObject, CocoaMQTTClient, CocoaMQTTFrameBufferProtocol 
         self.host = host
         self.port = port
         super.init()
-        buffer.delegate = self
+        deliver.delegate = self
     }
     
     deinit {
@@ -254,8 +268,8 @@ public class CocoaMQTT: NSObject, CocoaMQTTClient, CocoaMQTTFrameBufferProtocol 
         socket.disconnect()
     }
     
-    // MARK: CocoaMQTTFrameBufferProtocol
-    func buffer(_ buffer: CocoaMQTTFrameBuffer, sendPublishFrame frame: CocoaMQTTFramePublish) {
+    // MARK: CocoaMQTTDeliverProtocol
+    func deliver(_ deliver: CocoaMQTTDeliver, wantToSend frame: CocoaMQTTFramePublish) {
         send(frame, tag: Int(frame.msgid!))
     }
 
@@ -357,7 +371,7 @@ public class CocoaMQTT: NSObject, CocoaMQTTClient, CocoaMQTTFrameBufferProtocol 
         frame.dup = message.dup
         
         // Push frame to sending queue
-        _ = buffer.add(frame)
+        _ = deliver.add(frame)
 
         delegate?.mqtt(self, didPublishMessage: message, id: msgid)
         didPublishMessage(self, message, msgid)
@@ -447,16 +461,14 @@ extension CocoaMQTT: GCDAsyncSocketDelegate {
         delegate?.mqttDidDisconnect(self, withError: err)
         didDisconnect(self, err)
 
-        dispatchQueue.async {
-            self.autoReconnTimer = nil
-            if self.disconnectExpectedly {
-                self.connState = .initial
-            } else if self.autoReconnect && self.autoReconnectTimeInterval > 0 {
-                self.autoReconnTimer = CocoaMQTTTimer.every(Double(self.autoReconnectTimeInterval), { [weak self] in
-                    printDebug("try reconnect")
-                    self?.connect()
-                })
-            }
+        autoReconnTimer = nil
+        if disconnectExpectedly {
+            connState = .initial
+        } else if autoReconnect && autoReconnectTimeInterval > 0 {
+            autoReconnTimer = CocoaMQTTTimer.every(Double(autoReconnectTimeInterval), { [weak self] in
+                printDebug("try reconnect")
+                self?.connect()
+            })
         }
     }
 }
@@ -484,12 +496,12 @@ extension CocoaMQTT: CocoaMQTTReaderDelegate {
 
         // XXX: may casue message not acked miss
         // clean silos (reset flow controll)
-        buffer.cleanSilos()
+        deliver.cleanAll()
 
         delegate?.mqtt(self, didConnectAck: ack)
         didConnectAck(self, ack)
         
-        // auto reconnect
+        // reset auto-reconnect state
         if ack == CocoaMQTTConnAck.accept {
             autoReconnTimer = nil
             disconnectExpectedly = false
@@ -498,13 +510,12 @@ extension CocoaMQTT: CocoaMQTTReaderDelegate {
         // keep alive
         // FIXME: if keepalive == 0 --> not set keekalive timer???
         if ack == CocoaMQTTConnAck.accept && keepAlive > 0 {
-            dispatchQueue.async{
-                self.aliveTimer = CocoaMQTTTimer.every(Double(self.keepAlive / 2 + 1)) { [weak self] in
-                    if self?.connState == .connected {
-                        self?.ping()
-                    } else {
-						self?.aliveTimer = nil
-                    }
+            self.aliveTimer = CocoaMQTTTimer.every(Double(self.keepAlive / 2 + 1)) { [weak self] in
+                guard let weakSelf = self else {return}
+                if weakSelf.connState == .connected {
+                    weakSelf.ping()
+                } else {
+                    weakSelf.aliveTimer = nil
                 }
             }
         }
@@ -526,7 +537,7 @@ extension CocoaMQTT: CocoaMQTTReaderDelegate {
     func didReceivePubAck(_ reader: CocoaMQTTReader, msgid: UInt16) {
         printDebug("PUBACK Received: \(msgid)")
         
-        buffer.sendSuccess(withMsgid: msgid)
+        deliver.sendSuccess(withMsgid: msgid)
         delegate?.mqtt(self, didPublishAck: msgid)
         didPublishAck(self, msgid)
     }
@@ -546,7 +557,7 @@ extension CocoaMQTT: CocoaMQTTReaderDelegate {
     func didReceivePubComp(_ reader: CocoaMQTTReader, msgid: UInt16) {
         printDebug("PUBCOMP Received: \(msgid)")
 
-        buffer.sendSuccess(withMsgid: msgid)
+        deliver.sendSuccess(withMsgid: msgid)
         delegate?.mqtt?(self, didPublishComplete: msgid)
         didCompletePublish(self, msgid)
     }

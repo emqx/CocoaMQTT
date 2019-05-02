@@ -347,6 +347,13 @@ class CocoaMQTTFramePublish: CocoaMQTTFrame {
     }
 }
 
+extension CocoaMQTTFramePublish: CustomStringConvertible {
+    var description: String {
+        return "PUBLISH(msgid: \(msgid ?? 0), topic: \(topic ?? ""), payload: \(payload))"
+    }
+}
+
+
 /**
  * MQTT PUBACK Frame
  */
@@ -410,101 +417,5 @@ class CocoaMQTTFrameUnsubscribe: CocoaMQTTFrame {
     override func pack() {
         variableHeader += msgid!.hlBytes
         payload += topic!.bytesWithLength
-    }
-}
-
-//MARK: - Buffer
-
-protocol CocoaMQTTFrameBufferProtocol: class {
-    func buffer(_ buffer: CocoaMQTTFrameBuffer, sendPublishFrame frame: CocoaMQTTFramePublish)
-}
-
-class CocoaMQTTFrameBuffer: NSObject {
-    
-    weak var delegate: CocoaMQTTFrameBufferProtocol?
-    
-    // flow control
-    fileprivate var silos = [CocoaMQTTFramePublish]()
-    fileprivate var buffer = [CocoaMQTTFramePublish]()
-    fileprivate var bufferSize = 1000
-    var silosMaxNumber: UInt = 10
-    var timeout: Double = 60
-    //TODO: bufferCapacity
-    //fileprivate var bufferCapacity = 50.MB // unit: byte
-    
-    //
-    var isBufferEmpty: Bool { get { return buffer.count == 0 }}
-    var isBufferFull : Bool { get { return buffer.count > bufferSize }}
-    var isSilosFull  : Bool { get { return silos.count >= Int(silosMaxNumber) }}
-    
-    
-    // return false means the frame is rejected because of the buffer is full
-    func add(_ frame: CocoaMQTTFramePublish) -> Bool {
-        guard !isBufferFull else {
-            printError("Buffer is full, message(\(String(describing: frame.msgid))) was abandoned.")
-            return false
-        }
-        
-        buffer.append(frame)
-        tryTransport()
-        return true
-    }
-    
-    // try transport a frame from buffer to silo
-    func tryTransport() {
-        if isBufferEmpty || isSilosFull { return }
-
-        // take out the earliest frame
-        if buffer.isEmpty { return }
-        let frame = buffer.remove(at: 0)
-        
-        send(frame)
-
-        if frame.qos != 0 {
-            silos.append(frame)
-            // XXX: When timeout arrived should resend it, not drop!
-            CocoaMQTTTimer.after(timeout) { [weak self, weak frame] in
-                guard let msgid = frame?.msgid else {return}
-                if self?.removeFrameFromSilos(withMsgid: msgid) == true {
-                    printDebug("timeout of frame:\(msgid)")
-                }
-            }
-        }
-
-        // keep trying after a transport
-        self.tryTransport()
-    }
-    
-    func send(_ frame: CocoaMQTTFramePublish) {
-        delegate?.buffer(self, sendPublishFrame: frame)
-    }
-    
-    func sendSuccess(withMsgid msgid: UInt16) {
-        DispatchQueue.main.async { [weak self] in
-            _ = self?.removeFrameFromSilos(withMsgid: msgid)
-            printDebug("sendMessageSuccess:\(msgid)")
-        }
-    }
-    
-    func removeFrameFromSilos(withMsgid msgid: UInt16) -> Bool {
-        var success = false
-        for (index, item) in silos.enumerated() {
-            if item.msgid == msgid {
-                success = true
-                silos.remove(at: index)
-                tryTransport()
-                break
-            }
-        }
-        return success
-    }
-
-    /// Clean silos content to prevent message blocked, when next connection established
-    ///
-    /// !!Warning: it's a tempnary method for hotfix #221
-    func cleanSilos() {
-        DispatchQueue.main.async { [weak self] in
-            _ = self?.silos.removeAll()
-        }
     }
 }
