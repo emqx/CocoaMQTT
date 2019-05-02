@@ -371,7 +371,7 @@ public class CocoaMQTT: NSObject, CocoaMQTTClient, CocoaMQTTDeliverProtocol {
         frame.retained = message.retained
         frame.dup = message.dup
         
-        // Push frame to sending queue
+        // Push frame to deliver message queue
         _ = deliver.add(frame)
 
         delegate?.mqtt(self, didPublishMessage: message, id: msgid)
@@ -495,9 +495,10 @@ extension CocoaMQTT: CocoaMQTTReaderDelegate {
             return
         }
 
-        // XXX: may casue message not acked miss
-        // clean silos (reset flow controll)
-        deliver.cleanAll()
+        // TODO: how to handle the cleanSession = false & auto-reconnect
+        if cleanSession {
+            deliver.cleanAll()
+        }
 
         delegate?.mqtt(self, didConnectAck: ack)
         didConnectAck(self, ack)

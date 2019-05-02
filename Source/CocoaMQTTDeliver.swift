@@ -58,15 +58,6 @@ class CocoaMQTTDeliver: NSObject {
         
         send(frame)
         
-        if frame.qos != 0 && frame.msgid != nil {
-            // TODO: Re-send
-//            let _ = CocoaMQTTTimer.after(timeout) { [weak self] in
-//                guard let weakSelf = self else { return }
-//                weakSelf.send(frame)
-//            }
-            inflight.append(frame)
-        }
-        
         // keep trying after a transport
         self.tryTransport()
     }
@@ -75,6 +66,16 @@ class CocoaMQTTDeliver: NSObject {
         guard let delegate = self.delegate else { return }
         delegate.dispatchQueue.async {
             delegate.deliver(self, wantToSend: frame)
+        }
+        
+        // Insert to In-flight window for Qos1/Qos2 message
+        if frame.qos != 0 && frame.msgid != nil {
+            let _ = CocoaMQTTTimer.after(timeout) { [weak self] in
+                guard let weakSelf = self else { return }
+                printDebug("re-delvery frame \(frame)")
+                weakSelf.send(frame)
+            }
+            inflight.append(frame)
         }
     }
     

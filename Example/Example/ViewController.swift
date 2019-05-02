@@ -202,7 +202,7 @@ extension ViewController {
     func TRACE(_ message: String = "", fun: String = #function) {
         let names = fun.components(separatedBy: ":")
         var prettyName: String
-        if names.count == 1 {
+        if names.count == 2 {
             prettyName = names[0]
         } else {
             prettyName = names[1]
