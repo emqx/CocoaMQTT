@@ -132,13 +132,12 @@ class CocoaMQTTTests: XCTestCase, CocoaMQTTDelegate {
         }
     }
     
-    func mqtt(_ mqtt: CocoaMQTT, didSubscribeTopic topic: String) {
-        if topic == topicToSub {
+    func mqtt(_ mqtt: CocoaMQTT, didSubscribeTopic topics: [String]) {
+        if topics.first! == topicToSub {
             subExp?.fulfill()
         } else {
             XCTFail()
         }
-        
     }
     
     func mqtt(_ mqtt: CocoaMQTT, didUnsubscribeTopic topic: String) {
