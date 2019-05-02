@@ -35,11 +35,13 @@ Install using [Carthage](https://github.com/Carthage/Carthage) by adding the fol
 github "robbiehanson/CocoaAsyncSocket" "master"
 github "emqtt/CocoaMQTT" "master"
 ````
+
 Then, run the following command:
 
 ```bash
 $ carthage update --platform iOS
 ```
+
 Last if you're building for OS X:
 
 - On your application targets “General” settings tab, in the “Embedded Binaries” section, drag and drop CocoaMQTT.framework from the Carthage/Build/Mac folder on disk.
@@ -52,6 +54,7 @@ If you're building for iOS, tvOS:
 `/usr/local/bin/carthage copy-frameworks`
 
 - and add the paths to the frameworks you want to use under “Input Files”, e.g.:
+
 ```
 $(SRCROOT)/Carthage/Build/iOS/CocoaMQTT.framework
 ```
@@ -128,7 +131,6 @@ MIT License (see `LICENSE`)
 
 
 ## Twitter
-
 
 https://twitter.com/emqtt
 
