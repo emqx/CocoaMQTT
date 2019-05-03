@@ -1,6 +1,0 @@
-framework module Pods_CocoaMQTT_tvOS {
-  umbrella header "Pods-CocoaMQTT tvOS-umbrella.h"
-
-  export *
-  module * { export * }
-}
