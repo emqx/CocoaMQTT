@@ -1,6 +1,0 @@
-framework module CocoaAsyncSocket {
-  umbrella header "CocoaAsyncSocket-tvOS-umbrella.h"
-
-  export *
-  module * { export * }
-}
