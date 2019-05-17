@@ -409,10 +409,10 @@ struct CocoaMQTTFrameSubscribe: CocoaMQTTFrame {
     }
     
     init(msgid: UInt16, topics: [(String, CocoaMQTTQOS)]) {
-        header = CocoaMQTTFrameType.subscribe.rawValue
-        
+        header = CocoaMQTTFrameType.subscribe.rawValue        
         self.msgid = msgid
-        self.topics = topics
+        self.topics = topics        
+        qos = CocoaMQTTQOS.qos1.rawValue
     }
 
     mutating func pack() {
