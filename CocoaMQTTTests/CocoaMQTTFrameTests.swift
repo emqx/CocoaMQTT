@@ -113,14 +113,78 @@ class CocoaMQTTFrameTests: XCTestCase {
     }
     
     func testFramePubAck() {
+        // INITIAL
+        var puback = CocoaMQTTFramePubAck(type: .puback, msgid: 0x1010)
+        XCTAssertEqual(puback.header, 0x40)
+        XCTAssertEqual(puback.msgid, 0x1010)
+        XCTAssertEqual(puback.data(), [0x40, 0x02, 0x10, 0x10])
         
+        var pubrec = CocoaMQTTFramePubAck(type: .pubrec, msgid: 0x1011)
+        XCTAssertEqual(pubrec.header, 0x50)
+        XCTAssertEqual(pubrec.msgid, 0x1011)
+        XCTAssertEqual(pubrec.data(), [0x50, 0x02, 0x10, 0x11])
+        
+        var pubrel = CocoaMQTTFramePubAck(type: .pubrel, msgid: 0x1012)
+        XCTAssertEqual(pubrel.header, 0x62)
+        XCTAssertEqual(pubrel.msgid, 0x1012)
+        XCTAssertEqual(pubrel.data(), [0x62, 0x02, 0x10, 0x12])
+        
+        var pubcom = CocoaMQTTFramePubAck(type: .pubcomp, msgid: 0x1013)
+        XCTAssertEqual(pubcom.header, 0x70)
+        XCTAssertEqual(pubcom.msgid, 0x1013)
+        XCTAssertEqual(pubcom.data(), [0x70, 0x02, 0x10, 0x13])
     }
     
     func testFrameSubscribe() {
-        
+        // INITIAL
+        var subs = CocoaMQTTFrameSubscribe(msgid: 0x1010, topic: "topic", reqos: .qos1)
+        XCTAssertEqual(subs.header, 0x82)
+        XCTAssertEqual(subs.msgid, 0x1010)
+        XCTAssertEqual(subs.topics.count, 1)
+        for (t, qos) in subs.topics {
+            XCTAssertEqual(t, "topic")
+            XCTAssertEqual(qos, .qos1)
+        }
+        XCTAssertEqual(subs.data(), [0x82, 0x0A,
+                                     0x10, 0x10,
+                                     0x00, 0x05, 0x74, 0x6F, 0x70, 0x69, 0x63,
+                                     0x01])
+    }
+    
+    func testFrameSubAck() {
+        // TODO:
     }
     
     func testFrameUnsubscribe() {
-        
+        // INITIAL
+        var unsub = CocoaMQTTFrameUnsubscribe(msgid: 0x1010, topic: "topic")
+        XCTAssertEqual(unsub.header, 0xA2)
+        XCTAssertEqual(unsub.msgid, 0x1010)
+        XCTAssertEqual(unsub.topic, "topic")
+        XCTAssertEqual(unsub.data(), [0xA2, 0x09,
+                                      0x10, 0x10,
+                                      0x00, 0x05, 0x74, 0x6F, 0x70, 0x69, 0x63])
+    }
+    
+    func testFrameUnsubAck() {
+        // TODO:
+    }
+    
+    func testFrameDisconnect() {
+        // INITIAL
+        var disconn = CocoaMQTTFrameDisconnect()
+        XCTAssertEqual(disconn.header, 0xE0)
+        XCTAssertEqual(disconn.data(), [0xE0, 0x00])
+    }
+    
+    func testFramePing() {
+        // INITIAL
+        var ping = CocoaMQTTFramePing()
+        XCTAssertEqual(ping.header, 0xC0)
+        XCTAssertEqual(ping.data(), [0xC0, 0x00])
+    }
+    
+    func testFramePoing() {
+        // TODO:
     }
 }

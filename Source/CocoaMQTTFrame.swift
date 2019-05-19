@@ -366,7 +366,7 @@ extension CocoaMQTTFramePublish: CustomStringConvertible {
 
 
 /**
- * MQTT PUBACK Frame
+ * MQTT PUBACK/PUBREC/PUBREL/PUBCOM Frame
  */
 struct CocoaMQTTFramePubAck: CocoaMQTTFrame {
     var header: UInt8
@@ -375,19 +375,18 @@ struct CocoaMQTTFramePubAck: CocoaMQTTFrame {
     
     var payload: [UInt8] = []
     
-    var msgid: UInt16?
-
+    var msgid: UInt16
+    
     init(type: CocoaMQTTFrameType, msgid: UInt16) {
         header = type.rawValue
-        // XXX: pubrel??
+        self.msgid = msgid
         if type == CocoaMQTTFrameType.pubrel {
             qos = CocoaMQTTQOS.qos1.rawValue
         }
-        self.msgid = msgid
     }
 
     mutating func pack() {
-        variableHeader += msgid!.hlBytes
+        variableHeader += msgid.hlBytes
     }
 }
 
@@ -434,10 +433,11 @@ struct CocoaMQTTFrameUnsubscribe: CocoaMQTTFrame {
     
     var payload: [UInt8] = []
     
-    var msgid: UInt16?
-    var topic: String?
+    var msgid: UInt16
+    var topic: String
 
     init(msgid: UInt16, topic: String) {
+        // TODO: Support topic tables!!
         self.header = CocoaMQTTFrameType.unsubscribe.rawValue
         self.msgid = msgid
         self.topic = topic
@@ -445,8 +445,8 @@ struct CocoaMQTTFrameUnsubscribe: CocoaMQTTFrame {
     }
 
     mutating func pack() {
-        variableHeader += msgid!.hlBytes
-        payload += topic!.bytesWithLength
+        variableHeader += msgid.hlBytes
+        payload += topic.bytesWithLength
     }
 }
 

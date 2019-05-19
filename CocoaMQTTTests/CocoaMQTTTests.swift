@@ -60,7 +60,7 @@ class CocoaMQTTTests: XCTestCase, CocoaMQTTDelegate {
         res1Exp = expectation(description: "res_1")
         res2Exp = expectation(description: "res_2")
         
-        mqtt.connect()
+        _ = mqtt.connect()
         wait(for: [connExp!], timeout: timeout)
         
         if mqtt.connState != .connected {
@@ -87,7 +87,7 @@ class CocoaMQTTTests: XCTestCase, CocoaMQTTDelegate {
     
     func testAutoReconnect() {
         connExp = expectation(description: "connection")
-        mqtt.connect()
+        _ = mqtt.connect()
         wait(for: [connExp!], timeout: timeout)
         
         connExp = expectation(description: "connection")

@@ -154,7 +154,7 @@ extension Int {
 /**
  * Main CocoaMQTT Class
  *
- * Notice: GCDAsyncSocket need delegate to extend NSObject
+ * - Note: GCDAsyncSocket need delegate to extend NSObject
  */
 public class CocoaMQTT: NSObject, CocoaMQTTClient, CocoaMQTTDeliverProtocol {
     
@@ -200,17 +200,20 @@ public class CocoaMQTT: NSObject, CocoaMQTTClient, CocoaMQTTDeliverProtocol {
         set { deliver.inflightWindowSize = newValue }
     }
     
-    // heartbeat
+    /// Keep alive time inerval
     public var keepAlive: UInt16 = 60
 	fileprivate var aliveTimer: CocoaMQTTTimer?
     
-    // auto reconnect
+    /// Enable auto-reconnect mechanism
     public var autoReconnect = false
+    
+    /// Auto reconnect time interval
     public var autoReconnectTimeInterval: UInt16 = 20
+    
     fileprivate var autoReconnTimer: CocoaMQTTTimer?
     fileprivate var disconnectExpectedly = false
     
-    // log
+    /// Console log level
     public var logLevel: CocoaMQTTLoggerLevel {
         get {
             return CocoaMQTTLogger.logger.minLevel
@@ -220,20 +223,27 @@ public class CocoaMQTT: NSObject, CocoaMQTTClient, CocoaMQTTDeliverProtocol {
         }
     }
     
-    // ssl
+    /// Enable SSL connection
     public var enableSSL = false
+    
+    ///
     public var sslSettings: [String: NSObject]?
+    
+    /// Allow self-signed ca certificate.
+    ///
+    /// Default is false
     public var allowUntrustCACertificate = false
     
-    // the subscribed topics in current communication
+    /// The subscribed topics in current communication
     public var subscriptions: [String: CocoaMQTTQOS] = [:]
-    var subscriptionsWaitingAck: [UInt16: [(String, CocoaMQTTQOS)]] = [:]
-    var unsubscriptionsWaitingAck: [UInt16: String] = [:]
+    
+    fileprivate var subscriptionsWaitingAck: [UInt16: [(String, CocoaMQTTQOS)]] = [:]
+    fileprivate var unsubscriptionsWaitingAck: [UInt16: String] = [:]
 
-    // global message id
-    var gmid: UInt16 = 1
-    var socket = GCDAsyncSocket()
-    var reader: CocoaMQTTReader?
+    /// Global message id
+    fileprivate var gmid: UInt16 = 1
+    fileprivate var socket = GCDAsyncSocket()
+    fileprivate var reader: CocoaMQTTReader?
     
     // Clousures
     public var didConnectAck: (CocoaMQTT, CocoaMQTTConnAck) -> Void = { _, _ in }
@@ -249,9 +259,12 @@ public class CocoaMQTT: NSObject, CocoaMQTTClient, CocoaMQTTDeliverProtocol {
     public var didCompletePublish: (CocoaMQTT, UInt16) -> Void = { _, _ in }
     public var didChangeState: (CocoaMQTT, CocoaMQTTConnState) -> Void = { _, _ in }
     
-    
-
-    // MARK: init
+    /// Initial client object
+    ///
+    /// - Parameters:
+    ///   - clientID: Client Identifier
+    ///   - host: The MQTT broker host domain or IP address. Default is "localhost"
+    ///   - port: The MQTT service port of host. Default is 1883
     public init(clientID: String, host: String = "localhost", port: UInt16 = 1883) {
         self.clientID = clientID
         self.host = host
@@ -314,11 +327,12 @@ public class CocoaMQTT: NSObject, CocoaMQTTClient, CocoaMQTTDeliverProtocol {
         send(CocoaMQTTFramePubAck(type: type, msgid: msgid))
     }
 
-    @discardableResult
+    /// Connect to MQTT broker
     public func connect() -> Bool {
         return connect(timeout: -1)
     }
     
+    /// Connect to MQTT broker
     public func connect(timeout: TimeInterval) -> Bool {
         socket.setDelegate(self, delegateQueue: dispatchQueue)
         reader = CocoaMQTTReader(socket: socket, delegate: self)
@@ -336,19 +350,23 @@ public class CocoaMQTT: NSObject, CocoaMQTTClient, CocoaMQTTDeliverProtocol {
         }
     }
     
-    /// Only can be called from outside. If you want to disconnect from inside framwork, call internal_disconnect()
-    /// disconnect expectedly
+    /// Send a DISCONNECT packet to the broker then close the connection
+    ///
+    /// - Note: Only can be called from outside.
+    ///         If you want to disconnect from inside framwork, call internal_disconnect()
+    ///         disconnect expectedly
     public func disconnect() {
         disconnectExpectedly = true
         internal_disconnect()
     }
     
-    /// disconnect unexpectedly
-    public func internal_disconnect() {
+    /// Disconnect unexpectedly
+    func internal_disconnect() {
         send(CocoaMQTTFrameDisconnect(), tag: -0xE0)
         socket.disconnect()
     }
     
+    /// Send ping request to broker
     public func ping() {
         printDebug("ping")
         send(CocoaMQTTFramePing(), tag: -0xC0)
@@ -358,6 +376,7 @@ public class CocoaMQTT: NSObject, CocoaMQTTClient, CocoaMQTTDeliverProtocol {
 
     @discardableResult
     public func publish(_ topic: String, withString string: String, qos: CocoaMQTTQOS = .qos1, retained: Bool = false, dup: Bool = false) -> UInt16 {
+        // TODO: The duplicated flag must hidden for caller
         let message = CocoaMQTTMessage(topic: topic, string: string, qos: qos, retained: retained, dup: dup)
         return publish(message)
     }
@@ -468,7 +487,7 @@ extension CocoaMQTT: GCDAsyncSocketDelegate {
         } else if autoReconnect && autoReconnectTimeInterval > 0 {
             autoReconnTimer = CocoaMQTTTimer.every(Double(autoReconnectTimeInterval), { [weak self] in
                 printDebug("try reconnect")
-                self?.connect()
+                _ = self?.connect()
             })
         }
     }
@@ -693,6 +712,7 @@ class CocoaMQTTReader {
         case .pubcomp:
             delegate?.didReceivePubComp(self, msgid: msgid(data))
         case .suback:
+            // TODO: We should parse the suback to ge granted qos level
             delegate?.didReceiveSubAck(self, msgid: msgid(data))
         case .unsuback:
             delegate?.didReceiveUnsubAck(self, msgid: msgid(data))
