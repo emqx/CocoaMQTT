@@ -59,6 +59,12 @@ extension UInt8 {
     }
 }
 
+extension Int {
+    var MB: Int {
+        return self * 1024 * 1024
+    }
+}
+
 /**
  * MQTT Frame Type
  */
