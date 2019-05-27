@@ -17,6 +17,7 @@
 		8225B556227C334700E4DB51 /* CocoaMQTTTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 0409971E1C1B0B96006B5A6D /* CocoaMQTTTests.swift */; };
 		8225B557227C334700E4DB51 /* CocoaMQTTFrameTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 8270C4AA21DA6F6700C5D485 /* CocoaMQTTFrameTests.swift */; };
 		8225B571227C3B0200E4DB51 /* CocoaAsyncSocket.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = 8225B543227C308900E4DB51 /* CocoaAsyncSocket.framework */; };
+		82519C0722ACC6E100FA0815 /* CocoaMQTTTypes.swift in Sources */ = {isa = PBXBuildFile; fileRef = 82519C0622ACC6E100FA0815 /* CocoaMQTTTypes.swift */; };
 		82CF1FB022943B2100DF539A /* CocoaMQTTReader.swift in Sources */ = {isa = PBXBuildFile; fileRef = 82CF1FAF22943B2100DF539A /* CocoaMQTTReader.swift */; };
 /* End PBXBuildFile section */
 
@@ -44,6 +45,7 @@
 		8225B532227C2E8700E4DB51 /* CocoaMQTT.framework */ = {isa = PBXFileReference; explicitFileType = wrapper.framework; includeInIndex = 0; path = CocoaMQTT.framework; sourceTree = BUILT_PRODUCTS_DIR; };
 		8225B543227C308900E4DB51 /* CocoaAsyncSocket.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = CocoaAsyncSocket.framework; path = Carthage/Build/Mac/CocoaAsyncSocket.framework; sourceTree = "<group>"; };
 		8225B54C227C32C500E4DB51 /* CocoaMQTT-Tests.xctest */ = {isa = PBXFileReference; explicitFileType = wrapper.cfbundle; includeInIndex = 0; path = "CocoaMQTT-Tests.xctest"; sourceTree = BUILT_PRODUCTS_DIR; };
+		82519C0622ACC6E100FA0815 /* CocoaMQTTTypes.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CocoaMQTTTypes.swift; sourceTree = "<group>"; };
 		8270C4AA21DA6F6700C5D485 /* CocoaMQTTFrameTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CocoaMQTTFrameTests.swift; sourceTree = "<group>"; };
 		82CF1FAF22943B2100DF539A /* CocoaMQTTReader.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CocoaMQTTReader.swift; sourceTree = "<group>"; };
 /* End PBXFileReference section */
@@ -106,6 +108,7 @@
 				8225B4C8227B182200E4DB51 /* CocoaMQTTTimer.swift */,
 				8225B4CC227B196F00E4DB51 /* CocoaMQTTLogger.swift */,
 				82CF1FAF22943B2100DF539A /* CocoaMQTTReader.swift */,
+				82519C0622ACC6E100FA0815 /* CocoaMQTTTypes.swift */,
 				040997791C1B14F0006B5A6D /* Supporting Files */,
 			);
 			path = Source;
@@ -265,6 +268,7 @@
 				8225B53D227C2FC600E4DB51 /* CocoaMQTTDeliver.swift in Sources */,
 				8225B53E227C2FC600E4DB51 /* CocoaMQTTTimer.swift in Sources */,
 				8225B53F227C2FC600E4DB51 /* CocoaMQTTLogger.swift in Sources */,
+				82519C0722ACC6E100FA0815 /* CocoaMQTTTypes.swift in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};

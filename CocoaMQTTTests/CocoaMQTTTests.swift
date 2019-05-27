@@ -21,12 +21,13 @@ let autoReconn: UInt16 = 5
 let topicToSub = "animals"
 let longString = longStringGen()
 
-class CocoaMQTTTests: XCTestCase, CocoaMQTTDelegate {
+class CocoaMQTTTests: XCTestCase {
     
     var mqtt: CocoaMQTT = CocoaMQTT(clientID: clientID, host: host, port: port)
     
     var connExp: XCTestExpectation?
     var subExp: XCTestExpectation?
+    var unsubExp: XCTestExpectation?
     
     var pubQos1Exp: XCTestExpectation?
     var pubQos2Exp: XCTestExpectation?
@@ -52,6 +53,7 @@ class CocoaMQTTTests: XCTestCase, CocoaMQTTDelegate {
     func testConnect() {
         connExp = expectation(description: "connection")
         subExp = expectation(description: "sub")
+        unsubExp = expectation(description: "unsub")
         
         pubQos1Exp = expectation(description: "pub_1")
         pubQos2Exp = expectation(description: "pub_2")
@@ -69,20 +71,25 @@ class CocoaMQTTTests: XCTestCase, CocoaMQTTDelegate {
         
         mqtt.subscribe(topicToSub)
         wait(for: [subExp!], timeout: timeout)
+        XCTAssertEqual(mqtt.subscriptions, [topicToSub: .qos1])
 
-        mqtt.publish(topicToSub, withString: "0", qos: .qos0, retained: false, dup: false)
+        mqtt.publish(topicToSub, withString: "0", qos: .qos0, retained: false)
         wait(for: [res0Exp!], timeout: timeout)
 
-        mqtt.publish(topicToSub, withString: "1", qos: .qos1, retained: false, dup: false)
+        mqtt.publish(topicToSub, withString: "1", qos: .qos1, retained: false)
         wait(for: [pubQos1Exp!, res1Exp!], timeout: timeout)
         
-        mqtt.publish(topicToSub, withString: "2", qos: .qos2, retained: false, dup: false)
+        mqtt.publish(topicToSub, withString: "2", qos: .qos2, retained: false)
         wait(for: [pubQos2Exp!, res2Exp!], timeout: timeout)
         
         pubQos1Exp = expectation(description: "pub_1")
         res1Exp = expectation(description: "res_1")
-        mqtt.publish(topicToSub, withString: longString, qos: .qos1, retained: false, dup: false)
+        mqtt.publish(topicToSub, withString: longString, qos: .qos1, retained: false)
         wait(for: [pubQos1Exp!, res1Exp!], timeout: timeout)
+        
+        mqtt.unsubscribe(topicToSub)
+        wait(for: [unsubExp!], timeout: timeout)
+        XCTAssertEqual(mqtt.subscriptions, [:])
     }
     
     func testAutoReconnect() {
@@ -94,12 +101,10 @@ class CocoaMQTTTests: XCTestCase, CocoaMQTTDelegate {
         mqtt.internal_disconnect()
         wait(for: [connExp!], timeout: 10)
     }
+}
+
+extension CocoaMQTTTests: CocoaMQTTDelegate {
     
-    //MARK: - CocoaMQTTDelegate
-    
-    /// MQTT connected with server
-    func mqtt(_ mqtt: CocoaMQTT, didConnect host: String, port: Int) {
-    }
     
     func mqtt(_ mqtt: CocoaMQTT, didConnectAck ack: CocoaMQTTConnAck) {
         connExp?.fulfill()
@@ -132,7 +137,7 @@ class CocoaMQTTTests: XCTestCase, CocoaMQTTDelegate {
         }
     }
     
-    func mqtt(_ mqtt: CocoaMQTT, didSubscribeTopic topics: [String]) {
+    func mqtt(_ mqtt: CocoaMQTT, didSubscribeTopics topics: [String]) {
         if topics.first! == topicToSub {
             subExp?.fulfill()
         } else {
@@ -140,9 +145,14 @@ class CocoaMQTTTests: XCTestCase, CocoaMQTTDelegate {
         }
     }
     
-    func mqtt(_ mqtt: CocoaMQTT, didUnsubscribeTopic topic: String) {
-        
+    func mqtt(_ mqtt: CocoaMQTT, didUnsubscribeTopics topics: [String]) {
+        if topics.first! == topicToSub {
+            unsubExp?.fulfill()
+        } else {
+            XCTFail()
+        }
     }
+    
     func mqttDidPing(_ mqtt: CocoaMQTT) {
         
     }
