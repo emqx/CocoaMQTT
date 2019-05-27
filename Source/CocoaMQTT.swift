@@ -9,19 +9,26 @@
 import Foundation
 import CocoaAsyncSocket
 
-/**
- * QOS
- */
-@objc public enum CocoaMQTTQOS: UInt8, CustomStringConvertible {
+/// Quality of Service levels
+@objc public enum CocoaMQTTQoS: UInt8, CustomStringConvertible {
+    /// At most once delivery
     case qos0 = 0
+    
+    /// At least once delivery
     case qos1
+    
+    /// Exactly once delivery
     case qos2
+    
+    /// !!! Used SUBACK frame only
+    case FAILTURE = 0x80
     
     public var description: String {
         switch self {
             case .qos0: return "qos0"
             case .qos1: return "qos1"
             case .qos2: return "qos2"
+            case .FAILTURE: return "Failure"
         }
     }
 }
@@ -83,8 +90,8 @@ import CocoaAsyncSocket
     func mqtt(_ mqtt: CocoaMQTT, didReceiveMessage message: CocoaMQTTMessage, id: UInt16 )
     // deprecated!!! instead of `func mqtt(_ mqtt: CocoaMQTT, didSubscribeTopic topics: [String])`
     //func mqtt(_ mqtt: CocoaMQTT, didSubscribeTopic topic: String)
-    func mqtt(_ mqtt: CocoaMQTT, didSubscribeTopic topics: [String])
-    func mqtt(_ mqtt: CocoaMQTT, didUnsubscribeTopic topic: String)
+    func mqtt(_ mqtt: CocoaMQTT, didSubscribeTopics topics: [String])
+    func mqtt(_ mqtt: CocoaMQTT, didUnsubscribeTopics topics: [String])
     func mqttDidPing(_ mqtt: CocoaMQTT)
     func mqttDidReceivePong(_ mqtt: CocoaMQTT)
     func mqttDidDisconnect(_ mqtt: CocoaMQTT, withError err: Error?)
@@ -111,11 +118,11 @@ protocol CocoaMQTTClient {
     func disconnect()
     func ping()
     
-    func subscribe(_ topic: String, qos: CocoaMQTTQOS) -> UInt16
-    func subscribe(_ topics: [(String, CocoaMQTTQOS)]) -> UInt16
+    func subscribe(_ topic: String, qos: CocoaMQTTQoS) -> UInt16
+    func subscribe(_ topics: [(String, CocoaMQTTQoS)]) -> UInt16
     
     func unsubscribe(_ topic: String) -> UInt16
-    func publish(_ topic: String, withString string: String, qos: CocoaMQTTQOS, retained: Bool, dup: Bool) -> UInt16
+    func publish(_ topic: String, withString string: String, qos: CocoaMQTTQoS, retained: Bool) -> UInt16
     func publish(_ message: CocoaMQTTMessage) -> UInt16
     
 }
@@ -204,10 +211,10 @@ public class CocoaMQTT: NSObject, CocoaMQTTClient, CocoaMQTTDeliverProtocol {
     public var allowUntrustCACertificate = false
     
     /// The subscribed topics in current communication
-    public var subscriptions: [String: CocoaMQTTQOS] = [:]
+    public var subscriptions: [String: CocoaMQTTQoS] = [:]
     
-    fileprivate var subscriptionsWaitingAck: [UInt16: [(String, CocoaMQTTQOS)]] = [:]
-    fileprivate var unsubscriptionsWaitingAck: [UInt16: String] = [:]
+    fileprivate var subscriptionsWaitingAck: [UInt16: [(String, CocoaMQTTQoS)]] = [:]
+    fileprivate var unsubscriptionsWaitingAck: [UInt16: [String]] = [:]
 
     /// Global message id
     fileprivate var gmid: UInt16 = 1
@@ -219,8 +226,8 @@ public class CocoaMQTT: NSObject, CocoaMQTTClient, CocoaMQTTDeliverProtocol {
     public var didPublishMessage: (CocoaMQTT, CocoaMQTTMessage, UInt16) -> Void = { _, _, _ in }
     public var didPublishAck: (CocoaMQTT, UInt16) -> Void = { _, _ in }
     public var didReceiveMessage: (CocoaMQTT, CocoaMQTTMessage, UInt16) -> Void = { _, _, _ in }
-    public var didSubscribeTopic: (CocoaMQTT, [String]) -> Void = { _, _ in }
-    public var didUnsubscribeTopic: (CocoaMQTT, String) -> Void = { _, _ in }
+    public var didSubscribeTopics: (CocoaMQTT, [String]) -> Void = { _, _ in }
+    public var didUnsubscribeTopics: (CocoaMQTT, [String]) -> Void = { _, _ in }
     public var didPing: (CocoaMQTT) -> Void = { _ in }
     public var didReceivePong: (CocoaMQTT) -> Void = { _ in }
     public var didDisconnect: (CocoaMQTT, Error?) -> Void = { _, _ in }
@@ -252,7 +259,7 @@ public class CocoaMQTT: NSObject, CocoaMQTTClient, CocoaMQTTDeliverProtocol {
     
     // MARK: CocoaMQTTDeliverProtocol
     func deliver(_ deliver: CocoaMQTTDeliver, wantToSend frame: CocoaMQTTFramePublish) {
-        send(frame, tag: Int(frame.msgid!))
+        send(frame, tag: Int(frame.msgid))
     }
 
     fileprivate func send(_ frame: CocoaMQTTFrame, tag: Int = 0) {
@@ -342,11 +349,18 @@ public class CocoaMQTT: NSObject, CocoaMQTTClient, CocoaMQTTDeliverProtocol {
         self.delegate?.mqttDidPing(self)
         didPing(self)
     }
-
+    
+    
+    /// Publish a message
+    ///
+    /// - Parameters:
+    ///    - topic: Topic Name. It can not contain '#', '+' wildcards
+    ///    - string: Payload string
+    ///    - qos: Qos. Default is Qos1
+    ///    - retained: Retained flag. Mark this message is a retained message. default is false
     @discardableResult
-    public func publish(_ topic: String, withString string: String, qos: CocoaMQTTQOS = .qos1, retained: Bool = false, dup: Bool = false) -> UInt16 {
-        // TODO: The duplicated flag must hidden for caller
-        let message = CocoaMQTTMessage(topic: topic, string: string, qos: qos, retained: retained, dup: dup)
+    public func publish(_ topic: String, withString string: String, qos: CocoaMQTTQoS = .qos1, retained: Bool = false) -> UInt16 {
+        let message = CocoaMQTTMessage(topic: topic, string: string, qos: qos, retained: retained)
         return publish(message)
     }
 
@@ -355,9 +369,8 @@ public class CocoaMQTT: NSObject, CocoaMQTTClient, CocoaMQTTDeliverProtocol {
         let msgid: UInt16 = nextMessageID()
         // XXX: qos0 should not take msgid
         var frame = CocoaMQTTFramePublish(msgid: msgid, topic: message.topic, payload: message.payload)
-        frame.qos = message.qos.rawValue
+        frame.qos = message.qos
         frame.retained = message.retained
-        frame.dup = message.dup
         
         // Push frame to deliver message queue
         _ = deliver.add(frame)
@@ -368,12 +381,12 @@ public class CocoaMQTT: NSObject, CocoaMQTTClient, CocoaMQTTDeliverProtocol {
     }
 
     @discardableResult
-    public func subscribe(_ topic: String, qos: CocoaMQTTQOS = .qos1) -> UInt16 {
+    public func subscribe(_ topic: String, qos: CocoaMQTTQoS = .qos1) -> UInt16 {
         return subscribe([(topic, qos)])
     }
     
     @discardableResult
-    public func subscribe(_ topics: [(String, CocoaMQTTQOS)]) -> UInt16 {
+    public func subscribe(_ topics: [(String, CocoaMQTTQoS)]) -> UInt16 {
         let msgid = nextMessageID()
         let frame = CocoaMQTTFrameSubscribe(msgid: msgid, topics: topics)
         send(frame, tag: Int(msgid))
@@ -383,9 +396,14 @@ public class CocoaMQTT: NSObject, CocoaMQTTClient, CocoaMQTTDeliverProtocol {
 
     @discardableResult
     public func unsubscribe(_ topic: String) -> UInt16 {
+        return unsubscribe([topic])
+    }
+    
+    @discardableResult
+    public func unsubscribe(_ topics: [String]) -> UInt16 {
         let msgid = nextMessageID()
-        let frame = CocoaMQTTFrameUnsubscribe(msgid: msgid, topic: topic)
-        unsubscriptionsWaitingAck[msgid] = topic
+        let frame = CocoaMQTTFrameUnsubscribe(msgid: msgid, topics: topics)
+        unsubscriptionsWaitingAck[msgid] = topics
         send(frame, tag: Int(msgid))
         return msgid
     }
@@ -517,9 +535,9 @@ extension CocoaMQTT: CocoaMQTTReaderDelegate {
         delegate?.mqtt(self, didReceiveMessage: message, id: id)
         didReceiveMessage(self, message, id)
         
-        if message.qos == CocoaMQTTQOS.qos1 {
+        if message.qos == CocoaMQTTQoS.qos1 {
             puback(CocoaMQTTFrameType.puback, msgid: id)
-        } else if message.qos == CocoaMQTTQOS.qos2 {
+        } else if message.qos == CocoaMQTTQoS.qos2 {
             puback(CocoaMQTTFrameType.pubrec, msgid: id)
         }
     }
@@ -552,41 +570,44 @@ extension CocoaMQTT: CocoaMQTTReaderDelegate {
         didCompletePublish(self, msgid)
     }
 
-    func didReceiveSubAck(_ reader: CocoaMQTTReader, msgid: UInt16) {
-        printDebug("SUBACK Received: \(msgid)")
+    func didReceiveSubAck(_ reader: CocoaMQTTReader, suback: CocoaMQTTFrameSubAck) {
+        printDebug("SUBACK Received: \(suback.msgid)")
         
-        guard let topicsAndQos = subscriptionsWaitingAck.removeValue(forKey: msgid) else {
-            printWarning("UNEXPECT SUBACK Received: \(msgid)")
+        guard let topicsAndQos = subscriptionsWaitingAck.removeValue(forKey: suback.msgid) else {
+            printWarning("UNEXPECT SUBACK Received: \(suback)")
+            return
+        }
+        
+        guard topicsAndQos.count == suback.grantedQos.count else {
+            printWarning("UNEXPECT SUBACK Recivied: \(suback)")
             return
         }
         
         var topics: [String] = []
-        for (topic, qos) in topicsAndQos {
-            // FIXME: should update qos with server granted
-            subscriptions[topic] = qos
-            topics.append(topic)
+        for (idx,(topic, _)) in topicsAndQos.enumerated() {
+            if suback.grantedQos[idx] != .FAILTURE {
+                subscriptions[topic] = suback.grantedQos[idx]
+                topics.append(topic)
+            }
         }
         
-        delegate?.mqtt(self, didSubscribeTopic: topics)
-        didSubscribeTopic(self, topics)
+        delegate?.mqtt(self, didSubscribeTopics: topics)
+        didSubscribeTopics(self, topics)
     }
 
     func didReceiveUnsubAck(_ reader: CocoaMQTTReader, msgid: UInt16) {
         printDebug("UNSUBACK Received: \(msgid)")
         
-        guard let topic = unsubscriptionsWaitingAck.removeValue(forKey: msgid) else {
+        guard let topics = unsubscriptionsWaitingAck.removeValue(forKey: msgid) else {
             printWarning("UNEXPECT UNSUBACK Received: \(msgid)")
             return
         }
-        
-        for (t, _) in subscriptions {
-            if t == topic {
-                subscriptions.removeValue(forKey: t)
-                break
-            }
+        // Remove local subscription
+        for t in topics {
+            subscriptions.removeValue(forKey: t)
         }
-        delegate?.mqtt(self, didUnsubscribeTopic: topic)
-        didUnsubscribeTopic(self, topic)
+        delegate?.mqtt(self, didUnsubscribeTopics: topics)
+        didUnsubscribeTopics(self, topics)
     }
 
     func didReceivePong(_ reader: CocoaMQTTReader) {

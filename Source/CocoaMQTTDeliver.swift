@@ -69,11 +69,13 @@ class CocoaMQTTDeliver: NSObject {
         }
         
         // Insert to In-flight window for Qos1/Qos2 message
-        if frame.qos != 0 && frame.msgid != nil {
+        if frame.qos != .qos0 {
             let _ = CocoaMQTTTimer.after(timeout) { [weak self] in
                 guard let weakSelf = self else { return }
-                printDebug("re-delvery frame \(frame)")
-                weakSelf.send(frame)
+                var dupFrame = frame
+                dupFrame.dup = true
+                printDebug("re-delvery frame \(dupFrame)")
+                weakSelf.send(dupFrame)
             }
             inflight.append(frame)
         }

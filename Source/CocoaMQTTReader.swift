@@ -16,10 +16,10 @@ enum CocoaMQTTReadTag: Int {
     case payload
 }
 
-/**
- * MQTT Reader Delegate
- */
+///
 protocol CocoaMQTTReaderDelegate: class {
+   
+    // TODO: All of callback should return a frame entity, not a few feilds
     
     func didReceiveConnAck(_ reader: CocoaMQTTReader, connack: UInt8)
     
@@ -33,7 +33,7 @@ protocol CocoaMQTTReaderDelegate: class {
     
     func didReceivePubComp(_ reader: CocoaMQTTReader, msgid: UInt16)
     
-    func didReceiveSubAck(_ reader: CocoaMQTTReader, msgid: UInt16)
+    func didReceiveSubAck(_ reader: CocoaMQTTReader, suback: CocoaMQTTFrameSubAck)
     
     func didReceiveUnsubAck(_ reader: CocoaMQTTReader, msgid: UInt16)
     
@@ -125,8 +125,11 @@ class CocoaMQTTReader {
         case .pubcomp:
             delegate?.didReceivePubComp(self, msgid: msgid(data))
         case .suback:
-            // TODO: We should parse the suback to ge granted qos level
-            delegate?.didReceiveSubAck(self, msgid: msgid(data))
+            guard let frame = CocoaMQTTFrameSubAck(fixedHeader: header, bytes: data) else {
+                printError("[Reader] received illegal frame stream for .suback type, header: \(header), bytes: \(data)")
+                break
+            }
+            delegate?.didReceiveSubAck(self, suback: frame)
         case .unsuback:
             delegate?.didReceiveUnsubAck(self, msgid: msgid(data))
         case .pingresp:
@@ -139,16 +142,13 @@ class CocoaMQTTReader {
     }
     
     private func unpackPublish() -> (UInt16, CocoaMQTTMessage?) {
-        var frame = CocoaMQTTFramePublish(header: header, data: data)
-        frame.unpack()
-        // if unpack fail
-        if frame.msgid == nil {
+        guard let frame = CocoaMQTTFramePublish(fixedHeader: header, bytes: data) else {
+            printError("Unpack publish frame error, header: \(header), bytes: \(data)")
             return (0, nil)
         }
-        let msgid = frame.msgid!
-        let qos = CocoaMQTTQOS(rawValue: frame.qos)!
-        let message = CocoaMQTTMessage(topic: frame.topic!, payload: frame.payload, qos: qos, retained: frame.retained, dup: frame.dup)
-        return (msgid, message)
+        
+        let message = CocoaMQTTMessage(topic: frame.topic, payload: frame.payload, qos: frame.qos, retained: frame.retained)
+        return (frame.msgid, message)
     }
     
     private func msgid(_ bytes: [UInt8]) -> UInt16 {

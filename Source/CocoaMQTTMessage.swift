@@ -9,38 +9,33 @@
 import Foundation
 
 
-/**
- * MQTT Message
- */
+/// MQTT Message
 public class CocoaMQTTMessage: NSObject {
-    public var qos = CocoaMQTTQOS.qos1
-    public var dup = false
-
+    public var qos = CocoaMQTTQoS.qos1
+    
     public var topic: String
     public var payload: [UInt8]
     public var retained = false
     
-    // utf8 bytes array to string
+    /// Return the payload as a utf8 string if possiable
     public var string: String? {
         get {
             return NSString(bytes: payload, length: payload.count, encoding: String.Encoding.utf8.rawValue) as String?
         }
     }
     
-    public init(topic: String, string: String, qos: CocoaMQTTQOS = .qos1, retained: Bool = false, dup: Bool = false) {
+    public init(topic: String, string: String, qos: CocoaMQTTQoS = .qos1, retained: Bool = false) {
         self.topic = topic
         self.payload = [UInt8](string.utf8)
         self.qos = qos
         self.retained = retained
-        self.dup = dup
     }
 
-    public init(topic: String, payload: [UInt8], qos: CocoaMQTTQOS = .qos1, retained: Bool = false, dup: Bool = false) {
+    public init(topic: String, payload: [UInt8], qos: CocoaMQTTQoS = .qos1, retained: Bool = false) {
         self.topic = topic
         self.payload = payload
         self.qos = qos
         self.retained = retained
-        self.dup = dup
     }
 }
 

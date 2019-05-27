@@ -124,6 +124,7 @@ class ViewController: UIViewController {
 }
 
 extension ViewController: CocoaMQTTDelegate {
+    
     // Optional ssl CocoaMQTTDelegate
     func mqtt(_ mqtt: CocoaMQTT, didReceive trust: SecTrust, completionHandler: @escaping (Bool) -> Void) {
         TRACE("trust: \(trust)")
@@ -143,7 +144,7 @@ extension ViewController: CocoaMQTTDelegate {
         TRACE("ack: \(ack)")
 
         if ack == .accept {
-            mqtt.subscribe("chat/room/animals/client/+", qos: CocoaMQTTQOS.qos1)
+            mqtt.subscribe("chat/room/animals/client/+", qos: CocoaMQTTQoS.qos1)
             
             let chatViewController = storyboard?.instantiateViewController(withIdentifier: "ChatViewController") as? ChatViewController
             chatViewController?.mqtt = mqtt
@@ -170,12 +171,12 @@ extension ViewController: CocoaMQTTDelegate {
         NotificationCenter.default.post(name: name, object: self, userInfo: ["message": message.string!, "topic": message.topic])
     }
     
-    func mqtt(_ mqtt: CocoaMQTT, didSubscribeTopic topics: [String]) {
+    func mqtt(_ mqtt: CocoaMQTT, didSubscribeTopics topics: [String]) {
         TRACE("topics: \(topics)")
     }
     
-    func mqtt(_ mqtt: CocoaMQTT, didUnsubscribeTopic topic: String) {
-        TRACE("topic: \(topic)")
+    func mqtt(_ mqtt: CocoaMQTT, didUnsubscribeTopics topics: [String]) {
+        TRACE("topic: \(topics)")
     }
     
     func mqttDidPing(_ mqtt: CocoaMQTT) {
