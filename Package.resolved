@@ -1,0 +1,16 @@
+{
+  "object": {
+    "pins": [
+      {
+        "package": "CocoaAsyncSocket",
+        "repositoryURL": "https://github.com/tbaranes/CocoaAsyncSocket",
+        "state": {
+          "branch": null,
+          "revision": "e058080b17b8327d7940ae75a941d62c7ca152f0",
+          "version": "7.7.0"
+        }
+      }
+    ]
+  },
+  "version": 1
+}
