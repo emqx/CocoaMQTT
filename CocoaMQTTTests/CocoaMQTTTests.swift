@@ -36,6 +36,11 @@ class CocoaMQTTTests: XCTestCase {
     var res1Exp: XCTestExpectation?
     var res2Exp: XCTestExpectation?
     
+
+    var maxMessageCount: UInt = 100
+    var multiCounter: UInt = 0
+    var multiPub: XCTestExpectation?
+    
     override func setUp() {
         super.setUp()
         // custom set
@@ -101,6 +106,30 @@ class CocoaMQTTTests: XCTestCase {
         mqtt.internal_disconnect()
         wait(for: [connExp!], timeout: 10)
     }
+    
+    func testProcessSafePub() {
+        connExp = expectation(description: "connection")
+        _ = mqtt.connect()
+        wait(for: [connExp!], timeout: timeout)
+        
+        // subscribe first
+        subExp = expectation(description: "sub")
+        mqtt.subscribe("test/#")
+        wait(for: [subExp!], timeout: timeout)
+        
+        mqtt.inflightWindowSize = 10
+        mqtt.messageQueueSize = maxMessageCount
+        
+        multiPub = expectation(description: "process_safe")
+        
+        let concurrentQueue = DispatchQueue(label: "tests.cocoamqtt.emqx", qos: .default, attributes: .concurrent)
+        for i in 0 ..< maxMessageCount {
+            concurrentQueue.async { [weak self] in
+                self?.mqtt.publish("test/\(i)", withString: "m", qos: .qos1)
+            }
+        }
+        wait(for: [multiPub!], timeout: timeout)
+    }
 }
 
 extension CocoaMQTTTests: CocoaMQTTDelegate {
@@ -132,13 +161,18 @@ extension CocoaMQTTTests: CocoaMQTTDelegate {
             res2Exp?.fulfill()
         } else if string == longString {
             res1Exp?.fulfill()
-        } else {
-            
+        } else if string == "m" {
+            multiCounter += 1
+            if multiCounter == maxMessageCount {
+                multiPub?.fulfill()
+            }
         }
     }
     
     func mqtt(_ mqtt: CocoaMQTT, didSubscribeTopics topics: [String]) {
         if topics.first! == topicToSub {
+            subExp?.fulfill()
+        } else if topics.first! == "test/#" {
             subExp?.fulfill()
         } else {
             XCTFail()
