@@ -7,7 +7,7 @@
 //
 
 import Foundation
-
+import Dispatch
 
 protocol CocoaMQTTDeliverProtocol: class {
     
@@ -18,6 +18,9 @@ protocol CocoaMQTTDeliverProtocol: class {
 
 // CocoaMQTTDeliver
 class CocoaMQTTDeliver: NSObject {
+    
+    /// The dispatch queue is used by delivering frames in serially
+    private var deliverQueue = DispatchQueue.init(label: "deliver.cocoamqtt.emqx", qos: .default)
     
     weak var delegate: CocoaMQTTDeliverProtocol?
     
@@ -36,53 +39,28 @@ class CocoaMQTTDeliver: NSObject {
     var isInflightFull  : Bool { get { return inflight.count >= inflightWindowSize }}
     
     
-    // return false means the frame is rejected because of the buffer is full
+    /// return false means the frame is rejected because of the buffer is full
     func add(_ frame: CocoaMQTTFramePublish) -> Bool {
         guard !isQueueFull else {
             printError("Buffer is full, message(\(String(describing: frame.msgid))) was abandoned.")
             return false
         }
         
-        mqueue.append(frame)
-        tryTransport()
+        deliverQueue.async { [weak self] in
+            guard let wSelf = self else { return }
+            wSelf.mqueue.append(frame)
+            wSelf.tryTransport()
+        }
+        
         return true
     }
     
-    // try transport a frame from mqueue to inflight
-    func tryTransport() {
-        if isQueueEmpty || isInflightFull { return }
-        
-        // take out the earliest frame
-        if mqueue.isEmpty { return }
-        let frame = mqueue.remove(at: 0)
-        
-        send(frame)
-        
-        // keep trying after a transport
-        self.tryTransport()
-    }
-    
-    func send(_ frame: CocoaMQTTFramePublish) {
-        guard let delegate = self.delegate else { return }
-        delegate.dispatchQueue.async {
-            delegate.deliver(self, wantToSend: frame)
-        }
-        
-        // Insert to In-flight window for Qos1/Qos2 message
-        if frame.qos != 0 && frame.msgid != nil {
-            let _ = CocoaMQTTTimer.after(timeout) { [weak self] in
-                guard let weakSelf = self else { return }
-                printDebug("re-delvery frame \(frame)")
-                weakSelf.send(frame)
-            }
-            inflight.append(frame)
-        }
-    }
-    
+    ///
     func sendSuccess(withMsgid msgid: UInt16) {
-        DispatchQueue.main.async { [weak self] in
-            self?.removeFrameFromInflight(withMsgid: msgid)
-            printDebug("sendMessageSuccess:\(msgid)")
+        deliverQueue.async { [weak self] in
+            guard let wself = self else { return }
+            wself.removeFrameFromInflight(withMsgid: msgid)
+            printDebug("Frame \(msgid) send success")
         }
     }
     
@@ -90,15 +68,55 @@ class CocoaMQTTDeliver: NSObject {
     ///
     /// !!Warning: it's a tempnary method for hotfix #221
     func cleanAll() {
-        DispatchQueue.main.async { [weak self] in
-            _ = self?.mqueue.removeAll()
-            _ = self?.inflight.removeAll()
+        deliverQueue.async { [weak self] in
+            guard let wself = self else { return }
+            _ = wself.mqueue.removeAll()
+            _ = wself.inflight.removeAll()
         }
     }
 }
 
 // MARK: Private Funcs
 extension CocoaMQTTDeliver {
+    
+    // try transport a frame from mqueue to inflight
+    private func tryTransport() {
+        if isQueueEmpty || isInflightFull { return }
+        
+        // take out the earliest frame
+        if mqueue.isEmpty { return }
+        let frame = mqueue.remove(at: 0)
+        
+        deliver(frame)
+        
+        // keep trying after a transport
+        self.tryTransport()
+    }
+    
+    private func deliver(_ frame: CocoaMQTTFramePublish) {
+        guard let delegate = self.delegate else {
+            printError("The deliver delegate is nil!!! the frame will be drop: \(frame)")
+            return
+        }
+        
+        delegate.dispatchQueue.async {
+            delegate.deliver(self, wantToSend: frame)
+        }
+        
+        // Insert to In-flight window for Qos1/Qos2 message
+        if frame.qos != 0 && frame.msgid != nil {
+            let _ = CocoaMQTTTimer.after(timeout) { [weak self] in
+                guard let wself = self else { return }
+                wself.deliverQueue.async {
+                    var dupFrame = frame
+                    dupFrame.dup = true
+                    printDebug("re-delvery frame \(dupFrame)")
+                    wself.deliver(dupFrame)
+                }
+            }
+            inflight.append(frame)
+        }
+    }
     
     @discardableResult
     private func removeFrameFromInflight(withMsgid msgid: UInt16) -> Bool {
