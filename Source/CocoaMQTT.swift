@@ -529,9 +529,9 @@ extension CocoaMQTT: CocoaMQTTReaderDelegate {
         }
         
         // keep alive
-        // FIXME: if keepalive == 0 --> not set keekalive timer???
-        if ack == CocoaMQTTConnAck.accept && keepAlive > 0 {
-            self.aliveTimer = CocoaMQTTTimer.every(Double(self.keepAlive / 2 + 1)) { [weak self] in
+        if ack == CocoaMQTTConnAck.accept {
+            let interval = Double(keepAlive <= 0 ? 60: keepAlive)
+            self.aliveTimer = CocoaMQTTTimer.every(interval) { [weak self] in
                 guard let weakSelf = self else {return}
                 if weakSelf.connState == .connected {
                     weakSelf.ping()
