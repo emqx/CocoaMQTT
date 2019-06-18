@@ -42,6 +42,14 @@ public class CocoaMQTTMessage: NSObject {
         self.retained = retained
         self.dup = dup
     }
+    
+    func convertToFrame() -> CocoaMQTTFramePublish {
+        var frame = CocoaMQTTFramePublish(msgid: 0, topic: topic, payload: payload)
+        frame.qos = qos.rawValue
+        frame.retained = retained
+        
+        return frame
+    }
 }
 
 /**
