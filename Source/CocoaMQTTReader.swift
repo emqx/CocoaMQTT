@@ -60,7 +60,7 @@ class CocoaMQTTReader {
     }
     
     func headerReady(_ header: UInt8) {
-        printDebug("reader header ready: \(header) ")
+        printDebug("Reader header ready: \(header) ")
         
         self.header = header
         readLength()

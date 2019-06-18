@@ -13,6 +13,10 @@ func printDebug(_ message: String) {
     CocoaMQTTLogger.logger.debug(message)
 }
 
+func printInfo(_ message: String) {
+    CocoaMQTTLogger.logger.info(message)
+}
+
 func printWarning(_ message: String) {
     CocoaMQTTLogger.logger.warning(message)
 }
@@ -24,7 +28,7 @@ func printError(_ message: String) {
 
 // Enum log levels
 public enum CocoaMQTTLoggerLevel: Int {
-    case debug = 0, warning, error, off
+    case debug = 0, info, warning, error, off
 }
 
 
@@ -45,6 +49,10 @@ class CocoaMQTTLogger: NSObject {
     
     func debug(_ message: String) {
         log(level: .debug, message: message)
+    }
+    
+    func info(_ message: String) {
+        log(level: .info, message: message)
     }
     
     func warning(_ message: String) {
