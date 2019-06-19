@@ -13,4 +13,4 @@ before_script:
 
 script:
    - xcodebuild clean build -project CocoaMQTT.xcodeproj -scheme "$SCHEME" -sdk "$SDK"
-   - xcodebuild test -project CocoaMQTT.xcodeproj -scheme "$SCHEME" -sdk "$SDK" -destination "$DESTINATION" | xcpretty -c
+   - xcodebuild -project CocoaMQTT.xcodeproj -scheme "$SCHEME" -sdk "$SDK" -destination "$DESTINATION" build test | xcpretty
