@@ -3,7 +3,7 @@ language: swift
 osx_image: xcode10.2
 xcode_project: CocoaMQTT.xcodeproj
 # xcode_workspace: <WORKSPACE_PLACEHOLDER>
-xcode_scheme: CocoaMQTT-Tests
+xcode_scheme: CocoaMQTT
 xcode_destination: platform=iOS Simulator,OS=12.0,name=iPhone Xs
 # xcode_sdk: iphonesimulator9.3
 # env:
@@ -30,7 +30,7 @@ before_script:
   # bootstrap the dependencies for the project
   # you can remove if you don't have dependencies
   # - swift package resolve
-   - carthage bootstrap
+   - carthage bootstrap --platform iOS
 
 # run the build script
 # script:
