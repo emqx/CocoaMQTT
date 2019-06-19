@@ -4,8 +4,8 @@ osx_image: xcode10.2
 xcode_project: CocoaMQTT.xcodeproj
 # xcode_workspace: <WORKSPACE_PLACEHOLDER>
 xcode_scheme: CocoaMQTT
-xcode_destination: platform=iOS Simulator,OS=12.0,name=iPhone Xs
-xcode_sdk: iphonesimulator12.0
+xcode_destination: platform=iOS Simulator,OS=12.2,name=iPhone Xs
+xcode_sdk: iphonesimulator12.2
 # env:
 #   global:
 #     - FRAMEWORK_NAME=<THIS_IS_A_PLACEHOLDER_REPLACE_ME>
