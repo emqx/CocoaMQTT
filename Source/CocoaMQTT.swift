@@ -248,7 +248,7 @@ public class CocoaMQTT: NSObject, CocoaMQTTClient, CocoaMQTTDeliverProtocol {
     fileprivate var socket = GCDAsyncSocket()
     fileprivate var reader: CocoaMQTTReader?
     
-    // Clousures
+    // Closures
     public var didConnectAck: (CocoaMQTT, CocoaMQTTConnAck) -> Void = { _, _ in }
     public var didPublishMessage: (CocoaMQTT, CocoaMQTTMessage, UInt16) -> Void = { _, _, _ in }
     public var didPublishAck: (CocoaMQTT, UInt16) -> Void = { _, _ in }
@@ -258,7 +258,7 @@ public class CocoaMQTT: NSObject, CocoaMQTTClient, CocoaMQTTDeliverProtocol {
     public var didPing: (CocoaMQTT) -> Void = { _ in }
     public var didReceivePong: (CocoaMQTT) -> Void = { _ in }
     public var didDisconnect: (CocoaMQTT, Error?) -> Void = { _, _ in }
-    public var didReceiveTrust: (CocoaMQTT, SecTrust) -> Void = { _, _ in }
+    public var didReceiveTrust: (CocoaMQTT, SecTrust, @escaping (Bool) -> Swift.Void) -> Void = { _, _, _ in }
     public var didCompletePublish: (CocoaMQTT, UInt16) -> Void = { _, _ in }
     public var didChangeState: (CocoaMQTT, CocoaMQTTConnState) -> Void = { _, _ in }
     
@@ -462,7 +462,7 @@ extension CocoaMQTT: GCDAsyncSocketDelegate {
         printDebug("didReceiveTrust")
         
         delegate?.mqtt?(self, didReceive: trust, completionHandler: completionHandler)
-        didReceiveTrust(self, trust)
+        didReceiveTrust(self, trust, completionHandler)
     }
 
     public func socketDidSecure(_ sock: GCDAsyncSocket) {
