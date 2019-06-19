@@ -45,7 +45,7 @@ class CocoaMQTTTests: XCTestCase {
         super.setUp()
         // custom set
         mqtt.delegate = self
-        mqtt.logLevel = .debug
+        mqtt.logLevel = .info
         mqtt.autoReconnect = true
         mqtt.keepAlive = keepAlive
         mqtt.autoReconnectTimeInterval = autoReconn
