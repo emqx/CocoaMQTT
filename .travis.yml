@@ -13,9 +13,12 @@ xcode_destination: platform=iOS Simulator,OS=12.0,name=iPhone Xs
 
 # You can run custom commands before the installation step
 before_install:
-   - brew update
-   - brew install emqx
-   - brew services start emqx
+   - wget https://www.emqx.io/downloads/broker/v3.1.2/emqx-macosx-v3.1.2.zip -O emqx.zip
+   - unzip emqx.zip
+   - emqx/bin/emqx start
+#   - brew update
+#   - brew install emqx
+#   - brew services start emqx
 #   - brew outdated carthage || brew upgrade carthage
 
 # install any dependencies required
