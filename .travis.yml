@@ -1,0 +1,37 @@
+language: swift
+osx_image: osx_image: xcode10.2
+xcode_project: CocoaMQTT.xcodeproj
+# xcode_workspace: <WORKSPACE_PLACEHOLDER>
+xcode_scheme: CocoaMQTT-Tests
+xcode_destination: platform=iOS Simulator,OS=12.0,name=iPhone Xs
+# xcode_sdk: iphonesimulator9.3
+# env:
+#   global:
+#     - FRAMEWORK_NAME=<THIS_IS_A_PLACEHOLDER_REPLACE_ME>
+
+
+# You can run custom commands before the installation step
+before_install:
+#   - brew update
+#   - brew outdated carthage || brew upgrade carthage
+
+# install any dependencies required
+# install:
+  # request swift package manager depdencies
+  # - swift package resolve
+
+before_script:
+  # bootstrap the dependencies for the project
+  # you can remove if you don't have dependencies
+  # - swift package resolve
+  - carthage bootstrap
+
+
+# run the build script
+# script:
+#   - swift build
+#
+
+# before_deploy:
+#   - carthage build --no-skip-current
+#   - carthage archive $FRAMEWORK_NAME
