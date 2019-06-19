@@ -1,9 +1,7 @@
-language: objective-c
+language: swift
 osx_image: xcode10.2
 env:
-   - DESTINATION="OS=12.2,name=iPhone XS"
-   - SCHEME="CocoaMQTT"
-   - SDK=iphonesimulator12.2
+   - DESTINATION="OS=12.2,name=iPhone XS" SCHEME="CocoaMQTT" SDK=iphonesimulator12.2
 
 before_install:
    - wget https://www.emqx.io/downloads/broker/v3.1.2/emqx-macosx-v3.1.2.zip -O emqx.zip
