@@ -1,3 +1,4 @@
+os: osx
 language: swift
 osx_image: osx_image: xcode10.2
 xcode_project: CocoaMQTT.xcodeproj
