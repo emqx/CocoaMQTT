@@ -1,38 +1,21 @@
-os: osx
-language: swift
+language: objective-c
 osx_image: xcode10.2
-xcode_project: CocoaMQTT.xcodeproj
-# xcode_workspace: <WORKSPACE_PLACEHOLDER>
-xcode_scheme: CocoaMQTT
-xcode_destination: platform=iOS Simulator,OS=12.2,name=iPhone Xs
-xcode_sdk: iphonesimulator12.2
-# env:
-#   global:
-#     - FRAMEWORK_NAME=<THIS_IS_A_PLACEHOLDER_REPLACE_ME>
+env:
+   - DESTINATION="OS=12.2,name=iPhone XS"
+   - SCHEME="CocoaMQTT"
+   - SDK=iphonesimulator12.2
 
-
-# You can run custom commands before the installation step
 before_install:
    - wget https://www.emqx.io/downloads/broker/v3.1.2/emqx-macosx-v3.1.2.zip -O emqx.zip
    - unzip emqx.zip
    - emqx/bin/emqx start
 
-# install any dependencies required
-# install:
-  # request swift package manager depdencies
-  # - swift package resolve
-
 before_script:
-  # bootstrap the dependencies for the project
-  # you can remove if you don't have dependencies
-  # - swift package resolve
-   - carthage bootstrap --platform iOS
+   - brew update
+   - brew outdated carthage || brew upgrade carthage
+   - carthage update --platform iOS
+   - gem install xcpretty --no-rdoc --no-ri --no-document --quiet
 
-# run the build script
-# script:
-#   - swift build
-#
-
-# before_deploy:
-#   - carthage build --no-skip-current
-#   - carthage archive $FRAMEWORK_NAME
+script:
+   - xcodebuild clean build -project CocoaMQTT.xcodeproj -scheme "$SCHEME" -sdk "$SDK"
+   - xcodebuild test -project CocoaMQTT.xcodeproj -scheme "$SCHEME" -sdk "$SDK" -destination "$DESTINATION" | xcpretty -c
