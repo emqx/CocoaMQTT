@@ -16,6 +16,22 @@ protocol CocoaMQTTDeliverProtocol: class {
     func deliver(_ deliver: CocoaMQTTDeliver, wantToSend frame: CocoaMQTTFramePublish)
 }
 
+private struct InflightFrame {
+    
+    var frame: CocoaMQTTFramePublish
+    
+    var timestamp: TimeInterval
+    
+    init(frame: CocoaMQTTFramePublish) {
+        self.init(frame: frame, timestamp: Date.init(timeIntervalSinceNow: 0).timeIntervalSince1970)
+    }
+    
+    init(frame: CocoaMQTTFramePublish, timestamp: TimeInterval) {
+        self.frame = frame
+        self.timestamp = timestamp
+    }
+}
+
 // CocoaMQTTDeliver
 class CocoaMQTTDeliver: NSObject {
     
@@ -24,7 +40,7 @@ class CocoaMQTTDeliver: NSObject {
     
     weak var delegate: CocoaMQTTDeliverProtocol?
     
-    fileprivate var inflight = [CocoaMQTTFramePublish]()
+    fileprivate var inflight = [InflightFrame]()
     
     fileprivate var mqueue = [CocoaMQTTFramePublish]()
     
@@ -32,12 +48,15 @@ class CocoaMQTTDeliver: NSObject {
     
     var inflightWindowSize: UInt = 10
     
-    var timeout: Double = 60
+    /// Retry time interval millisecond
+    var retryTimeInterval: Double = 5000
+    
+    private var awaitingTimer: CocoaMQTTTimer?
     
     var isQueueEmpty: Bool { get { return mqueue.count == 0 }}
-    var isQueueFull : Bool { get { return mqueue.count > mqueueSize }}
-    var isInflightFull  : Bool { get { return inflight.count >= inflightWindowSize }}
-    
+    var isQueueFull: Bool { get { return mqueue.count > mqueueSize }}
+    var isInflightFull: Bool { get { return inflight.count >= inflightWindowSize }}
+    var isInflightEmpty: Bool { get { return inflight.count == 0 }}
     
     /// return false means the frame is rejected because of the buffer is full
     func add(_ frame: CocoaMQTTFramePublish) -> Bool {
@@ -47,9 +66,9 @@ class CocoaMQTTDeliver: NSObject {
         }
         
         deliverQueue.async { [weak self] in
-            guard let wSelf = self else { return }
-            wSelf.mqueue.append(frame)
-            wSelf.tryTransport()
+            guard let wself = self else { return }
+            wself.mqueue.append(frame)
+            wself.tryTransport()
         }
         
         return true
@@ -61,6 +80,8 @@ class CocoaMQTTDeliver: NSObject {
             guard let wself = self else { return }
             wself.removeFrameFromInflight(withMsgid: msgid)
             printDebug("Frame \(msgid) send success")
+            
+            wself.tryTransport()
         }
     }
     
@@ -93,28 +114,65 @@ extension CocoaMQTTDeliver {
         self.tryTransport()
     }
     
+    /// Try to deliver a frame
     private func deliver(_ frame: CocoaMQTTFramePublish) {
-        guard let delegate = self.delegate else {
-            printError("The deliver delegate is nil!!! the frame will be drop: \(frame)")
+        let sendfun = { (f: CocoaMQTTFramePublish) in
+            guard let delegate = self.delegate else {
+                printError("The deliver delegate is nil!!! the frame will be drop: \(f)")
+                return
+            }
+            delegate.dispatchQueue.async {
+                delegate.deliver(self, wantToSend: f)
+            }
+        }
+        
+        if frame.qos == CocoaMQTTQOS.qos0.rawValue {
+            // Send Qos0 message, whatever the in-flight queue is full
+            // TODO: A retrict deliver mode is need?
+            sendfun(frame)
+        } else {
+            
+            sendfun(frame)
+            inflight.append(InflightFrame(frame: frame))
+            
+            // Start a retry timer for resending it if it not receive PUBACK or PUBREC
+            if awaitingTimer == nil {
+                awaitingTimer = CocoaMQTTTimer.every(retryTimeInterval / 1000.0) { [weak self] in
+                    guard let wself = self else { return }
+                    wself.redeliver()
+                }
+            }
+        }
+    }
+    
+    /// Attemp to redliver in-flight messages
+    private func redeliver() {
+        if isInflightEmpty {
+            // Revoke the awaiting timer
+            awaitingTimer = nil
             return
         }
         
-        delegate.dispatchQueue.async {
-            delegate.deliver(self, wantToSend: frame)
+        let sendfun = { (f: CocoaMQTTFramePublish) in
+            guard let delegate = self.delegate else {
+                printError("The deliver delegate is nil!!! the frame will be drop: \(f)")
+                return
+            }
+            delegate.dispatchQueue.async {
+                delegate.deliver(self, wantToSend: f)
+            }
         }
         
-        // Insert to In-flight window for Qos1/Qos2 message
-        if frame.qos != 0 && frame.msgid != nil {
-            let _ = CocoaMQTTTimer.after(timeout) { [weak self] in
-                guard let wself = self else { return }
-                wself.deliverQueue.async {
-                    var dupFrame = frame
-                    dupFrame.dup = true
-                    printDebug("re-delvery frame \(dupFrame)")
-                    wself.deliver(dupFrame)
-                }
+        let nowTimestamp = Date(timeIntervalSinceNow: 0).timeIntervalSince1970
+        for (idx, frame) in inflight.enumerated() {
+            if (nowTimestamp - frame.timestamp) >= (retryTimeInterval/1000.0) {
+                var duplicatedFrame = frame
+                duplicatedFrame.frame.dup = true
+                duplicatedFrame.timestamp = nowTimestamp
+                sendfun(duplicatedFrame.frame)
+                inflight[idx] = duplicatedFrame
+                printInfo("Re-delivery frame \(duplicatedFrame.frame)")
             }
-            inflight.append(frame)
         }
     }
     
@@ -122,10 +180,9 @@ extension CocoaMQTTDeliver {
     private func removeFrameFromInflight(withMsgid msgid: UInt16) -> Bool {
         var success = false
         for (index, frame) in inflight.enumerated() {
-            if frame.msgid == msgid {
+            if frame.frame.msgid == msgid {
                 success = true
                 inflight.remove(at: index)
-                tryTransport()
                 break
             }
         }
