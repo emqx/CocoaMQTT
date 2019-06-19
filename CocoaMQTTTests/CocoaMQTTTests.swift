@@ -16,7 +16,7 @@ let clientID = "ClientForUnitTesting-" + randomCode(length: 6)
 
 let timeout: TimeInterval = 5
 let keepAlive: UInt16 = 20
-let autoReconn: UInt16 = 5
+let autoReconn: UInt16 = 3
 
 let topicToSub = "animals"
 let longString = longStringGen()
@@ -45,7 +45,7 @@ class CocoaMQTTTests: XCTestCase {
         super.setUp()
         // custom set
         mqtt.delegate = self
-        mqtt.logLevel = .debug
+        mqtt.logLevel = .info
         mqtt.autoReconnect = true
         mqtt.keepAlive = keepAlive
         mqtt.autoReconnectTimeInterval = autoReconn
@@ -104,7 +104,7 @@ class CocoaMQTTTests: XCTestCase {
         
         connExp = expectation(description: "connection")
         mqtt.internal_disconnect()
-        wait(for: [connExp!], timeout: 10)
+        wait(for: [connExp!], timeout: timeout)
     }
     
     func testProcessSafePub() {
