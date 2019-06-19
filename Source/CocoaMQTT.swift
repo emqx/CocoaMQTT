@@ -182,8 +182,8 @@ public class CocoaMQTT: NSObject, CocoaMQTTClient, CocoaMQTTDeliverProtocol {
     
     /// Re-deliver the un-acked messages
     public var deliverTimeout: Double {
-        get { return deliver.timeout }
-        set { deliver.timeout = newValue }
+        get { return deliver.retryTimeInterval }
+        set { deliver.retryTimeInterval = newValue }
     }
     
     /// Message queue size. default 1000
@@ -239,13 +239,16 @@ public class CocoaMQTT: NSObject, CocoaMQTTClient, CocoaMQTTDeliverProtocol {
     
     fileprivate var subscriptionsWaitingAck: [UInt16: [(String, CocoaMQTTQOS)]] = [:]
     fileprivate var unsubscriptionsWaitingAck: [UInt16: String] = [:]
+    
+    /// Sending messages
+    fileprivate var sendingMessages: [UInt16: CocoaMQTTMessage] = [:]
 
     /// Global message id
     fileprivate var gmid: UInt16 = 1
     fileprivate var socket = GCDAsyncSocket()
     fileprivate var reader: CocoaMQTTReader?
     
-    // Clousures
+    // Closures
     public var didConnectAck: (CocoaMQTT, CocoaMQTTConnAck) -> Void = { _, _ in }
     public var didPublishMessage: (CocoaMQTT, CocoaMQTTMessage, UInt16) -> Void = { _, _, _ in }
     public var didPublishAck: (CocoaMQTT, UInt16) -> Void = { _, _ in }
@@ -255,7 +258,7 @@ public class CocoaMQTT: NSObject, CocoaMQTTClient, CocoaMQTTDeliverProtocol {
     public var didPing: (CocoaMQTT) -> Void = { _ in }
     public var didReceivePong: (CocoaMQTT) -> Void = { _ in }
     public var didDisconnect: (CocoaMQTT, Error?) -> Void = { _, _ in }
-    public var didReceiveTrust: (CocoaMQTT, SecTrust) -> Void = { _, _ in }
+    public var didReceiveTrust: (CocoaMQTT, SecTrust, @escaping (Bool) -> Swift.Void) -> Void = { _, _, _ in }
     public var didCompletePublish: (CocoaMQTT, UInt16) -> Void = { _, _ in }
     public var didChangeState: (CocoaMQTT, CocoaMQTTConnState) -> Void = { _, _ in }
     
@@ -283,7 +286,15 @@ public class CocoaMQTT: NSObject, CocoaMQTTClient, CocoaMQTTDeliverProtocol {
     
     // MARK: CocoaMQTTDeliverProtocol
     func deliver(_ deliver: CocoaMQTTDeliver, wantToSend frame: CocoaMQTTFramePublish) {
-        send(frame, tag: Int(frame.msgid!))
+        let msgid = frame.msgid!
+        guard let message = sendingMessages[msgid] else {
+            return
+        }
+        
+        send(frame, tag: Int(msgid))
+        
+        delegate?.mqtt(self, didPublishMessage: message, id: msgid)
+        didPublishMessage(self, message, msgid)
     }
 
     fileprivate func send(_ frame: CocoaMQTTFrame, tag: Int = 0) {
@@ -392,9 +403,12 @@ public class CocoaMQTT: NSObject, CocoaMQTTClient, CocoaMQTTDeliverProtocol {
         
         // Push frame to deliver message queue
         _ = deliver.add(frame)
-
-        delegate?.mqtt(self, didPublishMessage: message, id: msgid)
-        didPublishMessage(self, message, msgid)
+        
+        // XXX: For process safety
+        dispatchQueue.async {
+            self.sendingMessages[msgid] = message
+        }
+        
         return msgid
     }
 
@@ -425,7 +439,7 @@ public class CocoaMQTT: NSObject, CocoaMQTTClient, CocoaMQTTDeliverProtocol {
 // MARK: - GCDAsyncSocketDelegate
 extension CocoaMQTT: GCDAsyncSocketDelegate {
     public func socket(_ sock: GCDAsyncSocket, didConnectToHost host: String, port: UInt16) {
-        printDebug("connected to \(host) : \(port)")
+        printInfo("Connected to \(host) : \(port)")
         
         #if os(iOS)
             if backgroundOnSocket {
@@ -448,7 +462,7 @@ extension CocoaMQTT: GCDAsyncSocketDelegate {
         printDebug("didReceiveTrust")
         
         delegate?.mqtt?(self, didReceive: trust, completionHandler: completionHandler)
-        didReceiveTrust(self, trust)
+        didReceiveTrust(self, trust, completionHandler)
     }
 
     public func socketDidSecure(_ sock: GCDAsyncSocket) {
@@ -486,7 +500,7 @@ extension CocoaMQTT: GCDAsyncSocketDelegate {
             connState = .initial
         } else if autoReconnect && autoReconnectTimeInterval > 0 {
             autoReconnTimer = CocoaMQTTTimer.every(Double(autoReconnectTimeInterval), { [weak self] in
-                printDebug("try reconnect")
+                printInfo("Try reconnect")
                 _ = self?.connect()
             })
         }
@@ -543,7 +557,7 @@ extension CocoaMQTT: CocoaMQTTReaderDelegate {
     }
 
     func didReceivePublish(_ reader: CocoaMQTTReader, message: CocoaMQTTMessage, id: UInt16) {
-        printDebug("PUBLISH Received from \(message.topic)")
+        printInfo("PUBLISH Received from \(message.topic)")
         
         delegate?.mqtt(self, didReceiveMessage: message, id: id)
         didReceiveMessage(self, message, id)

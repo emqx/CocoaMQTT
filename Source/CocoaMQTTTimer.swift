@@ -60,6 +60,7 @@ class CocoaMQTTTimer {
     private enum State {
         case suspended
         case resumed
+        case canceled
     }
     
     private var state: State = .suspended
@@ -89,5 +90,14 @@ class CocoaMQTTTimer {
         }
         state = .suspended
         timer.suspend()
+    }
+    
+    /// Manually cancel timer
+    func cancel() {
+        if state == .canceled {
+            return
+        }
+        state = .canceled
+        timer.cancel()
     }
 }
