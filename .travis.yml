@@ -1,6 +1,6 @@
 os: osx
 language: swift
-osx_image: osx_image: xcode10.2
+osx_image: xcode10.2
 xcode_project: CocoaMQTT.xcodeproj
 # xcode_workspace: <WORKSPACE_PLACEHOLDER>
 xcode_scheme: CocoaMQTT-Tests
@@ -27,8 +27,7 @@ before_script:
   # bootstrap the dependencies for the project
   # you can remove if you don't have dependencies
   # - swift package resolve
-  - carthage bootstrap
-
+   - carthage bootstrap
 
 # run the build script
 # script:
