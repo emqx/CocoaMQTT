@@ -111,7 +111,7 @@ protocol CocoaMQTTClient {
     var password: String? {get set}
     var cleanSession: Bool {get set}
     var keepAlive: UInt16 {get set}
-    var willMessage: CocoaMQTTWill? {get set}
+    var willMessage: CocoaMQTTMessage? {get set}
 
     func connect() -> Bool
     func connect(timeout:TimeInterval) -> Bool
@@ -127,11 +127,10 @@ protocol CocoaMQTTClient {
     
 }
 
-/**
- * Main CocoaMQTT Class
- *
- * - Note: GCDAsyncSocket need delegate to extend NSObject
- */
+
+/// MQTT Client
+///
+/// - Note: GCDAsyncSocket need delegate to extend NSObject
 public class CocoaMQTT: NSObject, CocoaMQTTClient, CocoaMQTTDeliverProtocol {
     
     public weak var delegate: CocoaMQTTDelegate?
@@ -142,7 +141,7 @@ public class CocoaMQTT: NSObject, CocoaMQTTClient, CocoaMQTTDeliverProtocol {
     public var username: String?
     public var password: String?
     public var cleanSession = true
-    public var willMessage: CocoaMQTTWill?
+    public var willMessage: CocoaMQTTMessage?
     public var backgroundOnSocket = true
     public var dispatchQueue = DispatchQueue.main
     
@@ -294,23 +293,7 @@ public class CocoaMQTT: NSObject, CocoaMQTTClient, CocoaMQTTDeliverProtocol {
     }
 
     fileprivate func puback(_ type: CocoaMQTTFrameType, msgid: UInt16) {
-        var descr: String?
-        switch type {
-        case .puback:
-            descr = "PUBACK"
-        case .pubrec:
-            descr = "PUBREC"
-        case .pubrel:
-            descr = "PUBREL"
-        case .pubcomp:
-            descr = "PUBCOMP"
-        default: break
-        }
-
-        if descr != nil {
-            printDebug("Send \(descr!), msgid: \(msgid)")
-        }
-
+        printDebug("Send \(type), msgid: \(msgid)")
         send(CocoaMQTTFramePubAck(type: type, msgid: msgid))
     }
 
@@ -496,6 +479,7 @@ extension CocoaMQTT: GCDAsyncSocketDelegate {
 
 // MARK: - CocoaMQTTReaderDelegate
 extension CocoaMQTT: CocoaMQTTReaderDelegate {
+    
     func didReceiveConnAck(_ reader: CocoaMQTTReader, connack: UInt8) {
         printDebug("CONNACK Received: \(connack)")
 
@@ -532,27 +516,31 @@ extension CocoaMQTT: CocoaMQTTReaderDelegate {
         // keep alive
         if ack == CocoaMQTTConnAck.accept {
             let interval = Double(keepAlive <= 0 ? 60: keepAlive)
-            self.aliveTimer = CocoaMQTTTimer.every(interval) { [weak self] in
-                guard let weakSelf = self else {return}
-                if weakSelf.connState == .connected {
-                    weakSelf.ping()
+            aliveTimer = CocoaMQTTTimer.every(interval) { [weak self] in
+                guard let wself = self else {return}
+                if wself.connState == .connected {
+                    wself.ping()
                 } else {
-                    weakSelf.aliveTimer = nil
+                    wself.aliveTimer = nil
                 }
             }
         }
     }
 
-    func didReceivePublish(_ reader: CocoaMQTTReader, message: CocoaMQTTMessage, id: UInt16) {
-        printInfo("PUBLISH Received from \(message.topic)")
+    func didReceive(_ reader: CocoaMQTTReader, publish: CocoaMQTTFramePublish) {
+        printDebug("PUBLISH Received: \(publish)")
+        let message = CocoaMQTTMessage(topic: publish.topic, payload: publish.payload, qos: publish.qos, retained: publish.retained)
         
-        delegate?.mqtt(self, didReceiveMessage: message, id: id)
-        didReceiveMessage(self, message, id)
+        message.duplicated = publish.dup
+        
+        printInfo("Recevied message: \(message)")
+        delegate?.mqtt(self, didReceiveMessage: message, id: publish.msgid)
+        didReceiveMessage(self, message, publish.msgid)
         
         if message.qos == CocoaMQTTQoS.qos1 {
-            puback(CocoaMQTTFrameType.puback, msgid: id)
+            puback(CocoaMQTTFrameType.puback, msgid: publish.msgid)
         } else if message.qos == CocoaMQTTQoS.qos2 {
-            puback(CocoaMQTTFrameType.pubrec, msgid: id)
+            puback(CocoaMQTTFrameType.pubrec, msgid: publish.msgid)
         }
     }
 

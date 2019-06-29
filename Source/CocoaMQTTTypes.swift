@@ -61,3 +61,17 @@ extension UInt8 {
 public enum CocoaMQTTError: Error {
     case invalidFrameStructrue
 }
+
+extension Array where Element == UInt8 {
+    var summary: String {
+        if self.count <= 10 {
+            return "\(self)"
+        } else {
+            var descr = "[\(self[0])"
+            for i in self[1..<10] {
+                descr += ", \(i)"
+            }
+            return "\(descr), ...]"
+        }
+    }
+}
