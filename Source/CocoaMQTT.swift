@@ -293,8 +293,28 @@ public class CocoaMQTT: NSObject, CocoaMQTTClient, CocoaMQTTDeliverProtocol {
     }
 
     fileprivate func puback(_ type: CocoaMQTTFrameType, msgid: UInt16) {
-        printDebug("Send \(type), msgid: \(msgid)")
-        send(CocoaMQTTFramePubAck(type: type, msgid: msgid))
+        let mayNilframe: CocoaMQTTFrame?
+        switch type {
+        case .puback:
+            mayNilframe = CocoaMQTTFramePubAck(msgid: msgid)
+        case .pubrec:
+            mayNilframe = CocoaMQTTFramePubRec(msgid: msgid)
+        case .pubrel:
+            mayNilframe = CocoaMQTTFramePubRel(msgid: msgid)
+        case .pubcomp:
+            mayNilframe = CocoaMQTTFramePubCom(msgid: msgid)
+        default:
+            mayNilframe = nil
+        }
+        
+        guard let frame = mayNilframe else {
+            return
+        }
+        
+        // TODO: pubrel should be re-send??
+        
+        printDebug("Send \(frame)")
+        send(frame)
     }
 
     /// Connect to MQTT broker

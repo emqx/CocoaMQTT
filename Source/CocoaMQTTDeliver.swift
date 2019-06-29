@@ -74,13 +74,18 @@ class CocoaMQTTDeliver: NSObject {
         return true
     }
     
-    ///
+    func add(_ frame: CocoaMQTTFramePubRel) -> Bool {
+        // TODO:
+        return false
+    }
+    
+    /// Acknowledge a frame by msgid
     func sendSuccess(withMsgid msgid: UInt16) {
         deliverQueue.async { [weak self] in
             guard let wself = self else { return }
-            wself.removeFrameFromInflight(withMsgid: msgid)
-            printDebug("Frame \(msgid) send success")
-            
+            if let ackedFrame = wself.removeFrameFromInflight(withMsgid: msgid) {
+                printDebug("Frame \(ackedFrame) send success")
+            }
             wself.tryTransport()
         }
     }
@@ -177,15 +182,15 @@ extension CocoaMQTTDeliver {
     }
     
     @discardableResult
-    private func removeFrameFromInflight(withMsgid msgid: UInt16) -> Bool {
-        var success = false
+    private func removeFrameFromInflight(withMsgid msgid: UInt16) -> CocoaMQTTFramePublish? {
+        var removed: CocoaMQTTFramePublish?
         for (index, frame) in inflight.enumerated() {
             if frame.frame.msgid == msgid {
-                success = true
+                removed = frame.frame
                 inflight.remove(at: index)
                 break
             }
         }
-        return success
+        return removed
     }
 }

@@ -126,22 +126,22 @@ class CocoaMQTTFrameTests: XCTestCase {
     
     func testFramePubAck() {
         // INITIAL
-        var puback = CocoaMQTTFramePubAck(type: .puback, msgid: 0x1010)
+        var puback = CocoaMQTTFramePubAck(msgid: 0x1010)
         XCTAssertEqual(puback.fixedHeader, 0x40)
         XCTAssertEqual(puback.msgid, 0x1010)
         XCTAssertEqual(puback.data(), [0x40, 0x02, 0x10, 0x10])
         
-        var pubrec = CocoaMQTTFramePubAck(type: .pubrec, msgid: 0x1011)
+        var pubrec = CocoaMQTTFramePubRec(msgid: 0x1011)
         XCTAssertEqual(pubrec.fixedHeader, 0x50)
         XCTAssertEqual(pubrec.msgid, 0x1011)
         XCTAssertEqual(pubrec.data(), [0x50, 0x02, 0x10, 0x11])
         
-        var pubrel = CocoaMQTTFramePubAck(type: .pubrel, msgid: 0x1012)
+        var pubrel = CocoaMQTTFramePubRel(msgid: 0x1012)
         XCTAssertEqual(pubrel.fixedHeader, 0x62)
         XCTAssertEqual(pubrel.msgid, 0x1012)
         XCTAssertEqual(pubrel.data(), [0x62, 0x02, 0x10, 0x12])
         
-        var pubcom = CocoaMQTTFramePubAck(type: .pubcomp, msgid: 0x1013)
+        var pubcom = CocoaMQTTFramePubCom(msgid: 0x1013)
         XCTAssertEqual(pubcom.fixedHeader, 0x70)
         XCTAssertEqual(pubcom.msgid, 0x1013)
         XCTAssertEqual(pubcom.data(), [0x70, 0x02, 0x10, 0x13])

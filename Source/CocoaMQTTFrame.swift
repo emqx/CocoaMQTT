@@ -331,7 +331,7 @@ extension CocoaMQTTFramePublish: CustomStringConvertible {
     }
 }
 
-/// MQTT PUBACK/PUBREC/PUBREL/PUBCOM Frame
+/// MQTT PUBACK
 struct CocoaMQTTFramePubAck: CocoaMQTTFrame {
     
     var fixedHeader: UInt8
@@ -342,14 +342,81 @@ struct CocoaMQTTFramePubAck: CocoaMQTTFrame {
     
     var msgid: UInt16
     
-    init(type: CocoaMQTTFrameType, msgid: UInt16) {
-        fixedHeader = type.rawValue
+    init(msgid: UInt16) {
+        fixedHeader = CocoaMQTTFrameType.puback.rawValue
         self.msgid = msgid
-        if type == CocoaMQTTFrameType.pubrel {
-            qos = CocoaMQTTQoS.qos1
-        }
     }
 
+    mutating func pack() {
+        variableHeader = []
+        
+        variableHeader += msgid.hlBytes
+    }
+}
+
+/// MQTT PUBREC Frame
+struct CocoaMQTTFramePubRec: CocoaMQTTFrame {
+    
+    var fixedHeader: UInt8
+    
+    var variableHeader: [UInt8] = []
+    
+    var payload: [UInt8] = []
+    
+    var msgid: UInt16
+    
+    init(msgid: UInt16) {
+        fixedHeader = CocoaMQTTFrameType.pubrec.rawValue
+        self.msgid = msgid
+    }
+    
+    mutating func pack() {
+        variableHeader = []
+        
+        variableHeader += msgid.hlBytes
+    }
+}
+
+/// MQTT PUBREL Frame
+struct CocoaMQTTFramePubRel: CocoaMQTTFrame {
+    
+    var fixedHeader: UInt8
+    
+    var variableHeader: [UInt8] = []
+    
+    var payload: [UInt8] = []
+    
+    var msgid: UInt16
+    
+    init(msgid: UInt16) {
+        fixedHeader = CocoaMQTTFrameType.pubrel.rawValue
+        self.msgid = msgid
+        self.qos = .qos1
+    }
+    
+    mutating func pack() {
+        variableHeader = []
+        
+        variableHeader += msgid.hlBytes
+    }
+}
+
+/// MQTT PUBCOM Frame
+struct CocoaMQTTFramePubCom: CocoaMQTTFrame {
+    
+    var fixedHeader: UInt8
+    
+    var variableHeader: [UInt8] = []
+    
+    var payload: [UInt8] = []
+    
+    var msgid: UInt16
+    
+    init(msgid: UInt16) {
+        fixedHeader = CocoaMQTTFrameType.pubcomp.rawValue
+        self.msgid = msgid
+    }
+    
     mutating func pack() {
         variableHeader = []
         
