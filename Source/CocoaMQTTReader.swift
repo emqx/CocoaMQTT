@@ -23,7 +23,7 @@ protocol CocoaMQTTReaderDelegate: class {
     
     func didReceiveConnAck(_ reader: CocoaMQTTReader, connack: UInt8)
     
-    func didReceivePublish(_ reader: CocoaMQTTReader, message: CocoaMQTTMessage, id: UInt16)
+    func didReceive(_ reader: CocoaMQTTReader, publish: CocoaMQTTFramePublish)
     
     func didReceivePubAck(_ reader: CocoaMQTTReader, msgid: UInt16)
     
@@ -112,9 +112,8 @@ class CocoaMQTTReader {
         case .connack:
             delegate?.didReceiveConnAck(self, connack: data[1])
         case .publish:
-            let (msgid, message) = unpackPublish()
-            if message != nil {
-                delegate?.didReceivePublish(self, message: message!, id: msgid)
+            if let publish = unpackPublish() {
+                delegate?.didReceive(self, publish: publish)
             }
         case .puback:
             delegate?.didReceivePubAck(self, msgid: msgid(data))
@@ -141,14 +140,12 @@ class CocoaMQTTReader {
         readHeader()
     }
     
-    private func unpackPublish() -> (UInt16, CocoaMQTTMessage?) {
+    private func unpackPublish() -> CocoaMQTTFramePublish? {
         guard let frame = CocoaMQTTFramePublish(fixedHeader: header, bytes: data) else {
             printError("Unpack publish frame error, header: \(header), bytes: \(data)")
-            return (0, nil)
+            return nil
         }
-        
-        let message = CocoaMQTTMessage(topic: frame.topic, payload: frame.payload, qos: frame.qos, retained: frame.retained)
-        return (frame.msgid, message)
+        return frame
     }
     
     private func msgid(_ bytes: [UInt8]) -> UInt16 {

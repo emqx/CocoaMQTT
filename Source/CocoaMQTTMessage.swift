@@ -11,13 +11,23 @@ import Foundation
 
 /// MQTT Message
 public class CocoaMQTTMessage: NSObject {
+    
     public var qos = CocoaMQTTQoS.qos1
     
     public var topic: String
+    
     public var payload: [UInt8]
+    
     public var retained = false
     
+    /// The `duplicated` property show that this message maybe has be received before
+    ///
+    /// - note: Readonly property
+    public var duplicated = false
+    
     /// Return the payload as a utf8 string if possiable
+    ///
+    /// It will return nil if the payload is not a valid utf8 string
     public var string: String? {
         get {
             return NSString(bytes: payload, length: payload.count, encoding: String.Encoding.utf8.rawValue) as String?
@@ -47,17 +57,9 @@ public class CocoaMQTTMessage: NSObject {
     }
 }
 
-/**
- * MQTT Will Message
- */
-public class CocoaMQTTWill: CocoaMQTTMessage {
-    public init(topic: String, message: String) {
-        super.init(topic: topic, payload: message.bytesWithLength)
-    }
+extension CocoaMQTTMessage {
     
-    public init(topic: String, payload: [UInt8]) {
-        let endian = UInt16(payload.count).hlBytes
-        let payloadCoded = endian + payload as [UInt8]
-        super.init(topic: topic, payload: payloadCoded)
+    public override var description: String {
+        return "CocoaMQTTMessage(topic: \(topic), qos: \(qos), payload: \(payload.summary))"
     }
 }
