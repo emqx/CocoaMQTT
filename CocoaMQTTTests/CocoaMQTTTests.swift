@@ -16,7 +16,7 @@ let clientID = "ClientForUnitTesting-" + randomCode(length: 6)
 
 let timeout: TimeInterval = 5
 let keepAlive: UInt16 = 20
-let autoReconn: UInt16 = 5
+let maxAutoReconn: UInt16 = 512
 
 let topicToSub = "animals"
 let longString = longStringGen()
@@ -47,7 +47,7 @@ class CocoaMQTTTests: XCTestCase {
         mqtt.logLevel = .debug
         mqtt.autoReconnect = true
         mqtt.keepAlive = keepAlive
-        mqtt.autoReconnectTimeInterval = autoReconn
+        mqtt.maxAutoReconnectTimeInterval = maxAutoReconn
     }
     
     override func tearDown() {
