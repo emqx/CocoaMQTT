@@ -503,16 +503,16 @@ extension CocoaMQTT: GCDAsyncSocketDelegate {
             connState = .initial
         } else if autoReconnect {
             autoReconnTimer = CocoaMQTTTimer.every(Double(autoReconnectTimeInterval), { [weak self] in
-                guard let weakSelf = self else {
+                guard let self = self else {
                     return
                 }
-                if weakSelf.autoReconnectTimeInterval < weakSelf.maxAutoReconnectTimeInterval {
-                    weakSelf.autoReconnectTimeInterval *= 2
+                if self.autoReconnectTimeInterval < weakSelf.maxAutoReconnectTimeInterval {
+                    self.autoReconnectTimeInterval *= 2
                 } else {
-                    weakSelf.autoReconnectTimeInterval = weakSelf.maxAutoReconnectTimeInterval
+                    self.autoReconnectTimeInterval = weakSelf.maxAutoReconnectTimeInterval
                 }
                 printInfo("Try reconnect with \(weakSelf.autoReconnectTimeInterval)")
-                _ = weakSelf.connect()
+                _ = self.connect()
             })
         }
     }
