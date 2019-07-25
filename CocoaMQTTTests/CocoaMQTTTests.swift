@@ -91,13 +91,13 @@ class CocoaMQTTTests: XCTestCase {
     }
     
     func testAutoReconnect() {
-        connExp = expectation(description: "connection")
+        connExp = expectation(description: "connection-reconnect-1")
         _ = mqtt.connect()
         wait(for: [connExp!], timeout: timeout)
         
-        connExp = expectation(description: "connection")
+        connExp = expectation(description: "connection-reconnect-2")
         mqtt.internal_disconnect()
-        wait(for: [connExp!], timeout: 10)
+        wait(for: [connExp!], timeout: 513)
     }
    
     func testProcessSafePub() {

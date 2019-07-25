@@ -207,11 +207,20 @@ public class CocoaMQTT: NSObject, CocoaMQTTClient, CocoaMQTTDeliverProtocol {
     /// Enable auto-reconnect mechanism
     public var autoReconnect = false
     
+    /// Reconnect time interval
+    ///
+    /// - note: This value will be increased with `autoReconnectTimeInterval *= 2`
+    ///         if reconnect failed
+    public var autoReconnectTimeInterval: UInt16 = 1 // starts from 1 second
+    
+    private var reconnectExponetials: Array<UInt16> = []
+    private var reconectCheckTimes = 0
+    
     /// Maximum auto reconnect time interval
-    /// The timer starts from 1 second and grows exponentially until this value
+    ///
+    /// The timer starts from `autoReconnectTimeInterval` second and grows exponentially until this value
     /// After that, it uses this value for subsequent requests.
     public var maxAutoReconnectTimeInterval: UInt16 = 128 // 128 seconds
-    fileprivate var autoReconnectTimeInterval: UInt16 = 1 // starts from 1 second
     
     fileprivate var autoReconnTimer: CocoaMQTTTimer?
     fileprivate var disconnectExpectedly = false
@@ -493,26 +502,45 @@ extension CocoaMQTT: GCDAsyncSocketDelegate {
     }
 
     public func socketDidDisconnect(_ sock: GCDAsyncSocket, withError err: Error?) {
+        // Clean up
         socket.delegate = nil
         connState = .disconnected
         delegate?.mqttDidDisconnect(self, withError: err)
         didDisconnect(self, err)
-
-        autoReconnTimer = nil
+        
         if disconnectExpectedly {
             connState = .initial
         } else if autoReconnect {
+            
+            // Generate exponential time point array
+            var exponential = autoReconnectTimeInterval
+            while(true) {
+                reconnectExponetials.append(exponential)
+                exponential = exponential * 2
+                if exponential > maxAutoReconnectTimeInterval {
+                    break
+                }
+            }
+            
+            // Start reconnect timer each autoReconnectTimeInterval
             autoReconnTimer = CocoaMQTTTimer.every(Double(autoReconnectTimeInterval), { [weak self] in
-                guard let self = self else {
+                guard let self = self else { return }
+                guard self.reconnectExponetials.count > 0 else {
+                    // Arrvied the max reconnect times; reset states
+                    self.reconnectExponetials = []
+                    self.reconectCheckTimes = 0
+                    self.autoReconnTimer = nil
                     return
                 }
-                if self.autoReconnectTimeInterval < weakSelf.maxAutoReconnectTimeInterval {
-                    self.autoReconnectTimeInterval *= 2
-                } else {
-                    self.autoReconnectTimeInterval = weakSelf.maxAutoReconnectTimeInterval
+                let disconnectedSeconds = self.autoReconnectTimeInterval * UInt16((self.reconectCheckTimes + 1))
+                if disconnectedSeconds == self.reconnectExponetials[0] {
+                    // Execute reconnect
+                    printInfo("Try reconnect after disconnected \(disconnectedSeconds) seconds")
+                    _ = self.connect()
+                    
+                    self.reconnectExponetials = Array<UInt16>(self.reconnectExponetials.dropFirst())
                 }
-                printInfo("Try reconnect with \(weakSelf.autoReconnectTimeInterval)")
-                _ = self.connect()
+                self.reconectCheckTimes += 1
             })
         }
     }
@@ -549,7 +577,8 @@ extension CocoaMQTT: CocoaMQTTReaderDelegate {
         
         // reset auto-reconnect state
         if ack == CocoaMQTTConnAck.accept {
-            autoReconnectTimeInterval = 1
+            reconnectExponetials = []
+            reconectCheckTimes = 0
             autoReconnTimer = nil
             disconnectExpectedly = false
         }
