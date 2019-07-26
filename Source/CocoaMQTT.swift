@@ -706,7 +706,7 @@ class CocoaMQTTReader {
         // handle frame
         guard let frameType = CocoaMQTTFrameType(rawValue: UInt8(header & 0xF0)) else {
             printError("Abort! Received unknown frame type!")
-            return assert(false)
+            return
         }
         
         switch frameType {
