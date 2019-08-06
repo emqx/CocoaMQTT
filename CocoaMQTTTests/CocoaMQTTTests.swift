@@ -16,7 +16,7 @@ let clientID = "ClientForUnitTesting-" + randomCode(length: 6)
 
 let timeout: TimeInterval = 5
 let keepAlive: UInt16 = 20
-let autoReconn: UInt16 = 5
+let maxAutoReconn: UInt16 = 512
 
 let topicToSub = "animals"
 let longString = longStringGen()
@@ -47,7 +47,7 @@ class CocoaMQTTTests: XCTestCase {
         mqtt.logLevel = .debug
         mqtt.autoReconnect = true
         mqtt.keepAlive = keepAlive
-        mqtt.autoReconnectTimeInterval = autoReconn
+        mqtt.maxAutoReconnectTimeInterval = maxAutoReconn
     }
     
     override func tearDown() {
@@ -91,13 +91,13 @@ class CocoaMQTTTests: XCTestCase {
     }
     
     func testAutoReconnect() {
-        connExp = expectation(description: "connection")
+        connExp = expectation(description: "connection-reconnect-1")
         _ = mqtt.connect()
         wait(for: [connExp!], timeout: timeout)
         
-        connExp = expectation(description: "connection")
+        connExp = expectation(description: "connection-reconnect-2")
         mqtt.internal_disconnect()
-        wait(for: [connExp!], timeout: 10)
+        wait(for: [connExp!], timeout: 513)
     }
    
     func testProcessSafePub() {
