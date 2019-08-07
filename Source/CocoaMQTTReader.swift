@@ -23,7 +23,7 @@ protocol CocoaMQTTReaderDelegate: class {
     
     func didReceiveConnAck(_ reader: CocoaMQTTReader, connack: UInt8)
     
-    func didReceive(_ reader: CocoaMQTTReader, publish: CocoaMQTTFramePublish)
+    func didReceive(_ reader: CocoaMQTTReader, publish: FramePublish)
     
     func didReceivePubAck(_ reader: CocoaMQTTReader, msgid: UInt16)
     
@@ -33,7 +33,7 @@ protocol CocoaMQTTReaderDelegate: class {
     
     func didReceivePubComp(_ reader: CocoaMQTTReader, msgid: UInt16)
     
-    func didReceiveSubAck(_ reader: CocoaMQTTReader, suback: CocoaMQTTFrameSubAck)
+    func didReceiveSubAck(_ reader: CocoaMQTTReader, suback: FrameSubAck)
     
     func didReceiveUnsubAck(_ reader: CocoaMQTTReader, msgid: UInt16)
     
@@ -103,7 +103,7 @@ class CocoaMQTTReader {
     
     private func frameReady() {
         // handle frame
-        guard let frameType = CocoaMQTTFrameType(rawValue: UInt8(header & 0xF0)) else {
+        guard let frameType = FrameType(rawValue: UInt8(header & 0xF0)) else {
             printError("Received unknown frame type, header: \(header), data:\(data)!")
             return
         }
@@ -124,7 +124,7 @@ class CocoaMQTTReader {
         case .pubcomp:
             delegate?.didReceivePubComp(self, msgid: msgid(data))
         case .suback:
-            guard let frame = CocoaMQTTFrameSubAck(fixedHeader: header, bytes: data) else {
+            guard let frame = FrameSubAck(fixedHeader: header, bytes: data) else {
                 printError("[Reader] received illegal frame stream for .suback type, header: \(header), bytes: \(data)")
                 break
             }
@@ -140,8 +140,8 @@ class CocoaMQTTReader {
         readHeader()
     }
     
-    private func unpackPublish() -> CocoaMQTTFramePublish? {
-        guard let frame = CocoaMQTTFramePublish(fixedHeader: header, bytes: data) else {
+    private func unpackPublish() -> FramePublish? {
+        guard let frame = FramePublish(fixedHeader: header, bytes: data) else {
             printError("Unpack publish frame error, header: \(header), bytes: \(data)")
             return nil
         }

@@ -271,7 +271,7 @@ public class CocoaMQTT: NSObject, CocoaMQTTClient, CocoaMQTTDeliverProtocol {
     }
     
     // MARK: CocoaMQTTDeliverProtocol
-    func deliver(_ deliver: CocoaMQTTDeliver, wantToSend frame: CocoaMQTTFramePublish) {
+    func deliver(_ deliver: CocoaMQTTDeliver, wantToSend frame: FramePublish) {
         let msgid = frame.msgid
         guard let message = sendingMessages[msgid] else {
             return
@@ -283,15 +283,21 @@ public class CocoaMQTT: NSObject, CocoaMQTTClient, CocoaMQTTDeliverProtocol {
         didPublishMessage(self, message, msgid)
     }
 
-    fileprivate func send(_ frame: CocoaMQTTFrame, tag: Int = 0) {
-        var f = frame
-        let data = f.data()
+    fileprivate func send(_ frame: Frame, tag: Int = 0) {
+        let data = frame.bytes()
         socket.write(Data(bytes: data, count: data.count), withTimeout: -1, tag: tag)
     }
 
     fileprivate func sendConnectFrame() {
-        let frame = CocoaMQTTFrameConnect(client: self)
-        send(frame)
+        
+        var connect = FrameConnect(clientID: clientID)
+        connect.keepalive = keepAlive
+        connect.username = username
+        connect.password = password
+        connect.willMsg = willMessage
+        connect.cleansess = cleanSession
+        
+        send(connect)
         reader!.start()
     }
 
@@ -303,10 +309,19 @@ public class CocoaMQTT: NSObject, CocoaMQTTClient, CocoaMQTTDeliverProtocol {
         return gmid
     }
 
-    fileprivate func puback(_ type: CocoaMQTTFrameType, msgid: UInt16) {
+    fileprivate func puback(_ type: FrameType, msgid: UInt16) {
+        var frame: Frame
+        switch type {
+        case .puback: frame = FramePubAck(msgid: msgid)
+        case .pubrec: frame = FramePubRec(msgid: msgid)
+        case .pubrel: frame = FramePubRel(msgid: msgid)
+        case .pubcomp: frame = FramePubComp(msgid: msgid)
+        default: return
+        }
         printDebug("Send \(type), msgid: \(msgid)")
-        send(CocoaMQTTFramePubAck(type: type, msgid: msgid))
+        send(frame)
     }
+    
 
     /// Connect to MQTT broker
     public func connect() -> Bool {
@@ -343,14 +358,14 @@ public class CocoaMQTT: NSObject, CocoaMQTTClient, CocoaMQTTDeliverProtocol {
     
     /// Disconnect unexpectedly
     func internal_disconnect() {
-        send(CocoaMQTTFrameDisconnect(), tag: -0xE0)
+        send(FrameDisconnect(), tag: -0xE0)
         socket.disconnect()
     }
     
     /// Send ping request to broker
     public func ping() {
         printDebug("ping")
-        send(CocoaMQTTFramePing(), tag: -0xC0)
+        send(FramePingReq(), tag: -0xC0)
         self.delegate?.mqttDidPing(self)
         didPing(self)
     }
@@ -373,7 +388,7 @@ public class CocoaMQTT: NSObject, CocoaMQTTClient, CocoaMQTTDeliverProtocol {
     public func publish(_ message: CocoaMQTTMessage) -> UInt16 {
         let msgid: UInt16 = nextMessageID()
         // XXX: qos0 should not take msgid
-        var frame = CocoaMQTTFramePublish(msgid: msgid, topic: message.topic, payload: message.payload)
+        var frame = FramePublish(msgid: msgid, topic: message.topic, payload: message.payload)
         frame.qos = message.qos
         frame.retained = message.retained
         
@@ -396,7 +411,7 @@ public class CocoaMQTT: NSObject, CocoaMQTTClient, CocoaMQTTDeliverProtocol {
     @discardableResult
     public func subscribe(_ topics: [(String, CocoaMQTTQoS)]) -> UInt16 {
         let msgid = nextMessageID()
-        let frame = CocoaMQTTFrameSubscribe(msgid: msgid, topics: topics)
+        let frame = FrameSubscribe(msgid: msgid, topics: topics)
         send(frame, tag: Int(msgid))
         subscriptionsWaitingAck[msgid] = topics
         return msgid
@@ -410,7 +425,7 @@ public class CocoaMQTT: NSObject, CocoaMQTTClient, CocoaMQTTDeliverProtocol {
     @discardableResult
     public func unsubscribe(_ topics: [String]) -> UInt16 {
         let msgid = nextMessageID()
-        let frame = CocoaMQTTFrameUnsubscribe(msgid: msgid, topics: topics)
+        let frame = FrameUnsubscribe(msgid: msgid, topics: topics)
         unsubscriptionsWaitingAck[msgid] = topics
         send(frame, tag: Int(msgid))
         return msgid
@@ -550,7 +565,7 @@ extension CocoaMQTT: CocoaMQTTReaderDelegate {
         }
     }
 
-    func didReceive(_ reader: CocoaMQTTReader, publish: CocoaMQTTFramePublish) {
+    func didReceive(_ reader: CocoaMQTTReader, publish: FramePublish) {
         printDebug("PUBLISH Received: \(publish)")
         let message = CocoaMQTTMessage(topic: publish.topic, payload: publish.payload, qos: publish.qos, retained: publish.retained)
         
@@ -561,9 +576,9 @@ extension CocoaMQTT: CocoaMQTTReaderDelegate {
         didReceiveMessage(self, message, publish.msgid)
         
         if message.qos == CocoaMQTTQoS.qos1 {
-            puback(CocoaMQTTFrameType.puback, msgid: publish.msgid)
+            puback(FrameType.puback, msgid: publish.msgid)
         } else if message.qos == CocoaMQTTQoS.qos2 {
-            puback(CocoaMQTTFrameType.pubrec, msgid: publish.msgid)
+            puback(FrameType.pubrec, msgid: publish.msgid)
         }
     }
 
@@ -578,13 +593,13 @@ extension CocoaMQTT: CocoaMQTTReaderDelegate {
     func didReceivePubRec(_ reader: CocoaMQTTReader, msgid: UInt16) {
         printDebug("PUBREC Received: \(msgid)")
 
-        puback(CocoaMQTTFrameType.pubrel, msgid: msgid)
+        puback(FrameType.pubrel, msgid: msgid)
     }
 
     func didReceivePubRel(_ reader: CocoaMQTTReader, msgid: UInt16) {
         printDebug("PUBREL Received: \(msgid)")
 
-        puback(CocoaMQTTFrameType.pubcomp, msgid: msgid)
+        puback(FrameType.pubcomp, msgid: msgid)
     }
 
     func didReceivePubComp(_ reader: CocoaMQTTReader, msgid: UInt16) {
@@ -595,7 +610,7 @@ extension CocoaMQTT: CocoaMQTTReaderDelegate {
         didCompletePublish(self, msgid)
     }
 
-    func didReceiveSubAck(_ reader: CocoaMQTTReader, suback: CocoaMQTTFrameSubAck) {
+    func didReceiveSubAck(_ reader: CocoaMQTTReader, suback: FrameSubAck) {
         printDebug("SUBACK Received: \(suback.msgid)")
         
         guard let topicsAndQos = subscriptionsWaitingAck.removeValue(forKey: suback.msgid) else {

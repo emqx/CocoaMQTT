@@ -48,8 +48,8 @@ public class CocoaMQTTMessage: NSObject {
         self.retained = retained
     }
     
-    func convertToFrame() -> CocoaMQTTFramePublish {
-        var frame = CocoaMQTTFramePublish(msgid: 0, topic: topic, payload: payload)
+    func convertToFrame() -> FramePublish {
+        var frame = FramePublish(msgid: 0, topic: topic, payload: payload)
         frame.qos = qos
         frame.retained = retained
         
