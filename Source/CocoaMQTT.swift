@@ -517,21 +517,14 @@ extension CocoaMQTT: GCDAsyncSocketDelegate {
 // MARK: - CocoaMQTTReaderDelegate
 extension CocoaMQTT: CocoaMQTTReaderDelegate {
     
-    func didReceiveConnAck(_ reader: CocoaMQTTReader, connack: UInt8) {
-        printDebug("CONNACK Received: \(connack)")
+    func didRecevied(_ reader: CocoaMQTTReader, connack: FrameConnAck) {
+        printDebug("RECV: \(connack)")
 
-        let ack: CocoaMQTTConnAck
-        switch connack {
-        case 0:
-            ack = .accept
+        switch connack.returnCode {
+        case .accept:
             connState = .connected
-        case 1...5:
-            ack = CocoaMQTTConnAck(rawValue: connack)!
-            internal_disconnect()
-        case _ where connack > 5:
-            ack = .reserved
-            internal_disconnect()
         default:
+            connState = .disconnected
             internal_disconnect()
             return
         }
@@ -541,32 +534,35 @@ extension CocoaMQTT: CocoaMQTTReaderDelegate {
             deliver.cleanAll()
         }
 
-        delegate?.mqtt(self, didConnectAck: ack)
-        didConnectAck(self, ack)
+        delegate?.mqtt(self, didConnectAck: connack.returnCode)
+        didConnectAck(self, connack.returnCode)
         
         // reset auto-reconnect state
-        if ack == CocoaMQTTConnAck.accept {
+        if connack.returnCode == .accept {
             reconectTimeInterval = 0
             autoReconnTimer = nil
             disconnectExpectedly = false
         }
         
         // keep alive
-        if ack == CocoaMQTTConnAck.accept {
+        if connack.returnCode == .accept {
+            
             let interval = Double(keepAlive <= 0 ? 60: keepAlive)
+            
             aliveTimer = CocoaMQTTTimer.every(interval) { [weak self] in
-                guard let wself = self else {return}
-                if wself.connState == .connected {
-                    wself.ping()
-                } else {
-                    wself.aliveTimer = nil
+                guard let self = self else { return }
+                guard self.connState == .connected else {
+                    self.aliveTimer = nil
+                    return
                 }
+                self.ping()
             }
         }
     }
 
-    func didReceive(_ reader: CocoaMQTTReader, publish: FramePublish) {
-        printDebug("PUBLISH Received: \(publish)")
+    func didRecevied(_ reader: CocoaMQTTReader, publish: FramePublish) {
+        printDebug("RECV: \(publish)")
+        
         let message = CocoaMQTTMessage(topic: publish.topic, payload: publish.payload(), qos: publish.qos, retained: publish.retained)
         
         message.duplicated = publish.dup
@@ -582,36 +578,37 @@ extension CocoaMQTT: CocoaMQTTReaderDelegate {
         }
     }
 
-    func didReceivePubAck(_ reader: CocoaMQTTReader, msgid: UInt16) {
-        printDebug("PUBACK Received: \(msgid)")
+    func didReceived(_ reader: CocoaMQTTReader, puback: FramePubAck) {
+        printDebug("RECV: \(puback)")
         
-        deliver.sendSuccess(withMsgid: msgid)
-        delegate?.mqtt(self, didPublishAck: msgid)
-        didPublishAck(self, msgid)
+        deliver.sendSuccess(withMsgid: puback.msgid)
+        
+        delegate?.mqtt(self, didPublishAck: puback.msgid)
+        didPublishAck(self, puback.msgid)
     }
     
-    func didReceivePubRec(_ reader: CocoaMQTTReader, msgid: UInt16) {
-        printDebug("PUBREC Received: \(msgid)")
+    func didRecevied(_ reader: CocoaMQTTReader, pubrec: FramePubRec) {
+        printDebug("RECV: \(pubrec)")
 
-        puback(FrameType.pubrel, msgid: msgid)
+        puback(FrameType.pubrel, msgid: pubrec.msgid)
     }
 
-    func didReceivePubRel(_ reader: CocoaMQTTReader, msgid: UInt16) {
-        printDebug("PUBREL Received: \(msgid)")
+    func didReceived(_ reader: CocoaMQTTReader, pubrel: FramePubRel) {
+        printDebug("RECV: \(pubrel)")
 
-        puback(FrameType.pubcomp, msgid: msgid)
+        puback(FrameType.pubcomp, msgid: pubrel.msgid)
     }
 
-    func didReceivePubComp(_ reader: CocoaMQTTReader, msgid: UInt16) {
-        printDebug("PUBCOMP Received: \(msgid)")
+    func didRecevied(_ reader: CocoaMQTTReader, pubcomp: FramePubComp) {
+        printDebug("RECV: \(pubcomp)")
 
-        deliver.sendSuccess(withMsgid: msgid)
-        delegate?.mqtt?(self, didPublishComplete: msgid)
-        didCompletePublish(self, msgid)
+        deliver.sendSuccess(withMsgid: pubcomp.msgid)
+        delegate?.mqtt?(self, didPublishComplete: pubcomp.msgid)
+        didCompletePublish(self, pubcomp.msgid)
     }
 
-    func didReceiveSubAck(_ reader: CocoaMQTTReader, suback: FrameSubAck) {
-        printDebug("SUBACK Received: \(suback.msgid)")
+    func didReceived(_ reader: CocoaMQTTReader, suback: FrameSubAck) {
+        printDebug("RECV: \(suback)")
         
         guard let topicsAndQos = subscriptionsWaitingAck.removeValue(forKey: suback.msgid) else {
             printWarning("UNEXPECT SUBACK Received: \(suback)")
@@ -635,11 +632,11 @@ extension CocoaMQTT: CocoaMQTTReaderDelegate {
         didSubscribeTopics(self, topics)
     }
 
-    func didReceiveUnsubAck(_ reader: CocoaMQTTReader, msgid: UInt16) {
-        printDebug("UNSUBACK Received: \(msgid)")
+    func didReceived(_ reader: CocoaMQTTReader, unsuback: FrameUnsubAck) {
+        printDebug("RECV: \(unsuback)")
         
-        guard let topics = unsubscriptionsWaitingAck.removeValue(forKey: msgid) else {
-            printWarning("UNEXPECT UNSUBACK Received: \(msgid)")
+        guard let topics = unsubscriptionsWaitingAck.removeValue(forKey: unsuback.msgid) else {
+            printWarning("UNEXPECT UNSUBACK Received: \(unsuback.msgid)")
             return
         }
         // Remove local subscription
@@ -650,9 +647,9 @@ extension CocoaMQTT: CocoaMQTTReaderDelegate {
         didUnsubscribeTopics(self, topics)
     }
 
-    func didReceivePong(_ reader: CocoaMQTTReader) {
-        printDebug("PONG Received")
-
+    func didReceived(_ reader: CocoaMQTTReader, pingresp: FramePingResp) {
+        printDebug("RECV: \(pingresp)")
+        
         delegate?.mqttDidReceivePong(self)
         didReceivePong(self)
     }
