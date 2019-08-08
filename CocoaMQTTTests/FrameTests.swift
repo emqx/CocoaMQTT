@@ -3,7 +3,7 @@
 //  CocoaMQTT
 //
 //  Created by HJianBo on 2018/12/31.
-//  Copyright © 2018 emqtt.io. All rights reserved.
+//  Copyright © 2018 emqx.io. All rights reserved.
 //
 
 import XCTest
@@ -85,14 +85,14 @@ class FrameTests: XCTestCase {
         XCTAssertEqual(publish.topic, publish2?.topic)
         XCTAssertEqual(publish.msgid, 0x0010)
         XCTAssertEqual(publish2?.msgid, 0)
-        XCTAssertEqual(publish.payload, publish2?.payload)
+        XCTAssertEqual(publish.payload(), publish2?.payload())
         
 
         publish.dup = false
         publish.retained = true
         publish.qos = .qos2
         publish.topic = "t/b"
-        publish.payload = "bbb".utf8 + []
+        publish._payload = "bbb".utf8 + []
         
         
         bytes = [UInt8](publish.bytes()[2...])
@@ -103,7 +103,7 @@ class FrameTests: XCTestCase {
         XCTAssertEqual(publish.retained, publish2?.retained)
         XCTAssertEqual(publish.topic, publish2?.topic)
         XCTAssertEqual(publish.msgid, publish2?.msgid)
-        XCTAssertEqual(publish.payload, publish2?.payload)
+        XCTAssertEqual(publish.payload(), publish2?.payload())
         
         
         // -- Property GET/SET
@@ -124,7 +124,7 @@ class FrameTests: XCTestCase {
         
         XCTAssertEqual(f0.topic, "t/a")
         XCTAssertEqual(f0.msgid, 16)
-        XCTAssertEqual(f0.payload, [0x61, 0x61, 0x61])
+        XCTAssertEqual(f0.payload(), [0x61, 0x61, 0x61])
         
         f0.dup = false
         f0.qos = CocoaMQTTQoS.qos0

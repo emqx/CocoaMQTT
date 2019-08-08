@@ -3,7 +3,7 @@
 //  CocoaMQTT
 //
 //  Created by Feng Lee<feng@eqmtt.io> on 14/8/3.
-//  Copyright (c) 2015 emqtt.io. All rights reserved.
+//  Copyright (c) 2015 emqx.io. All rights reserved.
 //
 
 import Foundation
@@ -567,7 +567,7 @@ extension CocoaMQTT: CocoaMQTTReaderDelegate {
 
     func didReceive(_ reader: CocoaMQTTReader, publish: FramePublish) {
         printDebug("PUBLISH Received: \(publish)")
-        let message = CocoaMQTTMessage(topic: publish.topic, payload: publish.payload, qos: publish.qos, retained: publish.retained)
+        let message = CocoaMQTTMessage(topic: publish.topic, payload: publish.payload(), qos: publish.qos, retained: publish.retained)
         
         message.duplicated = publish.dup
         

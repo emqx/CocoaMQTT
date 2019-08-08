@@ -3,7 +3,7 @@
 //  CocoaMQTT
 //
 //  Created by HJianBo on 2019/6/9.
-//  Copyright © 2019 emqtt.io. All rights reserved.
+//  Copyright © 2019 emqx.io. All rights reserved.
 //
 
 import Foundation

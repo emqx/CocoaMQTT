@@ -3,7 +3,7 @@
 //  CocoaMQTT
 //
 //  Created by JianBo on 2019/8/7.
-//  Copyright © 2019 emqtt.io. All rights reserved.
+//  Copyright © 2019 emqx.io. All rights reserved.
 //
 
 import Foundation
@@ -12,36 +12,35 @@ import Foundation
 /// MQTT SUBACK packet
 struct FrameSubAck: Frame {
     
-    // --- Inherit
-    
     var fixedHeader: UInt8 = FrameType.suback.rawValue
     
-    var variableHeader: [UInt8] = []
-    
-    var payload: [UInt8] = []
-    
-    // --- Inherit end
+    // --- Attributes
     
     var msgid: UInt16
     
     var grantedQos: [CocoaMQTTQoS]
     
+    // --- Attributes End
+    
     init(msgid: UInt16, grantedQos: [CocoaMQTTQoS]) {
         self.msgid = msgid
         self.grantedQos = grantedQos
     }
+}
+
+extension FrameSubAck {
     
-    func bytes() -> [UInt8] {
-        
-        let variableHeader = msgid.hlBytes
+    func variableHeader() -> [UInt8] { return msgid.hlBytes }
+    
+    func payload() -> [UInt8] {
         
         var payload = [UInt8]()
+        
         for qos in grantedQos {
             payload.append(qos.rawValue)
         }
         
-        let length = UInt32(variableHeader.count + payload.count)
-        return [fixedHeader] + remainingLen(len: length) + variableHeader + payload
+        return payload
     }
 }
 

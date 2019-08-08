@@ -3,7 +3,7 @@
 //  CocoaMQTT
 //
 //  Created by JianBo on 2019/8/7.
-//  Copyright © 2019 emqtt.io. All rights reserved.
+//  Copyright © 2019 emqx.io. All rights reserved.
 //
 
 import Foundation
@@ -11,19 +11,13 @@ import Foundation
 /// MQTT CONNECT Frame
 struct FrameConnect: Frame {
     
-    // --- Inherit
-    
     var fixedHeader: UInt8 = FrameType.connect.rawValue
-    
-    var variableHeader: [UInt8] = []
-    
-    var payload: [UInt8] = []
-    
-    // --- Inherit end
     
     private let PROTOCOL_LEVEL = UInt8(4)
     private let PROTOCOL_VERSION: String  = "MQTT/3.1.1"
     private let PROTOCOL_MAGIC: String = "MQTT"
+    
+    // --- Attributes
     
     var clientID: String
     
@@ -35,55 +29,72 @@ struct FrameConnect: Frame {
     
     var password: String?
     
-    /// Clean Session
     var cleansess: Bool = true
+    
+    // --- Attributes End
     
     init(clientID: String) {
         self.clientID = clientID
     }
+}
+
+extension FrameConnect {
     
-    func bytes() -> [UInt8] {
-        
-        var variableHeader = [UInt8]()
-        var payload = [UInt8]()
-        
-        var connFlag = ConnFlags()
+    func variableHeader() -> [UInt8] {
+        var header = [UInt8]()
+        var flags = ConnFlags()
         
         // variable header
-        variableHeader += PROTOCOL_MAGIC.bytesWithLength
-        variableHeader.append(PROTOCOL_LEVEL)
+        header += PROTOCOL_MAGIC.bytesWithLength
+        header.append(PROTOCOL_LEVEL)
         
-        // payload
-        payload += clientID.bytesWithLength
         if let will = willMsg {
-            connFlag.flagWill = true
-            connFlag.flagWillQoS = will.qos.rawValue
-            connFlag.flagWillRetain = will.retained
+            flags.flagWill = true
+            flags.flagWillQoS = will.qos.rawValue
+            flags.flagWillRetain = will.retained
+        }
+        
+        if let _ = username {
+            flags.flagUsername = true
+            
+            // Append password attribute if username presented
+            if let _ = password {
+                flags.flagPassword = true
+            }
+        }
+
+        flags.flagCleanSession = cleansess
+        
+        header.append(flags.rawValue)
+        header += keepalive.hlBytes
+        
+        return header
+    }
+    
+    func payload() -> [UInt8] {
+        var payload = [UInt8]()
+        
+        payload += clientID.bytesWithLength
+        
+        if let will = willMsg {
             payload += will.topic.bytesWithLength
             payload += will.payload
         }
         if let username = username {
-            connFlag.flagUsername = true
             payload += username.bytesWithLength
-        }
-        if let password = password {
-            connFlag.flagPassword = true
-            payload += password.bytesWithLength
+            
+            // Append password attribute if username presented
+            if let password = password {
+                payload += password.bytesWithLength
+            }
         }
         
-        // flags
-        connFlag.flagCleanSession = cleansess
-        variableHeader.append(connFlag.rawValue)
-        variableHeader += keepalive.hlBytes
-        
-        let length = UInt32(variableHeader.count + payload.count)
-        return [fixedHeader] + remainingLen(len: length) + variableHeader + payload
+        return payload
     }
 }
 
 
 /// Connect Flags
-
 private struct ConnFlags {
 
     /// These Flags consist of following flags:

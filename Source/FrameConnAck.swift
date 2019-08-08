@@ -3,7 +3,7 @@
 //  CocoaMQTT
 //
 //  Created by JianBo on 2019/8/7.
-//  Copyright © 2019 emqtt.io. All rights reserved.
+//  Copyright © 2019 emqx.io. All rights reserved.
 //
 
 import Foundation
@@ -11,27 +11,28 @@ import Foundation
 
 struct FrameConnAck: Frame {
     
-    // -- Inherit
-    
     var fixedHeader: UInt8 = FrameType.connack.rawValue
     
-    var variableHeader: [UInt8] = []
-    
-    var payload: [UInt8] = []
-    
-    // -- Inherit end
+    // --- Attributes
     
     var returnCode: CocoaMQTTConnAck
     
     var sessPresent: Bool = false
     
-    func bytes() -> [UInt8] {
-        return [fixedHeader, 0x02, sessPresent.bit, returnCode.rawValue]
-    }
-    
+    // --- Attributes End
+
     init(code: CocoaMQTTConnAck) {
         returnCode = code
     }
+}
+
+extension FrameConnAck {
+    
+    func variableHeader() -> [UInt8] {
+        return [sessPresent.bit, returnCode.rawValue]
+    }
+    
+    func payload() -> [UInt8] { return [] }
 }
 
 extension FrameConnAck: InitialWithBytes {

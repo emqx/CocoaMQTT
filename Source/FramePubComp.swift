@@ -3,7 +3,7 @@
 //  CocoaMQTT
 //
 //  Created by JianBo on 2019/8/7.
-//  Copyright © 2019 emqtt.io. All rights reserved.
+//  Copyright © 2019 emqx.io. All rights reserved.
 //
 
 import Foundation
@@ -11,27 +11,24 @@ import Foundation
 /// MQTT PUBCOMP packet
 struct FramePubComp: Frame {
     
-    // --- Inherit
-    
     var fixedHeader: UInt8 = FrameType.pubcomp.rawValue
     
-    var variableHeader: [UInt8] = []
-    
-    var payload: [UInt8] = []
-    
-    // -- Inherit end
+    // --- Attributes
     
     var msgid: UInt16
+    
+    // --- Attributes End
     
     init(msgid: UInt16) {
         self.msgid = msgid
     }
+}
+
+extension FramePubComp {
     
-    func bytes() -> [UInt8] {
-        return [fixedHeader, 0x02] + msgid.hlBytes
-    }
+    func variableHeader() -> [UInt8] { return msgid.hlBytes }
     
-    func pack() { /* won't use */ }
+    func payload() -> [UInt8] { return [] }
 }
 
 extension FramePubComp: InitialWithBytes {

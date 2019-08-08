@@ -1,9 +1,9 @@
 //
-//  CocoaMQTTFrame.swift
+//  Frame.swift
 //  CocoaMQTT
 //
 //  Created by Feng Lee<feng@eqmtt.io> on 14/8/3.
-//  Copyright (c) 2015 emqtt.io. All rights reserved.
+//  Copyright (c) 2015 emqx.io. All rights reserved.
 //
 
 import Foundation
@@ -36,33 +36,59 @@ protocol InitialWithBytes {
 
 /// MQTT Frame protocol
 protocol Frame {
-    /**
-     * |--------------------------------------
-     * | 7 6 5 4 |     3    |  2 1  | 0      |
-     * |  Type   | DUP flag |  QoS  | RETAIN |
-     * |--------------------------------------
-     */
+    
+    /// Each MQTT Control Packet contains a fixed header
     var fixedHeader: UInt8 {get set}
     
     /// Some types of MQTT Control Packets contain a variable header component
-    ///
-    /// It is readonly property, the value decided by the attributes of frame
-    var variableHeader: [UInt8] {get}
+    func variableHeader() -> [UInt8]
     
     /// Some MQTT Control Packets contain a payload as the final part of the packet
-    var payload: [UInt8] {get set}
-    
-    /// Pack the attributes to variableHeader
-    ///
-    /// After excuting this method, the 'variableHeader' or 'payload' will be override
-    //mutating func pack()
-    
-    /// Compact all attributes to a binary array
-    func bytes() -> [UInt8]
+    func payload() -> [UInt8]
 }
 
 extension Frame {
+    
+    /// Pack struct to binary
+    func bytes() -> [UInt8] {
+        let variableHeader = self.variableHeader()
+        let payload = self.payload()
+        
+        let len = UInt32(variableHeader.count + payload.count)
+        return [fixedHeader] + remainingLen(len: len) + variableHeader + payload
+    }
+    
+    private func remainingLen(len: UInt32) -> [UInt8] {
+        var bytes: [UInt8] = []
+        var digit: UInt8 = 0
+        
+        var len = len
+        repeat {
+            digit = UInt8(len % 128)
+            len = len / 128
+            // if there are more digits to encode, set the top bit of this digit
+            if len > 0 {
+                digit = digit | 0x80
+            }
+            bytes.append(digit)
+        } while len > 0
+        
+        return bytes
+    }
+}
 
+/// Fixed Header Attributes
+extension Frame {
+
+    /// The Fixed Header consist of the following attritutes
+    ///
+    /// +---------+----------+-------+--------+
+    /// | 7 6 5 4 |     3    |  2 1  | 0      |
+    /// +---------+----------+-------+--------+
+    /// |  Type   | DUP flag |  QoS  | RETAIN |
+    /// +-------------------------------------+
+    
+    
     /// The type of the Frame
     var type: FrameType {
         return  FrameType(rawValue: fixedHeader & 0xF0)!
@@ -96,26 +122,5 @@ extension Frame {
         set {
             fixedHeader = (fixedHeader & 0xFE) | newValue.bit
         }
-    }
-}
-
-extension Frame {
-    
-    func remainingLen(len: UInt32) -> [UInt8] {
-        var bytes: [UInt8] = []
-        var digit: UInt8 = 0
-        
-        var len = len
-        repeat {
-            digit = UInt8(len % 128)
-            len = len / 128
-            // if there are more digits to encode, set the top bit of this digit
-            if len > 0 {
-                digit = digit | 0x80
-            }
-            bytes.append(digit)
-        } while len > 0
-        
-        return bytes
     }
 }
