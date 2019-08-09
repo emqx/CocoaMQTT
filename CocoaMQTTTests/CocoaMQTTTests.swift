@@ -35,7 +35,6 @@ class CocoaMQTTTests: XCTestCase {
     var res0Exp: XCTestExpectation?
     var res1Exp: XCTestExpectation?
     var res2Exp: XCTestExpectation?
-    
 
     var maxMessageCount: UInt = 100
     var multiCounter: UInt = 0
@@ -48,6 +47,7 @@ class CocoaMQTTTests: XCTestCase {
         mqtt.logLevel = .info
         mqtt.autoReconnect = true
         mqtt.keepAlive = keepAlive
+        mqtt.deliverTimeout =  3000 //ms
         mqtt.maxAutoReconnectTimeInterval = maxAutoReconn
     }
     
@@ -95,6 +95,8 @@ class CocoaMQTTTests: XCTestCase {
         mqtt.unsubscribe(topicToSub)
         wait(for: [unsubExp!], timeout: timeout)
         XCTAssertEqual(mqtt.subscriptions, [:])
+        
+        mqtt.disconnect()
     }
     
     func testAutoReconnect() {
@@ -105,6 +107,8 @@ class CocoaMQTTTests: XCTestCase {
         connExp = expectation(description: "connection-reconnect-2")
         mqtt.internal_disconnect()
         wait(for: [connExp!], timeout: 513)
+        
+        mqtt.disconnect()
     }
     
     func testProcessSafePub() {
@@ -129,6 +133,8 @@ class CocoaMQTTTests: XCTestCase {
             }
         }
         wait(for: [multiPub!], timeout: timeout)
+        
+        mqtt.disconnect()
     }
 }
 

@@ -96,6 +96,6 @@ extension FramePublish: InitialWithBytes {
 
 extension FramePublish: CustomStringConvertible {
     var description: String {
-        return "PUBLISH(msgid: \(msgid), topic: \(topic), payload: \(_payload))"
+        return "PUBLISH(msgid: \(msgid), topic: \(topic), payload: \(_payload.summary))"
     }
 }

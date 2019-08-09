@@ -11,7 +11,7 @@ import Dispatch
 
 protocol CocoaMQTTDeliverProtocol: class {
     
-    var dispatchQueue: DispatchQueue { get set }
+    var delegateQueue: DispatchQueue { get set }
     
     func deliver(_ deliver: CocoaMQTTDeliver, wantToSend frame: FramePublish)
 }
@@ -79,7 +79,7 @@ class CocoaMQTTDeliver: NSObject {
         deliverQueue.async { [weak self] in
             guard let wself = self else { return }
             wself.removeFrameFromInflight(withMsgid: msgid)
-            printDebug("Frame \(msgid) send success")
+            printDebug("Deliver frame success, msgid: \(msgid)")
             
             wself.tryTransport()
         }
@@ -121,7 +121,7 @@ extension CocoaMQTTDeliver {
                 printError("The deliver delegate is nil!!! the frame will be drop: \(f)")
                 return
             }
-            delegate.dispatchQueue.async {
+            delegate.delegateQueue.async {
                 delegate.deliver(self, wantToSend: f)
             }
         }
@@ -158,7 +158,7 @@ extension CocoaMQTTDeliver {
                 printError("The deliver delegate is nil!!! the frame will be drop: \(f)")
                 return
             }
-            delegate.dispatchQueue.async {
+            delegate.delegateQueue.async {
                 delegate.deliver(self, wantToSend: f)
             }
         }

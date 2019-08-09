@@ -143,7 +143,7 @@ public class CocoaMQTT: NSObject, CocoaMQTTClient, CocoaMQTTDeliverProtocol {
     public var cleanSession = true
     public var willMessage: CocoaMQTTMessage?
     public var backgroundOnSocket = true
-    public var dispatchQueue = DispatchQueue.main
+    public var delegateQueue = DispatchQueue.main
     
     public var connState = CocoaMQTTConnState.initial {
         didSet {
@@ -284,8 +284,9 @@ public class CocoaMQTT: NSObject, CocoaMQTTClient, CocoaMQTTDeliverProtocol {
     }
 
     fileprivate func send(_ frame: Frame, tag: Int = 0) {
+        printDebug("SEND: \(frame)")
         let data = frame.bytes()
-        socket.write(Data(bytes: data, count: data.count), withTimeout: -1, tag: tag)
+        socket.write(Data(bytes: data, count: data.count), withTimeout: 5, tag: tag)
     }
 
     fileprivate func sendConnectFrame() {
@@ -318,7 +319,6 @@ public class CocoaMQTT: NSObject, CocoaMQTTClient, CocoaMQTTDeliverProtocol {
         case .pubcomp: frame = FramePubComp(msgid: msgid)
         default: return
         }
-        printDebug("Send \(type), msgid: \(msgid)")
         send(frame)
     }
     
@@ -330,7 +330,7 @@ public class CocoaMQTT: NSObject, CocoaMQTTClient, CocoaMQTTDeliverProtocol {
     
     /// Connect to MQTT broker
     public func connect(timeout: TimeInterval) -> Bool {
-        socket.setDelegate(self, delegateQueue: dispatchQueue)
+        socket.setDelegate(self, delegateQueue: delegateQueue)
         reader = CocoaMQTTReader(socket: socket, delegate: self)
         do {
             if timeout > 0 {
@@ -396,7 +396,7 @@ public class CocoaMQTT: NSObject, CocoaMQTTClient, CocoaMQTTDeliverProtocol {
         _ = deliver.add(frame)
         
         // XXX: For process safety
-        dispatchQueue.async {
+        delegateQueue.async {
             self.sendingMessages[msgid] = message
         }
         
@@ -467,7 +467,7 @@ extension CocoaMQTT: GCDAsyncSocketDelegate {
     }
 
     public func socket(_ sock: GCDAsyncSocket, didWriteDataWithTag tag: Int) {
-        printDebug("Socket write message with tag: \(tag)")
+        // XXX: How to print writed bytes??
     }
 
     public func socket(_ sock: GCDAsyncSocket, didRead data: Data, withTag tag: Int) {
@@ -571,9 +571,9 @@ extension CocoaMQTT: CocoaMQTTReaderDelegate {
         delegate?.mqtt(self, didReceiveMessage: message, id: publish.msgid)
         didReceiveMessage(self, message, publish.msgid)
         
-        if message.qos == CocoaMQTTQoS.qos1 {
+        if message.qos == .qos1 {
             puback(FrameType.puback, msgid: publish.msgid)
-        } else if message.qos == CocoaMQTTQoS.qos2 {
+        } else if message.qos == .qos2 {
             puback(FrameType.pubrec, msgid: publish.msgid)
         }
     }
