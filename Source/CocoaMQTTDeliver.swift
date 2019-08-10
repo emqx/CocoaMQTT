@@ -3,7 +3,7 @@
 //  CocoaMQTT
 //
 //  Created by HJianBo on 2019/5/2.
-//  Copyright © 2019 emqtt.io. All rights reserved.
+//  Copyright © 2019 emqx.io. All rights reserved.
 //
 
 import Foundation
@@ -11,22 +11,22 @@ import Dispatch
 
 protocol CocoaMQTTDeliverProtocol: class {
     
-    var dispatchQueue: DispatchQueue { get set }
+    var delegateQueue: DispatchQueue { get set }
     
-    func deliver(_ deliver: CocoaMQTTDeliver, wantToSend frame: CocoaMQTTFramePublish)
+    func deliver(_ deliver: CocoaMQTTDeliver, wantToSend frame: FramePublish)
 }
 
 private struct InflightFrame {
     
-    var frame: CocoaMQTTFramePublish
+    var frame: FramePublish
     
     var timestamp: TimeInterval
     
-    init(frame: CocoaMQTTFramePublish) {
+    init(frame: FramePublish) {
         self.init(frame: frame, timestamp: Date.init(timeIntervalSinceNow: 0).timeIntervalSince1970)
     }
     
-    init(frame: CocoaMQTTFramePublish, timestamp: TimeInterval) {
+    init(frame: FramePublish, timestamp: TimeInterval) {
         self.frame = frame
         self.timestamp = timestamp
     }
@@ -42,7 +42,7 @@ class CocoaMQTTDeliver: NSObject {
     
     fileprivate var inflight = [InflightFrame]()
     
-    fileprivate var mqueue = [CocoaMQTTFramePublish]()
+    fileprivate var mqueue = [FramePublish]()
     
     var mqueueSize: UInt = 1000
     
@@ -59,7 +59,7 @@ class CocoaMQTTDeliver: NSObject {
     var isInflightEmpty: Bool { get { return inflight.count == 0 }}
     
     /// return false means the frame is rejected because of the buffer is full
-    func add(_ frame: CocoaMQTTFramePublish) -> Bool {
+    func add(_ frame: FramePublish) -> Bool {
         guard !isQueueFull else {
             printError("Buffer is full, message(\(String(describing: frame.msgid))) was abandoned.")
             return false
@@ -79,7 +79,7 @@ class CocoaMQTTDeliver: NSObject {
         deliverQueue.async { [weak self] in
             guard let wself = self else { return }
             wself.removeFrameFromInflight(withMsgid: msgid)
-            printDebug("Frame \(msgid) send success")
+            printDebug("Deliver frame success, msgid: \(msgid)")
             
             wself.tryTransport()
         }
@@ -115,13 +115,13 @@ extension CocoaMQTTDeliver {
     }
     
     /// Try to deliver a frame
-    private func deliver(_ frame: CocoaMQTTFramePublish) {
-        let sendfun = { (f: CocoaMQTTFramePublish) in
+    private func deliver(_ frame: FramePublish) {
+        let sendfun = { (f: FramePublish) in
             guard let delegate = self.delegate else {
                 printError("The deliver delegate is nil!!! the frame will be drop: \(f)")
                 return
             }
-            delegate.dispatchQueue.async {
+            delegate.delegateQueue.async {
                 delegate.deliver(self, wantToSend: f)
             }
         }
@@ -153,12 +153,12 @@ extension CocoaMQTTDeliver {
             return
         }
         
-        let sendfun = { (f: CocoaMQTTFramePublish) in
+        let sendfun = { (f: FramePublish) in
             guard let delegate = self.delegate else {
                 printError("The deliver delegate is nil!!! the frame will be drop: \(f)")
                 return
             }
-            delegate.dispatchQueue.async {
+            delegate.delegateQueue.async {
                 delegate.deliver(self, wantToSend: f)
             }
         }

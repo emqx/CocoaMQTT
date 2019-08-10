@@ -3,7 +3,7 @@
 //  CocoaMQTT
 //
 //  Created by CrazyWisdom on 15/12/11.
-//  Copyright © 2015年 emqtt.io. All rights reserved.
+//  Copyright © 2015年 emqx.io. All rights reserved.
 //
 
 #import <Foundation/Foundation.h>

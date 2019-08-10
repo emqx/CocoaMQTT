@@ -3,7 +3,7 @@
 //  CocoaMQTT
 //
 //  Created by HJianBo on 2019/5/21.
-//  Copyright © 2019 emqtt.io. All rights reserved.
+//  Copyright © 2019 emqx.io. All rights reserved.
 //
 
 import Foundation
@@ -19,27 +19,24 @@ enum CocoaMQTTReadTag: Int {
 ///
 protocol CocoaMQTTReaderDelegate: class {
    
-    // TODO: All of callback should return a frame entity, not a few feilds
+    func didRecevied(_ reader: CocoaMQTTReader, connack: FrameConnAck)
     
-    func didReceiveConnAck(_ reader: CocoaMQTTReader, connack: UInt8)
+    func didRecevied(_ reader: CocoaMQTTReader, publish: FramePublish)
     
-    func didReceive(_ reader: CocoaMQTTReader, publish: CocoaMQTTFramePublish)
+    func didReceived(_ reader: CocoaMQTTReader, puback: FramePubAck)
     
-    func didReceivePubAck(_ reader: CocoaMQTTReader, msgid: UInt16)
+    func didRecevied(_ reader: CocoaMQTTReader, pubrec: FramePubRec)
     
-    func didReceivePubRec(_ reader: CocoaMQTTReader, msgid: UInt16)
+    func didReceived(_ reader: CocoaMQTTReader, pubrel: FramePubRel)
     
-    func didReceivePubRel(_ reader: CocoaMQTTReader, msgid: UInt16)
+    func didRecevied(_ reader: CocoaMQTTReader, pubcomp: FramePubComp)
     
-    func didReceivePubComp(_ reader: CocoaMQTTReader, msgid: UInt16)
+    func didReceived(_ reader: CocoaMQTTReader, suback: FrameSubAck)
     
-    func didReceiveSubAck(_ reader: CocoaMQTTReader, suback: CocoaMQTTFrameSubAck)
+    func didReceived(_ reader: CocoaMQTTReader, unsuback: FrameUnsubAck)
     
-    func didReceiveUnsubAck(_ reader: CocoaMQTTReader, msgid: UInt16)
-    
-    func didReceivePong(_ reader: CocoaMQTTReader)
+    func didReceived(_ reader: CocoaMQTTReader, pingresp: FramePingResp)
 }
-
 
 class CocoaMQTTReader {
     private var socket: GCDAsyncSocket
@@ -60,8 +57,6 @@ class CocoaMQTTReader {
     }
     
     func headerReady(_ header: UInt8) {
-        printDebug("Reader header ready: \(header) ")
-        
         self.header = header
         readLength()
     }
@@ -102,55 +97,75 @@ class CocoaMQTTReader {
     }
     
     private func frameReady() {
-        // handle frame
-        guard let frameType = CocoaMQTTFrameType(rawValue: UInt8(header & 0xF0)) else {
+        
+        guard let frameType = FrameType(rawValue: UInt8(header & 0xF0)) else {
             printError("Received unknown frame type, header: \(header), data:\(data)!")
+            readHeader()
             return
         }
         
+        // XXX: stupid implement
+        
         switch frameType {
         case .connack:
-            delegate?.didReceiveConnAck(self, connack: data[1])
-        case .publish:
-            if let publish = unpackPublish() {
-                delegate?.didReceive(self, publish: publish)
-            }
-        case .puback:
-            delegate?.didReceivePubAck(self, msgid: msgid(data))
-        case .pubrec:
-            delegate?.didReceivePubRec(self, msgid: msgid(data))
-        case .pubrel:
-            delegate?.didReceivePubRel(self, msgid: msgid(data))
-        case .pubcomp:
-            delegate?.didReceivePubComp(self, msgid: msgid(data))
-        case .suback:
-            guard let frame = CocoaMQTTFrameSubAck(fixedHeader: header, bytes: data) else {
-                printError("[Reader] received illegal frame stream for .suback type, header: \(header), bytes: \(data)")
+            guard let connack = FrameConnAck(fixedHeader: header, bytes: data) else {
+                printError("Reader parse \(frameType) failed, data: \(data)")
                 break
             }
-            delegate?.didReceiveSubAck(self, suback: frame)
+            delegate?.didRecevied(self, connack: connack)
+        case .publish:
+            guard let publish = FramePublish(fixedHeader: header, bytes: data) else {
+                printError("Reader parse \(frameType) failed, data: \(data)")
+                break
+            }
+            delegate?.didRecevied(self, publish: publish)
+        case .puback:
+            guard let puback = FramePubAck(fixedHeader: header, bytes: data) else {
+                printError("Reader parse \(frameType) failed, data: \(data)")
+                break
+            }
+            delegate?.didReceived(self, puback: puback)
+        case .pubrec:
+            guard let pubrec = FramePubRec(fixedHeader: header, bytes: data) else {
+                printError("Reader parse \(frameType) failed, data: \(data)")
+                break
+            }
+            delegate?.didRecevied(self, pubrec: pubrec)
+        case .pubrel:
+            guard let pubrel = FramePubRel(fixedHeader: header, bytes: data) else {
+                printError("Reader parse \(frameType) failed, data: \(data)")
+                break
+            }
+            delegate?.didReceived(self, pubrel: pubrel)
+        case .pubcomp:
+            guard let pubcomp = FramePubComp(fixedHeader: header, bytes: data) else {
+                printError("Reader parse \(frameType) failed, data: \(data)")
+                break
+            }
+            delegate?.didRecevied(self, pubcomp: pubcomp)
+        case .suback:
+            guard let frame = FrameSubAck(fixedHeader: header, bytes: data) else {
+                printError("Reader parse \(frameType) failed, data: \(data)")
+                break
+            }
+            delegate?.didReceived(self, suback: frame)
         case .unsuback:
-            delegate?.didReceiveUnsubAck(self, msgid: msgid(data))
+            guard let frame = FrameUnsubAck(fixedHeader: header, bytes: data) else {
+                printError("Reader parse \(frameType) failed, data: \(data)")
+                break
+            }
+            delegate?.didReceived(self, unsuback: frame)
         case .pingresp:
-            delegate?.didReceivePong(self)
+            guard let frame = FramePingResp(fixedHeader: header, bytes: data) else {
+                printError("Reader parse \(frameType) failed, data: \(data)")
+                break
+            }
+            delegate?.didReceived(self, pingresp: frame)
         default:
             break
         }
         
         readHeader()
-    }
-    
-    private func unpackPublish() -> CocoaMQTTFramePublish? {
-        guard let frame = CocoaMQTTFramePublish(fixedHeader: header, bytes: data) else {
-            printError("Unpack publish frame error, header: \(header), bytes: \(data)")
-            return nil
-        }
-        return frame
-    }
-    
-    private func msgid(_ bytes: [UInt8]) -> UInt16 {
-        if bytes.count < 2 { return 0 }
-        return UInt16(bytes[0]) << 8 + UInt16(bytes[1])
     }
     
     private func reset() {

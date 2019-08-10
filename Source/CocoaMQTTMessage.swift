@@ -3,7 +3,7 @@
 //  CocoaMQTT
 //
 //  Created by Feng Lee<feng@eqmtt.io> on 14/8/3.
-//  Copyright (c) 2015 emqtt.io. All rights reserved.
+//  Copyright (c) 2015 emqx.io. All rights reserved.
 //
 
 import Foundation
@@ -46,14 +46,6 @@ public class CocoaMQTTMessage: NSObject {
         self.payload = payload
         self.qos = qos
         self.retained = retained
-    }
-    
-    func convertToFrame() -> CocoaMQTTFramePublish {
-        var frame = CocoaMQTTFramePublish(msgid: 0, topic: topic, payload: payload)
-        frame.qos = qos
-        frame.retained = retained
-        
-        return frame
     }
 }
 
