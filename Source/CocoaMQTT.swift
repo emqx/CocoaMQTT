@@ -9,30 +9,6 @@
 import Foundation
 import CocoaAsyncSocket
 
-/// Quality of Service levels
-@objc public enum CocoaMQTTQoS: UInt8, CustomStringConvertible {
-    /// At most once delivery
-    case qos0 = 0
-    
-    /// At least once delivery
-    case qos1
-    
-    /// Exactly once delivery
-    case qos2
-    
-    /// !!! Used SUBACK frame only
-    case FAILTURE = 0x80
-    
-    public var description: String {
-        switch self {
-            case .qos0: return "qos0"
-            case .qos1: return "qos1"
-            case .qos2: return "qos2"
-            case .FAILTURE: return "Failure"
-        }
-    }
-}
-
 /**
  * Connection State
  */
@@ -386,10 +362,12 @@ public class CocoaMQTT: NSObject, CocoaMQTTClient, CocoaMQTTDeliverProtocol {
 
     @discardableResult
     public func publish(_ message: CocoaMQTTMessage) -> UInt16 {
-        let msgid: UInt16 = nextMessageID()
-        // XXX: qos0 should not take msgid
-        var frame = FramePublish(msgid: msgid, topic: message.topic, payload: message.payload)
-        frame.qos = message.qos
+        let msgid = nextMessageID()
+        var frame = FramePublish(topic: message.topic,
+                                 payload: message.payload,
+                                 qos: message.qos,
+                                 msgid: msgid)
+        
         frame.retained = message.retained
         
         // Push frame to deliver message queue

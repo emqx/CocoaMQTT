@@ -75,7 +75,7 @@ class FrameTests: XCTestCase {
     
     func testFramePublish() {
         
-        var publish = FramePublish(msgid: 0x0010, topic: "t/a", payload: "aaa".utf8 + [])
+        var publish = FramePublish(topic: "t/a", payload: "aaa".utf8 + [], qos: .qos0, msgid: 0x0010)
         var bytes = [UInt8](publish.bytes()[2...])
         var publish2 = FramePublish(fixedHeader: FrameType.publish.rawValue, bytes: bytes)
         

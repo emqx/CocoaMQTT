@@ -23,10 +23,12 @@ struct FramePublish: Frame {
     
     // --- Attributes End
     
-    init(msgid: UInt16, topic: String, payload: [UInt8]) {
-        self.msgid = msgid
+    init(topic: String, payload: [UInt8], qos: CocoaMQTTQoS = .qos0, msgid: UInt16 = 0) {
         self.topic = topic
         self._payload = payload
+        self.msgid = msgid
+        
+        self.qos = qos
     }
 }
 
@@ -36,7 +38,7 @@ extension FramePublish {
         
         var header = topic.bytesWithLength
         
-        if qos.rawValue > CocoaMQTTQoS.qos0.rawValue {
+        if qos > .qos0 {
             header += msgid.hlBytes
         }
         

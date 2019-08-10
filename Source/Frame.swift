@@ -8,6 +8,50 @@
 
 import Foundation
 
+
+/// Quality of Service levels
+@objc public enum CocoaMQTTQoS: UInt8, CustomStringConvertible {
+    /// At most once delivery
+    case qos0 = 0
+    
+    /// At least once delivery
+    case qos1
+    
+    /// Exactly once delivery
+    case qos2
+    
+    /// !!! Used SUBACK frame only
+    case FAILTURE = 0x80
+    
+    public var description: String {
+        switch self {
+        case .qos0: return "qos0"
+        case .qos1: return "qos1"
+        case .qos2: return "qos2"
+        case .FAILTURE: return "Failure"
+        }
+    }
+}
+
+extension CocoaMQTTQoS: Comparable {
+    
+    public static func < (lhs: CocoaMQTTQoS, rhs: CocoaMQTTQoS) -> Bool {
+        return lhs.rawValue < rhs.rawValue
+    }
+    
+    public static func <= (lhs: CocoaMQTTQoS, rhs: CocoaMQTTQoS) -> Bool {
+        return lhs.rawValue <= rhs.rawValue
+    }
+    
+    public static func > (lhs: CocoaMQTTQoS, rhs: CocoaMQTTQoS) -> Bool {
+        return lhs.rawValue > rhs.rawValue
+    }
+    
+    public static func >= (lhs: CocoaMQTTQoS, rhs: CocoaMQTTQoS) -> Bool {
+        return lhs.rawValue >= rhs.rawValue
+    }
+}
+
 /// MQTT Frame Type
 enum FrameType: UInt8 {
     case reserved = 0x00
