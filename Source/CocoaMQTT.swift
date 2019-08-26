@@ -516,7 +516,7 @@ extension CocoaMQTT: GCDAsyncSocketDelegate {
             
             // Start reconnector once socket error occuried
             printInfo("Try reconnect to server after \(reconectTimeInterval)s")
-            autoReconnTimer = CocoaMQTTTimer.after(Double(reconectTimeInterval), { [weak self] in
+            autoReconnTimer = CocoaMQTTTimer.after(Double(reconectTimeInterval), name: "autoReconnTimer", { [weak self] in
                 guard let self = self else { return }
                 if self.reconectTimeInterval < self.maxAutoReconnectTimeInterval {
                     self.reconectTimeInterval *= 2
@@ -568,7 +568,7 @@ extension CocoaMQTT: CocoaMQTTReaderDelegate {
         // keep alive
         if ack == CocoaMQTTConnAck.accept {
             let interval = Double(keepAlive <= 0 ? 60: keepAlive)
-            self.aliveTimer = CocoaMQTTTimer.every(interval) { [weak self] in
+            self.aliveTimer = CocoaMQTTTimer.every(interval, name: "aliveTimer") { [weak self] in
                 guard let weakSelf = self else {return}
                 if weakSelf.connState == .connected {
                     weakSelf.ping()
