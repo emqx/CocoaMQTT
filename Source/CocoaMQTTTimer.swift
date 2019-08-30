@@ -17,8 +17,10 @@ class CocoaMQTTTimer {
     
     let timeInterval: TimeInterval
     let startDelay: TimeInterval
+    let name: String
     
-    init(delay:TimeInterval?=nil, timeInterval: TimeInterval) {
+    init(delay:TimeInterval?=nil, name: String, timeInterval: TimeInterval) {
+        self.name = name
         self.timeInterval = timeInterval
         if let delay = delay {
             self.startDelay = delay
@@ -27,16 +29,16 @@ class CocoaMQTTTimer {
         }
     }
     
-    class func every(_ interval: TimeInterval, _ block: @escaping () -> Void) -> CocoaMQTTTimer {
-        let timer = CocoaMQTTTimer(timeInterval: interval)
+    class func every(_ interval: TimeInterval, name: String, _ block: @escaping () -> Void) -> CocoaMQTTTimer {
+        let timer = CocoaMQTTTimer(name: name, timeInterval: interval)
         timer.eventHandler = block
         timer.resume()
         return timer
     }
     
     @discardableResult
-    class func after(_ interval: TimeInterval, _ block: @escaping () -> Void) -> CocoaMQTTTimer {
-        var timer : CocoaMQTTTimer? = CocoaMQTTTimer(delay: interval, timeInterval:0)
+    class func after(_ interval: TimeInterval, name: String, _ block: @escaping () -> Void) -> CocoaMQTTTimer {
+        var timer : CocoaMQTTTimer? = CocoaMQTTTimer(delay: interval, name: name, timeInterval:0)
         timer?.eventHandler = {
             block()
             timer?.suspend()
@@ -46,8 +48,13 @@ class CocoaMQTTTimer {
         return timer!
     }
     
+    /// Execute the tasks concurrently on the target_queue with default QOS
+    private static let target_queue = DispatchQueue(label: "io.emqx.CocoaMQTT.TimerQueue", qos: .default, attributes: .concurrent)
+    
+    /// Execute each timer tasks serially and use the target queue for concurrency among timers
     private lazy var timer: DispatchSourceTimer = {
-        let t = DispatchSource.makeTimerSource()
+        let queue = DispatchQueue(label: "io.emqx.CocoaMQTT." + name, target: CocoaMQTTTimer.target_queue)
+        let t = DispatchSource.makeTimerSource(flags: .strict, queue: queue)
         t.schedule(deadline: .now() + self.startDelay, repeating: self.timeInterval > 0 ? Double(self.timeInterval) : Double.infinity)
         t.setEventHandler(handler: { [weak self] in
             self?.eventHandler?()

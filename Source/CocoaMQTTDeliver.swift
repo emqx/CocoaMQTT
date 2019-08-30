@@ -137,7 +137,7 @@ extension CocoaMQTTDeliver {
             
             // Start a retry timer for resending it if it not receive PUBACK or PUBREC
             if awaitingTimer == nil {
-                awaitingTimer = CocoaMQTTTimer.every(retryTimeInterval / 1000.0) { [weak self] in
+                awaitingTimer = CocoaMQTTTimer.every(retryTimeInterval / 1000.0, name: "awaitingTimer") { [weak self] in
                     guard let wself = self else { return }
                     wself.redeliver()
                 }
