@@ -297,8 +297,9 @@ public class CocoaMQTT: NSObject, CocoaMQTTClient, CocoaMQTTDeliverProtocol {
     
     // MARK: CocoaMQTTDeliverProtocol
     func deliver(_ deliver: CocoaMQTTDeliver, wantToSend frame: CocoaMQTTFramePublish) {
-        let msgid = frame.msgid!
-        guard let message = sendingMessages[msgid] else {
+        guard let msgid = frame.msgid,
+              let message = sendingMessages[msgid] else {
+            printWarning("Frame msgid is nil or not introduced sendingMessages, dropped frame: \(frame)")
             return
         }
         
