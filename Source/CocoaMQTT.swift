@@ -57,20 +57,18 @@ import CocoaAsyncSocket
  * MQTT Delegate
  */
 @objc public protocol CocoaMQTTDelegate {
-    /// MQTT connected with server
-    // deprecated: instead of `mqtt(_ mqtt: CocoaMQTT, didConnectAck ack: CocoaMQTTConnAck)`
-    // func mqtt(_ mqtt: CocoaMQTT, didConnect host: String, port: Int)
+    
     func mqtt(_ mqtt: CocoaMQTT, didConnectAck ack: CocoaMQTTConnAck)
     func mqtt(_ mqtt: CocoaMQTT, didPublishMessage message: CocoaMQTTMessage, id: UInt16)
     func mqtt(_ mqtt: CocoaMQTT, didPublishAck id: UInt16)
     func mqtt(_ mqtt: CocoaMQTT, didReceiveMessage message: CocoaMQTTMessage, id: UInt16 )
-    // deprecated!!! instead of `func mqtt(_ mqtt: CocoaMQTT, didSubscribeTopic topics: [String])`
-    //func mqtt(_ mqtt: CocoaMQTT, didSubscribeTopic topic: String)
     func mqtt(_ mqtt: CocoaMQTT, didSubscribeTopics topics: [String])
     func mqtt(_ mqtt: CocoaMQTT, didUnsubscribeTopics topics: [String])
+    
     func mqttDidPing(_ mqtt: CocoaMQTT)
     func mqttDidReceivePong(_ mqtt: CocoaMQTT)
     func mqttDidDisconnect(_ mqtt: CocoaMQTT, withError err: Error?)
+    
     @objc optional func mqtt(_ mqtt: CocoaMQTT, didReceive trust: SecTrust, completionHandler: @escaping (Bool) -> Void)
     @objc optional func mqtt(_ mqtt: CocoaMQTT, didPublishComplete id: UInt16)
     @objc optional func mqtt(_ mqtt: CocoaMQTT, didStateChangeTo state: CocoaMQTTConnState)
@@ -205,8 +203,8 @@ public class CocoaMQTT: NSObject, CocoaMQTTClient, CocoaMQTTDeliverProtocol {
     /// Sending messages
     fileprivate var sendingMessages: [UInt16: CocoaMQTTMessage] = [:]
 
-    /// Global message id
-    fileprivate var gmid: UInt16 = 1
+    /// message id counter
+    private var _msgid: UInt16 = 0
     fileprivate var socket = GCDAsyncSocket()
     fileprivate var reader: CocoaMQTTReader?
     
@@ -279,11 +277,11 @@ public class CocoaMQTT: NSObject, CocoaMQTTClient, CocoaMQTTDeliverProtocol {
     }
 
     fileprivate func nextMessageID() -> UInt16 {
-        if gmid == UInt16.max {
-            gmid = 0
+        if _msgid == UInt16.max {
+            _msgid = 0
         }
-        gmid += 1
-        return gmid
+        _msgid += 1
+        return _msgid
     }
 
     fileprivate func puback(_ type: FrameType, msgid: UInt16) {

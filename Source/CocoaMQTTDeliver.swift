@@ -139,7 +139,9 @@ extension CocoaMQTTDeliver {
             if awaitingTimer == nil {
                 awaitingTimer = CocoaMQTTTimer.every(retryTimeInterval / 1000.0) { [weak self] in
                     guard let wself = self else { return }
-                    wself.redeliver()
+                    wself.deliverQueue.async {
+                        wself.redeliver()
+                    }
                 }
             }
         }

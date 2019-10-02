@@ -39,13 +39,19 @@ protocol CocoaMQTTReaderDelegate: class {
 }
 
 class CocoaMQTTReader {
+    
     private var socket: GCDAsyncSocket
+    
+    private weak var delegate: CocoaMQTTReaderDelegate?
+    
+    private var timeout = 30000
+    
+    /*  -- Reader states -- */
     private var header: UInt8 = 0
     private var length: UInt = 0
     private var data: [UInt8] = []
     private var multiply = 1
-    private weak var delegate: CocoaMQTTReaderDelegate?
-    private var timeout = 30000
+    /*  -- Reader states -- */
     
     init(socket: GCDAsyncSocket, delegate: CocoaMQTTReaderDelegate?) {
         self.socket = socket
