@@ -581,7 +581,7 @@ extension CocoaMQTT: CocoaMQTTReaderDelegate {
     func didReceived(_ reader: CocoaMQTTReader, puback: FramePubAck) {
         printDebug("RECV: \(puback)")
         
-        deliver.ack(puback.msgid)
+        deliver.ack(by: puback)
         
         delegate?.mqtt(self, didPublishAck: puback.msgid)
         didPublishAck(self, puback.msgid)
@@ -590,7 +590,7 @@ extension CocoaMQTT: CocoaMQTTReaderDelegate {
     func didRecevied(_ reader: CocoaMQTTReader, pubrec: FramePubRec) {
         printDebug("RECV: \(pubrec)")
         
-        deliver.ack(pubrec.msgid)
+        deliver.ack(by: pubrec)
     }
 
     func didReceived(_ reader: CocoaMQTTReader, pubrel: FramePubRel) {
@@ -602,7 +602,7 @@ extension CocoaMQTT: CocoaMQTTReaderDelegate {
     func didRecevied(_ reader: CocoaMQTTReader, pubcomp: FramePubComp) {
         printDebug("RECV: \(pubcomp)")
 
-        deliver.ack(pubcomp.msgid)
+        deliver.ack(by: pubcomp)
         
         delegate?.mqtt?(self, didPublishComplete: pubcomp.msgid)
         didCompletePublish(self, pubcomp.msgid)

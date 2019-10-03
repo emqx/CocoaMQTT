@@ -70,7 +70,7 @@ class CocoaMQTTDeliver: NSObject {
     private var awaitingTimer: CocoaMQTTTimer?
     
     var isQueueEmpty: Bool { get { return mqueue.count == 0 }}
-    var isQueueFull: Bool { get { return mqueue.count > mqueueSize }}
+    var isQueueFull: Bool { get { return mqueue.count >= mqueueSize }}
     var isInflightFull: Bool { get { return inflight.count >= inflightWindowSize }}
     var isInflightEmpty: Bool { get { return inflight.count == 0 }}
     
@@ -79,27 +79,41 @@ class CocoaMQTTDeliver: NSObject {
     /// return false means the frame is rejected because of the buffer is full
     func add(_ frame: FramePublish) -> Bool {
         guard !isQueueFull else {
-            printError("Buffer is full, frame \(frame) was abandoned.")
+            printError("Sending buffer is full, frame \(frame) has been rejected to add.")
             return false
+        }
+        
+        // Sync to push the frame to mqueue for avoiding overcommit
+        deliverQueue.sync {
+            mqueue.append(frame)
         }
         
         deliverQueue.async { [weak self] in
             guard let wself = self else { return }
-            wself.mqueue.append(frame)
             wself.tryTransport()
         }
         
         return true
     }
-    
+
     /// Acknowledge a PUBLISH/PUBREL by msgid
-    func ack(_ msgid: UInt16) {
+    func ack(by frame: Frame) {
+        var msgid: UInt16
+        
+        if let puback = frame as? FramePubAck { msgid = puback.msgid }
+        else if let pubrec = frame as? FramePubRec { msgid = pubrec.msgid }
+        else if let pubcom = frame as? FramePubComp { msgid = pubcom.msgid }
+        else { return }
+        
         deliverQueue.async { [weak self] in
             guard let wself = self else { return }
-            wself.ackInflightFrame(withMsgid: msgid)
-            printDebug("Deliver frame success, msgid: \(msgid)")
-            
-            wself.tryTransport()
+            let acked = wself.ackInflightFrame(withMsgid: msgid, type: frame.type)
+            if acked.count == 0 {
+                printWarning("Acknowledge by \(frame), but not found in inflight window")
+            } else {
+                printDebug("Acknowledge frame \(msgid) success, acked: \(acked)")
+                wself.tryTransport()
+            }
         }
     }
     
@@ -107,7 +121,7 @@ class CocoaMQTTDeliver: NSObject {
     ///
     /// !!Warning: it's a temporary method for hotfix #221
     func cleanAll() {
-        deliverQueue.async { [weak self] in
+        deliverQueue.sync { [weak self] in
             guard let wself = self else { return }
             _ = wself.mqueue.removeAll()
             _ = wself.inflight.removeAll()
@@ -180,16 +194,15 @@ extension CocoaMQTTDeliver {
     }
     
     @discardableResult
-    private func ackInflightFrame(withMsgid msgid: UInt16) -> Bool {
-        var cnt = 0
+    private func ackInflightFrame(withMsgid msgid: UInt16, type: FrameType) -> [Frame] {
+        var ackedFrames = [Frame]()
         inflight = inflight.filterMap { frame in
             
             // -- ACK for PUBLISH
             if let publish = frame.frame as? FramePublish,
                 publish.msgid == msgid {
-                cnt = cnt + 1
                 
-                if publish.qos == .qos2 {  // -- Replace PUBLISH with PUBREL
+                if publish.qos == .qos2 && type == .pubrec {  // -- Replace PUBLISH with PUBREL
                     let pubrel = FramePubRel(msgid: publish.msgid)
                     
                     var nframe = frame
@@ -198,21 +211,25 @@ extension CocoaMQTTDeliver {
                     
                     sendfun(pubrel)
                     
+                    ackedFrames.append(publish)
                     return (true, nframe)
+                } else if publish.qos == .qos1 && type == .puback {
+                    ackedFrames.append(publish)
+                    return (false, frame)
                 }
-                return (false, frame)
             }
             
             // -- ACK for PUBREL
             if let pubrel = frame.frame as? FramePubRel,
-                pubrel.msgid == msgid {
-                cnt = cnt + 1
+                pubrel.msgid == msgid && type == .pubcomp {
+                
+                ackedFrames.append(pubrel)
                 return (false, frame)
             }
-            
             return (true, frame)
         }
-        return cnt > 0
+        
+        return ackedFrames
     }
     
     private func sendfun(_ frame: Frame) {
@@ -223,5 +240,22 @@ extension CocoaMQTTDeliver {
         delegate.delegateQueue.async {
             delegate.deliver(self, wantToSend: frame)
         }
+    }
+}
+
+
+// For tests
+extension CocoaMQTTDeliver {
+    
+    func t_inflightFrames() -> [Frame] {
+        var frames = [Frame]()
+        for f in inflight {
+            frames.append(f.frame)
+        }
+        return frames
+    }
+    
+    func t_queuedFrames() -> [Frame] {
+        return mqueue
     }
 }
