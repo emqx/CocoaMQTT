@@ -105,7 +105,7 @@ protocol CocoaMQTTClient {
 /// MQTT Client
 ///
 /// - Note: GCDAsyncSocket need delegate to extend NSObject
-public class CocoaMQTT: NSObject, CocoaMQTTClient, CocoaMQTTDeliverProtocol {
+public class CocoaMQTT: NSObject, CocoaMQTTClient {
     
     public weak var delegate: CocoaMQTTDelegate?
     
@@ -137,7 +137,7 @@ public class CocoaMQTT: NSObject, CocoaMQTTClient, CocoaMQTTDeliverProtocol {
     
     /// Message queue size. default 1000
     ///
-    /// The new publishing messages of Qos1/Qos2 will be drop, if the quene is full
+    /// The new publishing messages of Qos1/Qos2 will be drop, if the queue is full
     public var messageQueueSize: UInt {
         get { return deliver.mqueueSize }
         set { deliver.mqueueSize = newValue }
@@ -243,19 +243,6 @@ public class CocoaMQTT: NSObject, CocoaMQTTClient, CocoaMQTTDeliverProtocol {
         socket.delegate = nil
         socket.disconnect()
     }
-    
-    // MARK: CocoaMQTTDeliverProtocol
-    func deliver(_ deliver: CocoaMQTTDeliver, wantToSend frame: FramePublish) {
-        let msgid = frame.msgid
-        guard let message = sendingMessages[msgid] else {
-            return
-        }
-        
-        send(frame, tag: Int(msgid))
-        
-        delegate?.mqtt(self, didPublishMessage: message, id: msgid)
-        didPublishMessage(self, message, msgid)
-    }
 
     fileprivate func send(_ frame: Frame, tag: Int = 0) {
         printDebug("SEND: \(frame)")
@@ -285,18 +272,17 @@ public class CocoaMQTT: NSObject, CocoaMQTTClient, CocoaMQTTDeliverProtocol {
     }
 
     fileprivate func puback(_ type: FrameType, msgid: UInt16) {
-        var frame: Frame
         switch type {
-        case .puback: frame = FramePubAck(msgid: msgid)
-        case .pubrec: frame = FramePubRec(msgid: msgid)
-        case .pubrel: frame = FramePubRel(msgid: msgid)
-        case .pubcomp: frame = FramePubComp(msgid: msgid)
+        case .puback:
+            send(FramePubAck(msgid: msgid))
+        case .pubrec:
+            send(FramePubRec(msgid: msgid))
+        case .pubcomp:
+            send(FramePubComp(msgid: msgid))
         default: return
         }
-        send(frame)
     }
     
-
     /// Connect to MQTT broker
     public func connect() -> Bool {
         return connect(timeout: -1)
@@ -312,7 +298,12 @@ public class CocoaMQTT: NSObject, CocoaMQTTClient, CocoaMQTTDeliverProtocol {
             } else {
                 try socket.connect(toHost: self.host, onPort: self.port)
             }
-            connState = .connecting
+            
+            delegateQueue.async { [weak self] in
+                guard let wself = self else { return }
+                wself.connState = .connecting
+            }
+            
             return true
         } catch let error as NSError {
             printError("socket connect error: \(error.description)")
@@ -340,6 +331,7 @@ public class CocoaMQTT: NSObject, CocoaMQTTClient, CocoaMQTTDeliverProtocol {
     public func ping() {
         printDebug("ping")
         send(FramePingReq(), tag: -0xC0)
+        
         self.delegate?.mqttDidPing(self)
         didPing(self)
     }
@@ -360,7 +352,14 @@ public class CocoaMQTT: NSObject, CocoaMQTTClient, CocoaMQTTDeliverProtocol {
 
     @discardableResult
     public func publish(_ message: CocoaMQTTMessage) -> UInt16 {
-        let msgid = nextMessageID()
+        let msgid: UInt16
+        
+        if message.qos == .qos0 {
+            msgid = 0
+        } else {
+            msgid = nextMessageID()
+        }
+        
         var frame = FramePublish(topic: message.topic,
                                  payload: message.payload,
                                  qos: message.qos,
@@ -369,6 +368,7 @@ public class CocoaMQTT: NSObject, CocoaMQTTClient, CocoaMQTTDeliverProtocol {
         frame.retained = message.retained
         
         // Push frame to deliver message queue
+        // TODO: add failed???
         _ = deliver.add(frame)
         
         // XXX: For process safety
@@ -405,6 +405,28 @@ public class CocoaMQTT: NSObject, CocoaMQTTClient, CocoaMQTTDeliverProtocol {
         unsubscriptionsWaitingAck[msgid] = topics
         send(frame, tag: Int(msgid))
         return msgid
+    }
+}
+
+// MARK: CocoaMQTTDeliverProtocol
+extension CocoaMQTT: CocoaMQTTDeliverProtocol {
+    
+    func deliver(_ deliver: CocoaMQTTDeliver, wantToSend frame: Frame) {
+        if let publish = frame as? FramePublish {
+            let msgid = publish.msgid
+            guard let message = sendingMessages[msgid] else {
+                return
+            }
+            
+            send(publish, tag: Int(msgid))
+            
+            delegate?.mqtt(self, didPublishMessage: message, id: msgid)
+            didPublishMessage(self, message, msgid)
+            
+        } else if let pubrel = frame as? FramePubRel {
+            // -- Repeat sending PUBREL
+            send(pubrel, tag: Int(pubrel.msgid))
+        }
     }
 }
 
@@ -526,12 +548,14 @@ extension CocoaMQTT: CocoaMQTTReaderDelegate {
             let interval = Double(keepAlive <= 0 ? 60: keepAlive)
             
             aliveTimer = CocoaMQTTTimer.every(interval) { [weak self] in
-                guard let self = self else { return }
-                guard self.connState == .connected else {
-                    self.aliveTimer = nil
-                    return
+                guard let wself = self else { return }
+                wself.delegateQueue.async {
+                    guard wself.connState == .connected else {
+                        wself.aliveTimer = nil
+                        return
+                    }
+                    wself.ping()
                 }
-                self.ping()
             }
         }
     }
@@ -557,7 +581,7 @@ extension CocoaMQTT: CocoaMQTTReaderDelegate {
     func didReceived(_ reader: CocoaMQTTReader, puback: FramePubAck) {
         printDebug("RECV: \(puback)")
         
-        deliver.sendSuccess(withMsgid: puback.msgid)
+        deliver.ack(puback.msgid)
         
         delegate?.mqtt(self, didPublishAck: puback.msgid)
         didPublishAck(self, puback.msgid)
@@ -565,8 +589,8 @@ extension CocoaMQTT: CocoaMQTTReaderDelegate {
     
     func didRecevied(_ reader: CocoaMQTTReader, pubrec: FramePubRec) {
         printDebug("RECV: \(pubrec)")
-
-        puback(FrameType.pubrel, msgid: pubrec.msgid)
+        
+        deliver.ack(pubrec.msgid)
     }
 
     func didReceived(_ reader: CocoaMQTTReader, pubrel: FramePubRel) {
@@ -578,7 +602,8 @@ extension CocoaMQTT: CocoaMQTTReaderDelegate {
     func didRecevied(_ reader: CocoaMQTTReader, pubcomp: FramePubComp) {
         printDebug("RECV: \(pubcomp)")
 
-        deliver.sendSuccess(withMsgid: pubcomp.msgid)
+        deliver.ack(pubcomp.msgid)
+        
         delegate?.mqtt?(self, didPublishComplete: pubcomp.msgid)
         didCompletePublish(self, pubcomp.msgid)
     }

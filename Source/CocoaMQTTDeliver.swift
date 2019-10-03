@@ -13,24 +13,40 @@ protocol CocoaMQTTDeliverProtocol: class {
     
     var delegateQueue: DispatchQueue { get set }
     
-    func deliver(_ deliver: CocoaMQTTDeliver, wantToSend frame: FramePublish)
+    func deliver(_ deliver: CocoaMQTTDeliver, wantToSend frame: Frame)
 }
 
 private struct InflightFrame {
     
-    var frame: FramePublish
+    /// The infligth frame maybe a `FramePublish` or `FramePubRel`
+    var frame: Frame
     
     var timestamp: TimeInterval
     
-    init(frame: FramePublish) {
+    init(frame: Frame) {
         self.init(frame: frame, timestamp: Date.init(timeIntervalSinceNow: 0).timeIntervalSince1970)
     }
     
-    init(frame: FramePublish, timestamp: TimeInterval) {
+    init(frame: Frame, timestamp: TimeInterval) {
         self.frame = frame
         self.timestamp = timestamp
     }
 }
+
+extension Array where Element == InflightFrame {
+    
+    func filterMap(isIncluded: (Element) -> (Bool, Element)) -> [Element] {
+        var tmp = [Element]()
+        for e in self {
+            let res = isIncluded(e)
+            if res.0 {
+                tmp.append(res.1)
+            }
+        }
+        return tmp
+    }
+}
+
 
 // CocoaMQTTDeliver
 class CocoaMQTTDeliver: NSObject {
@@ -42,7 +58,7 @@ class CocoaMQTTDeliver: NSObject {
     
     fileprivate var inflight = [InflightFrame]()
     
-    fileprivate var mqueue = [FramePublish]()
+    fileprivate var mqueue = [Frame]()
     
     var mqueueSize: UInt = 1000
     
@@ -58,10 +74,12 @@ class CocoaMQTTDeliver: NSObject {
     var isInflightFull: Bool { get { return inflight.count >= inflightWindowSize }}
     var isInflightEmpty: Bool { get { return inflight.count == 0 }}
     
+    /// Add a FramePublish to the message queue to wait for sending
+    ///
     /// return false means the frame is rejected because of the buffer is full
     func add(_ frame: FramePublish) -> Bool {
         guard !isQueueFull else {
-            printError("Buffer is full, message(\(String(describing: frame.msgid))) was abandoned.")
+            printError("Buffer is full, frame \(frame) was abandoned.")
             return false
         }
         
@@ -74,11 +92,11 @@ class CocoaMQTTDeliver: NSObject {
         return true
     }
     
-    ///
-    func sendSuccess(withMsgid msgid: UInt16) {
+    /// Acknowledge a PUBLISH/PUBREL by msgid
+    func ack(_ msgid: UInt16) {
         deliverQueue.async { [weak self] in
             guard let wself = self else { return }
-            wself.removeFrameFromInflight(withMsgid: msgid)
+            wself.ackInflightFrame(withMsgid: msgid)
             printDebug("Deliver frame success, msgid: \(msgid)")
             
             wself.tryTransport()
@@ -87,7 +105,7 @@ class CocoaMQTTDeliver: NSObject {
     
     /// Clean Inflight content to prevent message blocked, when next connection established
     ///
-    /// !!Warning: it's a tempnary method for hotfix #221
+    /// !!Warning: it's a temporary method for hotfix #221
     func cleanAll() {
         deliverQueue.async { [weak self] in
             guard let wself = self else { return }
@@ -115,17 +133,7 @@ extension CocoaMQTTDeliver {
     }
     
     /// Try to deliver a frame
-    private func deliver(_ frame: FramePublish) {
-        let sendfun = { (f: FramePublish) in
-            guard let delegate = self.delegate else {
-                printError("The deliver delegate is nil!!! the frame will be drop: \(f)")
-                return
-            }
-            delegate.delegateQueue.async {
-                delegate.deliver(self, wantToSend: f)
-            }
-        }
-        
+    private func deliver(_ frame: Frame) {
         if frame.qos == .qos0 {
             // Send Qos0 message, whatever the in-flight queue is full
             // TODO: A retrict deliver mode is need?
@@ -155,39 +163,65 @@ extension CocoaMQTTDeliver {
             return
         }
         
-        let sendfun = { (f: FramePublish) in
-            guard let delegate = self.delegate else {
-                printError("The deliver delegate is nil!!! the frame will be drop: \(f)")
-                return
-            }
-            delegate.delegateQueue.async {
-                delegate.deliver(self, wantToSend: f)
-            }
-        }
-        
         let nowTimestamp = Date(timeIntervalSinceNow: 0).timeIntervalSince1970
         for (idx, frame) in inflight.enumerated() {
             if (nowTimestamp - frame.timestamp) >= (retryTimeInterval/1000.0) {
+                
                 var duplicatedFrame = frame
                 duplicatedFrame.frame.dup = true
                 duplicatedFrame.timestamp = nowTimestamp
-                sendfun(duplicatedFrame.frame)
+                
                 inflight[idx] = duplicatedFrame
+                
                 printInfo("Re-delivery frame \(duplicatedFrame.frame)")
+                sendfun(duplicatedFrame.frame)
             }
         }
     }
     
     @discardableResult
-    private func removeFrameFromInflight(withMsgid msgid: UInt16) -> Bool {
-        var success = false
-        for (index, frame) in inflight.enumerated() {
-            if frame.frame.msgid == msgid {
-                success = true
-                inflight.remove(at: index)
-                break
+    private func ackInflightFrame(withMsgid msgid: UInt16) -> Bool {
+        var cnt = 0
+        inflight = inflight.filterMap { frame in
+            
+            // -- ACK for PUBLISH
+            if let publish = frame.frame as? FramePublish,
+                publish.msgid == msgid {
+                cnt = cnt + 1
+                
+                if publish.qos == .qos2 {  // -- Replace PUBLISH with PUBREL
+                    let pubrel = FramePubRel(msgid: publish.msgid)
+                    
+                    var nframe = frame
+                    nframe.frame = pubrel
+                    nframe.timestamp = Date(timeIntervalSinceNow: 0).timeIntervalSince1970
+                    
+                    sendfun(pubrel)
+                    
+                    return (true, nframe)
+                }
+                return (false, frame)
             }
+            
+            // -- ACK for PUBREL
+            if let pubrel = frame.frame as? FramePubRel,
+                pubrel.msgid == msgid {
+                cnt = cnt + 1
+                return (false, frame)
+            }
+            
+            return (true, frame)
         }
-        return success
+        return cnt > 0
+    }
+    
+    private func sendfun(_ frame: Frame) {
+        guard let delegate = self.delegate else {
+            printError("The deliver delegate is nil!!! the frame will be drop: \(frame)")
+            return
+        }
+        delegate.delegateQueue.async {
+            delegate.deliver(self, wantToSend: frame)
+        }
     }
 }
