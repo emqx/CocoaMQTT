@@ -44,14 +44,14 @@ class FrameTests: XCTestCase {
         conn.cleansess = false
         
         XCTAssertEqual(conn.bytes(),
-                       [0x10, 0x29,
+                       [0x10, 0x2B,
                         0x00, 0x04, 0x4D, 0x51, 0x54, 0x54,         // MQTT
                         0x04,                                       // Protocol Version - 4
                         0b11110100,                                 // Connect Flags - 0b11110100
                         0x00, 0x3C,                                 // Keepalive - 60
                         0x00, 0x05, 0x73, 0x68, 0x65, 0x65, 0x70,   // ClientId - sheep
                         0x00, 0x03, 0x74, 0x2F, 0x31,               // Will Topic - t/1
-                        0x42, 0x61, 0x6E, 0x61, 0x6C, 0x61, 0x6E, 0x61, // Will Payload - Banalana
+                        0x00, 0x08, 0x42, 0x61, 0x6E, 0x61, 0x6C, 0x61, 0x6E, 0x61, // Will Payload - Banalana
                         0x00, 0x04, 0x61, 0x62, 0x63, 0x64,         // Username - abcd
                         0x00, 0x03, 0x70, 0x77, 0x64])              // Password - pwd
     }

@@ -20,6 +20,8 @@
 		82519C0722ACC6E100FA0815 /* CocoaMQTTTypes.swift in Sources */ = {isa = PBXBuildFile; fileRef = 82519C0622ACC6E100FA0815 /* CocoaMQTTTypes.swift */; };
 		82CF1FB022943B2100DF539A /* CocoaMQTTReader.swift in Sources */ = {isa = PBXBuildFile; fileRef = 82CF1FAF22943B2100DF539A /* CocoaMQTTReader.swift */; };
 		8D14C7632345CAB5002D959E /* CocoaMQTTDeliverTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 8D14C7622345CAB5002D959E /* CocoaMQTTDeliverTests.swift */; };
+		8D14C7652349BAF5002D959E /* CocoaMQTTStorage.swift in Sources */ = {isa = PBXBuildFile; fileRef = 8D14C7642349BAF5002D959E /* CocoaMQTTStorage.swift */; };
+		8D14C7672349C2A3002D959E /* CocoaMQTTStorageTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 8D14C7662349C2A3002D959E /* CocoaMQTTStorageTests.swift */; };
 		8D43DE4C22FAEB8B00D9A06B /* FrameConnect.swift in Sources */ = {isa = PBXBuildFile; fileRef = 8D43DE4B22FAEB8B00D9A06B /* FrameConnect.swift */; };
 		8D43DE4E22FAEC6700D9A06B /* FrameConnAck.swift in Sources */ = {isa = PBXBuildFile; fileRef = 8D43DE4D22FAEC6700D9A06B /* FrameConnAck.swift */; };
 		8D43DE5022FAED3400D9A06B /* FramePublish.swift in Sources */ = {isa = PBXBuildFile; fileRef = 8D43DE4F22FAED3400D9A06B /* FramePublish.swift */; };
@@ -64,6 +66,8 @@
 		8270C4AA21DA6F6700C5D485 /* FrameTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = FrameTests.swift; sourceTree = "<group>"; };
 		82CF1FAF22943B2100DF539A /* CocoaMQTTReader.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CocoaMQTTReader.swift; sourceTree = "<group>"; };
 		8D14C7622345CAB5002D959E /* CocoaMQTTDeliverTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CocoaMQTTDeliverTests.swift; sourceTree = "<group>"; };
+		8D14C7642349BAF5002D959E /* CocoaMQTTStorage.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CocoaMQTTStorage.swift; sourceTree = "<group>"; };
+		8D14C7662349C2A3002D959E /* CocoaMQTTStorageTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CocoaMQTTStorageTests.swift; sourceTree = "<group>"; };
 		8D43DE4B22FAEB8B00D9A06B /* FrameConnect.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = FrameConnect.swift; sourceTree = "<group>"; };
 		8D43DE4D22FAEC6700D9A06B /* FrameConnAck.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = FrameConnAck.swift; sourceTree = "<group>"; };
 		8D43DE4F22FAED3400D9A06B /* FramePublish.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = FramePublish.swift; sourceTree = "<group>"; };
@@ -123,6 +127,7 @@
 			children = (
 				0409971E1C1B0B96006B5A6D /* CocoaMQTTTests.swift */,
 				8D14C7622345CAB5002D959E /* CocoaMQTTDeliverTests.swift */,
+				8D14C7662349C2A3002D959E /* CocoaMQTTStorageTests.swift */,
 				8270C4AA21DA6F6700C5D485 /* FrameTests.swift */,
 				040997201C1B0B96006B5A6D /* Info.plist */,
 			);
@@ -180,6 +185,7 @@
 				8225B4C8227B182200E4DB51 /* CocoaMQTTTimer.swift */,
 				8225B4CC227B196F00E4DB51 /* CocoaMQTTLogger.swift */,
 				82519C0622ACC6E100FA0815 /* CocoaMQTTTypes.swift */,
+				8D14C7642349BAF5002D959E /* CocoaMQTTStorage.swift */,
 			);
 			name = Utils;
 			sourceTree = "<group>";
@@ -328,6 +334,7 @@
 				82CF1FB022943B2100DF539A /* CocoaMQTTReader.swift in Sources */,
 				8225B53B227C2FC600E4DB51 /* Frame.swift in Sources */,
 				8D43DE5E22FAF9E500D9A06B /* FrameUnsubscribe.swift in Sources */,
+				8D14C7652349BAF5002D959E /* CocoaMQTTStorage.swift in Sources */,
 				8D43DE6022FAFC2700D9A06B /* FrameUnsubAck.swift in Sources */,
 				8225B53C227C2FC600E4DB51 /* CocoaMQTTMessage.swift in Sources */,
 				8225B53D227C2FC600E4DB51 /* CocoaMQTTDeliver.swift in Sources */,
@@ -352,6 +359,7 @@
 			buildActionMask = 2147483647;
 			files = (
 				8D14C7632345CAB5002D959E /* CocoaMQTTDeliverTests.swift in Sources */,
+				8D14C7672349C2A3002D959E /* CocoaMQTTStorageTests.swift in Sources */,
 				8225B556227C334700E4DB51 /* CocoaMQTTTests.swift in Sources */,
 				8225B557227C334700E4DB51 /* FrameTests.swift in Sources */,
 			);

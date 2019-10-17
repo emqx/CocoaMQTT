@@ -78,6 +78,7 @@ extension FrameConnect {
         
         if let will = willMsg {
             payload += will.topic.bytesWithLength
+            payload += UInt16(will.payload.count).hlBytes
             payload += will.payload
         }
         if let username = username {
