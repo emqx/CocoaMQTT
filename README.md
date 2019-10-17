@@ -33,7 +33,7 @@ $ pod install
 Install using [Carthage](https://github.com/Carthage/Carthage) by adding the following lines to your Cartfile:
 
 ```
-github "emqtt/CocoaMQTT" "master"
+github "emqx/CocoaMQTT" "master"
 ```
 
 Then, run the following command:
@@ -139,7 +139,7 @@ MIT License (see `LICENSE`)
 
 ## Author
 
-- Feng Lee <feng@emqtt.io>
+- Feng Lee <feng@emqx.io>
 - CrazyWisdom <zh.whong@gmail.com>
 - Alex Yu <alexyu.dc@gmail.com>
 

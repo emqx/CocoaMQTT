@@ -48,7 +48,7 @@ class ViewController: UIViewController {
         mqtt = CocoaMQTT(clientID: clientID, host: defaultHost, port: 1883)
         mqtt!.username = ""
         mqtt!.password = ""
-        mqtt!.willMessage = CocoaMQTTWill(topic: "/will", message: "dieout")
+        mqtt!.willMessage = CocoaMQTTMessage(topic: "/will", string: "dieout")
         mqtt!.keepAlive = 60
         mqtt!.delegate = self
     }
@@ -58,7 +58,7 @@ class ViewController: UIViewController {
         mqtt = CocoaMQTT(clientID: clientID, host: defaultHost, port: 8883)
         mqtt!.username = ""
         mqtt!.password = ""
-        mqtt!.willMessage = CocoaMQTTWill(topic: "/will", message: "dieout")
+        mqtt!.willMessage = CocoaMQTTMessage(topic: "/will", string: "dieout")
         mqtt!.keepAlive = 60
         mqtt!.delegate = self
         mqtt!.enableSSL = true
@@ -69,7 +69,7 @@ class ViewController: UIViewController {
         mqtt = CocoaMQTT(clientID: clientID, host: defaultHost, port: 8883)
         mqtt!.username = ""
         mqtt!.password = ""
-        mqtt!.willMessage = CocoaMQTTWill(topic: "/will", message: "dieout")
+        mqtt!.willMessage = CocoaMQTTMessage(topic: "/will", string: "dieout")
         mqtt!.keepAlive = 60
         mqtt!.delegate = self
         mqtt!.enableSSL = true
