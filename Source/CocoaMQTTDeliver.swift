@@ -47,7 +47,6 @@ extension Array where Element == InflightFrame {
     }
 }
 
-
 // CocoaMQTTDeliver
 class CocoaMQTTDeliver: NSObject {
     
@@ -159,7 +158,7 @@ extension CocoaMQTTDeliver {
             
             // Start a retry timer for resending it if it not receive PUBACK or PUBREC
             if awaitingTimer == nil {
-                awaitingTimer = CocoaMQTTTimer.every(retryTimeInterval / 1000.0) { [weak self] in
+                awaitingTimer = CocoaMQTTTimer.every(retryTimeInterval / 1000.0, name: "awaitingTimer") { [weak self] in
                     guard let wself = self else { return }
                     wself.deliverQueue.async {
                         wself.redeliver()
@@ -192,7 +191,7 @@ extension CocoaMQTTDeliver {
             }
         }
     }
-    
+
     @discardableResult
     private func ackInflightFrame(withMsgid msgid: UInt16, type: FrameType) -> [Frame] {
         var ackedFrames = [Frame]()

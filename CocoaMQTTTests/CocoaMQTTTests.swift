@@ -48,6 +48,7 @@ class CocoaMQTTTests: XCTestCase {
         mqtt.autoReconnect = true
         mqtt.keepAlive = keepAlive
         mqtt.deliverTimeout =  3000 //ms
+
         mqtt.maxAutoReconnectTimeInterval = maxAutoReconn
     }
     
@@ -107,10 +108,9 @@ class CocoaMQTTTests: XCTestCase {
         connExp = expectation(description: "connection-reconnect-2")
         mqtt.internal_disconnect()
         wait(for: [connExp!], timeout: 513)
-        
         mqtt.disconnect()
     }
-    
+   
     func testProcessSafePub() {
         connExp = expectation(description: "connection")
         _ = mqtt.connect()

@@ -251,6 +251,7 @@ public class CocoaMQTT: NSObject, CocoaMQTTClient {
     fileprivate var subscriptionsWaitingAck: [UInt16: [(String, CocoaMQTTQoS)]] = [:]
     fileprivate var unsubscriptionsWaitingAck: [UInt16: [String]] = [:]
     
+
     /// Sending messages
     fileprivate var sendingMessages: [UInt16: CocoaMQTTMessage] = [:]
 
@@ -583,7 +584,7 @@ extension CocoaMQTT: GCDAsyncSocketDelegate {
             
             // Start reconnector once socket error occuried
             printInfo("Try reconnect to server after \(reconectTimeInterval)s")
-            autoReconnTimer = CocoaMQTTTimer.after(Double(reconectTimeInterval), { [weak self] in
+            autoReconnTimer = CocoaMQTTTimer.after(Double(reconectTimeInterval), name: "autoReconnTimer", { [weak self] in
                 guard let self = self else { return }
                 if self.reconectTimeInterval < self.maxAutoReconnectTimeInterval {
                     self.reconectTimeInterval *= 2
@@ -631,7 +632,7 @@ extension CocoaMQTT: CocoaMQTTReaderDelegate {
             
             let interval = Double(keepAlive <= 0 ? 60: keepAlive)
             
-            aliveTimer = CocoaMQTTTimer.every(interval) { [weak self] in
+            aliveTimer = CocoaMQTTTimer.every(interval, name: "aliveTimer") { [weak self] in
                 guard let wself = self else { return }
                 wself.delegateQueue.async {
                     guard wself.connState == .connected else {
@@ -739,3 +740,4 @@ extension CocoaMQTT: CocoaMQTTReaderDelegate {
         didReceivePong(self)
     }
 }
+
