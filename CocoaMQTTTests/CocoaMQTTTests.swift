@@ -9,12 +9,9 @@
 import XCTest
 @testable import CocoaMQTT
 
-let host = "localhost"
-let port: UInt16 = 1883
-let clientID = "ClientForUnitTesting-" + randomCode(length: 6)
-
-let topicToSub = "animals"
-let longString = longStringGen()
+private let host = "localhost"
+private let port: UInt16 = 1883
+private let clientID = "ClientForUnitTesting-" + randomCode(length: 6)
 
 class CocoaMQTTTests: XCTestCase {
 
@@ -101,7 +98,35 @@ class CocoaMQTTTests: XCTestCase {
             caller.isConnected == false
         }
     }
-   
+    
+    func testLongString() {
+        let caller = Caller()
+        let mqtt = CocoaMQTT(clientID: clientID, host: host, port: port)
+        mqtt.delegate = caller
+        mqtt.logLevel = .debug
+        mqtt.autoReconnect = false
+        
+        _ = mqtt.connect()
+        wait_for { caller.isConnected }
+
+        mqtt.subscribe("t/#", qos: .qos2)
+        wait_for {
+            caller.subs == ["t/#"]
+        }
+
+        mqtt.publish("t/1", withString: longStringGen(), qos: .qos2)
+        wait_for {
+            guard caller.recvs.count > 0 else {
+                return false
+            }
+            XCTAssertEqual(caller.recvs[0].topic, "t/1")
+            return true
+        }
+        
+        mqtt.disconnect()
+        wait_for { caller.isConnected == false }
+    }
+    
     func testProcessSafePub() {
         let caller = Caller()
         let mqtt = CocoaMQTT(clientID: clientID, host: host, port: port)
@@ -140,7 +165,7 @@ class CocoaMQTTTests: XCTestCase {
 }
 
 extension CocoaMQTTTests {
-    func wait_for(line: Int = #line, t: Int = 5, _ fun: @escaping () -> Bool) {
+    func wait_for(line: Int = #line, t: Int = 10, _ fun: @escaping () -> Bool) {
         let exp = XCTestExpectation()
         let thrd = Thread {
             while true {
