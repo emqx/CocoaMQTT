@@ -10,200 +10,202 @@ import XCTest
 @testable import CocoaMQTT
 
 let host = "localhost"
-//let host = "q.emqtt.com"
 let port: UInt16 = 1883
 let clientID = "ClientForUnitTesting-" + randomCode(length: 6)
-
-let timeout: TimeInterval = 5
-let keepAlive: UInt16 = 20
-let maxAutoReconn: UInt16 = 512
 
 let topicToSub = "animals"
 let longString = longStringGen()
 
 class CocoaMQTTTests: XCTestCase {
-    
-    var mqtt: CocoaMQTT = CocoaMQTT(clientID: clientID, host: host, port: port)
-    
-    var connExp: XCTestExpectation?
-    var subExp: XCTestExpectation?
-    var unsubExp: XCTestExpectation?
-    
-    var pubQos1Exp: XCTestExpectation?
-    var pubQos2Exp: XCTestExpectation?
-    
-    var res0Exp: XCTestExpectation?
-    var res1Exp: XCTestExpectation?
-    var res2Exp: XCTestExpectation?
 
-    var maxMessageCount: UInt = 100
-    var multiCounter: UInt = 0
-    var multiPub: XCTestExpectation?
-    
     override func setUp() {
         super.setUp()
-        // custom set
-        mqtt.delegate = self
-        mqtt.logLevel = .info
-        mqtt.autoReconnect = true
-        mqtt.keepAlive = keepAlive
-        mqtt.deliverTimeout =  3000 //ms
-
-        mqtt.maxAutoReconnectTimeInterval = maxAutoReconn
     }
     
     override func tearDown() {
         super.tearDown()
     }
     
-    func testConnect() {
-        connExp = expectation(description: "connection")
-        subExp = expectation(description: "sub")
-        unsubExp = expectation(description: "unsub")
-        
-        pubQos1Exp = expectation(description: "pub_1")
-        pubQos2Exp = expectation(description: "pub_2")
-        
-        res0Exp = expectation(description: "res_0")
-        res1Exp = expectation(description: "res_1")
-        res2Exp = expectation(description: "res_2")
-        
-        _ = mqtt.connect()
-        wait(for: [connExp!], timeout: timeout)
-        
-        if mqtt.connState != .connected {
-            XCTFail()
-        }
-        
-        mqtt.subscribe(topicToSub)
-        wait(for: [subExp!], timeout: timeout)
-        XCTAssertEqual(mqtt.subscriptions, [topicToSub: .qos1])
+     func testConnect() {
+         
+         let caller = Caller()
+         let mqtt = CocoaMQTT(clientID: clientID, host: host, port: port)
+         mqtt.delegate = caller
+         mqtt.logLevel = .debug
+         mqtt.autoReconnect = false
+         
+         _ = mqtt.connect()
+         wait_for {
+             caller.isConnected
+         }
+         
+         let topics = ["t/0", "t/1", "t/2"]
 
-        mqtt.publish(topicToSub, withString: "0", qos: .qos0, retained: false)
-        wait(for: [res0Exp!], timeout: timeout)
-
-        mqtt.publish(topicToSub, withString: "1", qos: .qos1, retained: false)
-        wait(for: [pubQos1Exp!, res1Exp!], timeout: timeout)
-        
-        mqtt.publish(topicToSub, withString: "2", qos: .qos2, retained: false)
-        wait(for: [pubQos2Exp!, res2Exp!], timeout: timeout)
-        
-        pubQos1Exp = expectation(description: "pub_1")
-        res1Exp = expectation(description: "res_1")
-        mqtt.publish(topicToSub, withString: longString, qos: .qos1, retained: false)
-        wait(for: [pubQos1Exp!, res1Exp!], timeout: timeout)
-        
-        mqtt.unsubscribe(topicToSub)
-        wait(for: [unsubExp!], timeout: timeout)
-        XCTAssertEqual(mqtt.subscriptions, [:])
-        
-        mqtt.disconnect()
+         mqtt.subscribe(topics[0])
+         mqtt.subscribe(topics[1])
+         mqtt.subscribe(topics[2])
+         wait_for {
+             caller.subs == topics
+         }
+         
+         mqtt.publish(topics[0], withString: "0", qos: .qos0, retained: false)
+         mqtt.publish(topics[1], withString: "1", qos: .qos1, retained: false)
+         mqtt.publish(topics[2], withString: "2", qos: .qos2, retained: false)
+         wait_for {
+             if caller.recvs.count >= 3 {
+                 let f0 = caller.recvs[0]
+                 let f1 = caller.recvs[1]
+                 let f2 = caller.recvs[2]
+                 XCTAssertEqual(f0.topic, topics[0])
+                 XCTAssertEqual(f1.topic, topics[1])
+                 XCTAssertEqual(f2.topic, topics[2])
+                 return true
+             }
+             return false
+         }
+         
+         mqtt.unsubscribe(topics[0])
+         mqtt.unsubscribe(topics[1])
+         mqtt.unsubscribe(topics[2])
+         wait_for {
+             caller.subs == []
+         }
+         
+         mqtt.disconnect()
     }
     
     func testAutoReconnect() {
-        connExp = expectation(description: "connection-reconnect-1")
-        _ = mqtt.connect()
-        wait(for: [connExp!], timeout: timeout)
+        let caller = Caller()
+        let mqtt = CocoaMQTT(clientID: clientID, host: host, port: port)
+        mqtt.delegate = caller
+        mqtt.logLevel = .debug
+        mqtt.autoReconnect = true
+        mqtt.autoReconnectTimeInterval = 1
         
-        connExp = expectation(description: "connection-reconnect-2")
+        _ = mqtt.connect()
+        wait_for {
+            caller.isConnected
+        }
+        
         mqtt.internal_disconnect()
-        wait(for: [connExp!], timeout: 513)
+        wait_for {
+            caller.isConnected == false
+        }
+        
+        wait_for {
+            caller.isConnected
+        }
+        
         mqtt.disconnect()
+        wait_for {
+            caller.isConnected == false
+        }
     }
    
     func testProcessSafePub() {
-        connExp = expectation(description: "connection")
-        _ = mqtt.connect()
-        wait(for: [connExp!], timeout: timeout)
+        let caller = Caller()
+        let mqtt = CocoaMQTT(clientID: clientID, host: host, port: port)
+        mqtt.delegate = caller
+        mqtt.logLevel = .debug
+        mqtt.autoReconnect = false
         
-        // subscribe first
-        subExp = expectation(description: "sub")
-        mqtt.subscribe("test/#")
-        wait(for: [subExp!], timeout: timeout)
+        _ = mqtt.connect()
+        wait_for {
+            caller.isConnected
+        }
+
+        mqtt.subscribe("t/#", qos: .qos1)
+        wait_for {
+            caller.subs == ["t/#"]
+        }
         
         mqtt.inflightWindowSize = 10
-        mqtt.messageQueueSize = maxMessageCount
-        
-        multiPub = expectation(description: "process_safe")
+        mqtt.messageQueueSize = 100
         
         let concurrentQueue = DispatchQueue(label: "tests.cocoamqtt.emqx", qos: .default, attributes: .concurrent)
-        for i in 0 ..< maxMessageCount {
-            concurrentQueue.async { [weak self] in
-                self?.mqtt.publish("test/\(i)", withString: "m", qos: .qos1)
+        for i in 0 ..< 100 {
+            concurrentQueue.async {
+                mqtt.publish("t/\(i)", withString: "m\(i)", qos: .qos1)
             }
         }
-        wait(for: [multiPub!], timeout: timeout)
+        wait_for {
+            caller.recvs.count == 100
+        }
         
         mqtt.disconnect()
+        wait_for {
+            caller.isConnected == false
+        }
+    }
+    
+    func wait_for(line: Int = #line, t: Int = 5, _ fun: @escaping () -> Bool) {
+        let exp = XCTestExpectation()
+        let thrd = Thread {
+            while true {
+                usleep(useconds_t(1000))
+                guard fun() else {
+                    continue
+                }
+                exp.fulfill()
+                break
+            }
+        }
+        thrd.start()
+        wait(for: [exp], timeout: TimeInterval(t))
+        thrd.cancel()
+    }
+    
+    private func ms_sleep(_ ms: Int) {
+        usleep(useconds_t(ms * 1000))
     }
 }
 
-extension CocoaMQTTTests: CocoaMQTTDelegate {
+private class Caller: CocoaMQTTDelegate {
     
+    var recvs = [FramePublish]()
+    
+    var sents = [UInt16]()
+    
+    var acks = [UInt16]()
+    
+    var subs = [String]()
+    
+    var isConnected = false
     
     func mqtt(_ mqtt: CocoaMQTT, didConnectAck ack: CocoaMQTTConnAck) {
-        connExp?.fulfill()
+        if ack == .accept { isConnected = true }
     }
     
     func mqtt(_ mqtt: CocoaMQTT, didPublishMessage message: CocoaMQTTMessage, id: UInt16) {
-        
+        sents.append(id)
     }
     
     func mqtt(_ mqtt: CocoaMQTT, didPublishAck id: UInt16) {
-        pubQos1Exp?.fulfill()
+        acks.append(id)
     }
     
-    func mqtt(_ mqtt: CocoaMQTT, didPublishComplete id: UInt16) {
-        pubQos2Exp?.fulfill()
-    }
-    
-    func mqtt(_ mqtt: CocoaMQTT, didReceiveMessage message: CocoaMQTTMessage, id: UInt16 ) {
-        let string = message.string!
-        if string == "0" {
-            res0Exp?.fulfill()
-        } else if string == "1" {
-            res1Exp?.fulfill()
-        } else if string == "2" {
-            res2Exp?.fulfill()
-        } else if string == longString {
-            res1Exp?.fulfill()
-        } else if string == "m" {
-            multiCounter += 1
-            if multiCounter == maxMessageCount {
-                multiPub?.fulfill()
-            }
-        }
+    func mqtt(_ mqtt: CocoaMQTT, didReceiveMessage message: CocoaMQTTMessage, id: UInt16) {
+        var frame = message.t_pub_frame
+        frame.msgid = id
+        recvs.append(frame)
     }
     
     func mqtt(_ mqtt: CocoaMQTT, didSubscribeTopics topics: [String]) {
-        if topics.first! == topicToSub {
-            subExp?.fulfill()
-        } else if topics.first! == "test/#" {
-            subExp?.fulfill()
-        } else {
-            XCTFail()
-        }
+        subs = subs + topics
     }
     
     func mqtt(_ mqtt: CocoaMQTT, didUnsubscribeTopics topics: [String]) {
-        if topics.first! == topicToSub {
-            unsubExp?.fulfill()
-        } else {
-            XCTFail()
+        subs = subs.filter { (e) -> Bool in
+            !topics.contains(e)
         }
     }
     
-    func mqttDidPing(_ mqtt: CocoaMQTT) {
-        
-    }
-    func mqttDidReceivePong(_ mqtt: CocoaMQTT) {
-        
-    }
-    func mqttDidDisconnect(_ mqtt: CocoaMQTT, withError err: Error?) {
-    }
+    func mqttDidPing(_ mqtt: CocoaMQTT) { }
     
-    func mqtt(_ mqtt: CocoaMQTT, didReceive trust: SecTrust, completionHandler: @escaping (Bool) -> Void) {
-        
+    func mqttDidReceivePong(_ mqtt: CocoaMQTT) { }
+    
+    func mqttDidDisconnect(_ mqtt: CocoaMQTT, withError err: Error?) {
+        isConnected = false
     }
 }
 

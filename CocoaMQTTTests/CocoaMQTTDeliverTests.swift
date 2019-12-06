@@ -23,7 +23,7 @@ class CocoaMQTTDeliverTests: XCTestCase {
         let caller = Caller()
         let deliver = CocoaMQTTDeliver()
         
-        var frames = [FramePublish(topic: "t/0", payload: [0x00], qos: .qos0),
+        let frames = [FramePublish(topic: "t/0", payload: [0x00], qos: .qos0),
                       FramePublish(topic: "t/1", payload: [0x01], qos: .qos1, msgid: 1),
                       FramePublish(topic: "t/2", payload: [0x02], qos: .qos2, msgid: 2)]
         
@@ -44,7 +44,7 @@ class CocoaMQTTDeliverTests: XCTestCase {
         let caller = Caller()
         let deliver = CocoaMQTTDeliver()
         
-        var frames = [FramePublish(topic: "t/0", payload: [0x00], qos: .qos0),
+        let frames = [FramePublish(topic: "t/0", payload: [0x00], qos: .qos0),
                       FramePublish(topic: "t/1", payload: [0x01], qos: .qos1, msgid: 1),
                       FramePublish(topic: "t/2", payload: [0x02], qos: .qos2, msgid: 2)]
         
@@ -104,7 +104,7 @@ class CocoaMQTTDeliverTests: XCTestCase {
         XCTAssertEqual(true, deliver.add(frames[2]))
         XCTAssertEqual(false, deliver.add(frames[0]))
         
-        ms_sleep(1000) // Wait for re-delivering timeout
+        ms_sleep(1100) // Wait for re-delivering timeout
         XCTAssertEqual(caller.frames.count, 2)
         assertEqual(caller.frames[0], frames[1])
         assertEqual(caller.frames[1], frames[1])
@@ -158,7 +158,7 @@ class CocoaMQTTDeliverTests: XCTestCase {
     }
 }
 
-class Caller: CocoaMQTTDeliverProtocol {
+private class Caller: CocoaMQTTDeliverProtocol {
     
     var delegateQueue: DispatchQueue
     

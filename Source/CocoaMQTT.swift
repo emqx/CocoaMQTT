@@ -435,15 +435,18 @@ public class CocoaMQTT: NSObject, CocoaMQTTClient {
         
         frame.retained = message.retained
         
-        // Push frame to deliver message queue
-        guard deliver.add(frame) else {
-            return -1
-        }
-        
         delegateQueue.async {
             self.sendingMessages[msgid] = message
         }
-        
+
+        // Push frame to deliver message queue
+        guard deliver.add(frame) else {
+            delegateQueue.async {
+                self.sendingMessages.removeValue(forKey: msgid)
+            }
+            return -1
+        }
+
         return Int(msgid)
     }
 
