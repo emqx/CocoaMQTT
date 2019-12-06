@@ -1,5 +1,5 @@
 language: swift
-osx_image: xcode10.2
+osx_image: xcode11.1
 xcode_project: CocoaMQTT.xcodeproj
 xcode_scheme: CocoaMQTT
 xcode_destination: platform=iOS Simulator,OS=12.2,name=iPhone Xs
