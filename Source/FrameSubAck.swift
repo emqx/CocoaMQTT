@@ -67,6 +67,6 @@ extension FrameSubAck: InitialWithBytes {
 
 extension FrameSubAck: CustomStringConvertible {
     var description: String {
-        return "SUBACK(id: \(msgid)"
+        return "SUBACK(id: \(msgid))"
     }
 }

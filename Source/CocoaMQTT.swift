@@ -69,7 +69,7 @@ import CocoaAsyncSocket
     func mqtt(_ mqtt: CocoaMQTT, didReceiveMessage message: CocoaMQTTMessage, id: UInt16 )
     
     ///
-    func mqtt(_ mqtt: CocoaMQTT, didSubscribeTopics topics: [String])
+    func mqtt(_ mqtt: CocoaMQTT, didSubscribeTopics success: NSDictionary, failed: [String])
     
     ///
     func mqtt(_ mqtt: CocoaMQTT, didUnsubscribeTopics topics: [String])
@@ -265,7 +265,7 @@ public class CocoaMQTT: NSObject, CocoaMQTTClient {
     public var didPublishMessage: (CocoaMQTT, CocoaMQTTMessage, UInt16) -> Void = { _, _, _ in }
     public var didPublishAck: (CocoaMQTT, UInt16) -> Void = { _, _ in }
     public var didReceiveMessage: (CocoaMQTT, CocoaMQTTMessage, UInt16) -> Void = { _, _, _ in }
-    public var didSubscribeTopics: (CocoaMQTT, [String]) -> Void = { _, _ in }
+    public var didSubscribeTopics: (CocoaMQTT, NSDictionary, [String]) -> Void = { _, _, _  in }
     public var didUnsubscribeTopics: (CocoaMQTT, [String]) -> Void = { _, _ in }
     public var didPing: (CocoaMQTT) -> Void = { _ in }
     public var didReceivePong: (CocoaMQTT) -> Void = { _ in }
@@ -710,16 +710,19 @@ extension CocoaMQTT: CocoaMQTTReaderDelegate {
             return
         }
         
-        var topics: [String] = []
+        let success: NSMutableDictionary = NSMutableDictionary()
+        var failed = [String]()
         for (idx,(topic, _)) in topicsAndQos.enumerated() {
             if suback.grantedQos[idx] != .FAILTURE {
                 subscriptions[topic] = suback.grantedQos[idx]
-                topics.append(topic)
+                success[topic] = suback.grantedQos[idx].rawValue
+            } else {
+                failed.append(topic)
             }
         }
-        
-        delegate?.mqtt(self, didSubscribeTopics: topics)
-        didSubscribeTopics(self, topics)
+
+        delegate?.mqtt(self, didSubscribeTopics: success, failed: failed)
+        didSubscribeTopics(self, success, failed)
     }
 
     func didReceived(_ reader: CocoaMQTTReader, unsuback: FrameUnsubAck) {

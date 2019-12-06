@@ -137,7 +137,9 @@ class CocoaMQTTTests: XCTestCase {
             caller.isConnected == false
         }
     }
-    
+}
+
+extension CocoaMQTTTests {
     func wait_for(line: Int = #line, t: Int = 5, _ fun: @escaping () -> Bool) {
         let exp = XCTestExpectation()
         let thrd = Thread {
@@ -190,8 +192,8 @@ private class Caller: CocoaMQTTDelegate {
         recvs.append(frame)
     }
     
-    func mqtt(_ mqtt: CocoaMQTT, didSubscribeTopics topics: [String]) {
-        subs = subs + topics
+    func mqtt(_ mqtt: CocoaMQTT, didSubscribeTopics success: NSDictionary, failed: [String]) {
+        subs = subs + (success.allKeys as! [String])
     }
     
     func mqtt(_ mqtt: CocoaMQTT, didUnsubscribeTopics topics: [String]) {
