@@ -13,14 +13,12 @@ import CocoaAsyncSocket
  * Connection State
  */
 @objc public enum CocoaMQTTConnState: UInt8, CustomStringConvertible {
-    case initial = 0
+    case disconnected = 0
     case connecting
     case connected
-    case disconnected
     
     public var description: String {
         switch self {
-            case .initial:      return "initial"
             case .connecting:   return "connecting"
             case .connected:    return "connected"
             case .disconnected: return "disconnected"
@@ -170,10 +168,12 @@ public class CocoaMQTT: NSObject, CocoaMQTTClient {
     /// The delegate/closure callback function will be commited asynchronously to it
     public var delegateQueue = DispatchQueue.main
     
-    public var connState = CocoaMQTTConnState.initial {
+    public var connState = CocoaMQTTConnState.disconnected {
         didSet {
-            delegate?.mqtt?(self, didStateChangeTo: connState)
-            didChangeState(self, connState)
+            __delegate_queue {
+                self.delegate?.mqtt?(self, didStateChangeTo: self.connState)
+                self.didChangeState(self, self.connState)
+            }
         }
     }
     
@@ -222,7 +222,7 @@ public class CocoaMQTT: NSObject, CocoaMQTTClient {
     private var reconectTimeInterval: UInt16 = 0
     
     private var autoReconnTimer: CocoaMQTTTimer?
-    private var disconnectExpectedly = false
+    private var is_internal_disconnected = false
     
     /// Console log level
     public var logLevel: CocoaMQTTLoggerLevel {
@@ -378,12 +378,13 @@ public class CocoaMQTT: NSObject, CocoaMQTTClient {
     ///         If you want to disconnect from inside framwork, call internal_disconnect()
     ///         disconnect expectedly
     public func disconnect() {
-        disconnectExpectedly = true
+        is_internal_disconnected = false
         internal_disconnect()
     }
     
     /// Disconnect unexpectedly
     func internal_disconnect() {
+        is_internal_disconnected = true
         send(FrameDisconnect(), tag: -0xE0)
         socket.disconnect()
     }
@@ -393,8 +394,10 @@ public class CocoaMQTT: NSObject, CocoaMQTTClient {
         printDebug("ping")
         send(FramePingReq(), tag: -0xC0)
         
-        self.delegate?.mqttDidPing(self)
-        didPing(self)
+        __delegate_queue {
+            self.delegate?.mqttDidPing(self)
+            self.didPing(self)
+        }
     }
     
     /// Publish a message to broker
@@ -503,12 +506,23 @@ extension CocoaMQTT: CocoaMQTTDeliverProtocol {
             
             send(publish, tag: Int(msgid))
             
-            delegate?.mqtt(self, didPublishMessage: message, id: msgid)
-            didPublishMessage(self, message, msgid)
             
+            self.delegate?.mqtt(self, didPublishMessage: message, id: msgid)
+            self.didPublishMessage(self, message, msgid)
+        
         } else if let pubrel = frame as? FramePubRel {
             // -- Send PUBREL
             send(pubrel, tag: Int(pubrel.msgid))
+        }
+    }
+}
+
+extension CocoaMQTT {
+    
+    func __delegate_queue(_ fun: @escaping () -> Void) {
+        delegateQueue.async { [weak self] in
+            guard let _ = self else { return }
+            fun()
         }
     }
 }
@@ -579,25 +593,29 @@ extension CocoaMQTT: GCDAsyncSocketDelegate {
         delegate?.mqttDidDisconnect(self, withError: err)
         didDisconnect(self, err)
         
-        if disconnectExpectedly {
-            connState = .initial
-        } else if autoReconnect {
-            if reconectTimeInterval == 0 {
-                reconectTimeInterval = autoReconnectTimeInterval
-            }
-            
-            // Start reconnector once socket error occuried
-            printInfo("Try reconnect to server after \(reconectTimeInterval)s")
-            autoReconnTimer = CocoaMQTTTimer.after(Double(reconectTimeInterval), name: "autoReconnTimer", { [weak self] in
-                guard let self = self else { return }
-                if self.reconectTimeInterval < self.maxAutoReconnectTimeInterval {
-                    self.reconectTimeInterval *= 2
-                } else {
-                    self.reconectTimeInterval = self.maxAutoReconnectTimeInterval
-                }
-                _ = self.connect()
-            })
+        guard is_internal_disconnected else {
+            return
         }
+        
+        guard autoReconnect else {
+            return
+        }
+        
+        if reconectTimeInterval == 0 {
+            reconectTimeInterval = autoReconnectTimeInterval
+        }
+        
+        // Start reconnector once socket error occuried
+        printInfo("Try reconnect to server after \(reconectTimeInterval)s")
+        autoReconnTimer = CocoaMQTTTimer.after(Double(reconectTimeInterval), name: "autoReconnTimer", { [weak self] in
+            guard let self = self else { return }
+            if self.reconectTimeInterval < self.maxAutoReconnectTimeInterval {
+                self.reconectTimeInterval *= 2
+            } else {
+                self.reconectTimeInterval = self.maxAutoReconnectTimeInterval
+            }
+            _ = self.connect()
+        })
     }
 }
 
@@ -628,7 +646,7 @@ extension CocoaMQTT: CocoaMQTTReaderDelegate {
         if connack.returnCode == .accept {
             reconectTimeInterval = 0
             autoReconnTimer = nil
-            disconnectExpectedly = false
+            is_internal_disconnected = false
         }
         
         // keep alive

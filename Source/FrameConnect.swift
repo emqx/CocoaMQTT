@@ -98,7 +98,7 @@ extension FrameConnect: CustomStringConvertible {
     
     var description: String {
         return "CONNECT(id: \(clientID), username: \(username ?? "nil"), " +
-               "password: \(password ?? "nil"), keepalive : \(keepalive)" +
+               "password: \(password ?? "nil"), keepalive : \(keepalive), " +
                "cleansess: \(cleansess))"
     }
 }
