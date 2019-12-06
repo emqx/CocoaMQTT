@@ -45,3 +45,9 @@ extension FramePubComp: InitialWithBytes {
         msgid = UInt16(bytes[0]) << 8 + UInt16(bytes[1])
     }
 }
+
+extension FramePubComp: CustomStringConvertible {
+    var description: String {
+        return "PUBCOMP(id: \(msgid))"
+    }
+}

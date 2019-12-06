@@ -47,3 +47,9 @@ extension FramePubRel: InitialWithBytes {
         msgid = UInt16(bytes[0]) << 8 + UInt16(bytes[1])
     }
 }
+
+extension FramePubRel: CustomStringConvertible {
+    var description: String {
+        return "PUBREL(id: \(msgid))"
+    }
+}

@@ -54,3 +54,9 @@ extension FrameConnAck: InitialWithBytes {
         returnCode = ack
     }
 }
+
+extension FrameConnAck: CustomStringConvertible {
+    var description: String {
+        return "CONNACK(code: \(returnCode), sp: \(sessPresent))"
+    }
+}

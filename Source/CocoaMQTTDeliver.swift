@@ -110,7 +110,7 @@ class CocoaMQTTDeliver: NSObject {
             if acked.count == 0 {
                 printWarning("Acknowledge by \(frame), but not found in inflight window")
             } else {
-                printDebug("Acknowledge frame \(msgid) success, acked: \(acked)")
+                printDebug("Acknowledge frame id \(msgid) success, acked: \(acked)")
                 wself.tryTransport()
             }
         }

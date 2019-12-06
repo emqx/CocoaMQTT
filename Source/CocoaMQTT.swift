@@ -497,6 +497,7 @@ extension CocoaMQTT: CocoaMQTTDeliverProtocol {
         if let publish = frame as? FramePublish {
             let msgid = publish.msgid
             guard let message = sendingMessages[msgid] else {
+                printError("Want send \(frame), but not found in CoacoaMQTT cache")
                 return
             }
             

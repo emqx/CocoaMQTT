@@ -45,3 +45,9 @@ extension FrameUnsubscribe {
         return payload
     }
 }
+
+extension FrameUnsubscribe: CustomStringConvertible {
+    var description: String {
+        return "UNSUBSCRIBE(id: \(msgid), topics: \(topics))"
+    }
+}

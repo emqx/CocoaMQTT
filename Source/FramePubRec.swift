@@ -45,3 +45,9 @@ extension FramePubRec: InitialWithBytes {
         msgid = UInt16(bytes[0]) << 8 + UInt16(bytes[1])
     }
 }
+
+extension FramePubRec: CustomStringConvertible {
+    var description: String {
+        return "PUBREC(id: \(msgid))"
+    }
+}
