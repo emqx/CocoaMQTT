@@ -4,6 +4,7 @@
 ![Platforms](https://img.shields.io/cocoapods/p/CocoaMQTT.svg)
 ![License](https://img.shields.io/cocoapods/l/BadgeSwift.svg?style=flat)
 ![Swift version](https://img.shields.io/badge/swift-5-orange.svg)
+[![Coverage Status](https://coveralls.io/repos/github/emqx/CocoaMQTT/badge.svg?branch=master)](https://coveralls.io/github/emqx/CocoaMQTT?branch=master)
 
 MQTT v3.1.1 client library for iOS/macOS/tvOS  written with Swift 5
 

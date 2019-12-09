@@ -16,7 +16,6 @@
 		8225B547227C312400E4DB51 /* CocoaMQTT.h in Headers */ = {isa = PBXBuildFile; fileRef = 040997711C1B1070006B5A6D /* CocoaMQTT.h */; settings = {ATTRIBUTES = (Public, ); }; };
 		8225B556227C334700E4DB51 /* CocoaMQTTTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 0409971E1C1B0B96006B5A6D /* CocoaMQTTTests.swift */; };
 		8225B557227C334700E4DB51 /* FrameTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 8270C4AA21DA6F6700C5D485 /* FrameTests.swift */; };
-		8225B571227C3B0200E4DB51 /* CocoaAsyncSocket.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = 8225B543227C308900E4DB51 /* CocoaAsyncSocket.framework */; };
 		82519C0722ACC6E100FA0815 /* CocoaMQTTTypes.swift in Sources */ = {isa = PBXBuildFile; fileRef = 82519C0622ACC6E100FA0815 /* CocoaMQTTTypes.swift */; };
 		82CF1FB022943B2100DF539A /* CocoaMQTTReader.swift in Sources */ = {isa = PBXBuildFile; fileRef = 82CF1FAF22943B2100DF539A /* CocoaMQTTReader.swift */; };
 		8D14C7632345CAB5002D959E /* CocoaMQTTDeliverTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 8D14C7622345CAB5002D959E /* CocoaMQTTDeliverTests.swift */; };
@@ -36,6 +35,8 @@
 		8D43DE6222FAFDA700D9A06B /* FramePingReq.swift in Sources */ = {isa = PBXBuildFile; fileRef = 8D43DE6122FAFDA700D9A06B /* FramePingReq.swift */; };
 		8D43DE6422FAFE5F00D9A06B /* FramePingResp.swift in Sources */ = {isa = PBXBuildFile; fileRef = 8D43DE6322FAFE5F00D9A06B /* FramePingResp.swift */; };
 		8D43DE6622FAFF2500D9A06B /* FrameDisconnect.swift in Sources */ = {isa = PBXBuildFile; fileRef = 8D43DE6522FAFF2500D9A06B /* FrameDisconnect.swift */; };
+		8D6C0E25239E7B44003094E9 /* CocoaAsyncSocket.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = 8225B543227C308900E4DB51 /* CocoaAsyncSocket.framework */; };
+		8D6C0E26239E7B44003094E9 /* CocoaAsyncSocket.framework in Embed Frameworks */ = {isa = PBXBuildFile; fileRef = 8225B543227C308900E4DB51 /* CocoaAsyncSocket.framework */; settings = {ATTRIBUTES = (CodeSignOnCopy, RemoveHeadersOnCopy, ); }; };
 /* End PBXBuildFile section */
 
 /* Begin PBXContainerItemProxy section */
@@ -47,6 +48,20 @@
 			remoteInfo = CocoaMQTT;
 		};
 /* End PBXContainerItemProxy section */
+
+/* Begin PBXCopyFilesBuildPhase section */
+		8D6C0E27239E7B44003094E9 /* Embed Frameworks */ = {
+			isa = PBXCopyFilesBuildPhase;
+			buildActionMask = 2147483647;
+			dstPath = "";
+			dstSubfolderSpec = 10;
+			files = (
+				8D6C0E26239E7B44003094E9 /* CocoaAsyncSocket.framework in Embed Frameworks */,
+			);
+			name = "Embed Frameworks";
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+/* End PBXCopyFilesBuildPhase section */
 
 /* Begin PBXFileReference section */
 		0409971E1C1B0B96006B5A6D /* CocoaMQTTTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CocoaMQTTTests.swift; sourceTree = "<group>"; };
@@ -89,7 +104,7 @@
 			isa = PBXFrameworksBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
-				8225B571227C3B0200E4DB51 /* CocoaAsyncSocket.framework in Frameworks */,
+				8D6C0E25239E7B44003094E9 /* CocoaAsyncSocket.framework in Frameworks */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -220,6 +235,8 @@
 				8225B52E227C2E8700E4DB51 /* Sources */,
 				8225B52F227C2E8700E4DB51 /* Frameworks */,
 				8225B530227C2E8700E4DB51 /* Resources */,
+				8D6C0E27239E7B44003094E9 /* Embed Frameworks */,
+				8D6C0E28239E90AB003094E9 /* ShellScript */,
 			);
 			buildRules = (
 			);
@@ -257,7 +274,7 @@
 			attributes = {
 				LastSwiftUpdateCheck = 1020;
 				LastUpgradeCheck = 0930;
-				ORGANIZATIONNAME = emqtt.io;
+				ORGANIZATIONNAME = emqx.io;
 				TargetAttributes = {
 					8225B531227C2E8700E4DB51 = {
 						CreatedOnToolsVersion = 10.2.1;
@@ -320,6 +337,23 @@
 			runOnlyForDeploymentPostprocessing = 0;
 			shellPath = /bin/sh;
 			shellScript = "for path in $FRAMEWORK_SEARCH_PATHS\ndo\nif [ -d \"${path}/CocoaAsyncSocket.framework\" ] && [[ $path == *\"Carthage\"* ]]; then\nexport SCRIPT_INPUT_FILE_COUNT=1\nexport SCRIPT_INPUT_FILE_0=\"${path}/CocoaAsyncSocket.framework\"\n/usr/local/bin/carthage copy-frameworks\nbreak\nfi\ndone\n";
+		};
+		8D6C0E28239E90AB003094E9 /* ShellScript */ = {
+			isa = PBXShellScriptBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+			);
+			inputFileListPaths = (
+			);
+			inputPaths = (
+			);
+			outputFileListPaths = (
+			);
+			outputPaths = (
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+			shellPath = /bin/sh;
+			shellScript = "# Type a script or drag a script file from your workspace to insert its path.\n\nexport CURRENT_ARCH=\"x86_64\"\nexport | egrep '(BUILT_PRODUCTS_DIR)|(CURRENT_ARCH)|(OBJECT_FILE_DIR_normal)|(SRCROOT)|(OBJROOT)' > xcenv.sh\n\n";
 		};
 /* End PBXShellScriptBuildPhase section */
 
@@ -417,6 +451,8 @@
 				"FRAMEWORK_SEARCH_PATHS[sdk=watchsimulator*]" = "$(PROJECT_DIR)/Carthage/Build/watchOS";
 				GCC_C_LANGUAGE_STANDARD = gnu99;
 				GCC_DYNAMIC_NO_PIC = NO;
+				GCC_GENERATE_TEST_COVERAGE_FILES = YES;
+				GCC_INSTRUMENT_PROGRAM_FLOW_ARCS = YES;
 				GCC_NO_COMMON_BLOCKS = YES;
 				GCC_OPTIMIZATION_LEVEL = 0;
 				GCC_PREPROCESSOR_DEFINITIONS = (
@@ -430,7 +466,7 @@
 				GCC_WARN_UNUSED_FUNCTION = YES;
 				GCC_WARN_UNUSED_VARIABLE = YES;
 				IPHONEOS_DEPLOYMENT_TARGET = 10.0;
-				MACOSX_DEPLOYMENT_TARGET = 10.10;
+				MACOSX_DEPLOYMENT_TARGET = 10.12;
 				MTL_ENABLE_DEBUG_INFO = YES;
 				ONLY_ACTIVE_ARCH = YES;
 				SDKROOT = "";
@@ -485,6 +521,8 @@
 				"FRAMEWORK_SEARCH_PATHS[sdk=watchos*]" = "$(PROJECT_DIR)/Carthage/Build/watchOS";
 				"FRAMEWORK_SEARCH_PATHS[sdk=watchsimulator*]" = "$(PROJECT_DIR)/Carthage/Build/watchOS";
 				GCC_C_LANGUAGE_STANDARD = gnu99;
+				GCC_GENERATE_TEST_COVERAGE_FILES = YES;
+				GCC_INSTRUMENT_PROGRAM_FLOW_ARCS = YES;
 				GCC_NO_COMMON_BLOCKS = YES;
 				GCC_WARN_64_TO_32_BIT_CONVERSION = YES;
 				GCC_WARN_ABOUT_RETURN_TYPE = YES_ERROR;
@@ -493,7 +531,7 @@
 				GCC_WARN_UNUSED_FUNCTION = YES;
 				GCC_WARN_UNUSED_VARIABLE = YES;
 				IPHONEOS_DEPLOYMENT_TARGET = 10.0;
-				MACOSX_DEPLOYMENT_TARGET = 10.10;
+				MACOSX_DEPLOYMENT_TARGET = 10.12;
 				MTL_ENABLE_DEBUG_INFO = NO;
 				SDKROOT = "";
 				SUPPORTED_PLATFORMS = "macosx iphoneos iphonesimulator appletvos appletvsimulator watchos watchsimulator";
