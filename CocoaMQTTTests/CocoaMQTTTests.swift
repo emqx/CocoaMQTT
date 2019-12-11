@@ -14,7 +14,7 @@ private let port: UInt16 = 1883
 private let clientID = "ClientForUnitTesting-" + randomCode(length: 6)
 
 private let delegate_queue_key = DispatchSpecificKey<String>()
-private let delegate_queue_val = "xxxxxxxxxxxxxxxxxxxxxxxxxxx"
+private let delegate_queue_val = "_custom_delegate_queue_"
 
 class CocoaMQTTTests: XCTestCase {
 
