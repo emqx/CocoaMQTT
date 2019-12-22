@@ -45,3 +45,9 @@ extension FramePubAck: InitialWithBytes {
         msgid = UInt16(bytes[0]) << 8 + UInt16(bytes[1])
     }
 }
+
+extension FramePubAck: CustomStringConvertible {
+    var description: String {
+        return "PUBACK(id: \(msgid))"
+    }
+}

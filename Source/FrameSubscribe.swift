@@ -51,3 +51,9 @@ extension FrameSubscribe {
         return payload
     }
 }
+
+extension FrameSubscribe: CustomStringConvertible {
+    var description: String {
+        return "SUBSCRIBE(id: \(msgid), topics: \(topics))"
+    }
+}

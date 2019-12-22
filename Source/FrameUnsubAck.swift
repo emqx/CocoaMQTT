@@ -47,3 +47,9 @@ extension FrameUnsubAck: InitialWithBytes {
         msgid = UInt16(bytes[0]) << 8 + UInt16(bytes[1])
     }
 }
+
+extension FrameUnsubAck: CustomStringConvertible {
+    var description: String {
+        return "UNSUBSACK(id: \(msgid))"
+    }
+}

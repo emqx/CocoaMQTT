@@ -55,3 +55,15 @@ extension CocoaMQTTMessage {
         return "CocoaMQTTMessage(topic: \(topic), qos: \(qos), payload: \(payload.summary))"
     }
 }
+
+// For test
+extension CocoaMQTTMessage {
+    
+    var t_pub_frame: FramePublish {
+        var frame = FramePublish(topic: topic, payload: payload, qos: qos, msgid: 0)
+        frame.retained = retained
+        frame.dup = duplicated
+        return frame
+    }
+    
+}

@@ -36,3 +36,9 @@ extension FramePingResp: InitialWithBytes {
         }
     }
 }
+
+extension FramePingResp: CustomStringConvertible {
+    var description: String {
+        return "PONG"
+    }
+}
