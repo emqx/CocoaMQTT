@@ -21,3 +21,9 @@ extension FramePingReq {
     
     func payload() -> [UInt8] { return [] }
 }
+
+extension FramePingReq: CustomStringConvertible {
+    var description: String {
+        return "PING"
+    }
+}

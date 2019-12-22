@@ -23,3 +23,9 @@ extension FrameDisconnect {
     
     func payload() -> [UInt8] { return [] }
 }
+
+extension FrameDisconnect: CustomStringConvertible {
+    var description: String {
+        return "DISCONNECT"
+    }
+}

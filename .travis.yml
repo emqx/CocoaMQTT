@@ -1,15 +1,20 @@
 language: swift
-osx_image: xcode10.2
-xcode_project: CocoaMQTT.xcodeproj
-xcode_scheme: CocoaMQTT
-xcode_destination: platform=iOS Simulator,OS=12.2,name=iPhone Xs
-xcode_sdk: iphonesimulator12.2
+osx_image: xcode11.1
 
 before_install:
-   - wget https://www.emqx.io/downloads/broker/v3.1.2/emqx-macosx-v3.1.2.zip -O emqx.zip
-   - unzip emqx.zip
-   - emqx/bin/emqx start
+    - wget https://www.emqx.io/downloads/broker/v3.2.7/emqx-macosx-v3.2.7.zip -O emqx.zip
+    - unzip emqx.zip
+    - brew install openssl
+    - emqx/bin/emqx start
+    - git clone https://github.com/hjianbo/xcode-coveralls --depth=1
+    - cd xcode-coveralls && git submodule init && git submodule update && cd ..
+    - xcodebuild -project xcode-coveralls/xcode-coveralls.xcodeproj -scheme xcode-coveralls DSTROOT=/ SYMROOT=build install | xcpretty
 
 before_script:
-   - carthage update --platform iOS
+    - carthage update --platform macOS
 
+script:
+    - set -o pipefail && xcodebuild -project CocoaMQTT.xcodeproj -scheme CocoaMQTT -derivedDataPath . build test
+
+after_success:
+    - bash coveralls.sh

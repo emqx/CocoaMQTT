@@ -22,7 +22,7 @@ class CocoaMQTTStorageTests: XCTestCase {
     }
 
     func testStorage() {
-        var frames = [FramePublish(topic: "t/1", payload: [0x01], qos: .qos1, msgid: 1),
+        let frames = [FramePublish(topic: "t/1", payload: [0x01], qos: .qos1, msgid: 1),
                       FramePublish(topic: "t/2", payload: [0x01], qos: .qos1, msgid: 2),
                       FramePublish(topic: "t/3", payload: [0x01], qos: .qos1, msgid: 3),]
         
@@ -36,8 +36,8 @@ class CocoaMQTTStorageTests: XCTestCase {
         storage = nil
         
         storage = CocoaMQTTStorage(by: clientId)
-        var should = [frames[0], frames[2]]
-        var saved = storage?.readAll()
+        let should = [frames[0], frames[2]]
+        let saved = storage?.readAll()
         XCTAssertEqual(should.count, saved?.count)
         for i in 0 ..< should.count {
             assertEqual(should[i], saved?[i])

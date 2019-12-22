@@ -9,201 +9,370 @@
 import XCTest
 @testable import CocoaMQTT
 
-let host = "localhost"
-//let host = "q.emqtt.com"
-let port: UInt16 = 1883
-let clientID = "ClientForUnitTesting-" + randomCode(length: 6)
+private let host = "localhost"
+private let port: UInt16 = 1883
+private let sslport: UInt16 = 8883
+private let clientID = "ClientForUnitTesting-" + randomCode(length: 6)
 
-let timeout: TimeInterval = 5
-let keepAlive: UInt16 = 20
-let maxAutoReconn: UInt16 = 512
-
-let topicToSub = "animals"
-let longString = longStringGen()
+private let delegate_queue_key = DispatchSpecificKey<String>()
+private let delegate_queue_val = "_custom_delegate_queue_"
 
 class CocoaMQTTTests: XCTestCase {
-    
-    var mqtt: CocoaMQTT = CocoaMQTT(clientID: clientID, host: host, port: port)
-    
-    var connExp: XCTestExpectation?
-    var subExp: XCTestExpectation?
-    var unsubExp: XCTestExpectation?
-    
-    var pubQos1Exp: XCTestExpectation?
-    var pubQos2Exp: XCTestExpectation?
-    
-    var res0Exp: XCTestExpectation?
-    var res1Exp: XCTestExpectation?
-    var res2Exp: XCTestExpectation?
 
-    var maxMessageCount: UInt = 100
-    var multiCounter: UInt = 0
-    var multiPub: XCTestExpectation?
+    var deleQueue: DispatchQueue!
     
     override func setUp() {
+        deleQueue = DispatchQueue(label: "cttest")
+        deleQueue.setSpecific(key: delegate_queue_key, value: delegate_queue_val)
         super.setUp()
-        // custom set
-        mqtt.delegate = self
-        mqtt.logLevel = .info
-        mqtt.autoReconnect = true
-        mqtt.keepAlive = keepAlive
-        mqtt.deliverTimeout =  3000 //ms
-
-        mqtt.maxAutoReconnectTimeInterval = maxAutoReconn
     }
     
     override func tearDown() {
         super.tearDown()
     }
     
-    func testConnect() {
-        connExp = expectation(description: "connection")
-        subExp = expectation(description: "sub")
-        unsubExp = expectation(description: "unsub")
-        
-        pubQos1Exp = expectation(description: "pub_1")
-        pubQos2Exp = expectation(description: "pub_2")
-        
-        res0Exp = expectation(description: "res_0")
-        res1Exp = expectation(description: "res_1")
-        res2Exp = expectation(description: "res_2")
+     func testConnect() {
+        let caller = Caller()
+        let mqtt = CocoaMQTT(clientID: clientID, host: host, port: port)
+        mqtt.delegateQueue = deleQueue
+        mqtt.delegate = caller
+        mqtt.logLevel = .debug
+        mqtt.autoReconnect = false
+ 
+        _ = mqtt.connect()
+        wait_for { caller.isConnected }
+        XCTAssertEqual(mqtt.connState, .connected)
+
+        let topics = ["t/0", "t/1", "t/2"]
+
+        mqtt.subscribe(topics[0])
+        mqtt.subscribe(topics[1])
+        mqtt.subscribe(topics[2])
+        wait_for {
+            caller.subs == topics
+        }
+
+        mqtt.publish(topics[0], withString: "0", qos: .qos0, retained: false)
+        mqtt.publish(topics[1], withString: "1", qos: .qos1, retained: false)
+        mqtt.publish(topics[2], withString: "2", qos: .qos2, retained: false)
+        wait_for {
+            if caller.recvs.count >= 3 {
+                let f0 = caller.recvs[0]
+                let f1 = caller.recvs[1]
+                let f2 = caller.recvs[2]
+                XCTAssertEqual(f0.topic, topics[0])
+                XCTAssertEqual(f1.topic, topics[1])
+                XCTAssertEqual(f2.topic, topics[2])
+                return true
+            }
+            return false
+        }
+         
+        mqtt.unsubscribe(topics[0])
+        mqtt.unsubscribe(topics[1])
+        mqtt.unsubscribe(topics[2])
+        wait_for {
+            caller.subs == []
+        }
+
+        mqtt.disconnect()
+        wait_for {
+            caller.isConnected == false
+        }
+        XCTAssertEqual(mqtt.connState, .disconnected)
+   }
+  
+    func testAutoReconnect() {
+        let caller = Caller()
+        let mqtt = CocoaMQTT(clientID: clientID, host: host, port: port)
+        mqtt.delegateQueue = deleQueue
+        mqtt.delegate = caller
+        mqtt.logLevel = .debug
+        mqtt.autoReconnect = true
+        mqtt.autoReconnectTimeInterval = 1
         
         _ = mqtt.connect()
-        wait(for: [connExp!], timeout: timeout)
+        wait_for { caller.isConnected }
+        XCTAssertEqual(mqtt.connState, .connected)
         
-        if mqtt.connState != .connected {
-            XCTFail()
+        mqtt.internal_disconnect()
+        wait_for {
+            caller.isConnected == false
         }
         
-        mqtt.subscribe(topicToSub)
-        wait(for: [subExp!], timeout: timeout)
-        XCTAssertEqual(mqtt.subscriptions, [topicToSub: .qos1])
-
-        mqtt.publish(topicToSub, withString: "0", qos: .qos0, retained: false)
-        wait(for: [res0Exp!], timeout: timeout)
-
-        mqtt.publish(topicToSub, withString: "1", qos: .qos1, retained: false)
-        wait(for: [pubQos1Exp!, res1Exp!], timeout: timeout)
-        
-        mqtt.publish(topicToSub, withString: "2", qos: .qos2, retained: false)
-        wait(for: [pubQos2Exp!, res2Exp!], timeout: timeout)
-        
-        pubQos1Exp = expectation(description: "pub_1")
-        res1Exp = expectation(description: "res_1")
-        mqtt.publish(topicToSub, withString: longString, qos: .qos1, retained: false)
-        wait(for: [pubQos1Exp!, res1Exp!], timeout: timeout)
-        
-        mqtt.unsubscribe(topicToSub)
-        wait(for: [unsubExp!], timeout: timeout)
-        XCTAssertEqual(mqtt.subscriptions, [:])
+        // Waiting for auto-reconnect
+        wait_for { caller.isConnected }
         
         mqtt.disconnect()
+        wait_for {
+            caller.isConnected == false
+        }
+        XCTAssertEqual(mqtt.connState, .disconnected)
     }
     
-    func testAutoReconnect() {
-        connExp = expectation(description: "connection-reconnect-1")
-        _ = mqtt.connect()
-        wait(for: [connExp!], timeout: timeout)
+    func testLongString() {
+        let caller = Caller()
+        let mqtt = CocoaMQTT(clientID: clientID, host: host, port: port)
+        mqtt.delegateQueue = deleQueue
+        mqtt.delegate = caller
+        mqtt.logLevel = .debug
+        mqtt.autoReconnect = false
         
-        connExp = expectation(description: "connection-reconnect-2")
-        mqtt.internal_disconnect()
-        wait(for: [connExp!], timeout: 513)
+        _ = mqtt.connect()
+        wait_for { caller.isConnected }
+        XCTAssertEqual(mqtt.connState, .connected)
+
+        mqtt.subscribe("t/#", qos: .qos2)
+        wait_for {
+            caller.subs == ["t/#"]
+        }
+
+        mqtt.publish("t/1", withString: longStringGen(), qos: .qos2)
+        wait_for {
+            guard caller.recvs.count > 0 else {
+                return false
+            }
+            XCTAssertEqual(caller.recvs[0].topic, "t/1")
+            return true
+        }
+        
         mqtt.disconnect()
+        wait_for { caller.isConnected == false }
+        XCTAssertEqual(mqtt.connState, .disconnected)
     }
-   
+    
     func testProcessSafePub() {
-        connExp = expectation(description: "connection")
-        _ = mqtt.connect()
-        wait(for: [connExp!], timeout: timeout)
+        let caller = Caller()
+        let mqtt = CocoaMQTT(clientID: clientID, host: host, port: port)
+        mqtt.delegateQueue = deleQueue
+        mqtt.delegate = caller
+        mqtt.logLevel = .debug
+        mqtt.autoReconnect = false
         
-        // subscribe first
-        subExp = expectation(description: "sub")
-        mqtt.subscribe("test/#")
-        wait(for: [subExp!], timeout: timeout)
+        _ = mqtt.connect()
+        wait_for { caller.isConnected }
+        XCTAssertEqual(mqtt.connState, .connected)
+        
+
+        mqtt.subscribe("t/#", qos: .qos1)
+        wait_for {
+            caller.subs == ["t/#"]
+        }
         
         mqtt.inflightWindowSize = 10
-        mqtt.messageQueueSize = maxMessageCount
-        
-        multiPub = expectation(description: "process_safe")
+        mqtt.messageQueueSize = 100
         
         let concurrentQueue = DispatchQueue(label: "tests.cocoamqtt.emqx", qos: .default, attributes: .concurrent)
-        for i in 0 ..< maxMessageCount {
-            concurrentQueue.async { [weak self] in
-                self?.mqtt.publish("test/\(i)", withString: "m", qos: .qos1)
+        for i in 0 ..< 100 {
+            concurrentQueue.async {
+                mqtt.publish("t/\(i)", withString: "m\(i)", qos: .qos1)
             }
         }
-        wait(for: [multiPub!], timeout: timeout)
+        wait_for {
+            caller.recvs.count == 100
+        }
         
         mqtt.disconnect()
+        wait_for { caller.isConnected == false }
+        XCTAssertEqual(mqtt.connState, .disconnected)
+    }
+    
+    
+    func testOnyWaySSL() {
+        let caller = Caller()
+        let mqtt = CocoaMQTT(clientID: clientID, host: host, port: sslport)
+        mqtt.delegateQueue = deleQueue
+        mqtt.delegate = caller
+        mqtt.logLevel = .debug
+        mqtt.enableSSL = true
+        mqtt.allowUntrustCACertificate = true
+        
+        _ = mqtt.connect()
+        wait_for { caller.isConnected }
+        XCTAssertEqual(caller.isSSL, true)
+        XCTAssertEqual(mqtt.connState, .connected)
+        
+        mqtt.disconnect()
+        wait_for { caller.isConnected == false }
+        XCTAssertEqual(mqtt.connState, .disconnected)
+    }
+    
+    func testTwoWaySLL() {
+        let caller = Caller()
+        let mqtt = CocoaMQTT(clientID: clientID, host: host, port: sslport)
+        mqtt.delegateQueue = deleQueue
+        mqtt.delegate = caller
+        mqtt.logLevel = .debug
+        mqtt.enableSSL = true
+        mqtt.allowUntrustCACertificate = true
+        
+        let clientCertArray = getClientCertFromP12File(certName: "client-keycert", certPassword: "MySecretPassword")
+
+        var sslSettings: [String: NSObject] = [:]
+        sslSettings[kCFStreamSSLCertificates as String] = clientCertArray
+        
+        mqtt.sslSettings = sslSettings
+        
+        _ = mqtt.connect()
+        wait_for { caller.isConnected }
+        XCTAssertEqual(caller.isSSL, true)
+        XCTAssertEqual(mqtt.connState, .connected)
+        
+        mqtt.disconnect()
+        wait_for { caller.isConnected == false }
+        XCTAssertEqual(mqtt.connState, .disconnected)
+
     }
 }
 
-extension CocoaMQTTTests: CocoaMQTTDelegate {
+extension CocoaMQTTTests {
+    func wait_for(line: Int = #line, t: Int = 10, _ fun: @escaping () -> Bool) {
+        let exp = XCTestExpectation(description: "line: \(line)")
+        let thrd = Thread {
+            while true {
+                usleep(useconds_t(1000))
+                guard fun() else {
+                    continue
+                }
+                exp.fulfill()
+                break
+            }
+        }
+        thrd.start()
+        wait(for: [exp], timeout: TimeInterval(t))
+        thrd.cancel()
+    }
     
+    private func ms_sleep(_ ms: Int) {
+        usleep(useconds_t(ms * 1000))
+    }
+    
+    func getClientCertFromP12File(certName: String, certPassword: String) -> CFArray? {
+        let testBundle = Bundle(for: type(of: self))
+        
+        // get p12 file path
+        let resourcePath = testBundle.path(forResource: certName, ofType: "p12")
+
+        guard let filePath = resourcePath, let p12Data = NSData(contentsOfFile: filePath) else {
+            print("Failed to open the certificate file: \(certName).p12")
+            return nil
+        }
+
+        // create key dictionary for reading p12 file
+        let key = kSecImportExportPassphrase as String
+        let options : NSDictionary = [key: certPassword]
+
+        var items : CFArray?
+        let securityError = SecPKCS12Import(p12Data, options, &items)
+
+        guard securityError == errSecSuccess else {
+            if securityError == errSecAuthFailed {
+                print("ERROR: SecPKCS12Import returned errSecAuthFailed. Incorrect password?")
+            } else {
+                print("Failed to open the certificate file: \(certName).p12")
+            }
+            return nil
+        }
+
+        guard let theArray = items, CFArrayGetCount(theArray) > 0 else {
+            return nil
+        }
+
+        let dictionary = (theArray as NSArray).object(at: 0)
+        guard let identity = (dictionary as AnyObject).value(forKey: kSecImportItemIdentity as String) else {
+            return nil
+        }
+        let certArray = [identity] as CFArray
+
+        return certArray
+    }
+}
+
+private class Caller: CocoaMQTTDelegate {
+    
+    var recvs = [FramePublish]()
+    
+    var sents = [UInt16]()
+    
+    var acks = [UInt16]()
+    
+    var subs = [String]()
+    
+    var isConnected = false
+    
+    var isSSL = false
     
     func mqtt(_ mqtt: CocoaMQTT, didConnectAck ack: CocoaMQTTConnAck) {
-        connExp?.fulfill()
+        assert_in_del_queue()
+        if ack == .accept { isConnected = true }
     }
     
     func mqtt(_ mqtt: CocoaMQTT, didPublishMessage message: CocoaMQTTMessage, id: UInt16) {
+        assert_in_del_queue()
         
+        sents.append(id)
     }
     
     func mqtt(_ mqtt: CocoaMQTT, didPublishAck id: UInt16) {
-        pubQos1Exp?.fulfill()
+        assert_in_del_queue()
+        
+        acks.append(id)
     }
     
-    func mqtt(_ mqtt: CocoaMQTT, didPublishComplete id: UInt16) {
-        pubQos2Exp?.fulfill()
+    func mqtt(_ mqtt: CocoaMQTT, didReceiveMessage message: CocoaMQTTMessage, id: UInt16) {
+        assert_in_del_queue()
+        
+        var frame = message.t_pub_frame
+        frame.msgid = id
+        recvs.append(frame)
     }
     
-    func mqtt(_ mqtt: CocoaMQTT, didReceiveMessage message: CocoaMQTTMessage, id: UInt16 ) {
-        let string = message.string!
-        if string == "0" {
-            res0Exp?.fulfill()
-        } else if string == "1" {
-            res1Exp?.fulfill()
-        } else if string == "2" {
-            res2Exp?.fulfill()
-        } else if string == longString {
-            res1Exp?.fulfill()
-        } else if string == "m" {
-            multiCounter += 1
-            if multiCounter == maxMessageCount {
-                multiPub?.fulfill()
-            }
-        }
-    }
-    
-    func mqtt(_ mqtt: CocoaMQTT, didSubscribeTopics topics: [String]) {
-        if topics.first! == topicToSub {
-            subExp?.fulfill()
-        } else if topics.first! == "test/#" {
-            subExp?.fulfill()
-        } else {
-            XCTFail()
-        }
+    func mqtt(_ mqtt: CocoaMQTT, didSubscribeTopics success: NSDictionary, failed: [String]) {
+        assert_in_del_queue()
+        
+        subs = subs + (success.allKeys as! [String])
     }
     
     func mqtt(_ mqtt: CocoaMQTT, didUnsubscribeTopics topics: [String]) {
-        if topics.first! == topicToSub {
-            unsubExp?.fulfill()
-        } else {
-            XCTFail()
+        assert_in_del_queue()
+        
+        subs = subs.filter { (e) -> Bool in
+            !topics.contains(e)
         }
     }
     
     func mqttDidPing(_ mqtt: CocoaMQTT) {
-        
+        assert_in_del_queue()
     }
+    
     func mqttDidReceivePong(_ mqtt: CocoaMQTT) {
-        
+        assert_in_del_queue()
     }
+    
     func mqttDidDisconnect(_ mqtt: CocoaMQTT, withError err: Error?) {
+        assert_in_del_queue()
+        
+        isConnected = false
+    }
+    
+    func mqtt(_ mqtt: CocoaMQTT, didStateChangeTo state: CocoaMQTTConnState) {
+        assert_in_del_queue()
+    }
+    
+    func mqtt(_ mqtt: CocoaMQTT, didPublishComplete id: UInt16) {
+        assert_in_del_queue()
     }
     
     func mqtt(_ mqtt: CocoaMQTT, didReceive trust: SecTrust, completionHandler: @escaping (Bool) -> Void) {
+        assert_in_del_queue()
         
+        isSSL = true
+        
+        completionHandler(true)
+    }
+
+    func assert_in_del_queue() {
+        XCTAssertEqual(delegate_queue_val, DispatchQueue.getSpecific(key: delegate_queue_key))
     }
 }
 
