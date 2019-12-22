@@ -37,6 +37,7 @@
 		8D43DE6622FAFF2500D9A06B /* FrameDisconnect.swift in Sources */ = {isa = PBXBuildFile; fileRef = 8D43DE6522FAFF2500D9A06B /* FrameDisconnect.swift */; };
 		8D6C0E25239E7B44003094E9 /* CocoaAsyncSocket.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = 8225B543227C308900E4DB51 /* CocoaAsyncSocket.framework */; };
 		8D6C0E26239E7B44003094E9 /* CocoaAsyncSocket.framework in Embed Frameworks */ = {isa = PBXBuildFile; fileRef = 8225B543227C308900E4DB51 /* CocoaAsyncSocket.framework */; settings = {ATTRIBUTES = (CodeSignOnCopy, RemoveHeadersOnCopy, ); }; };
+		8D7A262E23AF2FEA00CE7442 /* client-keycert.p12 in Resources */ = {isa = PBXBuildFile; fileRef = 8D7A262D23AF2FEA00CE7442 /* client-keycert.p12 */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXContainerItemProxy section */
@@ -97,6 +98,7 @@
 		8D43DE6122FAFDA700D9A06B /* FramePingReq.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = FramePingReq.swift; sourceTree = "<group>"; };
 		8D43DE6322FAFE5F00D9A06B /* FramePingResp.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = FramePingResp.swift; sourceTree = "<group>"; };
 		8D43DE6522FAFF2500D9A06B /* FrameDisconnect.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = FrameDisconnect.swift; sourceTree = "<group>"; };
+		8D7A262D23AF2FEA00CE7442 /* client-keycert.p12 */ = {isa = PBXFileReference; lastKnownFileType = file; path = "client-keycert.p12"; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
 /* Begin PBXFrameworksBuildPhase section */
@@ -140,6 +142,7 @@
 		0409971D1C1B0B96006B5A6D /* CocoaMQTTTests */ = {
 			isa = PBXGroup;
 			children = (
+				8D7A262D23AF2FEA00CE7442 /* client-keycert.p12 */,
 				0409971E1C1B0B96006B5A6D /* CocoaMQTTTests.swift */,
 				8D14C7622345CAB5002D959E /* CocoaMQTTDeliverTests.swift */,
 				8D14C7662349C2A3002D959E /* CocoaMQTTStorageTests.swift */,
@@ -315,6 +318,7 @@
 			isa = PBXResourcesBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
+				8D7A262E23AF2FEA00CE7442 /* client-keycert.p12 in Resources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};

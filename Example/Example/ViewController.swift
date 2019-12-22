@@ -171,8 +171,8 @@ extension ViewController: CocoaMQTTDelegate {
         NotificationCenter.default.post(name: name, object: self, userInfo: ["message": message.string!, "topic": message.topic])
     }
     
-    func mqtt(_ mqtt: CocoaMQTT, didSubscribeTopics topics: [String]) {
-        TRACE("topics: \(topics)")
+    func mqtt(_ mqtt: CocoaMQTT, didSubscribeTopics success: NSDictionary, failed: [String]) {
+        TRACE("subscribed: \(success), failed: \(failed)")
     }
     
     func mqtt(_ mqtt: CocoaMQTT, didUnsubscribeTopics topics: [String]) {

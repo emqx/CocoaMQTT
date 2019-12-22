@@ -81,7 +81,9 @@ import CocoaAsyncSocket
     ///
     func mqttDidDisconnect(_ mqtt: CocoaMQTT, withError err: Error?)
     
+    /// Manually validate SSL/TLS server certificate.
     ///
+    /// This method will be called if enable  `allowUntrustCACertificate`
     @objc optional func mqtt(_ mqtt: CocoaMQTT, didReceive trust: SecTrust, completionHandler: @escaping (Bool) -> Void)
     
     ///
@@ -556,14 +558,14 @@ extension CocoaMQTT: GCDAsyncSocketDelegate {
     }
 
     public func socket(_ sock: GCDAsyncSocket, didReceive trust: SecTrust, completionHandler: @escaping (Bool) -> Swift.Void) {
-        printDebug("didReceiveTrust")
-        
+        printDebug("Call the SSL/TLS manually validating function")
+
         delegate?.mqtt?(self, didReceive: trust, completionHandler: completionHandler)
         didReceiveTrust(self, trust, completionHandler)
     }
 
     public func socketDidSecure(_ sock: GCDAsyncSocket) {
-        printDebug("socketDidSecure")
+        printDebug("Socket has successfully completed SSL/TLS negotiation")
         sendConnectFrame()
     }
 

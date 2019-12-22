@@ -11,6 +11,7 @@ import XCTest
 
 private let host = "localhost"
 private let port: UInt16 = 1883
+private let sslport: UInt16 = 8883
 private let clientID = "ClientForUnitTesting-" + randomCode(length: 6)
 
 private let delegate_queue_key = DispatchSpecificKey<String>()
@@ -175,6 +176,53 @@ class CocoaMQTTTests: XCTestCase {
         wait_for { caller.isConnected == false }
         XCTAssertEqual(mqtt.connState, .disconnected)
     }
+    
+    
+    func testOnyWaySSL() {
+        let caller = Caller()
+        let mqtt = CocoaMQTT(clientID: clientID, host: host, port: sslport)
+        mqtt.delegateQueue = deleQueue
+        mqtt.delegate = caller
+        mqtt.logLevel = .debug
+        mqtt.enableSSL = true
+        mqtt.allowUntrustCACertificate = true
+        
+        _ = mqtt.connect()
+        wait_for { caller.isConnected }
+        XCTAssertEqual(caller.isSSL, true)
+        XCTAssertEqual(mqtt.connState, .connected)
+        
+        mqtt.disconnect()
+        wait_for { caller.isConnected == false }
+        XCTAssertEqual(mqtt.connState, .disconnected)
+    }
+    
+    func testTwoWaySLL() {
+        let caller = Caller()
+        let mqtt = CocoaMQTT(clientID: clientID, host: host, port: sslport)
+        mqtt.delegateQueue = deleQueue
+        mqtt.delegate = caller
+        mqtt.logLevel = .debug
+        mqtt.enableSSL = true
+        mqtt.allowUntrustCACertificate = true
+        
+        let clientCertArray = getClientCertFromP12File(certName: "client-keycert", certPassword: "MySecretPassword")
+
+        var sslSettings: [String: NSObject] = [:]
+        sslSettings[kCFStreamSSLCertificates as String] = clientCertArray
+        
+        mqtt.sslSettings = sslSettings
+        
+        _ = mqtt.connect()
+        wait_for { caller.isConnected }
+        XCTAssertEqual(caller.isSSL, true)
+        XCTAssertEqual(mqtt.connState, .connected)
+        
+        mqtt.disconnect()
+        wait_for { caller.isConnected == false }
+        XCTAssertEqual(mqtt.connState, .disconnected)
+
+    }
 }
 
 extension CocoaMQTTTests {
@@ -198,6 +246,46 @@ extension CocoaMQTTTests {
     private func ms_sleep(_ ms: Int) {
         usleep(useconds_t(ms * 1000))
     }
+    
+    func getClientCertFromP12File(certName: String, certPassword: String) -> CFArray? {
+        let testBundle = Bundle(for: type(of: self))
+        
+        // get p12 file path
+        let resourcePath = testBundle.path(forResource: certName, ofType: "p12")
+
+        guard let filePath = resourcePath, let p12Data = NSData(contentsOfFile: filePath) else {
+            print("Failed to open the certificate file: \(certName).p12")
+            return nil
+        }
+
+        // create key dictionary for reading p12 file
+        let key = kSecImportExportPassphrase as String
+        let options : NSDictionary = [key: certPassword]
+
+        var items : CFArray?
+        let securityError = SecPKCS12Import(p12Data, options, &items)
+
+        guard securityError == errSecSuccess else {
+            if securityError == errSecAuthFailed {
+                print("ERROR: SecPKCS12Import returned errSecAuthFailed. Incorrect password?")
+            } else {
+                print("Failed to open the certificate file: \(certName).p12")
+            }
+            return nil
+        }
+
+        guard let theArray = items, CFArrayGetCount(theArray) > 0 else {
+            return nil
+        }
+
+        let dictionary = (theArray as NSArray).object(at: 0)
+        guard let identity = (dictionary as AnyObject).value(forKey: kSecImportItemIdentity as String) else {
+            return nil
+        }
+        let certArray = [identity] as CFArray
+
+        return certArray
+    }
 }
 
 private class Caller: CocoaMQTTDelegate {
@@ -211,6 +299,8 @@ private class Caller: CocoaMQTTDelegate {
     var subs = [String]()
     
     var isConnected = false
+    
+    var isSSL = false
     
     func mqtt(_ mqtt: CocoaMQTT, didConnectAck ack: CocoaMQTTConnAck) {
         assert_in_del_queue()
@@ -275,6 +365,8 @@ private class Caller: CocoaMQTTDelegate {
     
     func mqtt(_ mqtt: CocoaMQTT, didReceive trust: SecTrust, completionHandler: @escaping (Bool) -> Void) {
         assert_in_del_queue()
+        
+        isSSL = true
         
         completionHandler(true)
     }
