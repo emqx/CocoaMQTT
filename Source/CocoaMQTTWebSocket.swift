@@ -407,4 +407,3 @@ extension CocoaMQTTWebSocket.StarscreamConnection: WebSocketDelegate {
         delegate?.connection(self, receivedData: data)
     }
 }
-

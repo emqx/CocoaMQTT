@@ -544,39 +544,15 @@ extension CocoaMQTT {
 
 // MARK: - GCDAsyncSocketDelegate
 extension CocoaMQTT: CocoaMQTTSocketDelegate {
-
-  public func socketConnected(_ socket: CocoaMQTTSocketProtocol) {
-        printInfo("Connected")
+    
+    public func socketConnected(_ socket: CocoaMQTTSocketProtocol) {
         sendConnectFrame()
     }
-  
-//     public func socket(_ sock: GCDAsyncSocket, didConnectToHost host: String, port: UInt16) {
-//         printInfo("Connected to \(host) : \(port)")
+    
+    public func socket(_ socket: CocoaMQTTSocketProtocol,
+                         didReceive trust: SecTrust,
+                         completionHandler: @escaping (Bool) -> Swift.Void) {
         
-//         #if os(iOS)
-//             if backgroundOnSocket {
-//                 sock.perform {
-//                     guard sock.enableBackgroundingOnSocket() else {
-//                         printWarning("Enable backgrounding socket failed, please check related permissions")
-//                         return
-//                     }
-//                     printInfo("Enable backgrounding socket successfully")
-//                 }
-//             }
-//         #endif
-        
-//         if enableSSL {
-//             var setting = sslSettings ?? [:]
-//             if allowUntrustCACertificate {
-//                 setting[GCDAsyncSocketManuallyEvaluateTrust as String] = NSNumber(value: true)
-//             }
-//             sock.startTLS(setting)
-//         } else {
-//             sendConnectFrame()
-//         }
-//     }   
-
-      public func socket(_ socket: CocoaMQTTSocketProtocol, didReceive trust: SecTrust, completionHandler: @escaping (Bool) -> Swift.Void) {
         printDebug("Call the SSL/TLS manually validating function")
         
         delegate?.mqtt?(self, didReceive: trust, completionHandler: completionHandler)
@@ -788,4 +764,3 @@ extension CocoaMQTT: CocoaMQTTReaderDelegate {
         didReceivePong(self)
     }
 }
-
