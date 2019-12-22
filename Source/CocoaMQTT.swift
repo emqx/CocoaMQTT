@@ -163,7 +163,10 @@ public class CocoaMQTT: NSObject, CocoaMQTTClient {
     /// Enable backgounding socket if running on iOS platform. Default is true
     ///
     /// - Note:
-    public var backgroundOnSocket = true
+    public var backgroundOnSocket: Bool {
+        get { return (self.socket as? CocoaMQTTSocket)?.backgroundOnSocket ?? true }
+        set { (self.socket as? CocoaMQTTSocket)?.backgroundOnSocket = newValue }
+    }
     
     /// Delegate Executed queue. Default is `DispatchQueue.main`
     ///
@@ -237,15 +240,24 @@ public class CocoaMQTT: NSObject, CocoaMQTTClient {
     }
     
     /// Enable SSL connection
-    public var enableSSL = false
+    public var enableSSL: Bool {
+        get { return (self.socket as? CocoaMQTTSocket)?.enableSSL ?? false }
+        set { (self.socket as? CocoaMQTTSocket)?.enableSSL = newValue }
+    }
     
     ///
-    public var sslSettings: [String: NSObject]?
+    public var sslSettings: [String: NSObject]? {
+        get { return (self.socket as? CocoaMQTTSocket)?.sslSettings ?? nil }
+        set { (self.socket as? CocoaMQTTSocket)?.sslSettings = newValue }
+    }
     
     /// Allow self-signed ca certificate.
     ///
     /// Default is false
-    public var allowUntrustCACertificate = false
+    public var allowUntrustCACertificate: Bool {
+        get { return (self.socket as? CocoaMQTTSocket)?.allowUntrustCACertificate ?? false }
+        set { (self.socket as? CocoaMQTTSocket)?.allowUntrustCACertificate = newValue }
+    }
     
     /// The subscribed topics in current communication
     public var subscriptions: [String: CocoaMQTTQoS] = [:]
@@ -259,7 +271,7 @@ public class CocoaMQTT: NSObject, CocoaMQTTClient {
 
     /// message id counter
     private var _msgid: UInt16 = 0
-    fileprivate var socket = GCDAsyncSocket()
+    fileprivate var socket: CocoaMQTTSocketProtocol
     fileprivate var reader: CocoaMQTTReader?
     
     // Closures
@@ -282,10 +294,11 @@ public class CocoaMQTT: NSObject, CocoaMQTTClient {
     ///   - clientID: Client Identifier
     ///   - host: The MQTT broker host domain or IP address. Default is "localhost"
     ///   - port: The MQTT service port of host. Default is 1883
-    public init(clientID: String, host: String = "localhost", port: UInt16 = 1883) {
+    public init(clientID: String, host: String = "localhost", port: UInt16 = 1883, socket: CocoaMQTTSocketProtocol = CocoaMQTTSocket()) {
         self.clientID = clientID
         self.host = host
         self.port = port
+        self.socket = socket
         super.init()
         deliver.delegate = self
     }
@@ -294,7 +307,7 @@ public class CocoaMQTT: NSObject, CocoaMQTTClient {
 		aliveTimer?.suspend()
         autoReconnTimer?.suspend()
         
-        socket.delegate = nil
+        socket.setDelegate(nil, delegateQueue: nil)
         socket.disconnect()
     }
 
@@ -530,50 +543,58 @@ extension CocoaMQTT {
 }
 
 // MARK: - GCDAsyncSocketDelegate
-extension CocoaMQTT: GCDAsyncSocketDelegate {
-    public func socket(_ sock: GCDAsyncSocket, didConnectToHost host: String, port: UInt16) {
-        printInfo("Connected to \(host) : \(port)")
-        
-        #if os(iOS)
-            if backgroundOnSocket {
-                sock.perform {
-                    guard sock.enableBackgroundingOnSocket() else {
-                        printWarning("Enable backgrounding socket failed, please check related permissions")
-                        return
-                    }
-                    printInfo("Enable backgrounding socket successfully")
-                }
-            }
-        #endif
-        
-        if enableSSL {
-            var setting = sslSettings ?? [:]
-            if allowUntrustCACertificate {
-                setting[GCDAsyncSocketManuallyEvaluateTrust as String] = NSNumber(value: true)
-            }
-            sock.startTLS(setting)
-        } else {
-            sendConnectFrame()
-        }
+extension CocoaMQTT: CocoaMQTTSocketDelegate {
+
+  public func socketConnected(_ socket: CocoaMQTTSocketProtocol) {
+        printInfo("Connected")
+        sendConnectFrame()
     }
+  
+//     public func socket(_ sock: GCDAsyncSocket, didConnectToHost host: String, port: UInt16) {
+//         printInfo("Connected to \(host) : \(port)")
+        
+//         #if os(iOS)
+//             if backgroundOnSocket {
+//                 sock.perform {
+//                     guard sock.enableBackgroundingOnSocket() else {
+//                         printWarning("Enable backgrounding socket failed, please check related permissions")
+//                         return
+//                     }
+//                     printInfo("Enable backgrounding socket successfully")
+//                 }
+//             }
+//         #endif
+        
+//         if enableSSL {
+//             var setting = sslSettings ?? [:]
+//             if allowUntrustCACertificate {
+//                 setting[GCDAsyncSocketManuallyEvaluateTrust as String] = NSNumber(value: true)
+//             }
+//             sock.startTLS(setting)
+//         } else {
+//             sendConnectFrame()
+//         }
+//     }   
 
-    public func socket(_ sock: GCDAsyncSocket, didReceive trust: SecTrust, completionHandler: @escaping (Bool) -> Swift.Void) {
+      public func socket(_ socket: CocoaMQTTSocketProtocol, didReceive trust: SecTrust, completionHandler: @escaping (Bool) -> Swift.Void) {
         printDebug("Call the SSL/TLS manually validating function")
-
+        
         delegate?.mqtt?(self, didReceive: trust, completionHandler: completionHandler)
         didReceiveTrust(self, trust, completionHandler)
     }
 
+    // ?
     public func socketDidSecure(_ sock: GCDAsyncSocket) {
         printDebug("Socket has successfully completed SSL/TLS negotiation")
         sendConnectFrame()
     }
 
-    public func socket(_ sock: GCDAsyncSocket, didWriteDataWithTag tag: Int) {
+    public func socket(_ socket: CocoaMQTTSocketProtocol, didWriteDataWithTag tag: Int) {
         // XXX: How to print writed bytes??
     }
 
-    public func socket(_ sock: GCDAsyncSocket, didRead data: Data, withTag tag: Int) {
+    public func socket(_ socket: CocoaMQTTSocketProtocol, didRead data: Data, withTag tag: Int) {
+        printDebug("Socket read data with tag: \(tag)")
         let etag = CocoaMQTTReadTag(rawValue: tag)!
         var bytes = [UInt8]([0])
         switch etag {
@@ -588,9 +609,9 @@ extension CocoaMQTT: GCDAsyncSocketDelegate {
         }
     }
 
-    public func socketDidDisconnect(_ sock: GCDAsyncSocket, withError err: Error?) {
+    public func socketDidDisconnect(_ socket: CocoaMQTTSocketProtocol, withError err: Error?) {
         // Clean up
-        socket.delegate = nil
+        socket.setDelegate(nil, delegateQueue: nil)
         connState = .disconnected
         delegate?.mqttDidDisconnect(self, withError: err)
         didDisconnect(self, err)

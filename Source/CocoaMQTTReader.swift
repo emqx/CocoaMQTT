@@ -7,7 +7,6 @@
 //
 
 import Foundation
-import CocoaAsyncSocket
 
 /// Read tag for AsyncSocket
 enum CocoaMQTTReadTag: Int {
@@ -40,7 +39,7 @@ protocol CocoaMQTTReaderDelegate: class {
 
 class CocoaMQTTReader {
     
-    private var socket: GCDAsyncSocket
+    private var socket: CocoaMQTTSocketProtocol
     
     private weak var delegate: CocoaMQTTReaderDelegate?
     
@@ -53,7 +52,7 @@ class CocoaMQTTReader {
     private var multiply = 1
     /*  -- Reader states -- */
     
-    init(socket: GCDAsyncSocket, delegate: CocoaMQTTReaderDelegate?) {
+    init(socket: CocoaMQTTSocketProtocol, delegate: CocoaMQTTReaderDelegate?) {
         self.socket = socket
         self.delegate = delegate
     }
