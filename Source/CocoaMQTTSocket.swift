@@ -19,6 +19,9 @@ public protocol CocoaMQTTSocketDelegate: AnyObject {
 }
 
 public protocol CocoaMQTTSocketProtocol {
+    
+    var enableSSL: Bool { get set }
+    
     func setDelegate(_ theDelegate: CocoaMQTTSocketDelegate?, delegateQueue: DispatchQueue?)
     func connect(toHost host: String, onPort port: UInt16) throws
     func connect(toHost host: String, onPort port: UInt16, withTimeout timeout: TimeInterval) throws
@@ -122,7 +125,6 @@ extension CocoaMQTTSocket: GCDAsyncSocketDelegate {
     }
 
     public func socket(_ sock: GCDAsyncSocket, didRead data: Data, withTag tag: Int) {
-        printDebug("socket read data \(data.count)")
         delegate?.socket(self, didRead: data, withTag: tag)
     }
 

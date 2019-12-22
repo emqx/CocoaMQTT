@@ -31,7 +31,7 @@ class CocoaMQTTTests: XCTestCase {
         super.tearDown()
     }
     
-     func testConnect() {
+    func testConnect() {
         let caller = Caller()
         let mqtt = CocoaMQTT(clientID: clientID, host: host, port: port)
         mqtt.delegateQueue = deleQueue
@@ -80,8 +80,62 @@ class CocoaMQTTTests: XCTestCase {
             caller.isConnected == false
         }
         XCTAssertEqual(mqtt.connState, .disconnected)
+
+    }
+    
+    func testWebsocketConnect() {
+        let caller = Caller()
+        let websocket = CocoaMQTTWebSocket(uri: "/mqtt")
+        let mqtt = CocoaMQTT(clientID: clientID, host: host, port: 8084, socket: websocket)
+        mqtt.delegateQueue = deleQueue
+        mqtt.delegate = caller
+        mqtt.logLevel = .debug
+        mqtt.autoReconnect = false
+        mqtt.enableSSL = true
+
+        _ = mqtt.connect()
+        wait_for { caller.isConnected }
+        XCTAssertEqual(mqtt.connState, .connected)
+
+        let topics = ["t/0", "t/1", "t/2"]
+
+        mqtt.subscribe(topics[0])
+        mqtt.subscribe(topics[1])
+        mqtt.subscribe(topics[2])
+        wait_for {
+            caller.subs == topics
+        }
+
+        mqtt.publish(topics[0], withString: "0", qos: .qos0, retained: false)
+        mqtt.publish(topics[1], withString: "1", qos: .qos1, retained: false)
+        mqtt.publish(topics[2], withString: "2", qos: .qos2, retained: false)
+        wait_for {
+            if caller.recvs.count >= 3 {
+                let f0 = caller.recvs[0]
+                let f1 = caller.recvs[1]
+                let f2 = caller.recvs[2]
+                XCTAssertEqual(f0.topic, topics[0])
+                XCTAssertEqual(f1.topic, topics[1])
+                XCTAssertEqual(f2.topic, topics[2])
+                return true
+            }
+            return false
+        }
+        
+        mqtt.unsubscribe(topics[0])
+        mqtt.unsubscribe(topics[1])
+        mqtt.unsubscribe(topics[2])
+        wait_for {
+            caller.subs == []
+        }
+
+        mqtt.disconnect()
+        wait_for {
+            caller.isConnected == false
+        }
+        XCTAssertEqual(mqtt.connState, .disconnected)
    }
-  
+
     func testAutoReconnect() {
         let caller = Caller()
         let mqtt = CocoaMQTT(clientID: clientID, host: host, port: port)

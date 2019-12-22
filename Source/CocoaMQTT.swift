@@ -241,8 +241,8 @@ public class CocoaMQTT: NSObject, CocoaMQTTClient {
     
     /// Enable SSL connection
     public var enableSSL: Bool {
-        get { return (self.socket as? CocoaMQTTSocket)?.enableSSL ?? false }
-        set { (self.socket as? CocoaMQTTSocket)?.enableSSL = newValue }
+        get { return self.socket.enableSSL }
+        set { socket.enableSSL = newValue }
     }
     
     ///
@@ -542,7 +542,7 @@ extension CocoaMQTT {
     }
 }
 
-// MARK: - GCDAsyncSocketDelegate
+// MARK: - CocoaMQTTSocketDelegate
 extension CocoaMQTT: CocoaMQTTSocketDelegate {
     
     public func socketConnected(_ socket: CocoaMQTTSocketProtocol) {
@@ -570,7 +570,6 @@ extension CocoaMQTT: CocoaMQTTSocketDelegate {
     }
 
     public func socket(_ socket: CocoaMQTTSocketProtocol, didRead data: Data, withTag tag: Int) {
-        printDebug("Socket read data with tag: \(tag)")
         let etag = CocoaMQTTReadTag(rawValue: tag)!
         var bytes = [UInt8]([0])
         switch etag {

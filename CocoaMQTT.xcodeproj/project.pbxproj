@@ -600,6 +600,7 @@
 				SWIFT_ACTIVE_COMPILATION_CONDITIONS = DEBUG;
 				SWIFT_VERSION = 5.0;
 				TARGETED_DEVICE_FAMILY = "1,2";
+				TVOS_DEPLOYMENT_TARGET = 10.0;
 				VALID_ARCHS = "$(inherited)";
 			};
 			name = Debug;
@@ -632,6 +633,7 @@
 				SUPPORTED_PLATFORMS = "$(inherited)";
 				SWIFT_VERSION = 5.0;
 				TARGETED_DEVICE_FAMILY = "1,2";
+				TVOS_DEPLOYMENT_TARGET = 10.0;
 				VALID_ARCHS = "$(inherited)";
 			};
 			name = Release;
