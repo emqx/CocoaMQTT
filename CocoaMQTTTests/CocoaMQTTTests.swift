@@ -86,12 +86,12 @@ class CocoaMQTTTests: XCTestCase {
     func testWebsocketConnect() {
         let caller = Caller()
         let websocket = CocoaMQTTWebSocket(uri: "/mqtt")
-        let mqtt = CocoaMQTT(clientID: clientID, host: host, port: 8084, socket: websocket)
+        let mqtt = CocoaMQTT(clientID: clientID, host: host, port: 8083, socket: websocket)
         mqtt.delegateQueue = deleQueue
         mqtt.delegate = caller
         mqtt.logLevel = .debug
         mqtt.autoReconnect = false
-        mqtt.enableSSL = true
+        //mqtt.enableSSL = true
 
         _ = mqtt.connect()
         wait_for { caller.isConnected }
