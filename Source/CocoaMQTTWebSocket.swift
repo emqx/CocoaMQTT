@@ -11,33 +11,49 @@ import Starscream
 // MARK: - Interfaces
 
 public protocol CocoaMQTTWebSocketConnectionDelegate: AnyObject {
+    
     func connection(_ conn: CocoaMQTTWebSocketConnection, didReceive trust: SecTrust, completionHandler: @escaping (Bool) -> Swift.Void)
+    
     func connectionOpened(_ conn: CocoaMQTTWebSocketConnection)
+    
     func connectionClosed(_ conn: CocoaMQTTWebSocketConnection, withError error: Error?)
+    
     func connection(_ conn: CocoaMQTTWebSocketConnection, receivedString string: String)
+    
     func connection(_ conn: CocoaMQTTWebSocketConnection, receivedData data: Data)
 }
 
 public protocol CocoaMQTTWebSocketConnection: NSObjectProtocol {
+    
     var delegate: CocoaMQTTWebSocketConnectionDelegate? { get set }
+    
     var queue: DispatchQueue { get set }
+    
     func connect()
+    
     func disconnect()
+    
     func write(data: Data, handler: @escaping (Error?) -> Void)
 }
 
 public protocol CocoaMQTTWebSocketConnectionBuilder {
+    
     func buildConnection(forURL url: URL) throws -> CocoaMQTTWebSocketConnection
+    
 }
 
 // MARK: - CocoaMQTTWebSocket
 
 public class CocoaMQTTWebSocket: CocoaMQTTSocketProtocol {
+    
+    public var enableSSL = false
 
     public typealias ConnectionBuilder = CocoaMQTTWebSocketConnectionBuilder
     
     public struct DefaultConnectionBuilder: ConnectionBuilder {
+        
         public init() {}
+        
         public func buildConnection(forURL url: URL) throws -> CocoaMQTTWebSocketConnection {
             if #available(OSX 10.15, iOS 13.0, watchOS 6.0, tvOS 13.0, *) {
                 let config = URLSessionConfiguration.default
@@ -55,9 +71,10 @@ public class CocoaMQTTWebSocket: CocoaMQTTSocketProtocol {
             self.delegateQueue = delegateQueue
         }
     }
-    
+    let uri: String
     let builder: ConnectionBuilder
-    public init(builder: ConnectionBuilder = CocoaMQTTWebSocket.DefaultConnectionBuilder()) {
+    public init(uri: String = "", builder: ConnectionBuilder = CocoaMQTTWebSocket.DefaultConnectionBuilder()) {
+        self.uri = uri
         self.builder = builder
     }
     
@@ -66,7 +83,10 @@ public class CocoaMQTTWebSocket: CocoaMQTTSocketProtocol {
     }
     
     public func connect(toHost host: String, onPort port: UInt16, withTimeout timeout: TimeInterval) throws {
-        guard let url = URL(string: "wss://\(host):\(port)") else { throw CocoaMQTTError.invalidURL }
+        
+        let urlStr = "\(enableSSL ? "wss": "ws")://\(host):\(port)\(uri)"
+        
+        guard let url = URL(string: urlStr) else { throw CocoaMQTTError.invalidURL }
         try internalQueue.sync {
             connection?.disconnect()
             connection?.delegate = nil
@@ -80,7 +100,8 @@ public class CocoaMQTTWebSocket: CocoaMQTTSocketProtocol {
     
     public func disconnect() {
         internalQueue.async {
-            self.reset()
+            //self.reset()
+            self.closeConnection(withError: nil)
         }
     }
     
@@ -130,7 +151,9 @@ public class CocoaMQTTWebSocket: CocoaMQTTSocketProtocol {
     
     private func closeConnection(withError error: Error?) {
         reset()
-        delegate?.socketDidDisconnect(self, withError: error)
+        __delegate_queue {
+            self.delegate?.socketDidDisconnect(self, withError: error)
+        }
     }
     
     private class ReusableTimer {
@@ -218,7 +241,9 @@ extension CocoaMQTTWebSocket: CocoaMQTTWebSocketConnectionDelegate {
     public func connection(_ conn: CocoaMQTTWebSocketConnection, didReceive trust: SecTrust, completionHandler: @escaping (Bool) -> Swift.Void) {
         guard conn.isEqual(connection) else { return }
         if let del = delegate {
-            del.socket(self, didReceive: trust, completionHandler: completionHandler)
+            __delegate_queue {
+                del.socket(self, didReceive: trust, completionHandler: completionHandler)
+            }
         } else {
             completionHandler(false)
         }
@@ -408,3 +433,14 @@ extension CocoaMQTTWebSocket.StarscreamConnection: WebSocketDelegate {
     }
 }
 
+// MARK: - Helper
+
+extension CocoaMQTTWebSocket {
+    
+    func __delegate_queue(_ fun: @escaping () -> Void) {
+        delegateQueue?.async { [weak self] in
+            guard let _ = self else { return }
+            fun()
+        }
+    }
+}

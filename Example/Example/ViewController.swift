@@ -37,6 +37,8 @@ class ViewController: UIViewController {
         mqttSetting()
         // selfSignedSSLSetting()
         // simpleSSLSetting()
+        // mqttWebsocketsSetting()
+        // mqttWebsocketSSLSetting()
     }
     
     override func viewWillAppear(_ animated: Bool) {
@@ -81,6 +83,29 @@ class ViewController: UIViewController {
         sslSettings[kCFStreamSSLCertificates as String] = clientCertArray
         
         mqtt!.sslSettings = sslSettings
+    }
+    
+    func mqttWebsocketsSetting() {
+        let clientID = "CocoaMQTT-\(animal!)-" + String(ProcessInfo().processIdentifier)
+        let websocket = CocoaMQTTWebSocket(uri: "/mqtt")
+        mqtt = CocoaMQTT(clientID: clientID, host: defaultHost, port: 8083, socket: websocket)
+        mqtt!.username = ""
+        mqtt!.password = ""
+        mqtt!.willMessage = CocoaMQTTMessage(topic: "/will", string: "dieout")
+        mqtt!.keepAlive = 60
+        mqtt!.delegate = self
+    }
+    
+    func mqttWebsocketSSLSetting() {
+        let clientID = "CocoaMQTT-\(animal!)-" + String(ProcessInfo().processIdentifier)
+        let websocket = CocoaMQTTWebSocket(uri: "/mqtt")
+        mqtt = CocoaMQTT(clientID: clientID, host: defaultHost, port: 8084, socket: websocket)
+        mqtt!.enableSSL = true
+        mqtt!.username = ""
+        mqtt!.password = ""
+        mqtt!.willMessage = CocoaMQTTMessage(topic: "/will", string: "dieout")
+        mqtt!.keepAlive = 60
+        mqtt!.delegate = self
     }
     
     func getClientCertFromP12File(certName: String, certPassword: String) -> CFArray? {

@@ -7,7 +7,6 @@
 	objects = {
 
 /* Begin PBXBuildFile section */
-		6EC871E023A4214000F69AE8 /* Starscream.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = 6EC871DF23A4214000F69AE8 /* Starscream.framework */; };
 		6EC871E323A421A200F69AE8 /* CocoaMQTTSocket.swift in Sources */ = {isa = PBXBuildFile; fileRef = 6EC871E223A421A200F69AE8 /* CocoaMQTTSocket.swift */; };
 		6EC871E523A421DE00F69AE8 /* CocoaMQTTWebSocket.swift in Sources */ = {isa = PBXBuildFile; fileRef = 6EC871E423A421DE00F69AE8 /* CocoaMQTTWebSocket.swift */; };
 		8225B53A227C2FC600E4DB51 /* CocoaMQTT.swift in Sources */ = {isa = PBXBuildFile; fileRef = 0409977A1C1B1529006B5A6D /* CocoaMQTT.swift */; };
@@ -38,9 +37,10 @@
 		8D43DE6222FAFDA700D9A06B /* FramePingReq.swift in Sources */ = {isa = PBXBuildFile; fileRef = 8D43DE6122FAFDA700D9A06B /* FramePingReq.swift */; };
 		8D43DE6422FAFE5F00D9A06B /* FramePingResp.swift in Sources */ = {isa = PBXBuildFile; fileRef = 8D43DE6322FAFE5F00D9A06B /* FramePingResp.swift */; };
 		8D43DE6622FAFF2500D9A06B /* FrameDisconnect.swift in Sources */ = {isa = PBXBuildFile; fileRef = 8D43DE6522FAFF2500D9A06B /* FrameDisconnect.swift */; };
-		8D6C0E25239E7B44003094E9 /* CocoaAsyncSocket.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = 8225B543227C308900E4DB51 /* CocoaAsyncSocket.framework */; };
 		8D6C0E26239E7B44003094E9 /* CocoaAsyncSocket.framework in Embed Frameworks */ = {isa = PBXBuildFile; fileRef = 8225B543227C308900E4DB51 /* CocoaAsyncSocket.framework */; settings = {ATTRIBUTES = (CodeSignOnCopy, RemoveHeadersOnCopy, ); }; };
 		8D7A262E23AF2FEA00CE7442 /* client-keycert.p12 in Resources */ = {isa = PBXBuildFile; fileRef = 8D7A262D23AF2FEA00CE7442 /* client-keycert.p12 */; };
+		8D7A262F23AF3B4700CE7442 /* Starscream.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = 6EC871DF23A4214000F69AE8 /* Starscream.framework */; };
+		8D7A263023AF3B4700CE7442 /* Starscream.framework in Embed Frameworks */ = {isa = PBXBuildFile; fileRef = 6EC871DF23A4214000F69AE8 /* Starscream.framework */; settings = {ATTRIBUTES = (CodeSignOnCopy, RemoveHeadersOnCopy, ); }; };
 /* End PBXBuildFile section */
 
 /* Begin PBXContainerItemProxy section */
@@ -61,6 +61,7 @@
 			dstSubfolderSpec = 10;
 			files = (
 				8D6C0E26239E7B44003094E9 /* CocoaAsyncSocket.framework in Embed Frameworks */,
+				8D7A263023AF3B4700CE7442 /* Starscream.framework in Embed Frameworks */,
 			);
 			name = "Embed Frameworks";
 			runOnlyForDeploymentPostprocessing = 0;
@@ -112,8 +113,7 @@
 			isa = PBXFrameworksBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
-				6EC871E023A4214000F69AE8 /* Starscream.framework in Frameworks */,
-				8225B571227C3B0200E4DB51 /* CocoaAsyncSocket.framework in Frameworks */,
+				8D7A262F23AF3B4700CE7442 /* Starscream.framework in Frameworks */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -600,6 +600,7 @@
 				SWIFT_ACTIVE_COMPILATION_CONDITIONS = DEBUG;
 				SWIFT_VERSION = 5.0;
 				TARGETED_DEVICE_FAMILY = "1,2";
+				TVOS_DEPLOYMENT_TARGET = 10.0;
 				VALID_ARCHS = "$(inherited)";
 			};
 			name = Debug;
@@ -632,6 +633,7 @@
 				SUPPORTED_PLATFORMS = "$(inherited)";
 				SWIFT_VERSION = 5.0;
 				TARGETED_DEVICE_FAMILY = "1,2";
+				TVOS_DEPLOYMENT_TARGET = 10.0;
 				VALID_ARCHS = "$(inherited)";
 			};
 			name = Release;
