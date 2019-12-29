@@ -146,8 +146,6 @@ class CocoaMQTTDeliverTests: XCTestCase {
             return
         }
         
-        CocoaMQTTLogger.logger.minLevel = .debug
-        
         deliver.delegate = caller
         deliver.recoverSessionBy(storage)
         
