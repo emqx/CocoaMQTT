@@ -131,13 +131,71 @@ class CocoaMQTTDeliverTests: XCTestCase {
         }
     }
     
+    func testStorage() {
+        
+        let clientID = "deliver-unit-testing"
+        let caller = Caller()
+        let deliver = CocoaMQTTDeliver()
+        
+        let frames = [FramePublish(topic: "t/0", payload: [0x00], qos: .qos0),
+                      FramePublish(topic: "t/1", payload: [0x01], qos: .qos1, msgid: 1),
+                      FramePublish(topic: "t/2", payload: [0x02], qos: .qos2, msgid: 2)]
+        
+        guard let storage = CocoaMQTTStorage(by: clientID) else {
+            XCTAssert(false, "Initial storage failed")
+            return
+        }
+        
+        CocoaMQTTLogger.logger.minLevel = .debug
+        
+        deliver.delegate = caller
+        deliver.recoverSessionBy(storage)
+        
+        for f in frames {
+            _ = deliver.add(f)
+        }
+        
+        var saved = storage.readAll()
+        XCTAssertEqual(saved.count, 2)
+        
+        
+        deliver.ack(by: FramePubAck(msgid: 1))
+        ms_sleep(100)
+        saved = storage.readAll()
+        XCTAssertEqual(saved.count, 1)
+        
+        deliver.ack(by: FramePubRec(msgid: 2))
+        ms_sleep(100)
+        saved = storage.readAll()
+        XCTAssertEqual(saved.count, 1)
+        assertEqual(saved[0], FramePubRel(msgid: 2))
+        
+        
+        deliver.ack(by: FramePubComp(msgid: 2))
+        ms_sleep(100)
+        saved = storage.readAll()
+        XCTAssertEqual(saved.count, 0)
+        
+        caller.reset()
+        _ = storage.write(frames[1])
+        deliver.recoverSessionBy(storage)
+        ms_sleep(100)
+        XCTAssertEqual(caller.frames.count, 1)
+        assertEqual(caller.frames[0], frames[1])
+        
+        
+        deliver.ack(by: FramePubAck(msgid: 1))
+        ms_sleep(100)
+        XCTAssertEqual(storage.readAll().count, 0)
+    }
+    
     func testTODO() {
         // TODO: How to test large of messages combined qos0/qos1/qos2
     }
     
     
     // Helper for assert equality for Frame
-    private func assertEqual(_ f1: Frame, _ f2: Frame) {
+    private func assertEqual(_ f1: Frame, _ f2: Frame, _ lines: Int = #line) {
         if let pub1 = f1 as? FramePublish,
             let pub2 = f2 as? FramePublish {
             XCTAssertEqual(pub1.topic, pub2.topic)
@@ -149,7 +207,7 @@ class CocoaMQTTDeliverTests: XCTestCase {
             let rel2 = f2 as? FramePubRel{
             XCTAssertEqual(rel1.msgid, rel2.msgid)
         } else {
-            XCTAssert(false)
+            XCTAssert(false, "Assert equal failed line: \(lines)")
         }
     }
     
@@ -160,16 +218,29 @@ class CocoaMQTTDeliverTests: XCTestCase {
 
 private class Caller: CocoaMQTTDeliverProtocol {
     
+    private let delegate_queue_key = DispatchSpecificKey<String>()
+    private let delegate_queue_val = "_custom_delegate_queue_"
+    
     var delegateQueue: DispatchQueue
     
     var frames = [Frame]()
     
     init() {
         delegateQueue = DispatchQueue(label: "caller.deliver.test")
+        delegateQueue.setSpecific(key: delegate_queue_key, value: delegate_queue_val)
+    }
+    
+    func reset() {
+        frames = []
     }
     
     func deliver(_ deliver: CocoaMQTTDeliver, wantToSend frame: Frame) {
+        assert_in_del_queue()
 
         frames.append(frame)
+    }
+    
+    private func assert_in_del_queue() {
+        XCTAssertEqual(delegate_queue_val, DispatchQueue.getSpecific(key: delegate_queue_key))
     }
 }

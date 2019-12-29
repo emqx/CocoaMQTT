@@ -73,6 +73,31 @@ class CocoaMQTTDeliver: NSObject {
     var isInflightFull: Bool { get { return inflight.count >= inflightWindowSize }}
     var isInflightEmpty: Bool { get { return inflight.count == 0 }}
     
+    var storage: CocoaMQTTStorage?
+    
+    func recoverSessionBy(_ storage: CocoaMQTTStorage) {
+        
+        let frames = storage.takeAll()
+        guard frames.count >= 0 else {
+            return
+        }
+        
+        // Sync to push the frame to mqueue for avoiding overcommit
+        deliverQueue.sync {
+            for f in frames {
+                mqueue.append(f)
+            }
+            self.storage = storage
+            printInfo("Deliver recvoer \(frames.count) msgs")
+            printDebug("Recover message \(frames)")
+        }
+        
+        deliverQueue.async { [weak self] in
+            guard let wself = self else { return }
+            wself.tryTransport()
+        }
+    }
+    
     /// Add a FramePublish to the message queue to wait for sending
     ///
     /// return false means the frame is rejected because of the buffer is full
@@ -85,6 +110,7 @@ class CocoaMQTTDeliver: NSObject {
         // Sync to push the frame to mqueue for avoiding overcommit
         deliverQueue.sync {
             mqueue.append(frame)
+            _ = storage?.write(frame)
         }
         
         deliverQueue.async { [weak self] in
@@ -110,6 +136,12 @@ class CocoaMQTTDeliver: NSObject {
             if acked.count == 0 {
                 printWarning("Acknowledge by \(frame), but not found in inflight window")
             } else {
+                // TODO: ACK DONT DELETE PUBREL
+                for f in acked {
+                    if frame is FramePubAck || frame is FramePubComp {
+                        wself.storage?.remove(f)
+                    }
+                }
                 printDebug("Acknowledge frame id \(msgid) success, acked: \(acked)")
                 wself.tryTransport()
             }
@@ -208,6 +240,7 @@ extension CocoaMQTTDeliver {
                     nframe.frame = pubrel
                     nframe.timestamp = Date(timeIntervalSinceNow: 0).timeIntervalSince1970
                     
+                    _ = storage?.write(pubrel)
                     sendfun(pubrel)
                     
                     ackedFrames.append(publish)
@@ -236,6 +269,11 @@ extension CocoaMQTTDeliver {
             printError("The deliver delegate is nil!!! the frame will be drop: \(frame)")
             return
         }
+        
+        if frame.qos == .qos0 {
+            if let p = frame as? FramePublish { storage?.remove(p) }
+        }
+        
         delegate.delegateQueue.async {
             delegate.deliver(self, wantToSend: frame)
         }

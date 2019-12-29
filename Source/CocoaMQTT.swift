@@ -623,32 +623,15 @@ extension CocoaMQTT: CocoaMQTTReaderDelegate {
     func didRecevied(_ reader: CocoaMQTTReader, connack: FrameConnAck) {
         printDebug("RECV: \(connack)")
 
-        switch connack.returnCode {
-        case .accept:
-            connState = .connected
-        default:
-            connState = .disconnected
-            internal_disconnect()
-            return
-        }
-
-        // TODO: how to handle the cleanSession = false & auto-reconnect
-        if cleanSession {
-            deliver.cleanAll()
-        }
-
-        delegate?.mqtt(self, didConnectAck: connack.returnCode)
-        didConnectAck(self, connack.returnCode)
-        
-        // reset auto-reconnect state
         if connack.returnCode == .accept {
+            
+            // Disable auto-reconnect
+            
             reconectTimeInterval = 0
             autoReconnTimer = nil
             is_internal_disconnected = false
-        }
-        
-        // keep alive
-        if connack.returnCode == .accept {
+            
+            // Start keepalive timer
             
             let interval = Double(keepAlive <= 0 ? 60: keepAlive)
             
@@ -662,7 +645,28 @@ extension CocoaMQTT: CocoaMQTTReaderDelegate {
                     wself.ping()
                 }
             }
+            
+            // recover session if enable
+            
+            if cleanSession {
+                deliver.cleanAll()
+            } else {
+                if let storage = CocoaMQTTStorage(by: clientID) {
+                    deliver.recoverSessionBy(storage)
+                } else {
+                    printWarning("Localstorage initial failed for key: \(clientID)")
+                }
+            }
+
+            connState = .connected
+            
+        } else {
+            connState = .disconnected
+            internal_disconnect()
         }
+
+        delegate?.mqtt(self, didConnectAck: connack.returnCode)
+        didConnectAck(self, connack.returnCode)
     }
 
     func didRecevied(_ reader: CocoaMQTTReader, publish: FramePublish) {

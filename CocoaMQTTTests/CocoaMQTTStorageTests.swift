@@ -42,6 +42,14 @@ class CocoaMQTTStorageTests: XCTestCase {
         for i in 0 ..< should.count {
             assertEqual(should[i], saved?[i])
         }
+        
+        let taken = storage?.takeAll()
+        XCTAssertEqual(should.count, taken?.count)
+        for i in 0 ..< should.count {
+            assertEqual(should[i], taken?[i])
+        }
+        
+        XCTAssertEqual(storage?.readAll().count, 0)
     }
     
     private func assertEqual(_ f1: Frame?, _ f2: Frame?) {
