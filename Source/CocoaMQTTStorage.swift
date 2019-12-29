@@ -68,26 +68,24 @@ final class CocoaMQTTStorage: CocoaMQTTStorageProtocol {
         userDefault.removeObject(forKey: key(frame.msgid))
     }
     
+    func remove(_ frame: Frame) {
+        if let pub = frame as? FramePublish {
+            userDefault.removeObject(forKey: key(pub.msgid))
+        } else if let rel = frame as? FramePubRel {
+            userDefault.removeObject(forKey: key(rel.msgid))
+        }
+    }
+    
     func synchronize() -> Bool {
         return userDefault.synchronize()
     }
     
     func readAll() -> [Frame] {
-        var frames = [Frame]()
-        let allObjs = userDefault.dictionaryRepresentation().sorted { (k1, k2) in
-            return k1.key < k2.key
-        }
-        for (_, v) in allObjs {
-            guard let bytes = v as? [UInt8] else { continue }
-            guard let parsed = parse(bytes) else { continue }
-            
-            if let f = FramePublish(fixedHeader: parsed.0, bytes: parsed.1) {
-                frames.append(f)
-            } else if let f = FramePubRel(fixedHeader: parsed.0, bytes: parsed.1) {
-                frames.append(f)
-            }
-        }
-        return frames
+        return __read(needDelete: false)
+    }
+    
+    func takeAll() -> [Frame] {
+        return __read(needDelete: true)
     }
     
     private func key(_ msgid: UInt16) -> String {
@@ -108,4 +106,27 @@ final class CocoaMQTTStorage: CocoaMQTTStorageProtocol {
         
         return nil
     }
+    
+    private func __read(needDelete: Bool)  -> [Frame] {
+        var frames = [Frame]()
+        let allObjs = userDefault.dictionaryRepresentation().sorted { (k1, k2) in
+            return k1.key < k2.key
+        }
+        for (k, v) in allObjs {
+            guard let bytes = v as? [UInt8] else { continue }
+            guard let parsed = parse(bytes) else { continue }
+
+            if needDelete {
+                userDefault.removeObject(forKey: k)
+            }
+
+            if let f = FramePublish(fixedHeader: parsed.0, bytes: parsed.1) {
+                frames.append(f)
+            } else if let f = FramePubRel(fixedHeader: parsed.0, bytes: parsed.1) {
+                frames.append(f)
+            }
+        }
+        return frames
+    }
+    
 }
