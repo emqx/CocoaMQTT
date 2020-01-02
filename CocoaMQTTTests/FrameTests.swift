@@ -148,6 +148,9 @@ class FrameTests: XCTestCase {
         XCTAssertEqual(f0.retained, true)
         f0.retained = false
         XCTAssertEqual(f0.retained, false)
+        
+        let f1 = FramePublish(fixedHeader: 0x30, bytes:[0, 60, 47, 114, 101, 109, 111, 116, 101, 97, 112, 112, 47, 109, 111, 98, 105, 108, 101, 47, 98, 114, 111, 97, 100, 99, 97, 115, 116, 47, 112, 108, 97, 116, 102, 111, 114, 109, 95, 115, 101, 114, 118, 105, 99, 101, 47, 97, 99, 116, 105, 111, 110, 115, 47, 116, 118, 115, 108, 101, 101, 112])
+        XCTAssertEqual(f1?.payload().count, 0)
     }
     
     func testFramePubAck() {

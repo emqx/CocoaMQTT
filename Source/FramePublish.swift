@@ -85,11 +85,10 @@ extension FramePublish: InitialWithBytes {
         }
         
         // payload
-        let end = bytes.count - 1
-        
-        if (end - pos >= 0) {
-            _payload = [UInt8](bytes[pos...end])
-            // receives an empty message
+        if (pos == bytes.count) {
+            _payload = []
+        } else if (pos < bytes.count) {
+            _payload = [UInt8](bytes[pos..<bytes.count])
         } else {
             return nil
         }
