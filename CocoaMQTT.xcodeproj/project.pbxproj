@@ -7,6 +7,8 @@
 	objects = {
 
 /* Begin PBXBuildFile section */
+		6E6C1F1C23C522430002B8D9 /* Starscream.framework in CopyFiles */ = {isa = PBXBuildFile; fileRef = 6EC871DF23A4214000F69AE8 /* Starscream.framework */; settings = {ATTRIBUTES = (CodeSignOnCopy, RemoveHeadersOnCopy, ); }; };
+		6E6C1F1D23C522430002B8D9 /* CocoaAsyncSocket.framework in CopyFiles */ = {isa = PBXBuildFile; fileRef = 8225B543227C308900E4DB51 /* CocoaAsyncSocket.framework */; settings = {ATTRIBUTES = (CodeSignOnCopy, RemoveHeadersOnCopy, ); }; };
 		6EC871E323A421A200F69AE8 /* CocoaMQTTSocket.swift in Sources */ = {isa = PBXBuildFile; fileRef = 6EC871E223A421A200F69AE8 /* CocoaMQTTSocket.swift */; };
 		6EC871E523A421DE00F69AE8 /* CocoaMQTTWebSocket.swift in Sources */ = {isa = PBXBuildFile; fileRef = 6EC871E423A421DE00F69AE8 /* CocoaMQTTWebSocket.swift */; };
 		6EF49CEE23C51E7000074BCF /* CocoaAsyncSocket.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = 8225B543227C308900E4DB51 /* CocoaAsyncSocket.framework */; };
@@ -51,6 +53,20 @@
 			remoteInfo = CocoaMQTT;
 		};
 /* End PBXContainerItemProxy section */
+
+/* Begin PBXCopyFilesBuildPhase section */
+		6E6C1F1923C5222E0002B8D9 /* CopyFiles */ = {
+			isa = PBXCopyFilesBuildPhase;
+			buildActionMask = 2147483647;
+			dstPath = "";
+			dstSubfolderSpec = 16;
+			files = (
+				6E6C1F1C23C522430002B8D9 /* Starscream.framework in CopyFiles */,
+				6E6C1F1D23C522430002B8D9 /* CocoaAsyncSocket.framework in CopyFiles */,
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+/* End PBXCopyFilesBuildPhase section */
 
 /* Begin PBXFileReference section */
 		0409971E1C1B0B96006B5A6D /* CocoaMQTTTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CocoaMQTTTests.swift; sourceTree = "<group>"; };
@@ -260,6 +276,7 @@
 				8225B549227C32C500E4DB51 /* Frameworks */,
 				8225B54A227C32C500E4DB51 /* Resources */,
 				8225B570227C377700E4DB51 /* ShellScript */,
+				6E6C1F1923C5222E0002B8D9 /* CopyFiles */,
 			);
 			buildRules = (
 			);
