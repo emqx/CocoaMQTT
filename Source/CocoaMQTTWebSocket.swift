@@ -48,7 +48,7 @@ public class CocoaMQTTWebSocket: CocoaMQTTSocketProtocol {
     
     public var enableSSL = false
     
-    public var headers: [String: String]!
+    public var headers: [String: String] = [:]
 
     public typealias ConnectionBuilder = CocoaMQTTWebSocketConnectionBuilder
     
