@@ -68,7 +68,7 @@ If you're building for iOS, tvOS:
 Create a client to connect MQTT Broker:
 
 ```swift
-let clientID = "CocoaMQTT-" + String(NSProcessInfo().processIdentifier)
+let clientID = "CocoaMQTT-" + String(ProcessInfo().processIdentifier)
 let mqtt = CocoaMQTT(clientID: clientID, host: "localhost", port: 1883)
 mqtt.username = "test"
 mqtt.password = "public"
