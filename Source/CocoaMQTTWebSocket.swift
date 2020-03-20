@@ -7,6 +7,9 @@
 
 import Foundation
 import Starscream
+#if IS_SWIFT_PACKAGE
+import CocoaMQTT
+#endif
 
 // MARK: - Interfaces
 
