@@ -7,6 +7,7 @@
 	objects = {
 
 /* Begin PBXBuildFile section */
+		65801AE02426ECEA00AC542F /* Package.swift in Sources */ = {isa = PBXBuildFile; fileRef = 65801ADF2426ECEA00AC542F /* Package.swift */; };
 		6E6C1F1C23C522430002B8D9 /* Starscream.framework in CopyFiles */ = {isa = PBXBuildFile; fileRef = 6EC871DF23A4214000F69AE8 /* Starscream.framework */; settings = {ATTRIBUTES = (CodeSignOnCopy, RemoveHeadersOnCopy, ); }; };
 		6E6C1F1D23C522430002B8D9 /* CocoaAsyncSocket.framework in CopyFiles */ = {isa = PBXBuildFile; fileRef = 8225B543227C308900E4DB51 /* CocoaAsyncSocket.framework */; settings = {ATTRIBUTES = (CodeSignOnCopy, RemoveHeadersOnCopy, ); }; };
 		6EC871E323A421A200F69AE8 /* CocoaMQTTSocket.swift in Sources */ = {isa = PBXBuildFile; fileRef = 6EC871E223A421A200F69AE8 /* CocoaMQTTSocket.swift */; };
@@ -76,6 +77,7 @@
 		0409977A1C1B1529006B5A6D /* CocoaMQTT.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = CocoaMQTT.swift; sourceTree = "<group>"; };
 		0409977B1C1B1529006B5A6D /* Frame.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = Frame.swift; sourceTree = "<group>"; };
 		0409977C1C1B1529006B5A6D /* CocoaMQTTMessage.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = CocoaMQTTMessage.swift; sourceTree = "<group>"; };
+		65801ADF2426ECEA00AC542F /* Package.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Package.swift; sourceTree = "<group>"; };
 		6EC871DF23A4214000F69AE8 /* Starscream.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = Starscream.framework; path = Carthage/Build/Mac/Starscream.framework; sourceTree = "<group>"; };
 		6EC871E223A421A200F69AE8 /* CocoaMQTTSocket.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CocoaMQTTSocket.swift; sourceTree = "<group>"; };
 		6EC871E423A421DE00F69AE8 /* CocoaMQTTWebSocket.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CocoaMQTTWebSocket.swift; sourceTree = "<group>"; };
@@ -131,6 +133,7 @@
 		040997051C1B0B96006B5A6D = {
 			isa = PBXGroup;
 			children = (
+				65801ADF2426ECEA00AC542F /* Package.swift */,
 				040997701C1B1070006B5A6D /* Source */,
 				0409971D1C1B0B96006B5A6D /* CocoaMQTTTests */,
 				C68B087463924483F8568675 /* Frameworks */,
@@ -397,6 +400,7 @@
 				8D43DE6022FAFC2700D9A06B /* FrameUnsubAck.swift in Sources */,
 				8225B53C227C2FC600E4DB51 /* CocoaMQTTMessage.swift in Sources */,
 				8225B53D227C2FC600E4DB51 /* CocoaMQTTDeliver.swift in Sources */,
+				65801AE02426ECEA00AC542F /* Package.swift in Sources */,
 				8225B53E227C2FC600E4DB51 /* CocoaMQTTTimer.swift in Sources */,
 				8225B53F227C2FC600E4DB51 /* CocoaMQTTLogger.swift in Sources */,
 				8D43DE5422FAEDCC00D9A06B /* FramePubRec.swift in Sources */,
