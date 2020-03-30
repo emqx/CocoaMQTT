@@ -16,7 +16,7 @@ enum CocoaMQTTReadTag: Int {
 }
 
 ///
-protocol CocoaMQTTReaderDelegate: class {
+protocol CocoaMQTTReaderDelegate: AnyObject {
    
     func didRecevied(_ reader: CocoaMQTTReader, connack: FrameConnAck)
     

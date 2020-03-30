@@ -9,7 +9,7 @@
 import Foundation
 import Dispatch
 
-protocol CocoaMQTTDeliverProtocol: class {
+protocol CocoaMQTTDeliverProtocol: AnyObject {
     
     var delegateQueue: DispatchQueue { get set }
     
