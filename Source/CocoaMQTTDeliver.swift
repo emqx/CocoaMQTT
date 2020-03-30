@@ -93,8 +93,8 @@ class CocoaMQTTDeliver: NSObject {
         }
         
         deliverQueue.async { [weak self] in
-            guard let wself = self else { return }
-            wself.tryTransport()
+            guard let self = self else { return }
+            self.tryTransport()
         }
     }
     
@@ -114,8 +114,8 @@ class CocoaMQTTDeliver: NSObject {
         }
         
         deliverQueue.async { [weak self] in
-            guard let wself = self else { return }
-            wself.tryTransport()
+            guard let self = self else { return }
+            self.tryTransport()
         }
         
         return true
@@ -131,19 +131,19 @@ class CocoaMQTTDeliver: NSObject {
         else { return }
         
         deliverQueue.async { [weak self] in
-            guard let wself = self else { return }
-            let acked = wself.ackInflightFrame(withMsgid: msgid, type: frame.type)
+            guard let self = self else { return }
+            let acked = self.ackInflightFrame(withMsgid: msgid, type: frame.type)
             if acked.count == 0 {
                 printWarning("Acknowledge by \(frame), but not found in inflight window")
             } else {
                 // TODO: ACK DONT DELETE PUBREL
                 for f in acked {
                     if frame is FramePubAck || frame is FramePubComp {
-                        wself.storage?.remove(f)
+                        self.storage?.remove(f)
                     }
                 }
                 printDebug("Acknowledge frame id \(msgid) success, acked: \(acked)")
-                wself.tryTransport()
+                self.tryTransport()
             }
         }
     }
@@ -153,9 +153,9 @@ class CocoaMQTTDeliver: NSObject {
     /// !!Warning: it's a temporary method for hotfix #221
     func cleanAll() {
         deliverQueue.sync { [weak self] in
-            guard let wself = self else { return }
-            _ = wself.mqueue.removeAll()
-            _ = wself.inflight.removeAll()
+            guard let self = self else { return }
+            _ = self.mqueue.removeAll()
+            _ = self.inflight.removeAll()
         }
     }
 }
@@ -191,9 +191,9 @@ extension CocoaMQTTDeliver {
             // Start a retry timer for resending it if it not receive PUBACK or PUBREC
             if awaitingTimer == nil {
                 awaitingTimer = CocoaMQTTTimer.every(retryTimeInterval / 1000.0, name: "awaitingTimer") { [weak self] in
-                    guard let wself = self else { return }
-                    wself.deliverQueue.async {
-                        wself.redeliver()
+                    guard let self = self else { return }
+                    self.deliverQueue.async {
+                        self.redeliver()
                     }
                 }
             }

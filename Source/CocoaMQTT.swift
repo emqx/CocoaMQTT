@@ -376,8 +376,8 @@ public class CocoaMQTT: NSObject, CocoaMQTTClient {
             }
             
             delegateQueue.async { [weak self] in
-                guard let wself = self else { return }
-                wself.connState = .connecting
+                guard let self = self else { return }
+                self.connState = .connecting
             }
             
             return true
@@ -636,13 +636,13 @@ extension CocoaMQTT: CocoaMQTTReaderDelegate {
             let interval = Double(keepAlive <= 0 ? 60: keepAlive)
             
             aliveTimer = CocoaMQTTTimer.every(interval, name: "aliveTimer") { [weak self] in
-                guard let wself = self else { return }
-                wself.delegateQueue.async {
-                    guard wself.connState == .connected else {
-                        wself.aliveTimer = nil
+                guard let self = self else { return }
+                self.delegateQueue.async {
+                    guard self.connState == .connected else {
+                        self.aliveTimer = nil
                         return
                     }
-                    wself.ping()
+                    self.ping()
                 }
             }
             
