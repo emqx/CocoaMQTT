@@ -205,7 +205,7 @@ public class CocoaMQTT: NSObject, CocoaMQTTClient {
         set { deliver.inflightWindowSize = newValue }
     }
     
-    /// Keep alive time inerval
+    /// Keep alive time interval
     public var keepAlive: UInt16 = 60
 	private var aliveTimer: CocoaMQTTTimer?
     
