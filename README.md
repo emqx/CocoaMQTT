@@ -68,7 +68,7 @@ If you're building for iOS, tvOS:
 Create a client to connect MQTT Broker:
 
 ```swift
-let clientID = "CocoaMQTT-" + String(NSProcessInfo().processIdentifier)
+let clientID = "CocoaMQTT-" + String(ProcessInfo().processIdentifier)
 let mqtt = CocoaMQTT(clientID: clientID, host: "localhost", port: 1883)
 mqtt.username = "test"
 mqtt.password = "public"
@@ -115,7 +115,7 @@ If you integrated by **CocoaPods**, you need to modify you `Podfile` like the fo
 use_frameworks!
 
 target 'Example' do
-    pod 'CocoaMQTT/WebSockets', '1.3.0'
+    pod 'CocoaMQTT/WebSockets', '1.3.0-rc.2'
 end
 
 ```
@@ -130,6 +130,22 @@ let mqtt = CocoaMQTT(clientID: clientID, host: host, port: 8083, socket: websock
 
 _ = mqtt.connect()
 
+```
+
+If you want to add additional custom header to the connection, you can use the following:
+
+```swift
+let websocket = CocoaMQTTWebSocket(uri: "/mqtt")
+websocket.headers = [
+            "x-api-key": "value"
+        ]
+        websocket.enableSSL = true
+
+let mqtt = CocoaMQTT(clientID: clientID, host: host, port: 8083, socket: websocket)
+
+// ...
+
+_ = mqtt.connect()
 ```
 
 ## Example App

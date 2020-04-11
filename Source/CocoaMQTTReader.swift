@@ -16,7 +16,7 @@ enum CocoaMQTTReadTag: Int {
 }
 
 ///
-protocol CocoaMQTTReaderDelegate: class {
+protocol CocoaMQTTReaderDelegate: AnyObject {
    
     func didRecevied(_ reader: CocoaMQTTReader, connack: FrameConnAck)
     
@@ -43,7 +43,7 @@ class CocoaMQTTReader {
     
     private weak var delegate: CocoaMQTTReaderDelegate?
     
-    private var timeout = 30000
+    private let timeout: TimeInterval = 30_000
     
     /*  -- Reader states -- */
     private var header: UInt8 = 0
@@ -94,11 +94,11 @@ class CocoaMQTTReader {
     }
     
     private func readLength() {
-        socket.readData(toLength: 1, withTimeout: TimeInterval(timeout), tag: CocoaMQTTReadTag.length.rawValue)
+        socket.readData(toLength: 1, withTimeout: timeout, tag: CocoaMQTTReadTag.length.rawValue)
     }
     
     private func readPayload() {
-        socket.readData(toLength: length, withTimeout: TimeInterval(timeout), tag: CocoaMQTTReadTag.payload.rawValue)
+        socket.readData(toLength: length, withTimeout: timeout, tag: CocoaMQTTReadTag.payload.rawValue)
     }
     
     private func frameReady() {

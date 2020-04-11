@@ -7,6 +7,9 @@
 
 import Foundation
 import Starscream
+#if IS_SWIFT_PACKAGE
+import CocoaMQTT
+#endif
 
 // MARK: - Interfaces
 
@@ -38,8 +41,8 @@ public protocol CocoaMQTTWebSocketConnection: NSObjectProtocol {
 
 public protocol CocoaMQTTWebSocketConnectionBuilder {
     
-    func buildConnection(forURL url: URL) throws -> CocoaMQTTWebSocketConnection
-    
+    func buildConnection(forURL url: URL, withHeaders headers: [String: String]) throws -> CocoaMQTTWebSocketConnection
+
 }
 
 // MARK: - CocoaMQTTWebSocket
@@ -47,6 +50,8 @@ public protocol CocoaMQTTWebSocketConnectionBuilder {
 public class CocoaMQTTWebSocket: CocoaMQTTSocketProtocol {
     
     public var enableSSL = false
+    
+    public var headers: [String: String] = [:]
 
     public typealias ConnectionBuilder = CocoaMQTTWebSocketConnectionBuilder
     
@@ -54,12 +59,15 @@ public class CocoaMQTTWebSocket: CocoaMQTTSocketProtocol {
         
         public init() {}
         
-        public func buildConnection(forURL url: URL) throws -> CocoaMQTTWebSocketConnection {
+        
+        public func buildConnection(forURL url: URL, withHeaders headers: [String: String]) throws -> CocoaMQTTWebSocketConnection {
             if #available(OSX 10.15, iOS 13.0, watchOS 6.0, tvOS 13.0, *) {
                 let config = URLSessionConfiguration.default
+                config.httpAdditionalHeaders = headers
                 return CocoaMQTTWebSocket.FoundationConnection(url: url, config: config)
             } else {
-                let request = URLRequest(url: url)
+                var request = URLRequest(url: url)
+                headers.forEach { request.setValue($1, forHTTPHeaderField: $0)}
                 return CocoaMQTTWebSocket.StarscreamConnection(request: request)
             }
         }
@@ -90,7 +98,7 @@ public class CocoaMQTTWebSocket: CocoaMQTTSocketProtocol {
         try internalQueue.sync {
             connection?.disconnect()
             connection?.delegate = nil
-            let newConnection = try builder.buildConnection(forURL: url)
+            let newConnection = try builder.buildConnection(forURL: url, withHeaders: self.headers)
             connection = newConnection
             newConnection.delegate = self
             newConnection.queue = internalQueue
