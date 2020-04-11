@@ -8,6 +8,9 @@
 
 import XCTest
 @testable import CocoaMQTT
+#if IS_SWIFT_PACKAGE
+@testable import CocoaMQTTWebSocket
+#endif
 
 private let host = "localhost"
 private let port: UInt16 = 1883
