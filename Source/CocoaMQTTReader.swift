@@ -18,23 +18,23 @@ enum CocoaMQTTReadTag: Int {
 ///
 protocol CocoaMQTTReaderDelegate: AnyObject {
    
-    func didRecevied(_ reader: CocoaMQTTReader, connack: FrameConnAck)
+    func didReceive(_ reader: CocoaMQTTReader, connack: FrameConnAck)
     
-    func didRecevied(_ reader: CocoaMQTTReader, publish: FramePublish)
+    func didReceive(_ reader: CocoaMQTTReader, publish: FramePublish)
     
-    func didReceived(_ reader: CocoaMQTTReader, puback: FramePubAck)
+    func didReceive(_ reader: CocoaMQTTReader, puback: FramePubAck)
     
-    func didRecevied(_ reader: CocoaMQTTReader, pubrec: FramePubRec)
+    func didReceive(_ reader: CocoaMQTTReader, pubrec: FramePubRec)
     
-    func didReceived(_ reader: CocoaMQTTReader, pubrel: FramePubRel)
+    func didReceive(_ reader: CocoaMQTTReader, pubrel: FramePubRel)
     
-    func didRecevied(_ reader: CocoaMQTTReader, pubcomp: FramePubComp)
+    func didReceive(_ reader: CocoaMQTTReader, pubcomp: FramePubComp)
     
-    func didReceived(_ reader: CocoaMQTTReader, suback: FrameSubAck)
+    func didReceive(_ reader: CocoaMQTTReader, suback: FrameSubAck)
     
-    func didReceived(_ reader: CocoaMQTTReader, unsuback: FrameUnsubAck)
+    func didReceive(_ reader: CocoaMQTTReader, unsuback: FrameUnsubAck)
     
-    func didReceived(_ reader: CocoaMQTTReader, pingresp: FramePingResp)
+    func didReceive(_ reader: CocoaMQTTReader, pingresp: FramePingResp)
 }
 
 class CocoaMQTTReader {
@@ -117,55 +117,55 @@ class CocoaMQTTReader {
                 printError("Reader parse \(frameType) failed, data: \(data)")
                 break
             }
-            delegate?.didRecevied(self, connack: connack)
+            delegate?.didReceive(self, connack: connack)
         case .publish:
             guard let publish = FramePublish(fixedHeader: header, bytes: data) else {
                 printError("Reader parse \(frameType) failed, data: \(data)")
                 break
             }
-            delegate?.didRecevied(self, publish: publish)
+            delegate?.didReceive(self, publish: publish)
         case .puback:
             guard let puback = FramePubAck(fixedHeader: header, bytes: data) else {
                 printError("Reader parse \(frameType) failed, data: \(data)")
                 break
             }
-            delegate?.didReceived(self, puback: puback)
+            delegate?.didReceive(self, puback: puback)
         case .pubrec:
             guard let pubrec = FramePubRec(fixedHeader: header, bytes: data) else {
                 printError("Reader parse \(frameType) failed, data: \(data)")
                 break
             }
-            delegate?.didRecevied(self, pubrec: pubrec)
+            delegate?.didReceive(self, pubrec: pubrec)
         case .pubrel:
             guard let pubrel = FramePubRel(fixedHeader: header, bytes: data) else {
                 printError("Reader parse \(frameType) failed, data: \(data)")
                 break
             }
-            delegate?.didReceived(self, pubrel: pubrel)
+            delegate?.didReceive(self, pubrel: pubrel)
         case .pubcomp:
             guard let pubcomp = FramePubComp(fixedHeader: header, bytes: data) else {
                 printError("Reader parse \(frameType) failed, data: \(data)")
                 break
             }
-            delegate?.didRecevied(self, pubcomp: pubcomp)
+            delegate?.didReceive(self, pubcomp: pubcomp)
         case .suback:
             guard let frame = FrameSubAck(fixedHeader: header, bytes: data) else {
                 printError("Reader parse \(frameType) failed, data: \(data)")
                 break
             }
-            delegate?.didReceived(self, suback: frame)
+            delegate?.didReceive(self, suback: frame)
         case .unsuback:
             guard let frame = FrameUnsubAck(fixedHeader: header, bytes: data) else {
                 printError("Reader parse \(frameType) failed, data: \(data)")
                 break
             }
-            delegate?.didReceived(self, unsuback: frame)
+            delegate?.didReceive(self, unsuback: frame)
         case .pingresp:
             guard let frame = FramePingResp(fixedHeader: header, bytes: data) else {
                 printError("Reader parse \(frameType) failed, data: \(data)")
                 break
             }
-            delegate?.didReceived(self, pingresp: frame)
+            delegate?.didReceive(self, pingresp: frame)
         default:
             break
         }

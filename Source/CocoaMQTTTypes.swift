@@ -59,7 +59,6 @@ extension UInt8 {
 }
 
 public enum CocoaMQTTError: Error {
-    case invalidFrameStructrue
     case invalidURL
     case readTimeout
     case writeTimeout
