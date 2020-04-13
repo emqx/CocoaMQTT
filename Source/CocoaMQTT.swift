@@ -157,7 +157,7 @@ public class CocoaMQTT: NSObject, CocoaMQTTClient {
     /// - TODO: What's behavior each Clean Session flags???
     public var cleanSession = true
     
-    /// Setup a **Last Will Message** to client before connecting to borker
+    /// Setup a **Last Will Message** to client before connecting to broker
     public var willMessage: CocoaMQTTMessage?
     
     /// Enable backgounding socket if running on iOS platform. Default is true
@@ -170,7 +170,7 @@ public class CocoaMQTT: NSObject, CocoaMQTTClient {
     
     /// Delegate Executed queue. Default is `DispatchQueue.main`
     ///
-    /// The delegate/closure callback function will be commited asynchronously to it
+    /// The delegate/closure callback function will be committed asynchronously to it
     public var delegateQueue = DispatchQueue.main
     
     public var connState = CocoaMQTTConnState.disconnected {
@@ -224,7 +224,7 @@ public class CocoaMQTT: NSObject, CocoaMQTTClient {
     /// After that, it uses this value for subsequent requests.
     public var maxAutoReconnectTimeInterval: UInt16 = 128 // 128 seconds
     
-    private var reconectTimeInterval: UInt16 = 0
+    private var reconnectTimeInterval: UInt16 = 0
     
     private var autoReconnTimer: CocoaMQTTTimer?
     private var is_internal_disconnected = false
@@ -390,7 +390,7 @@ public class CocoaMQTT: NSObject, CocoaMQTTClient {
     /// Send a DISCONNECT packet to the broker then close the connection
     ///
     /// - Note: Only can be called from outside.
-    ///         If you want to disconnect from inside framwork, call internal_disconnect()
+    ///         If you want to disconnect from inside framework, call internal_disconnect()
     ///         disconnect expectedly
     public func disconnect() {
         is_internal_disconnected = false
@@ -515,7 +515,7 @@ extension CocoaMQTT: CocoaMQTTDeliverProtocol {
         if let publish = frame as? FramePublish {
             let msgid = publish.msgid
             guard let message = sendingMessages[msgid] else {
-                printError("Want send \(frame), but not found in CoacoaMQTT cache")
+                printError("Want send \(frame), but not found in CocoaMQTT cache")
                 return
             }
             
@@ -599,18 +599,18 @@ extension CocoaMQTT: CocoaMQTTSocketDelegate {
             return
         }
         
-        if reconectTimeInterval == 0 {
-            reconectTimeInterval = autoReconnectTimeInterval
+        if reconnectTimeInterval == 0 {
+            reconnectTimeInterval = autoReconnectTimeInterval
         }
         
-        // Start reconnector once socket error occuried
-        printInfo("Try reconnect to server after \(reconectTimeInterval)s")
-        autoReconnTimer = CocoaMQTTTimer.after(Double(reconectTimeInterval), name: "autoReconnTimer", { [weak self] in
+        // Start reconnector once socket error occurred
+        printInfo("Try reconnect to server after \(reconnectTimeInterval)s")
+        autoReconnTimer = CocoaMQTTTimer.after(Double(reconnectTimeInterval), name: "autoReconnTimer", { [weak self] in
             guard let self = self else { return }
-            if self.reconectTimeInterval < self.maxAutoReconnectTimeInterval {
-                self.reconectTimeInterval *= 2
+            if self.reconnectTimeInterval < self.maxAutoReconnectTimeInterval {
+                self.reconnectTimeInterval *= 2
             } else {
-                self.reconectTimeInterval = self.maxAutoReconnectTimeInterval
+                self.reconnectTimeInterval = self.maxAutoReconnectTimeInterval
             }
             _ = self.connect()
         })
@@ -620,14 +620,14 @@ extension CocoaMQTT: CocoaMQTTSocketDelegate {
 // MARK: - CocoaMQTTReaderDelegate
 extension CocoaMQTT: CocoaMQTTReaderDelegate {
     
-    func didRecevied(_ reader: CocoaMQTTReader, connack: FrameConnAck) {
+    func didReceive(_ reader: CocoaMQTTReader, connack: FrameConnAck) {
         printDebug("RECV: \(connack)")
 
         if connack.returnCode == .accept {
             
             // Disable auto-reconnect
             
-            reconectTimeInterval = 0
+            reconnectTimeInterval = 0
             autoReconnTimer = nil
             is_internal_disconnected = false
             
@@ -681,14 +681,14 @@ extension CocoaMQTT: CocoaMQTTReaderDelegate {
         didConnectAck(self, connack.returnCode)
     }
 
-    func didRecevied(_ reader: CocoaMQTTReader, publish: FramePublish) {
+    func didReceive(_ reader: CocoaMQTTReader, publish: FramePublish) {
         printDebug("RECV: \(publish)")
         
         let message = CocoaMQTTMessage(topic: publish.topic, payload: publish.payload(), qos: publish.qos, retained: publish.retained)
         
         message.duplicated = publish.dup
         
-        printInfo("Recevied message: \(message)")
+        printInfo("Received message: \(message)")
         delegate?.mqtt(self, didReceiveMessage: message, id: publish.msgid)
         didReceiveMessage(self, message, publish.msgid)
         
@@ -699,7 +699,7 @@ extension CocoaMQTT: CocoaMQTTReaderDelegate {
         }
     }
 
-    func didReceived(_ reader: CocoaMQTTReader, puback: FramePubAck) {
+    func didReceive(_ reader: CocoaMQTTReader, puback: FramePubAck) {
         printDebug("RECV: \(puback)")
         
         deliver.ack(by: puback)
@@ -708,19 +708,19 @@ extension CocoaMQTT: CocoaMQTTReaderDelegate {
         didPublishAck(self, puback.msgid)
     }
     
-    func didRecevied(_ reader: CocoaMQTTReader, pubrec: FramePubRec) {
+    func didReceive(_ reader: CocoaMQTTReader, pubrec: FramePubRec) {
         printDebug("RECV: \(pubrec)")
         
         deliver.ack(by: pubrec)
     }
 
-    func didReceived(_ reader: CocoaMQTTReader, pubrel: FramePubRel) {
+    func didReceive(_ reader: CocoaMQTTReader, pubrel: FramePubRel) {
         printDebug("RECV: \(pubrel)")
 
         puback(FrameType.pubcomp, msgid: pubrel.msgid)
     }
 
-    func didRecevied(_ reader: CocoaMQTTReader, pubcomp: FramePubComp) {
+    func didReceive(_ reader: CocoaMQTTReader, pubcomp: FramePubComp) {
         printDebug("RECV: \(pubcomp)")
 
         deliver.ack(by: pubcomp)
@@ -729,7 +729,7 @@ extension CocoaMQTT: CocoaMQTTReaderDelegate {
         didCompletePublish(self, pubcomp.msgid)
     }
 
-    func didReceived(_ reader: CocoaMQTTReader, suback: FrameSubAck) {
+    func didReceive(_ reader: CocoaMQTTReader, suback: FrameSubAck) {
         printDebug("RECV: \(suback)")
         
         guard let topicsAndQos = subscriptionsWaitingAck.removeValue(forKey: suback.msgid) else {
@@ -757,7 +757,7 @@ extension CocoaMQTT: CocoaMQTTReaderDelegate {
         didSubscribeTopics(self, success, failed)
     }
 
-    func didReceived(_ reader: CocoaMQTTReader, unsuback: FrameUnsubAck) {
+    func didReceive(_ reader: CocoaMQTTReader, unsuback: FrameUnsubAck) {
         printDebug("RECV: \(unsuback)")
         
         guard let topics = unsubscriptionsWaitingAck.removeValue(forKey: unsuback.msgid) else {
@@ -772,7 +772,7 @@ extension CocoaMQTT: CocoaMQTTReaderDelegate {
         didUnsubscribeTopics(self, topics)
     }
 
-    func didReceived(_ reader: CocoaMQTTReader, pingresp: FramePingResp) {
+    func didReceive(_ reader: CocoaMQTTReader, pingresp: FramePingResp) {
         printDebug("RECV: \(pingresp)")
         
         delegate?.mqttDidReceivePong(self)
