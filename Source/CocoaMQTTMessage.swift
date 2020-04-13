@@ -25,7 +25,7 @@ public class CocoaMQTTMessage: NSObject {
     /// - note: Readonly property
     public var duplicated = false
     
-    /// Return the payload as a utf8 string if possiable
+    /// Return the payload as a utf8 string if possible
     ///
     /// It will return nil if the payload is not a valid utf8 string
     public var string: String? {
