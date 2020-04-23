@@ -142,28 +142,28 @@ public class CocoaMQTT: NSObject, CocoaMQTTClient {
     
     public weak var delegate: CocoaMQTTDelegate?
     
-    public var host = "localhost"
+    @objc public var host = "localhost"
     
-    public var port: UInt16 = 1883
+    @objc public var port: UInt16 = 1883
     
-    public var clientID: String
+    @objc public var clientID: String
     
-    public var username: String?
+    @objc public var username: String?
     
-    public var password: String?
+    @objc public var password: String?
     
     /// Clean Session flag. Default is true
     ///
     /// - TODO: What's behavior each Clean Session flags???
-    public var cleanSession = true
+    @objc public var cleanSession = true
     
     /// Setup a **Last Will Message** to client before connecting to broker
-    public var willMessage: CocoaMQTTMessage?
+    @objc public var willMessage: CocoaMQTTMessage?
     
     /// Enable backgounding socket if running on iOS platform. Default is true
     ///
     /// - Note:
-    public var backgroundOnSocket: Bool {
+    @objc public var backgroundOnSocket: Bool {
         get { return (self.socket as? CocoaMQTTSocket)?.backgroundOnSocket ?? true }
         set { (self.socket as? CocoaMQTTSocket)?.backgroundOnSocket = newValue }
     }
@@ -171,9 +171,9 @@ public class CocoaMQTT: NSObject, CocoaMQTTClient {
     /// Delegate Executed queue. Default is `DispatchQueue.main`
     ///
     /// The delegate/closure callback function will be committed asynchronously to it
-    public var delegateQueue = DispatchQueue.main
+    @objc public var delegateQueue = DispatchQueue.main
     
-    public var connState = CocoaMQTTConnState.disconnected {
+    @objc public var connState = CocoaMQTTConnState.disconnected {
         didSet {
             __delegate_queue {
                 self.delegate?.mqtt?(self, didStateChangeTo: self.connState)
@@ -186,7 +186,7 @@ public class CocoaMQTT: NSObject, CocoaMQTTClient {
     private var deliver = CocoaMQTTDeliver()
     
     /// Re-deliver the un-acked messages
-    public var deliverTimeout: Double {
+    @objc public var deliverTimeout: Double {
         get { return deliver.retryTimeInterval }
         set { deliver.retryTimeInterval = newValue }
     }
@@ -194,20 +194,20 @@ public class CocoaMQTT: NSObject, CocoaMQTTClient {
     /// Message queue size. default 1000
     ///
     /// The new publishing messages of Qos1/Qos2 will be drop, if the queue is full
-    public var messageQueueSize: UInt {
+    @objc public var messageQueueSize: UInt {
         get { return deliver.mqueueSize }
         set { deliver.mqueueSize = newValue }
     }
     
     /// In-flight window size. default 10
-    public var inflightWindowSize: UInt {
+    @objc public var inflightWindowSize: UInt {
         get { return deliver.inflightWindowSize }
         set { deliver.inflightWindowSize = newValue }
     }
     
     /// Keep alive time interval
-    public var keepAlive: UInt16 = 60
-	private var aliveTimer: CocoaMQTTTimer?
+    @objc public var keepAlive: UInt16 = 60
+    private var aliveTimer: CocoaMQTTTimer?
     
     /// Enable auto-reconnect mechanism
     public var autoReconnect = false
@@ -216,13 +216,13 @@ public class CocoaMQTT: NSObject, CocoaMQTTClient {
     ///
     /// - note: This value will be increased with `autoReconnectTimeInterval *= 2`
     ///         if reconnect failed
-    public var autoReconnectTimeInterval: UInt16 = 1 // starts from 1 second
+    @objc public var autoReconnectTimeInterval: UInt16 = 1 // starts from 1 second
     
     /// Maximum auto reconnect time interval
     ///
     /// The timer starts from `autoReconnectTimeInterval` second and grows exponentially until this value
     /// After that, it uses this value for subsequent requests.
-    public var maxAutoReconnectTimeInterval: UInt16 = 128 // 128 seconds
+    @objc public var maxAutoReconnectTimeInterval: UInt16 = 128 // 128 seconds
     
     private var reconnectTimeInterval: UInt16 = 0
     
@@ -230,7 +230,7 @@ public class CocoaMQTT: NSObject, CocoaMQTTClient {
     private var is_internal_disconnected = false
     
     /// Console log level
-    public var logLevel: CocoaMQTTLoggerLevel {
+    @objc public var logLevel: CocoaMQTTLoggerLevel {
         get {
             return CocoaMQTTLogger.logger.minLevel
         }
@@ -240,13 +240,13 @@ public class CocoaMQTT: NSObject, CocoaMQTTClient {
     }
     
     /// Enable SSL connection
-    public var enableSSL: Bool {
+    @objc public var enableSSL: Bool {
         get { return self.socket.enableSSL }
         set { socket.enableSSL = newValue }
     }
     
     ///
-    public var sslSettings: [String: NSObject]? {
+    @objc public var sslSettings: [String: NSObject]? {
         get { return (self.socket as? CocoaMQTTSocket)?.sslSettings ?? nil }
         set { (self.socket as? CocoaMQTTSocket)?.sslSettings = newValue }
     }
@@ -254,7 +254,7 @@ public class CocoaMQTT: NSObject, CocoaMQTTClient {
     /// Allow self-signed ca certificate.
     ///
     /// Default is false
-    public var allowUntrustCACertificate: Bool {
+    @objc public var allowUntrustCACertificate: Bool {
         get { return (self.socket as? CocoaMQTTSocket)?.allowUntrustCACertificate ?? false }
         set { (self.socket as? CocoaMQTTSocket)?.allowUntrustCACertificate = newValue }
     }
@@ -275,18 +275,18 @@ public class CocoaMQTT: NSObject, CocoaMQTTClient {
     fileprivate var reader: CocoaMQTTReader?
     
     // Closures
-    public var didConnectAck: (CocoaMQTT, CocoaMQTTConnAck) -> Void = { _, _ in }
-    public var didPublishMessage: (CocoaMQTT, CocoaMQTTMessage, UInt16) -> Void = { _, _, _ in }
-    public var didPublishAck: (CocoaMQTT, UInt16) -> Void = { _, _ in }
-    public var didReceiveMessage: (CocoaMQTT, CocoaMQTTMessage, UInt16) -> Void = { _, _, _ in }
-    public var didSubscribeTopics: (CocoaMQTT, NSDictionary, [String]) -> Void = { _, _, _  in }
-    public var didUnsubscribeTopics: (CocoaMQTT, [String]) -> Void = { _, _ in }
-    public var didPing: (CocoaMQTT) -> Void = { _ in }
-    public var didReceivePong: (CocoaMQTT) -> Void = { _ in }
-    public var didDisconnect: (CocoaMQTT, Error?) -> Void = { _, _ in }
-    public var didReceiveTrust: (CocoaMQTT, SecTrust, @escaping (Bool) -> Swift.Void) -> Void = { _, _, _ in }
-    public var didCompletePublish: (CocoaMQTT, UInt16) -> Void = { _, _ in }
-    public var didChangeState: (CocoaMQTT, CocoaMQTTConnState) -> Void = { _, _ in }
+    @objc public var didConnectAck: (CocoaMQTT, CocoaMQTTConnAck) -> Void = { _, _ in }
+    @objc public var didPublishMessage: (CocoaMQTT, CocoaMQTTMessage, UInt16) -> Void = { _, _, _ in }
+    @objc public var didPublishAck: (CocoaMQTT, UInt16) -> Void = { _, _ in }
+    @objc public var didReceiveMessage: (CocoaMQTT, CocoaMQTTMessage, UInt16) -> Void = { _, _, _ in }
+    @objc public var didSubscribeTopics: (CocoaMQTT, NSDictionary, [String]) -> Void = { _, _, _  in }
+    @objc public var didUnsubscribeTopics: (CocoaMQTT, [String]) -> Void = { _, _ in }
+    @objc public var didPing: (CocoaMQTT) -> Void = { _ in }
+    @objc public var didReceivePong: (CocoaMQTT) -> Void = { _ in }
+    @objc public var didDisconnect: (CocoaMQTT, Error?) -> Void = { _, _ in }
+    @objc public var didReceiveTrust: (CocoaMQTT, SecTrust, @escaping (Bool) -> Swift.Void) -> Void = { _, _, _ in }
+    @objc public var didCompletePublish: (CocoaMQTT, UInt16) -> Void = { _, _ in }
+    @objc public var didChangeState: (CocoaMQTT, CocoaMQTTConnState) -> Void = { _, _ in }
     
     /// Initial client object
     ///
@@ -294,7 +294,7 @@ public class CocoaMQTT: NSObject, CocoaMQTTClient {
     ///   - clientID: Client Identifier
     ///   - host: The MQTT broker host domain or IP address. Default is "localhost"
     ///   - port: The MQTT service port of host. Default is 1883
-    public init(clientID: String, host: String = "localhost", port: UInt16 = 1883, socket: CocoaMQTTSocketProtocol = CocoaMQTTSocket()) {
+    @objc public init(clientID: String, host: String = "localhost", port: UInt16 = 1883, socket: CocoaMQTTSocketProtocol = CocoaMQTTSocket()) {
         self.clientID = clientID
         self.host = host
         self.port = port
@@ -355,7 +355,7 @@ public class CocoaMQTT: NSObject, CocoaMQTTClient {
     /// - Returns:
     ///   - Bool: It indicates whether successfully calling socket connect function.
     ///           Not yet established correct MQTT session
-    public func connect() -> Bool {
+    @objc public func connect() -> Bool {
         return connect(timeout: -1)
     }
     
@@ -365,7 +365,7 @@ public class CocoaMQTT: NSObject, CocoaMQTTClient {
     /// - Returns:
     ///   - Bool: It indicates whether successfully calling socket connect function.
     ///           Not yet established correct MQTT session
-    public func connect(timeout: TimeInterval) -> Bool {
+    @objc public func connect(timeout: TimeInterval) -> Bool {
         socket.setDelegate(self, delegateQueue: delegateQueue)
         reader = CocoaMQTTReader(socket: socket, delegate: self)
         do {
@@ -392,7 +392,7 @@ public class CocoaMQTT: NSObject, CocoaMQTTClient {
     /// - Note: Only can be called from outside.
     ///         If you want to disconnect from inside framework, call internal_disconnect()
     ///         disconnect expectedly
-    public func disconnect() {
+    @objc public func disconnect() {
         is_internal_disconnected = false
         internal_disconnect()
     }
@@ -405,7 +405,7 @@ public class CocoaMQTT: NSObject, CocoaMQTTClient {
     }
     
     /// Send a PING request to broker
-    public func ping() {
+    @objc public func ping() {
         printDebug("ping")
         send(FramePingReq(), tag: -0xC0)
         
@@ -427,7 +427,7 @@ public class CocoaMQTT: NSObject, CocoaMQTTClient {
     ///     - 1-65535 will be returned, if the messages's qos is qos1/qos2
     ///     - -1 will be returned, if the messages queue is full
     @discardableResult
-    public func publish(_ topic: String, withString string: String, qos: CocoaMQTTQoS = .qos1, retained: Bool = false) -> Int {
+    @objc public func publish(_ topic: String, withString string: String, qos: CocoaMQTTQoS = .qos1, retained: Bool = false) -> Int {
         let message = CocoaMQTTMessage(topic: topic, string: string, qos: qos, retained: retained)
         return publish(message)
     }
@@ -437,7 +437,7 @@ public class CocoaMQTT: NSObject, CocoaMQTTClient {
     /// - Parameters:
     ///   - message: Message
     @discardableResult
-    public func publish(_ message: CocoaMQTTMessage) -> Int {
+    @objc public func publish(_ message: CocoaMQTTMessage) -> Int {
         let msgid: UInt16
         
         if message.qos == .qos0 {
@@ -473,7 +473,7 @@ public class CocoaMQTT: NSObject, CocoaMQTTClient {
     /// - Parameters:
     ///   - topic: Topic Name or Topic Filter
     ///   - qos: Qos. Default is qos1
-    public func subscribe(_ topic: String, qos: CocoaMQTTQoS = .qos1) {
+    @objc public func subscribe(_ topic: String, qos: CocoaMQTTQoS = .qos1) {
         return subscribe([(topic, qos)])
     }
     
@@ -492,8 +492,12 @@ public class CocoaMQTT: NSObject, CocoaMQTTClient {
     ///
     /// - Parameters:
     ///   - topic: A Topic Name or Topic Filter
+    @objc public func unsubscribe(_ topic: NSString) {
+      return unsubscribe([String(topic)])
+    }
+  
     public func unsubscribe(_ topic: String) {
-        return unsubscribe([topic])
+      return unsubscribe([String(topic)])
     }
     
     /// Unsubscribe a list of topics

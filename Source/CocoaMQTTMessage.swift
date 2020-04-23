@@ -12,36 +12,36 @@ import Foundation
 /// MQTT Message
 public class CocoaMQTTMessage: NSObject {
     
-    public var qos = CocoaMQTTQoS.qos1
+    @objc public var qos = CocoaMQTTQoS.qos1
     
-    public var topic: String
+    @objc public var topic: String
     
-    public var payload: [UInt8]
+    @objc public var payload: [UInt8]
     
-    public var retained = false
+    @objc public var retained = false
     
     /// The `duplicated` property show that this message maybe has be received before
     ///
     /// - note: Readonly property
-    public var duplicated = false
+    @objc public var duplicated = false
     
     /// Return the payload as a utf8 string if possible
     ///
     /// It will return nil if the payload is not a valid utf8 string
-    public var string: String? {
+    @objc public var string: String? {
         get {
             return NSString(bytes: payload, length: payload.count, encoding: String.Encoding.utf8.rawValue) as String?
         }
     }
     
-    public init(topic: String, string: String, qos: CocoaMQTTQoS = .qos1, retained: Bool = false) {
+    @objc public init(topic: String, string: String, qos: CocoaMQTTQoS = .qos1, retained: Bool = false) {
         self.topic = topic
         self.payload = [UInt8](string.utf8)
         self.qos = qos
         self.retained = retained
     }
 
-    public init(topic: String, payload: [UInt8], qos: CocoaMQTTQoS = .qos1, retained: Bool = false) {
+    @objc public init(topic: String, payload: [UInt8], qos: CocoaMQTTQoS = .qos1, retained: Bool = false) {
         self.topic = topic
         self.payload = payload
         self.qos = qos

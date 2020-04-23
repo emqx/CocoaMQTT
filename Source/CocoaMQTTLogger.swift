@@ -27,7 +27,7 @@ func printError(_ message: String) {
 
 
 // Enum log levels
-public enum CocoaMQTTLoggerLevel: Int {
+@objc public enum CocoaMQTTLoggerLevel: Int {
     case debug = 0, info, warning, error, off
 }
 
