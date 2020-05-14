@@ -591,7 +591,7 @@ extension CocoaMQTT: CocoaMQTTSocketDelegate {
         delegate?.mqttDidDisconnect(self, withError: err)
         didDisconnect(self, err)
         
-        guard is_internal_disconnected else {
+        guard !is_internal_disconnected else {
             return
         }
         
