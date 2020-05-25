@@ -167,7 +167,7 @@ Then, open the `Example.xcworkspace/` by Xcode and start it!
 These third-party functions are used:
 
 * [GCDAsyncSocket](https://github.com/robbiehanson/CocoaAsyncSocket)
-* [Starscream](https://github.com/daltoniam/Starscream）
+* [Starscream](https://github.com/daltoniam/Starscream)
 
 
 ## LICENSE
