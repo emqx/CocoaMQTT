@@ -35,7 +35,10 @@ $ pod install
 Alternatively, if you're using CocoaMQTT in a project with only a `.podspec` file and no `Podfile`, e.g. in a module for React Native, add this line to your `.podspec`:
 
 ```ruby
+Pod::Spec.new do |s|
+  ...
   s.dependency = "CocoaMQTT"
+end
 ```
 
 ### Carthage
@@ -131,8 +134,11 @@ end
 If you're using CocoaMQTT in a project with only a `.podspec` and no `Podfile`, e.g. in a module for React Native, add this line to your `.podspec`:
 
 ```ruby
+Pod::Spec.new do |s|
+  ...
   s.dependency = 'CocoaMQTT' # if you didn't add this line above
   s.dependency = 'CocoaMQTT/WebSockets', '1.3.0-rc.1'
+end
 ```
 
 Then, Create a MQTT instance over Websocket:
