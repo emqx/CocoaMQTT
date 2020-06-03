@@ -12,6 +12,7 @@ MQTT v3.1.1 client library for iOS/macOS/tvOS  written with Swift 5
 ## Build
 
 Build with Xcode 11.1 / Swift 5.1
+iOS Target: 10.0 or above
 
 
 ## Installation
@@ -28,6 +29,12 @@ Then, run the following command:
 
 ```bash
 $ pod install
+```
+
+Alternatively, if you're using CocoaMQTT in a project with only a `.podspec` file and no `Podfile`, e.g. in a module for React Native, add this line to your `.podspec`:
+
+```ruby
+  s.dependency = "CocoaMQTT"
 ```
 
 ### Carthage
@@ -115,9 +122,16 @@ If you integrated by **CocoaPods**, you need to modify you `Podfile` like the fo
 use_frameworks!
 
 target 'Example' do
-    pod 'CocoaMQTT/WebSockets', '1.3.0-rc.2'
+    pod 'CocoaMQTT/WebSockets', '1.3.0-rc.1'
 end
 
+```
+
+If you're using CocoaMQTT in a project with only a `.podspec` and no `Podfile`, e.g. in a module for React Native, add this line to your `.podspec`:
+
+```ruby
+  s.dependency = 'CocoaMQTT' # if you didn't add this line above
+  s.dependency = 'CocoaMQTT/WebSockets', '1.3.0-rc.1'
 ```
 
 Then, Create a MQTT instance over Websocket:
