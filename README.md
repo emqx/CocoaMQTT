@@ -65,7 +65,7 @@ If you're building for iOS, tvOS:
 
 ## Usage
 
-Create a client to connect MQTT Broker:
+Create a client to connect [MQTT broker](https://www.emqx.io/products/broker):
 
 ```swift
 let clientID = "CocoaMQTT-" + String(ProcessInfo().processIdentifier)
