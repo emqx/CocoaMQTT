@@ -15,7 +15,7 @@
             <BuildableReference
                BuildableIdentifier = "primary"
                BlueprintIdentifier = "8225B531227C2E8700E4DB51"
-               BuildableName = "iOS_CocoaMQTT.framework"
+               BuildableName = "CocoaMQTT.framework"
                BlueprintName = "iOS CocoaMQTT"
                ReferencedContainer = "container:CocoaMQTT.xcodeproj">
             </BuildableReference>
@@ -32,7 +32,7 @@
          <BuildableReference
             BuildableIdentifier = "primary"
             BlueprintIdentifier = "8225B531227C2E8700E4DB51"
-            BuildableName = "iOS_CocoaMQTT.framework"
+            BuildableName = "CocoaMQTT.framework"
             BlueprintName = "iOS CocoaMQTT"
             ReferencedContainer = "container:CocoaMQTT.xcodeproj">
          </BuildableReference>
@@ -64,7 +64,7 @@
          <BuildableReference
             BuildableIdentifier = "primary"
             BlueprintIdentifier = "8225B531227C2E8700E4DB51"
-            BuildableName = "iOS_CocoaMQTT.framework"
+            BuildableName = "CocoaMQTT.framework"
             BlueprintName = "iOS CocoaMQTT"
             ReferencedContainer = "container:CocoaMQTT.xcodeproj">
          </BuildableReference>
@@ -80,7 +80,7 @@
          <BuildableReference
             BuildableIdentifier = "primary"
             BlueprintIdentifier = "8225B531227C2E8700E4DB51"
-            BuildableName = "iOS_CocoaMQTT.framework"
+            BuildableName = "CocoaMQTT.framework"
             BlueprintName = "iOS CocoaMQTT"
             ReferencedContainer = "container:CocoaMQTT.xcodeproj">
          </BuildableReference>
