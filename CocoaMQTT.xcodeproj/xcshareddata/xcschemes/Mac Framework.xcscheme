@@ -15,7 +15,7 @@
             <BuildableReference
                BuildableIdentifier = "primary"
                BlueprintIdentifier = "1111248A24BB515E00E2DFBC"
-               BuildableName = "Mac CocoaMQTT.framework"
+               BuildableName = "CocoaMQTT.framework"
                BlueprintName = "Mac CocoaMQTT"
                ReferencedContainer = "container:CocoaMQTT.xcodeproj">
             </BuildableReference>
@@ -51,7 +51,7 @@
          <BuildableReference
             BuildableIdentifier = "primary"
             BlueprintIdentifier = "1111248A24BB515E00E2DFBC"
-            BuildableName = "Mac CocoaMQTT.framework"
+            BuildableName = "CocoaMQTT.framework"
             BlueprintName = "Mac CocoaMQTT"
             ReferencedContainer = "container:CocoaMQTT.xcodeproj">
          </BuildableReference>

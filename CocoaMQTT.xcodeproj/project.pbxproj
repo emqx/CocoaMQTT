@@ -158,8 +158,8 @@
 		0409977A1C1B1529006B5A6D /* CocoaMQTT.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = CocoaMQTT.swift; sourceTree = "<group>"; };
 		0409977B1C1B1529006B5A6D /* Frame.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = Frame.swift; sourceTree = "<group>"; };
 		0409977C1C1B1529006B5A6D /* CocoaMQTTMessage.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = CocoaMQTTMessage.swift; sourceTree = "<group>"; };
-		111124B224BB515E00E2DFBC /* Mac CocoaMQTT.framework */ = {isa = PBXFileReference; explicitFileType = wrapper.framework; includeInIndex = 0; path = "Mac CocoaMQTT.framework"; sourceTree = BUILT_PRODUCTS_DIR; };
-		111124DC24BB516400E2DFBC /* tvOS CocoaMQTT.framework */ = {isa = PBXFileReference; explicitFileType = wrapper.framework; includeInIndex = 0; path = "tvOS CocoaMQTT.framework"; sourceTree = BUILT_PRODUCTS_DIR; };
+		111124B224BB515E00E2DFBC /* CocoaMQTT.framework */ = {isa = PBXFileReference; explicitFileType = wrapper.framework; includeInIndex = 0; path = CocoaMQTT.framework; sourceTree = BUILT_PRODUCTS_DIR; };
+		111124DC24BB516400E2DFBC /* CocoaMQTT.framework */ = {isa = PBXFileReference; explicitFileType = wrapper.framework; includeInIndex = 0; path = CocoaMQTT.framework; sourceTree = BUILT_PRODUCTS_DIR; };
 		11EBF5F324BB537A0096E199 /* CocoaAsyncSocket.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = CocoaAsyncSocket.framework; path = Carthage/Build/iOS/CocoaAsyncSocket.framework; sourceTree = "<group>"; };
 		11EBF5F424BB537A0096E199 /* Starscream.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = Starscream.framework; path = Carthage/Build/iOS/Starscream.framework; sourceTree = "<group>"; };
 		11EBF5F724BB53A00096E199 /* Starscream.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = Starscream.framework; path = Carthage/Build/Mac/Starscream.framework; sourceTree = "<group>"; };
@@ -171,7 +171,7 @@
 		8225B4C8227B182200E4DB51 /* CocoaMQTTTimer.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CocoaMQTTTimer.swift; sourceTree = "<group>"; };
 		8225B4CC227B196F00E4DB51 /* CocoaMQTTLogger.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CocoaMQTTLogger.swift; sourceTree = "<group>"; };
 		8225B4D0227B2F2900E4DB51 /* CocoaMQTTDeliver.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CocoaMQTTDeliver.swift; sourceTree = "<group>"; };
-		8225B532227C2E8700E4DB51 /* iOS_CocoaMQTT.framework */ = {isa = PBXFileReference; explicitFileType = wrapper.framework; includeInIndex = 0; path = iOS_CocoaMQTT.framework; sourceTree = BUILT_PRODUCTS_DIR; };
+		8225B532227C2E8700E4DB51 /* CocoaMQTT.framework */ = {isa = PBXFileReference; explicitFileType = wrapper.framework; includeInIndex = 0; path = CocoaMQTT.framework; sourceTree = BUILT_PRODUCTS_DIR; };
 		8225B54C227C32C500E4DB51 /* CocoaMQTT-Tests.xctest */ = {isa = PBXFileReference; explicitFileType = wrapper.cfbundle; includeInIndex = 0; path = "CocoaMQTT-Tests.xctest"; sourceTree = BUILT_PRODUCTS_DIR; };
 		82519C0622ACC6E100FA0815 /* CocoaMQTTTypes.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CocoaMQTTTypes.swift; sourceTree = "<group>"; };
 		8270C4AA21DA6F6700C5D485 /* FrameTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = FrameTests.swift; sourceTree = "<group>"; };
@@ -247,10 +247,10 @@
 		040997101C1B0B96006B5A6D /* Products */ = {
 			isa = PBXGroup;
 			children = (
-				8225B532227C2E8700E4DB51 /* iOS_CocoaMQTT.framework */,
+				8225B532227C2E8700E4DB51 /* CocoaMQTT.framework */,
 				8225B54C227C32C500E4DB51 /* CocoaMQTT-Tests.xctest */,
-				111124B224BB515E00E2DFBC /* Mac CocoaMQTT.framework */,
-				111124DC24BB516400E2DFBC /* tvOS CocoaMQTT.framework */,
+				111124B224BB515E00E2DFBC /* CocoaMQTT.framework */,
+				111124DC24BB516400E2DFBC /* CocoaMQTT.framework */,
 			);
 			name = Products;
 			sourceTree = "<group>";
@@ -394,7 +394,7 @@
 			);
 			name = "Mac CocoaMQTT";
 			productName = CocoaMQTT;
-			productReference = 111124B224BB515E00E2DFBC /* Mac CocoaMQTT.framework */;
+			productReference = 111124B224BB515E00E2DFBC /* CocoaMQTT.framework */;
 			productType = "com.apple.product-type.framework";
 		};
 		111124B424BB516300E2DFBC /* tvOS CocoaMQTT */ = {
@@ -414,7 +414,7 @@
 			);
 			name = "tvOS CocoaMQTT";
 			productName = CocoaMQTT;
-			productReference = 111124DC24BB516400E2DFBC /* tvOS CocoaMQTT.framework */;
+			productReference = 111124DC24BB516400E2DFBC /* CocoaMQTT.framework */;
 			productType = "com.apple.product-type.framework";
 		};
 		8225B531227C2E8700E4DB51 /* iOS CocoaMQTT */ = {
@@ -434,7 +434,7 @@
 			);
 			name = "iOS CocoaMQTT";
 			productName = CocoaMQTT;
-			productReference = 8225B532227C2E8700E4DB51 /* iOS_CocoaMQTT.framework */;
+			productReference = 8225B532227C2E8700E4DB51 /* CocoaMQTT.framework */;
 			productType = "com.apple.product-type.framework";
 		};
 		8225B54B227C32C500E4DB51 /* CocoaMQTT-Tests */ = {
@@ -878,7 +878,7 @@
 				MTL_ENABLE_DEBUG_INFO = INCLUDE_SOURCE;
 				MTL_FAST_MATH = YES;
 				PRODUCT_BUNDLE_IDENTIFIER = io.emqx.CocoaMQTT;
-				PRODUCT_NAME = "$(TARGET_NAME)";
+				PRODUCT_NAME = "$(PROJECT_NAME)";
 				SKIP_INSTALL = YES;
 				SUPPORTED_PLATFORMS = macosx;
 				SWIFT_ACTIVE_COMPILATION_CONDITIONS = DEBUG;
@@ -912,7 +912,7 @@
 				LD_RUNPATH_SEARCH_PATHS = "$(inherited) @executable_path/Frameworks @loader_path/Frameworks";
 				MTL_FAST_MATH = YES;
 				PRODUCT_BUNDLE_IDENTIFIER = io.emqx.CocoaMQTT;
-				PRODUCT_NAME = "$(TARGET_NAME)";
+				PRODUCT_NAME = "$(PROJECT_NAME)";
 				SKIP_INSTALL = YES;
 				SUPPORTED_PLATFORMS = macosx;
 				SWIFT_VERSION = 5.0;
@@ -946,7 +946,7 @@
 				MTL_ENABLE_DEBUG_INFO = INCLUDE_SOURCE;
 				MTL_FAST_MATH = YES;
 				PRODUCT_BUNDLE_IDENTIFIER = io.emqx.CocoaMQTT;
-				PRODUCT_NAME = "$(TARGET_NAME)";
+				PRODUCT_NAME = "$(PROJECT_NAME)";
 				SKIP_INSTALL = YES;
 				SUPPORTED_PLATFORMS = "appletvsimulator appletvos";
 				SWIFT_ACTIVE_COMPILATION_CONDITIONS = DEBUG;
@@ -980,7 +980,7 @@
 				LD_RUNPATH_SEARCH_PATHS = "$(inherited) @executable_path/Frameworks @loader_path/Frameworks";
 				MTL_FAST_MATH = YES;
 				PRODUCT_BUNDLE_IDENTIFIER = io.emqx.CocoaMQTT;
-				PRODUCT_NAME = "$(TARGET_NAME)";
+				PRODUCT_NAME = "$(PROJECT_NAME)";
 				SKIP_INSTALL = YES;
 				SUPPORTED_PLATFORMS = "appletvsimulator appletvos";
 				SWIFT_VERSION = 5.0;
@@ -1015,7 +1015,7 @@
 				MTL_ENABLE_DEBUG_INFO = INCLUDE_SOURCE;
 				MTL_FAST_MATH = YES;
 				PRODUCT_BUNDLE_IDENTIFIER = io.emqx.CocoaMQTT;
-				PRODUCT_NAME = "$(TARGET_NAME:c99extidentifier)";
+				PRODUCT_NAME = "$(PROJECT_NAME)";
 				SKIP_INSTALL = YES;
 				SUPPORTED_PLATFORMS = "iphonesimulator iphoneos";
 				SWIFT_ACTIVE_COMPILATION_CONDITIONS = DEBUG;
@@ -1050,7 +1050,7 @@
 				LD_RUNPATH_SEARCH_PATHS = "$(inherited) @executable_path/Frameworks @loader_path/Frameworks";
 				MTL_FAST_MATH = YES;
 				PRODUCT_BUNDLE_IDENTIFIER = io.emqx.CocoaMQTT;
-				PRODUCT_NAME = "$(TARGET_NAME:c99extidentifier)";
+				PRODUCT_NAME = "$(PROJECT_NAME)";
 				SKIP_INSTALL = YES;
 				SUPPORTED_PLATFORMS = "iphonesimulator iphoneos";
 				SWIFT_VERSION = 5.0;
