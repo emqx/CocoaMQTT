@@ -385,7 +385,6 @@
 				1111248D24BB515E00E2DFBC /* Sources */,
 				111124A724BB515E00E2DFBC /* Frameworks */,
 				111124AA24BB515E00E2DFBC /* Resources */,
-				111124AB24BB515E00E2DFBC /* ShellScript */,
 				111124AC24BB515E00E2DFBC /* Embed Frameworks */,
 			);
 			buildRules = (
@@ -405,7 +404,6 @@
 				111124B724BB516300E2DFBC /* Sources */,
 				111124D124BB516300E2DFBC /* Frameworks */,
 				111124D424BB516300E2DFBC /* Resources */,
-				111124D524BB516300E2DFBC /* ShellScript */,
 				111124D624BB516300E2DFBC /* Embed Frameworks */,
 			);
 			buildRules = (
@@ -425,7 +423,6 @@
 				8225B52E227C2E8700E4DB51 /* Sources */,
 				8225B52F227C2E8700E4DB51 /* Frameworks */,
 				8225B530227C2E8700E4DB51 /* Resources */,
-				8D6C0E28239E90AB003094E9 /* ShellScript */,
 				1111242324BB4B7C00E2DFBC /* Embed Frameworks */,
 			);
 			buildRules = (
@@ -536,40 +533,6 @@
 /* End PBXResourcesBuildPhase section */
 
 /* Begin PBXShellScriptBuildPhase section */
-		111124AB24BB515E00E2DFBC /* ShellScript */ = {
-			isa = PBXShellScriptBuildPhase;
-			buildActionMask = 2147483647;
-			files = (
-			);
-			inputFileListPaths = (
-			);
-			inputPaths = (
-			);
-			outputFileListPaths = (
-			);
-			outputPaths = (
-			);
-			runOnlyForDeploymentPostprocessing = 0;
-			shellPath = /bin/sh;
-			shellScript = "# Type a script or drag a script file from your workspace to insert its path.\n\nexport CURRENT_ARCH=\"x86_64\"\nexport | egrep '(BUILT_PRODUCTS_DIR)|(CURRENT_ARCH)|(OBJECT_FILE_DIR_normal)|(SRCROOT)|(OBJROOT)' > xcenv.sh\n\n";
-		};
-		111124D524BB516300E2DFBC /* ShellScript */ = {
-			isa = PBXShellScriptBuildPhase;
-			buildActionMask = 2147483647;
-			files = (
-			);
-			inputFileListPaths = (
-			);
-			inputPaths = (
-			);
-			outputFileListPaths = (
-			);
-			outputPaths = (
-			);
-			runOnlyForDeploymentPostprocessing = 0;
-			shellPath = /bin/sh;
-			shellScript = "# Type a script or drag a script file from your workspace to insert its path.\n\nexport CURRENT_ARCH=\"x86_64\"\nexport | egrep '(BUILT_PRODUCTS_DIR)|(CURRENT_ARCH)|(OBJECT_FILE_DIR_normal)|(SRCROOT)|(OBJROOT)' > xcenv.sh\n\n";
-		};
 		8225B570227C377700E4DB51 /* ShellScript */ = {
 			isa = PBXShellScriptBuildPhase;
 			buildActionMask = 2147483647;
@@ -586,23 +549,6 @@
 			runOnlyForDeploymentPostprocessing = 0;
 			shellPath = /bin/sh;
 			shellScript = "for path in $FRAMEWORK_SEARCH_PATHS\ndo\nif [ -d \"${path}/CocoaAsyncSocket.framework\" ] && [[ $path == *\"Carthage\"* ]]; then\nexport SCRIPT_INPUT_FILE_COUNT=1\nexport SCRIPT_INPUT_FILE_0=\"${path}/CocoaAsyncSocket.framework\"\n/usr/local/bin/carthage copy-frameworks\nbreak\nfi\ndone\n";
-		};
-		8D6C0E28239E90AB003094E9 /* ShellScript */ = {
-			isa = PBXShellScriptBuildPhase;
-			buildActionMask = 2147483647;
-			files = (
-			);
-			inputFileListPaths = (
-			);
-			inputPaths = (
-			);
-			outputFileListPaths = (
-			);
-			outputPaths = (
-			);
-			runOnlyForDeploymentPostprocessing = 0;
-			shellPath = /bin/sh;
-			shellScript = "# Type a script or drag a script file from your workspace to insert its path.\n\nexport CURRENT_ARCH=\"x86_64\"\nexport | egrep '(BUILT_PRODUCTS_DIR)|(CURRENT_ARCH)|(OBJECT_FILE_DIR_normal)|(SRCROOT)|(OBJROOT)' > xcenv.sh\n\n";
 		};
 /* End PBXShellScriptBuildPhase section */
 
