@@ -6,6 +6,7 @@
 //  Copyright © 2020 emqx.io. All rights reserved.
 //
 
+#if canImport(Network)
 import Foundation
 import Network
 
@@ -106,4 +107,4 @@ extension CocoaMQTTNetworkConnectionSocket {
         return NWParameters(tls: options)
     }
 }
-
+#endif

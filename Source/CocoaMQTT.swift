@@ -163,8 +163,18 @@ public class CocoaMQTT: NSObject, CocoaMQTTClient {
     ///
     /// - Note:
     public var backgroundOnSocket: Bool {
-        get { return (self.socket as? CocoaMQTTSocket)?.backgroundOnSocket ?? true }
-        set { (self.socket as? CocoaMQTTSocket)?.backgroundOnSocket = newValue }
+        get {
+            #if canImport(CocoaAsyncSocket)
+            return (self.socket as? CocoaMQTTSocket)?.backgroundOnSocket ?? true
+            #else
+            return true
+            #endif
+        }
+        set {
+            #if canImport(CocoaAsyncSocket)
+            (self.socket as? CocoaMQTTSocket)?.backgroundOnSocket = newValue
+            #endif
+        }
     }
     
     /// Delegate Executed queue. Default is `DispatchQueue.main`
