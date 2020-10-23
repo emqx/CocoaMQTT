@@ -21,11 +21,71 @@ protocol CocoaMQTTStorageProtocol {
     func remove(_ frame: FramePublish)
     
     func remove(_ frame: FramePubRel)
+
+    func remove(_ frame: Frame)
     
     func synchronize() -> Bool
     
     /// Read all stored messages by saving order
     func readAll() -> [Frame]
+
+    func takeAll() -> [Frame]
+}
+
+final class CocoaMQTTMemoryStorage: CocoaMQTTStorageProtocol {
+
+    var clientId: String
+
+    var dictionary = [String: Frame]()
+
+    init?(by clientId: String) {
+        self.clientId = clientId
+    }
+
+    private func key(_ msgid: UInt16) -> String {
+        return "\(msgid)"
+    }
+
+    func write(_ frame: FramePublish) -> Bool {
+        dictionary[key(frame.msgid)] = frame
+        return true
+    }
+
+    func write(_ frame: FramePubRel) -> Bool {
+        dictionary[key(frame.msgid)] = frame
+        return true
+    }
+
+    func remove(_ frame: FramePublish) {
+        dictionary.removeValue(forKey: key(frame.msgid))
+    }
+
+    func remove(_ frame: FramePubRel) {
+        dictionary.removeValue(forKey: key(frame.msgid))
+    }
+
+    func remove(_ frame: Frame) {
+        if let pub = frame as? FramePublish {
+            remove(pub)
+        } else if let rel = frame as? FramePubRel {
+            remove(rel)
+        }
+    }
+
+    func synchronize() -> Bool {
+        true
+    }
+
+    func readAll() -> [Frame] {
+        dictionary.sorted { (k1, k2) in return k1.key < k2.key }
+            .map(\.value)
+    }
+
+    func takeAll() -> [Frame] {
+        let all = readAll()
+        dictionary.removeAll()
+        return all
+    }
 }
 
 final class CocoaMQTTStorage: CocoaMQTTStorageProtocol {

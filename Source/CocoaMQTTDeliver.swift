@@ -73,9 +73,9 @@ class CocoaMQTTDeliver: NSObject {
     var isInflightFull: Bool { get { return inflight.count >= inflightWindowSize }}
     var isInflightEmpty: Bool { get { return inflight.count == 0 }}
     
-    var storage: CocoaMQTTStorage?
+    var storage: CocoaMQTTStorageProtocol?
     
-    func recoverSessionBy(_ storage: CocoaMQTTStorage) {
+    func recoverSessionBy(_ storage: CocoaMQTTStorageProtocol) {
         
         let frames = storage.takeAll()
         guard frames.count >= 0 else {
