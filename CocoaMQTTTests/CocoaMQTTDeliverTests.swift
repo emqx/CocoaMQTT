@@ -186,6 +186,12 @@ class CocoaMQTTDeliverTests: XCTestCase {
         ms_sleep(100)
         XCTAssertEqual(storage.readAll().count, 0)
     }
+
+    func testPeformance() {
+        measure {
+            testStorage()
+        }
+    }
     
     func testTODO() {
         // TODO: How to test large of messages combined qos0/qos1/qos2
