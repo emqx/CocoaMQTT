@@ -34,6 +34,8 @@ final class CocoaMQTTStorage: CocoaMQTTStorageProtocol {
     
     var userDefault: UserDefaults
 
+    private let keyPrefix = "CocoaMQTTStorage"
+
     init?(by clientId: String) {
         guard let userDefault = UserDefaults(suiteName: CocoaMQTTStorage.name(clientId)) else {
             return nil
@@ -89,7 +91,7 @@ final class CocoaMQTTStorage: CocoaMQTTStorageProtocol {
     }
     
     private func key(_ msgid: UInt16) -> String {
-        return "\(msgid)"
+        return "\(keyPrefix).\(msgid)"
     }
     
     private class func name(_ clientId: String) -> String {
@@ -97,6 +99,7 @@ final class CocoaMQTTStorage: CocoaMQTTStorageProtocol {
     }
     
     private func parse(_ bytes: [UInt8]) -> (UInt8, [UInt8])? {
+        guard bytes.count >= 2 else { return nil }
         /// bytes 1..<5 may be 'Remaining Length'
         for i in 1 ..< 5 {
             if (bytes[i] & 0x80) == 0 {
@@ -108,25 +111,28 @@ final class CocoaMQTTStorage: CocoaMQTTStorageProtocol {
     }
     
     private func __read(needDelete: Bool)  -> [Frame] {
-        var frames = [Frame]()
-        let allObjs = userDefault.dictionaryRepresentation().sorted { (k1, k2) in
-            return k1.key < k2.key
-        }
-        for (k, v) in allObjs {
-            guard let bytes = v as? [UInt8] else { continue }
-            guard let parsed = parse(bytes) else { continue }
-
-            if needDelete {
-                userDefault.removeObject(forKey: k)
+        return userDefault.dictionaryRepresentation().lazy
+            .filter { $0.key.contains(self.keyPrefix) }
+            .compactMap { k, v -> (key: String, value: (UInt8, [UInt8]))? in
+                guard let array = v as? [UInt8],
+                      let parse = self.parse(array) else { return nil }
+                return (key: k, value: parse)
             }
+            .elements
+            .sorted { (k1, k2) in return k1.key < k2.key }
+            .compactMap { key, parsed -> Frame? in
+                if needDelete {
+                    userDefault.removeObject(forKey: key)
+                }
 
-            if let f = FramePublish(fixedHeader: parsed.0, bytes: parsed.1) {
-                frames.append(f)
-            } else if let f = FramePubRel(fixedHeader: parsed.0, bytes: parsed.1) {
-                frames.append(f)
+                if let f = FramePublish(fixedHeader: parsed.0, bytes: parsed.1) {
+                    return f
+                } else if let f = FramePubRel(fixedHeader: parsed.0, bytes: parsed.1) {
+                    return f
+                } else {
+                    return nil
+                }
             }
-        }
-        return frames
     }
     
 }
