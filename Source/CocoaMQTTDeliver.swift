@@ -216,7 +216,9 @@ extension CocoaMQTTDeliver {
                 duplicatedFrame.frame.dup = true
                 duplicatedFrame.timestamp = nowTimestamp
                 
-                inflight[idx] = duplicatedFrame
+                if idx < inflight.count {
+                    inflight[idx] = duplicatedFrame
+                }
                 
                 printInfo("Re-delivery frame \(duplicatedFrame.frame)")
                 sendfun(duplicatedFrame.frame)
