@@ -130,6 +130,7 @@ protocol CocoaMQTTClient {
     
     func publish(_ topic: String, withString string: String, qos: CocoaMQTTQoS, retained: Bool) -> Int
     func publish(_ message: CocoaMQTTMessage) -> Int
+	func publish(_ message: CocoaMQTTMessage, patientLogId: String) -> Int
 
     /* PUBLISH/SUBSCRIBE */
 }
@@ -467,6 +468,32 @@ public class CocoaMQTT: NSObject, CocoaMQTTClient {
 
         return Int(msgid)
     }
+	
+	@discardableResult
+	public func publish(_ message: CocoaMQTTMessage, patientLogId: String) -> Int {
+		let msgid: UInt16 = UInt16(patientLogId.hashValue)
+		
+		var frame = FramePublish(topic: message.topic,
+								 payload: message.payload,
+								 qos: message.qos,
+								 msgid: msgid)
+		
+		frame.retained = message.retained
+		
+		delegateQueue.async {
+			self.sendingMessages[msgid] = message
+		}
+		
+		// Push frame to deliver message queue
+		guard deliver.add(frame) else {
+			delegateQueue.async {
+				self.sendingMessages.removeValue(forKey: msgid)
+			}
+			return -1
+		}
+		
+		return Int(msgid)
+	}
 
     /// Subscribe a `<Topic Name>/<Topic Filter>`
     ///
