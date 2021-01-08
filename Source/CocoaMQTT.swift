@@ -130,7 +130,7 @@ protocol CocoaMQTTClient {
     
     func publish(_ topic: String, withString string: String, qos: CocoaMQTTQoS, retained: Bool) -> Int
     func publish(_ message: CocoaMQTTMessage) -> Int
-	func publish(_ message: CocoaMQTTMessage, patientLogId: String) -> Int
+	func publish(_ message: CocoaMQTTMessage, msgid: UInt16) -> Int
 
     /* PUBLISH/SUBSCRIBE */
 }
@@ -470,8 +470,7 @@ public class CocoaMQTT: NSObject, CocoaMQTTClient {
     }
 	
 	@discardableResult
-	public func publish(_ message: CocoaMQTTMessage, patientLogId: String) -> Int {
-		let msgid: UInt16 = UInt16(patientLogId.hashValue)
+	public func publish(_ message: CocoaMQTTMessage, msgid: UInt16) -> Int {
 		
 		var frame = FramePublish(topic: message.topic,
 								 payload: message.payload,
