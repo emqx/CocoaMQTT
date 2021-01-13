@@ -393,7 +393,6 @@ public class CocoaMQTT: NSObject, CocoaMQTTClient {
     ///         If you want to disconnect from inside framework, call internal_disconnect()
     ///         disconnect expectedly
     public func disconnect() {
-        is_internal_disconnected = false
         internal_disconnect()
     }
     
