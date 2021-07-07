@@ -1,6 +1,6 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <Scheme
-   LastUpgradeVersion = "1020"
+   LastUpgradeVersion = "1140"
    version = "1.3">
    <BuildAction
       parallelizeBuildables = "YES"
@@ -14,9 +14,9 @@
             buildForAnalyzing = "YES">
             <BuildableReference
                BuildableIdentifier = "primary"
-               BlueprintIdentifier = "8225B531227C2E8700E4DB51"
+               BlueprintIdentifier = "111124B424BB516300E2DFBC"
                BuildableName = "CocoaMQTT.framework"
-               BlueprintName = "CocoaMQTT"
+               BlueprintName = "tvOS CocoaMQTT"
                ReferencedContainer = "container:CocoaMQTT.xcodeproj">
             </BuildableReference>
          </BuildActionEntry>
@@ -26,28 +26,8 @@
       buildConfiguration = "Debug"
       selectedDebuggerIdentifier = "Xcode.DebuggerFoundation.Debugger.LLDB"
       selectedLauncherIdentifier = "Xcode.DebuggerFoundation.Launcher.LLDB"
-      shouldUseLaunchSchemeArgsEnv = "YES"
-      codeCoverageEnabled = "YES">
-      <MacroExpansion>
-         <BuildableReference
-            BuildableIdentifier = "primary"
-            BlueprintIdentifier = "8225B531227C2E8700E4DB51"
-            BuildableName = "CocoaMQTT.framework"
-            BlueprintName = "CocoaMQTT"
-            ReferencedContainer = "container:CocoaMQTT.xcodeproj">
-         </BuildableReference>
-      </MacroExpansion>
+      shouldUseLaunchSchemeArgsEnv = "YES">
       <Testables>
-         <TestableReference
-            skipped = "NO">
-            <BuildableReference
-               BuildableIdentifier = "primary"
-               BlueprintIdentifier = "8225B54B227C32C500E4DB51"
-               BuildableName = "CocoaMQTT-Tests.xctest"
-               BlueprintName = "CocoaMQTT-Tests"
-               ReferencedContainer = "container:CocoaMQTT.xcodeproj">
-            </BuildableReference>
-         </TestableReference>
       </Testables>
    </TestAction>
    <LaunchAction
@@ -60,15 +40,6 @@
       debugDocumentVersioning = "YES"
       debugServiceExtension = "internal"
       allowLocationSimulation = "YES">
-      <MacroExpansion>
-         <BuildableReference
-            BuildableIdentifier = "primary"
-            BlueprintIdentifier = "8225B531227C2E8700E4DB51"
-            BuildableName = "CocoaMQTT.framework"
-            BlueprintName = "CocoaMQTT"
-            ReferencedContainer = "container:CocoaMQTT.xcodeproj">
-         </BuildableReference>
-      </MacroExpansion>
    </LaunchAction>
    <ProfileAction
       buildConfiguration = "Release"
@@ -79,9 +50,9 @@
       <MacroExpansion>
          <BuildableReference
             BuildableIdentifier = "primary"
-            BlueprintIdentifier = "8225B531227C2E8700E4DB51"
+            BlueprintIdentifier = "111124B424BB516300E2DFBC"
             BuildableName = "CocoaMQTT.framework"
-            BlueprintName = "CocoaMQTT"
+            BlueprintName = "tvOS CocoaMQTT"
             ReferencedContainer = "container:CocoaMQTT.xcodeproj">
          </BuildableReference>
       </MacroExpansion>
