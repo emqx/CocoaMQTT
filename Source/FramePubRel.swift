@@ -31,6 +31,19 @@ extension FramePubRel {
     func variableHeader() -> [UInt8] { return msgid.hlBytes }
     
     func payload() -> [UInt8] { return [] }
+    
+    func properties() -> [UInt8] { return [] }
+
+    func allData() -> [UInt8] {
+        var allData = [UInt8]()
+
+        allData.append(fixedHeader)
+        allData += variableHeader()
+        allData += properties()
+        allData += payload()
+
+        return allData
+    }
 }
 
 extension FramePubRel: InitialWithBytes {

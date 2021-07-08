@@ -69,6 +69,7 @@ enum FrameType: UInt8 {
     case pingreq = 0xC0
     case pingresp = 0xD0
     case disconnect = 0xE0
+    case auth = 0xF0
 }
 
 /// The frame can be initialized with a bytes
@@ -86,9 +87,15 @@ protocol Frame {
     
     /// Some types of MQTT Control Packets contain a variable header component
     func variableHeader() -> [UInt8]
-    
+
+    /// MQTT 5.0 The last field in the Variable Header of the CONNECT, CONNACK, PUBLISH, PUBACK, PUBREC, PUBREL, PUBCOMP, SUBSCRIBE, SUBACK, UNSUBSCRIBE, UNSUBACK, DISCONNECT, and AUTH packet is a set of Properties. In the CONNECT packet there is also an optional set of Properties in the Will Properties field with the Payload.
+    func properties() -> [UInt8]
+
     /// Some MQTT Control Packets contain a payload as the final part of the packet
     func payload() -> [UInt8]
+
+    /// fixedHeader + variableHeader + properties + payload
+    func allData() -> [UInt8]
 }
 
 extension Frame {
@@ -97,9 +104,9 @@ extension Frame {
     func bytes() -> [UInt8] {
         let variableHeader = self.variableHeader()
         let payload = self.payload()
-        
+        let properties = self.properties()
         let len = UInt32(variableHeader.count + payload.count)
-        return [fixedHeader] + remainingLen(len: len) + variableHeader + payload
+        return [fixedHeader] + remainingLen(len: len) + variableHeader + properties + payload
     }
     
     private func remainingLen(len: UInt32) -> [UInt8] {

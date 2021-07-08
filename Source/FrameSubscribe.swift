@@ -50,6 +50,19 @@ extension FrameSubscribe {
         
         return payload
     }
+
+    func properties() -> [UInt8] { return [] }
+
+    func allData() -> [UInt8] {
+        var allData = [UInt8]()
+
+        allData.append(fixedHeader)
+        allData += variableHeader()
+        allData += properties()
+        allData += payload()
+
+        return allData
+    }
 }
 
 extension FrameSubscribe: CustomStringConvertible {

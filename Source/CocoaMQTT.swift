@@ -29,33 +29,33 @@ import CocoaAsyncSocket
 /**
  * Conn Ack
  */
-@objc public enum CocoaMQTTConnAck: UInt8, CustomStringConvertible {
-    case accept  = 0
-    case unacceptableProtocolVersion
-    case identifierRejected
-    case serverUnavailable
-    case badUsernameOrPassword
-    case notAuthorized
-    case reserved
-    
-    public var description: String {
-        switch self {
-            case .accept:                       return "accept"
-            case .unacceptableProtocolVersion:  return "unacceptableProtocolVersion"
-            case .identifierRejected:           return "identifierRejected"
-            case .serverUnavailable:            return "serverUnavailable"
-            case .badUsernameOrPassword:        return "badUsernameOrPassword"
-            case .notAuthorized:                return "notAuthorized"
-            case .reserved:                     return "reserved"
-        }
-    }
-}
+//@objc public enum CocoaMQTTConnAck: UInt8, CustomStringConvertible {
+//    case accept  = 0
+//    case unacceptableProtocolVersion
+//    case identifierRejected
+//    case serverUnavailable
+//    case badUsernameOrPassword
+//    case notAuthorized
+//    case reserved
+//    
+//    public var description: String {
+//        switch self {
+//            case .accept:                       return "accept"
+//            case .unacceptableProtocolVersion:  return "unacceptableProtocolVersion"
+//            case .identifierRejected:           return "identifierRejected"
+//            case .serverUnavailable:            return "serverUnavailable"
+//            case .badUsernameOrPassword:        return "badUsernameOrPassword"
+//            case .notAuthorized:                return "notAuthorized"
+//            case .reserved:                     return "reserved"
+//        }
+//    }
+//}
 
 /// CocoaMQTT Delegate
 @objc public protocol CocoaMQTTDelegate {
 
     ///
-    func mqtt(_ mqtt: CocoaMQTT, didConnectAck ack: CocoaMQTTConnAck)
+    func mqtt(_ mqtt: CocoaMQTT, didConnectAck ack: CocoaMQTTCONNACKReasonCode)
     
     ///
     func mqtt(_ mqtt: CocoaMQTT, didPublishMessage message: CocoaMQTTMessage, id: UInt16)
@@ -275,7 +275,7 @@ public class CocoaMQTT: NSObject, CocoaMQTTClient {
     fileprivate var reader: CocoaMQTTReader?
     
     // Closures
-    public var didConnectAck: (CocoaMQTT, CocoaMQTTConnAck) -> Void = { _, _ in }
+    public var didConnectAck: (CocoaMQTT, CocoaMQTTCONNACKReasonCode) -> Void = { _, _ in }
     public var didPublishMessage: (CocoaMQTT, CocoaMQTTMessage, UInt16) -> Void = { _, _, _ in }
     public var didPublishAck: (CocoaMQTT, UInt16) -> Void = { _, _ in }
     public var didReceiveMessage: (CocoaMQTT, CocoaMQTTMessage, UInt16) -> Void = { _, _, _ in }
@@ -314,13 +314,14 @@ public class CocoaMQTT: NSObject, CocoaMQTTClient {
     fileprivate func send(_ frame: Frame, tag: Int = 0) {
         printDebug("SEND: \(frame)")
         let data = frame.bytes()
+        print("SEND: \(data)")
         socket.write(Data(bytes: data, count: data.count), withTimeout: 5, tag: tag)
     }
 
     fileprivate func sendConnectFrame() {
         
         var connect = FrameConnect(clientID: clientID)
-        connect.keepalive = keepAlive
+        connect.keepAlive = keepAlive
         connect.username = username
         connect.password = password
         connect.willMsg = willMessage
@@ -506,6 +507,15 @@ public class CocoaMQTT: NSObject, CocoaMQTTClient {
         unsubscriptionsWaitingAck[msgid] = topics
         send(frame, tag: Int(msgid))
     }
+
+
+    ///  Authentication exchange
+    ///
+    ///
+    public func auth() {
+        printDebug("auth")
+       // send(FrameAuth(reasonCode: CocoaMQTTAUTHReasonCode.success), tag: -0xC0)
+    }
 }
 
 // MARK: CocoaMQTTDeliverProtocol
@@ -591,7 +601,7 @@ extension CocoaMQTT: CocoaMQTTSocketDelegate {
         delegate?.mqttDidDisconnect(self, withError: err)
         didDisconnect(self, err)
         
-        guard !is_internal_disconnected else {
+        guard is_internal_disconnected else {
             return
         }
         
@@ -623,7 +633,7 @@ extension CocoaMQTT: CocoaMQTTReaderDelegate {
     func didReceive(_ reader: CocoaMQTTReader, connack: FrameConnAck) {
         printDebug("RECV: \(connack)")
 
-        if connack.returnCode == .accept {
+        if connack.returnCode == .success {
             
             // Disable auto-reconnect
             

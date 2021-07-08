@@ -10,18 +10,19 @@ import Foundation
 
 
 struct FrameConnAck: Frame {
+
     
     var fixedHeader: UInt8 = FrameType.connack.rawValue
     
     // --- Attributes
     
-    var returnCode: CocoaMQTTConnAck
+    var returnCode: CocoaMQTTCONNACKReasonCode
     
     var sessPresent: Bool = false
     
     // --- Attributes End
 
-    init(code: CocoaMQTTConnAck) {
+    init(code: CocoaMQTTCONNACKReasonCode) {
         returnCode = code
     }
 }
@@ -33,6 +34,19 @@ extension FrameConnAck {
     }
     
     func payload() -> [UInt8] { return [] }
+
+    func properties() -> [UInt8] { return [] }
+
+    func allData() -> [UInt8] {
+        var allData = [UInt8]()
+
+        allData.append(fixedHeader)
+        allData += variableHeader()
+        allData += properties()
+        allData += payload()
+
+        return allData
+    }
 }
 
 extension FrameConnAck: InitialWithBytes {
@@ -42,13 +56,13 @@ extension FrameConnAck: InitialWithBytes {
             return nil
         }
         
-        guard bytes.count == 2 else {
-            return nil
-        }
+//        guard bytes.count == 2 else {
+//            return nil
+//        }
         
         sessPresent = Bool(bit: bytes[0] & 0x01)
         
-        guard let ack = CocoaMQTTConnAck(rawValue: bytes[1]) else {
+        guard let ack = CocoaMQTTCONNACKReasonCode(rawValue: bytes[1]) else {
             return nil
         }
         returnCode = ack
