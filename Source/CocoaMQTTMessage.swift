@@ -11,11 +11,13 @@ import Foundation
 
 /// MQTT Message
 public class CocoaMQTTMessage: NSObject {
-    
+    //3.3.2.3.4 Topic Alias
+    public var topicAlias: UInt16?
+
     public var qos = CocoaMQTTQoS.qos1
     
     public var topic: String
-    
+
     public var payload: [UInt8]
     
     public var retained = false
