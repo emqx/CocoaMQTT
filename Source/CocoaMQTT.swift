@@ -9,22 +9,7 @@
 import Foundation
 import CocoaAsyncSocket
 
-/**
- * Connection State
- */
-@objc public enum CocoaMQTTConnState: UInt8, CustomStringConvertible {
-    case disconnected = 0
-    case connecting
-    case connected
-    
-    public var description: String {
-        switch self {
-            case .connecting:   return "connecting"
-            case .connected:    return "connected"
-            case .disconnected: return "disconnected"
-        }
-    }
-}
+
 
 /**
  * Conn Ack
@@ -99,7 +84,7 @@ import CocoaAsyncSocket
 protocol CocoaMQTTClient {
     
     /* Basic Properties */
-    
+
     var host: String { get set }
     var port: UInt16 { get set }
     var clientID: String { get }
@@ -141,7 +126,9 @@ protocol CocoaMQTTClient {
 public class CocoaMQTT: NSObject, CocoaMQTTClient {
     
     public weak var delegate: CocoaMQTTDelegate?
-    
+
+    private var version = "3.1.1"
+
     public var host = "localhost"
     
     public var port: UInt16 = 1883
@@ -207,7 +194,7 @@ public class CocoaMQTT: NSObject, CocoaMQTTClient {
     
     /// Keep alive time interval
     public var keepAlive: UInt16 = 60
-	private var aliveTimer: CocoaMQTTTimer?
+    private var aliveTimer: CocoaMQTTTimer?
     
     /// Enable auto-reconnect mechanism
     public var autoReconnect = false
@@ -301,10 +288,15 @@ public class CocoaMQTT: NSObject, CocoaMQTTClient {
         self.socket = socket
         super.init()
         deliver.delegate = self
+        if let storage = CocoaMQTTStorage(by: clientID) {
+            storage.setMQTTVersion("3.1.1")
+        } else {
+            printWarning("Localstorage initial failed for key: \(clientID)")
+        }
     }
     
     deinit {
-		aliveTimer?.suspend()
+        aliveTimer?.suspend()
         autoReconnTimer?.suspend()
         
         socket.setDelegate(nil, delegateQueue: nil)
@@ -313,14 +305,14 @@ public class CocoaMQTT: NSObject, CocoaMQTTClient {
 
     fileprivate func send(_ frame: Frame, tag: Int = 0) {
         printDebug("SEND: \(frame)")
-        let data = frame.bytes()
+        let data = frame.bytes(version: version)
         socket.write(Data(bytes: data, count: data.count), withTimeout: 5, tag: tag)
     }
 
     fileprivate func sendConnectFrame() {
         
         var connect = FrameConnect(clientID: clientID)
-        connect.keepalive = keepAlive
+        connect.keepAlive = keepAlive
         connect.username = username
         connect.password = password
         connect.willMsg = willMessage
@@ -590,15 +582,14 @@ extension CocoaMQTT: CocoaMQTTSocketDelegate {
         connState = .disconnected
         delegate?.mqttDidDisconnect(self, withError: err)
         didDisconnect(self, err)
-        
+
         if !autoReconnect{
             guard !is_internal_disconnected else {
                 return
             }
         }
 
-        
-        guard autoReconnect else {
+        guard autoReconnect else {            
             return
         }
         
@@ -622,6 +613,14 @@ extension CocoaMQTT: CocoaMQTTSocketDelegate {
 
 // MARK: - CocoaMQTTReaderDelegate
 extension CocoaMQTT: CocoaMQTTReaderDelegate {
+    
+    func didReceive(_ reader: CocoaMQTTReader, disconnect: FrameDisconnect) {
+    
+    }
+    
+    func didReceive(_ reader: CocoaMQTTReader, auth: FrameAuth) {
+        
+    }
     
     func didReceive(_ reader: CocoaMQTTReader, connack: FrameConnAck) {
         printDebug("RECV: \(connack)")
@@ -668,8 +667,8 @@ extension CocoaMQTT: CocoaMQTTReaderDelegate {
             internal_disconnect()
         }
 
-        delegate?.mqtt(self, didConnectAck: connack.returnCode)
-        didConnectAck(self, connack.returnCode)
+        delegate?.mqtt(self, didConnectAck: connack.returnCode!)
+        didConnectAck(self, connack.returnCode!)
     }
 
     func didReceive(_ reader: CocoaMQTTReader, publish: FramePublish) {
