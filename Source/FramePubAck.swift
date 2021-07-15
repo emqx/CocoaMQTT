@@ -12,31 +12,79 @@ import Foundation
 /// MQTT PUBACK packet
 struct FramePubAck: Frame {
     
-    var fixedHeader: UInt8 = FrameType.puback.rawValue
+    var packetFixedHeaderType: UInt8 = FrameType.puback.rawValue
 
     // --- Attributes
     
     var msgid: UInt16
     
     // --- Attributes End
+
+
+    //3.4.2.1 PUBACK Reason Code
+    public var reasonCode: CocoaMQTTPUBACKReasonCode?
+
+    //3.4.2.2 PUBACK Properties
+    //3.4.2.2.2 Reason String
+    public var reasonString: String?
+    //3.4.2.2.3 User Property
+    public var userProperties: [String: String]?
     
-    init(msgid: UInt16) {
+    init(msgid: UInt16, reasonCode: CocoaMQTTPUBACKReasonCode) {
         self.msgid = msgid
+        self.reasonCode = reasonCode
     }
 }
 
 extension FramePubAck {
+    func fixedHeader() -> [UInt8] {
+        var header = [UInt8]()
+        header += [FrameType.puback.rawValue]
+        header += [UInt8(variableHeader().count)]
+
+        return header
+    }
     
-    func variableHeader() -> [UInt8] { return msgid.hlBytes }
+    func variableHeader() -> [UInt8] {
+        //3.4.2 MSB+LSB
+        var head = msgid.hlBytes
+        //3.4.2.1 PUBACK Reason Code
+        head += [reasonCode!.rawValue]
+
+        //MQTT 5.0
+        head.append(UInt8(self.properties().count))
+        head += self.properties()
+
+        return head
+        
+    }
     
     func payload() -> [UInt8] { return [] }
 
-    func properties() -> [UInt8] { return [] }
+    func properties() -> [UInt8] {
+        var properties = [UInt8]()
+
+        //3.4.2.2.2 Reason String
+        if let reasonString = self.reasonString {
+            properties += getMQTTPropertyData(type: CocoaMQTTPropertyName.reasonString.rawValue, value: reasonString.bytesWithLength)
+        }
+
+        //3.4.2.2.3 User Property
+        if let userProperty = self.userProperties {
+            //propertiesData += MQTTProperty<[String : String]>(.userProperty, value: userProperty).mqttData
+            let dictValues = [String](userProperty.values)
+            for (value) in dictValues {
+                properties += getMQTTPropertyData(type: CocoaMQTTPropertyName.userProperty.rawValue, value: value.bytesWithLength)
+            }
+        }
+
+        return properties;
+    }
 
     func allData() -> [UInt8] {
         var allData = [UInt8]()
 
-        allData.append(fixedHeader)
+        allData += fixedHeader()
         allData += variableHeader()
         allData += properties()
         allData += payload()
@@ -47,11 +95,12 @@ extension FramePubAck {
 
 extension FramePubAck: InitialWithBytes {
     
-    init?(fixedHeader: UInt8, bytes: [UInt8]) {
-        guard fixedHeader == FrameType.puback.rawValue else {
+    init?(packetFixedHeaderType: UInt8, bytes: [UInt8]) {
+        guard packetFixedHeaderType == FrameType.puback.rawValue else {
             return nil
         }
-        guard bytes.count == 2 else {
+        //MQTT 5.0 bytes.count == 4
+        guard bytes.count == 2 || bytes.count == 4 else {
             return nil
         }
         

@@ -333,11 +333,11 @@ public class CocoaMQTT: NSObject, CocoaMQTTClient {
     fileprivate func puback(_ type: FrameType, msgid: UInt16) {
         switch type {
         case .puback:
-            send(FramePubAck(msgid: msgid))
+            send(FramePubAck(msgid: msgid, reasonCode: CocoaMQTTPUBACKReasonCode.success))
         case .pubrec:
-            send(FramePubRec(msgid: msgid))
+            send(FramePubRec(msgid: msgid, reasonCode: CocoaMQTTPUBRECReasonCode.success))
         case .pubcomp:
-            send(FramePubComp(msgid: msgid))
+            send(FramePubComp(msgid: msgid, reasonCode: CocoaMQTTPUBCOMPReasonCode.success))
         default: return
         }
     }
@@ -494,7 +494,8 @@ public class CocoaMQTT: NSObject, CocoaMQTTClient {
     ///   - topics: A list of `<Topic Names>/<Topic Filters>`
     public func unsubscribe(_ topics: [String]) {
         let msgid = nextMessageID()
-        let frame = FrameUnsubscribe(msgid: msgid, topics: topics)
+        let filter = CocoaMMQTTopicFilter(topic: topics)
+        let frame = FrameUnsubscribe(msgid: msgid, topics: topics, topicFilters: [filter])
         unsubscriptionsWaitingAck[msgid] = topics
         send(frame, tag: Int(msgid))
     }

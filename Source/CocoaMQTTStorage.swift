@@ -120,9 +120,9 @@ final class CocoaMQTTStorage: CocoaMQTTStorageProtocol {
                 userDefault.removeObject(forKey: k)
             }
 
-            if let f = FramePublish(fixedHeader: parsed.0, bytes: parsed.1) {
+            if let f = FramePublish(packetFixedHeaderType: parsed.0, bytes: parsed.1) {
                 frames.append(f)
-            } else if let f = FramePubRel(fixedHeader: parsed.0, bytes: parsed.1) {
+            } else if let f = FramePubRel(packetFixedHeaderType: parsed.0, bytes: parsed.1) {
                 frames.append(f)
             }
         }

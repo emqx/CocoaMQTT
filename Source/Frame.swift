@@ -60,11 +60,11 @@ enum FrameType: UInt8 {
     case publish = 0x30
     case puback = 0x40
     case pubrec = 0x50
-    case pubrel = 0x60
+    case pubrel = 0x62
     case pubcomp = 0x70
-    case subscribe = 0x80
+    case subscribe = 0x82
     case suback = 0x90
-    case unsubscribe = 0xA0
+    case unsubscribe = 0xA2
     case unsuback = 0xB0
     case pingreq = 0xC0
     case pingresp = 0xD0
@@ -75,7 +75,7 @@ enum FrameType: UInt8 {
 /// The frame can be initialized with a bytes
 protocol InitialWithBytes {
     
-    init?(fixedHeader: UInt8, bytes: [UInt8])
+    init?(packetFixedHeaderType: UInt8, bytes: [UInt8])
 }
 
 
@@ -83,8 +83,9 @@ protocol InitialWithBytes {
 protocol Frame {
     
     /// Each MQTT Control Packet contains a fixed header
-    var fixedHeader: UInt8 {get set}
-    
+    var packetFixedHeaderType: UInt8 {get set}
+    func fixedHeader() -> [UInt8]
+
     /// Some types of MQTT Control Packets contain a variable header component
     func variableHeader() -> [UInt8]
 
@@ -99,14 +100,21 @@ protocol Frame {
 }
 
 extension Frame {
-    
+//    /// ping two byte
+//    public static func fixedHeader(MQTTControlPacketType: UInt8, RemainingLength: UInt8) -> [UInt8] {
+//        var data = [UInt8]()
+//        data.append(MQTTControlPacketType)
+//        data.append(RemainingLength)
+//        return data
+//    }
+
     /// Pack struct to binary
     func bytes() -> [UInt8] {
         let variableHeader = self.variableHeader()
         let payload = self.payload()
         let properties = self.properties()
         let len = UInt32(variableHeader.count + payload.count)
-        return [fixedHeader] + remainingLen(len: len) + variableHeader + properties + payload
+        return [packetFixedHeaderType] + remainingLen(len: len) + variableHeader + properties + payload
     }
     
     private func remainingLen(len: UInt32) -> [UInt8] {
@@ -142,36 +150,38 @@ extension Frame {
     
     /// The type of the Frame
     var type: FrameType {
-        return  FrameType(rawValue: fixedHeader & 0xF0)!
+        return  FrameType(rawValue: packetFixedHeaderType & 0xF0)!
     }
     
     /// Dup flag
     var dup: Bool {
         get {
-            return ((fixedHeader & 0x08) >> 3) == 0 ? false : true
+            return ((packetFixedHeaderType & 0x08) >> 3) == 0 ? false : true
         }
         set {
-            fixedHeader = (fixedHeader & 0xF7) | (newValue.bit  << 3)
+            packetFixedHeaderType = (packetFixedHeaderType & 0xF7) | (newValue.bit  << 3)
         }
     }
     
     /// Qos level
     var qos: CocoaMQTTQoS {
         get {
-            return CocoaMQTTQoS(rawValue: (fixedHeader & 0x06) >> 1)!
+            return CocoaMQTTQoS(rawValue: (packetFixedHeaderType & 0x06) >> 1)!
         }
         set {
-            fixedHeader = (fixedHeader & 0xF9) | (newValue.rawValue << 1)
+            packetFixedHeaderType = (packetFixedHeaderType & 0xF9) | (newValue.rawValue << 1)
         }
     }
     
     /// Retained flag
     var retained: Bool {
         get {
-            return (fixedHeader & 0x01) == 0 ? false : true
+            return (packetFixedHeaderType & 0x01) == 0 ? false : true
         }
         set {
-            fixedHeader = (fixedHeader & 0xFE) | newValue.bit
+            packetFixedHeaderType = (packetFixedHeaderType & 0xFE) | newValue.bit
         }
     }
 }
+
+
