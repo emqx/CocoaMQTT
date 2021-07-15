@@ -11,8 +11,7 @@ import Foundation
 /// MQTT CONNECT Frame
 struct FrameConnect: Frame {
 
-    var fixedHeader: UInt8 = FrameType.connect.rawValue
-
+    var packetFixedHeaderType: UInt8 = FrameType.connect.rawValue
 //    private let PROTOCOL_LEVEL = UInt8(4)
 //    private let PROTOCOL_VERSION: String  = "MQTT/5.0"
 //    private let PROTOCOL_MAGIC: String = "MQTT"
@@ -94,6 +93,13 @@ struct FrameConnect: Frame {
 }
 
 extension FrameConnect {
+    func fixedHeader() -> [UInt8] {
+        var header = [UInt8]()
+        header += [FrameType.connect.rawValue]
+        header += [UInt8(variableHeader().count + payload().count)]
+
+        return header
+    }
 
     func variableHeader() -> [UInt8] {
         var header = [UInt8]()
@@ -182,8 +188,6 @@ extension FrameConnect {
             properties += authenticationData
         }
 
-
-
         return properties
     }
 
@@ -214,7 +218,7 @@ extension FrameConnect {
     func allData() -> [UInt8] {
         var allData = [UInt8]()
 
-        allData.append(fixedHeader)
+        allData += fixedHeader()
         allData += variableHeader()
         allData += properties()
         allData += payload()
