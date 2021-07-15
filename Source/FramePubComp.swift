@@ -8,34 +8,84 @@
 
 import Foundation
 
-/// MQTT PUBCOMP packet
+/// ublish complete (QoS 2 delivery part 3)
+/// The PUBCOMP packet is the response to a PUBREL packet. It is the fourth and final packet of the QoS 2 protocol exchange.
 struct FramePubComp: Frame {
     
-    var fixedHeader: UInt8 = FrameType.pubcomp.rawValue
+    var packetFixedHeaderType: UInt8 = FrameType.pubcomp.rawValue
     
     // --- Attributes
     
     var msgid: UInt16
     
     // --- Attributes End
+
+
+    //3.7.2.1 PUBCOMP Reason Code
+    public var reasonCode: CocoaMQTTPUBCOMPReasonCode?
+
+    //3.7.2.2 PUBCOMP Properties
+    //3.7.2.2.2 Reason String
+    public var reasonString: String?
+    //3.7.2.2.3 User Property
+    public var userProperties: [String: String]?
+
+
     
-    init(msgid: UInt16) {
+    init(msgid: UInt16,  reasonCode: CocoaMQTTPUBCOMPReasonCode) {
         self.msgid = msgid
+        self.reasonCode = reasonCode
     }
 }
 
 extension FramePubComp {
+    func fixedHeader() -> [UInt8] {
+        var header = [UInt8]()
+        header += [FrameType.pubcomp.rawValue]
+        header += [UInt8(variableHeader().count + payload().count)]
+
+        return header
+    }
     
-    func variableHeader() -> [UInt8] { return msgid.hlBytes }
+    func variableHeader() -> [UInt8] {
+        //3.7.2 MSB+LSB
+        var head = msgid.hlBytes
+        //3.7.2.1 PUBACK Reason Code
+        head += [reasonCode!.rawValue]
+
+        //MQTT 5.0
+        head.append(UInt8(self.properties().count))
+        head += self.properties()
+
+        return head
+    }
     
     func payload() -> [UInt8] { return [] }
 
-    func properties() -> [UInt8] { return [] }
+    func properties() -> [UInt8] {
+        var properties = [UInt8]()
+
+        //3.7.2.2.2 Reason String
+        if let reasonString = self.reasonString {
+            properties += getMQTTPropertyData(type: CocoaMQTTPropertyName.reasonString.rawValue, value: reasonString.bytesWithLength)
+        }
+
+        //3.7.2.2.3 User Property
+        if let userProperty = self.userProperties {
+            //propertiesData += MQTTProperty<[String : String]>(.userProperty, value: userProperty).mqttData
+            let dictValues = [String](userProperty.values)
+            for (value) in dictValues {
+                properties += getMQTTPropertyData(type: CocoaMQTTPropertyName.userProperty.rawValue, value: value.bytesWithLength)
+            }
+        }
+
+        return properties;
+    }
 
     func allData() -> [UInt8] {
         var allData = [UInt8]()
 
-        allData.append(fixedHeader)
+        allData += fixedHeader()
         allData += variableHeader()
         allData += properties()
         allData += payload()
@@ -46,8 +96,8 @@ extension FramePubComp {
 
 extension FramePubComp: InitialWithBytes {
     
-    init?(fixedHeader: UInt8, bytes: [UInt8]) {
-        guard fixedHeader == FrameType.pubcomp.rawValue else {
+    init?(packetFixedHeaderType: UInt8, bytes: [UInt8]) {
+        guard packetFixedHeaderType == FrameType.pubcomp.rawValue else {
             return nil
         }
         

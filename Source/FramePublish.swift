@@ -44,7 +44,7 @@ struct FramePublish: Frame {
     public var contentType: String?
 
 
-    var fixedHeader: UInt8 = FrameType.publish.rawValue
+    var packetFixedHeaderType: UInt8 = FrameType.publish.rawValue
     
     // --- Attributes
     
@@ -68,42 +68,27 @@ struct FramePublish: Frame {
 }
 
 extension FramePublish {
+    func fixedHeader() -> [UInt8] {
+        var header = [UInt8]()
+        header += [FrameType.publish.rawValue]
+        header += [UInt8(variableHeader().count + payload().count)]
+
+        return header
+    }
     
     func variableHeader() -> [UInt8] {
-        var head = [UInt8]()
-        var publishFixedHeader = [UInt8]()
 
-
-
-        // Reserved
-        var flags: UInt8 = 0
-        if DUP {
-            flags = flags | 0b0000_1000
-        } else {
-            flags = flags & 0b1111_0111
-        }
-
-        switch QoS {
-        case .qos0:
-            flags = flags & 0b1111_1001
-        case .qos1:
-            flags = flags & 0b1111_1011
-            flags = flags | 0b0000_0010
-        case .qos2:
-            flags = flags | 0b0000_0100
-            flags = flags & 0b1111_1101
-        }
-
-        publishFixedHeader.append(FrameType.publish.rawValue << 4 + flags)
-
-        
         //3.3.2.1 Topic Name
         var header = topic.bytesWithLength
         //3.3.2.2 Packet Identifier qos1 or qos2
         if qos > .qos0 {
             header += msgid.hlBytes
         }
-        
+
+        //MQTT 5.0
+        header.append(UInt8(self.properties().count))
+        header += self.properties()
+
         return header
     }
     
@@ -157,7 +142,7 @@ extension FramePublish {
     func allData() -> [UInt8] {
         var allData = [UInt8]()
 
-        allData.append(fixedHeader)
+        allData += fixedHeader()
         allData += variableHeader()
         allData += properties()
         allData += payload()
@@ -168,13 +153,37 @@ extension FramePublish {
 
 extension FramePublish: InitialWithBytes {
     
-    init?(fixedHeader: UInt8, bytes: [UInt8]) {
+    init?(packetFixedHeaderType: UInt8, bytes: [UInt8]) {
         
-        guard fixedHeader & 0xF0 == FrameType.publish.rawValue else {
+        guard packetFixedHeaderType & 0xF0 == FrameType.publish.rawValue else {
             return nil
         }
+
+
+        // Reserved
+        var flags: UInt8 = 0
+
+        if retain {
+            flags = flags | 0b0000_0001
+        } else {
+            flags = flags | 0b0000_0000
+        }
+
+        if DUP {
+            flags = flags | 0b0011_1000
+        } else {
+            flags = flags | 0b0011_0000
+        }
         
-        self.fixedHeader = fixedHeader
+        switch QoS {
+        case .qos0:
+            flags = flags | 0b0011_0000
+        case .qos1:
+            flags = flags | 0b0011_0010
+        case .qos2:
+            flags = flags | 0b0011_0100
+        }
+        self.packetFixedHeaderType = flags
 
 
         // parse topic
@@ -193,7 +202,7 @@ extension FramePublish: InitialWithBytes {
         topic = NSString(bytes: [UInt8](bytes[2...(pos-1)]), length: Int(len), encoding: String.Encoding.utf8.rawValue)! as String
         
         // msgid
-        if (fixedHeader & 0x06) >> 1 == CocoaMQTTQoS.qos0.rawValue {
+        if (packetFixedHeaderType & 0x06) >> 1 == CocoaMQTTQoS.qos0.rawValue {
             msgid = 0
         } else {
             if bytes.count < pos + 2 {
