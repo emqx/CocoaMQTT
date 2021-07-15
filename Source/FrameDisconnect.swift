@@ -12,14 +12,20 @@ import Foundation
 /// MQTT Disconnect packet
 struct FrameDisconnect: Frame {
 
-    
-    var fixedHeader: UInt8 = FrameType.disconnect.rawValue
+    var packetFixedHeaderType: UInt8 = FrameType.disconnect.rawValue
     
     init() { /* Nothing to do */ }
 }
 
 extension FrameDisconnect {
+    func fixedHeader() -> [UInt8] {
+        var header = [UInt8]()
+        header += [FrameType.disconnect.rawValue]
+        header += [UInt8(variableHeader().count)]
 
+        return header
+    }
+    
     func variableHeader() -> [UInt8] { return [] }
     
     func payload() -> [UInt8] { return [] }
@@ -29,7 +35,7 @@ extension FrameDisconnect {
     func allData() -> [UInt8] {
         var allData = [UInt8]()
 
-        allData.append(fixedHeader)
+        allData += fixedHeader()
         allData += variableHeader()
         allData += properties()
         allData += payload()
