@@ -29,6 +29,7 @@ class ChatViewController: UIViewController {
         }
     }
     var mqtt: CocoaMQTT?
+    var client: UInt16?
     var messages: [ChatMessage] = [] {
         didSet {
             tableView.reloadData()
@@ -56,10 +57,8 @@ class ChatViewController: UIViewController {
     
     @IBAction func sendMessage() {
         let message = messageTextView.text
-        if let client = animal {
-            mqtt!.publish("chat/room/animals/client/" + client, withString: message!, qos: .qos1)
-        }
-        
+
+        mqtt!.publish("wlw", withString: message!, qos: .qos1)
         messageTextView.text = ""
         sendMessageButton.isEnabled = false
         messageTextViewHeightConstraint.constant = messageTextView.contentSize.height
@@ -75,7 +74,13 @@ class ChatViewController: UIViewController {
         super.viewDidLoad()
         navigationController?.navigationBar.isHidden = true
         animal = tabBarController?.selectedViewController?.tabBarItem.title
-        automaticallyAdjustsScrollViewInsets = false
+       // automaticallyAdjustsScrollViewInsets = false
+        if #available(iOS 11.0, *) {
+            self.tableView.contentInsetAdjustmentBehavior = .never
+        } else {
+            automaticallyAdjustsScrollViewInsets = false
+        }
+
         messageTextView.delegate = self
         tableView.delegate = self
         tableView.dataSource = self
@@ -106,10 +111,12 @@ class ChatViewController: UIViewController {
     
     @objc func receivedMessage(notification: NSNotification) {
         let userInfo = notification.userInfo as! [String: AnyObject]
-        let content = userInfo["message"] as! String
+        let message = userInfo["message"] as! String
         let topic = userInfo["topic"] as! String
-        let sender = topic.replacingOccurrences(of: "chat/room/animals/client/", with: "")
-        let chatMessage = ChatMessage(sender: sender, content: content)
+        client = UInt16(userInfo["id"] as! UInt16)
+        let sender = topic.replacingOccurrences(of: "wlw", with: "")
+        let content = String(message.filter { !"\0".contains($0) })
+        let chatMessage = ChatMessage(sender: sender, content: content, id: client!)
         messages.append(chatMessage)
     }
     
@@ -148,15 +155,17 @@ extension ChatViewController: UITableViewDataSource, UITableViewDelegate {
     
     func tableView(_ tableView: UITableView, cellForRowAt indexPath: IndexPath) -> UITableViewCell {
         let message = messages[indexPath.row]
-        if message.sender == animal {
+
+        if message.id != 0 {
             let cell = tableView.dequeueReusableCell(withIdentifier: "rightMessageCell", for: indexPath) as! ChatRightMessageCell
-            cell.contentLabel.text = messages[indexPath.row].content
+            print(message.content)
+            cell.contentLabel.text = message.content
             cell.avatarImageView.image = UIImage(named: animal!)
             return cell
         } else {
             let cell = tableView.dequeueReusableCell(withIdentifier: "leftMessageCell", for: indexPath) as! ChatLeftMessageCell
-            cell.contentLabel.text = messages[indexPath.row].content
-            cell.avatarImageView.image = UIImage(named: message.sender)
+            cell.contentLabel.text = message.content
+            cell.avatarImageView.image = UIImage(named: "other")
             return cell
         }
     }
