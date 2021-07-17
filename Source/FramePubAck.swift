@@ -103,7 +103,9 @@ extension FramePubAck: InitialWithBytes {
         guard bytes.count == 2 || bytes.count == 4 else {
             return nil
         }
-        
+
+        self.reasonCode = CocoaMQTTPUBACKReasonCode(rawValue: bytes[2])
+        print(self.reasonCode)
         msgid = UInt16(bytes[0]) << 8 + UInt16(bytes[1])
     }
 }
