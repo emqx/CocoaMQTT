@@ -99,7 +99,7 @@ extension FrameUnsubAck: InitialWithBytes {
         guard bytes.count == 2 else {
             return nil
         }
-        
+
         msgid = UInt16(bytes[0]) << 8 + UInt16(bytes[1])
     }
 }

@@ -401,7 +401,7 @@ public class CocoaMQTT: NSObject, CocoaMQTTClient {
     /// Disconnect unexpectedly
     func internal_disconnect() {
         is_internal_disconnected = true
-        send(FrameDisconnect(), tag: -0xE0)
+        send(FrameDisconnect(disconnectReasonCode: CocoaMQTTDISCONNECTReasonCode.success), tag: -0xE0)
         socket.disconnect()
     }
 
@@ -446,6 +446,8 @@ public class CocoaMQTT: NSObject, CocoaMQTTClient {
         } else {
             msgid = nextMessageID()
         }
+
+        print("message.topic \(message.topic )   = message.payload \(message.payload)")
 
         var frame = FramePublish(topic: message.topic,
                                  payload: message.payload,
@@ -730,7 +732,7 @@ extension CocoaMQTT: CocoaMQTTReaderDelegate {
 
     func didReceive(_ reader: CocoaMQTTReader, suback: FrameSubAck) {
         printDebug("RECV: \(suback)")
-
+//        print(suback.reasonCodes)
         guard let topicsAndQos = subscriptionsWaitingAck.removeValue(forKey: suback.msgid) else {
             printWarning("UNEXPECT SUBACK Received: \(suback)")
             return

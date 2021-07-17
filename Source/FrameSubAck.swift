@@ -82,14 +82,23 @@ extension FrameSubAck: InitialWithBytes {
         guard bytes.count >= 3 else {
             return nil
         }
-        
+
+
         self.msgid = UInt16(bytes[0]) << 8 + UInt16(bytes[1])
         self.grantedQos = []
-        for i in 2 ..< bytes.count {
+        for i in 3 ..< bytes.count {
             guard let qos = CocoaMQTTQoS(rawValue: bytes[i]) else {
                 return nil
             }
             self.grantedQos.append(qos)
+        }
+
+        self.reasonCodes = [CocoaMQTTSUBACKReasonCode]()
+        for i in 2 ..< bytes.count {
+            guard let qos = CocoaMQTTSUBACKReasonCode(rawValue: bytes[i]) else {
+                return nil
+            }
+            self.reasonCodes! += [qos]
         }
     }
 }
