@@ -10,7 +10,7 @@ import Foundation
 
 public enum CocoaMQTTPropertyName: UInt8 {
     case payloadFormatIndicator = 0x01
-    case messageExpiryInterval = 0x02
+    case willExpiryInterval = 0x02
     case contentType = 0x03
     case responseTopic = 0x08
     case correlationData = 0x09
@@ -157,7 +157,7 @@ func unsignedByteToBinary(data:[UInt8], offset:Int) -> (resStr: [UInt8], newOffs
 
 //1.5.5 Variable Byte Integer
 //The Variable Byte Integer is encoded using an encoding scheme which uses a single byte for values up to 127. Larger values are handled as follows. The least significant seven bits of each byte encode the data, and the most significant bit is used to indicate whether there are bytes following in the representation. Thus, each byte encodes 128 values and a "continuation bit". The maximum number of bytes in the Variable Byte Integer field is four. The encoded value MUST use the minimum number of bytes necessary to represent the value [MQTT-1.5.5-1]. This is shown in Table 1‑1 Size of Variable Byte Integer.
-func variableByteInteger(data: [UInt8], offset: Int) -> (res: Int, newOffset: Int) {
+func decodeVariableByteInteger(data: [UInt8], offset: Int) -> (res: Int, newOffset: Int) {
     var newOffset = offset
     var count = 0
     var res: Int = 0
@@ -172,4 +172,24 @@ func variableByteInteger(data: [UInt8], offset: Int) -> (res: Int, newOffset: In
         count += 7
     }
     return (res, newOffset)
+}
+
+
+
+func beVariableByteInteger(length: Int) -> [UInt8]{
+    var res = [UInt8]()
+    if length > 0 && length <= 127 {
+        res.append(UInt8(length))
+    }else if length > 127 && length <= 16383 {
+        res += UInt16(length).hlBytes
+    }else if length > 16383 && length <= 2097151 {
+        res += UInt32(length).byteArrayLittleEndian
+    }else if length > 2097151 && length <= 268435455 {
+        res += UInt32(length).byteArrayLittleEndian
+    }else{
+        return [0]
+    }
+
+
+    return res
 }

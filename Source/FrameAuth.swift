@@ -7,6 +7,7 @@
 
 import Foundation
 
+
 struct FrameAuth: Frame {
 
 
@@ -66,7 +67,6 @@ extension FrameAuth {
         }
         //3.15.2.2.5 User Property
         if let userProperty = self.userProperties {
-            //propertiesData += MQTTProperty<[String : String]>(.userProperty, value: userProperty).mqttData
             let dictValues = [String](userProperty.values)
             for (value) in dictValues {
                 properties += getMQTTPropertyData(type: CocoaMQTTPropertyName.userProperty.rawValue, value: value.bytesWithLength)

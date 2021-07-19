@@ -11,13 +11,12 @@ import CocoaMQTT
 
 
 class ViewController: UIViewController {
-    //let defaultHost = "broker.emqx.io"
-    let defaultHost = "iot-platform.cloud"
-    //let defaultHost = "mqtt.p2hp.com"
+
+    let defaultHost = "localhost"
 
     var mqtt: CocoaMQTT?
     var animal: String?
-    
+
     @IBOutlet weak var connectButton: UIButton!
     @IBOutlet weak var animalsImageView: UIImageView! {
         didSet {
@@ -48,11 +47,21 @@ class ViewController: UIViewController {
     }
     
     func mqttSetting() {
-        let clientID = "sheep"
+        let clientID = "CocoaMQTT-\(animal!)-" + String(ProcessInfo().processIdentifier)
         mqtt = CocoaMQTT(clientID: clientID, host: defaultHost, port: 6301)
+
+        mqtt?.topicAliasMaximum = 60
+        mqtt?.sessionExpiryInterval = 0
+        mqtt?.receiveMaximum = 100
+        mqtt?.contentType = "JSON"
+        mqtt?.messageExpiryInterval = 0
+        mqtt?.willDelayInterval = 0
+
         mqtt!.username = ""
         mqtt!.password = ""
-        //mqtt!.willMessage = CocoaMQTTMessage(topic: "wlw", string: "dieout")
+        let lastWillMessage = CocoaMQTTMessage(topic: "/will", string: "dieout")
+        lastWillMessage.contentType = "json"
+        mqtt!.willMessage = lastWillMessage
         mqtt!.keepAlive = 60
         mqtt!.delegate = self
     }
@@ -108,6 +117,7 @@ class ViewController: UIViewController {
         mqtt!.willMessage = CocoaMQTTMessage(topic: "/will", string: "dieout")
         mqtt!.keepAlive = 60
         mqtt!.delegate = self
+
     }
     
     func getClientCertFromP12File(certName: String, certPassword: String) -> CFArray? {
@@ -171,7 +181,7 @@ extension ViewController: CocoaMQTTDelegate {
         TRACE("ack: \(ack)")
 
         if ack == .success {
-            mqtt.subscribe("wlw", qos: CocoaMQTTQoS.qos1)
+            mqtt.subscribe("chat/room/animals/client/+", qos: CocoaMQTTQoS.qos1)
             
             let chatViewController = storyboard?.instantiateViewController(withIdentifier: "ChatViewController") as? ChatViewController
             chatViewController?.mqtt = mqtt
@@ -181,6 +191,9 @@ extension ViewController: CocoaMQTTDelegate {
     
     func mqtt(_ mqtt: CocoaMQTT, didStateChangeTo state: CocoaMQTTConnState) {
         TRACE("new state: \(state)")
+        if state == .disconnected {
+
+        }
     }
     
     func mqtt(_ mqtt: CocoaMQTT, didPublishMessage message: CocoaMQTTMessage, id: UInt16) {
@@ -193,9 +206,9 @@ extension ViewController: CocoaMQTTDelegate {
     
     func mqtt(_ mqtt: CocoaMQTT, didReceiveMessage message: CocoaMQTTMessage, id: UInt16 ) {
         TRACE("message: \(message.string.description), id: \(id)")
-
         let name = NSNotification.Name(rawValue: "MQTTMessageNotification" + animal!)
-        NotificationCenter.default.post(name: name, object: self, userInfo: ["message": message.string!, "topic": message.topic, "id": id])
+
+        NotificationCenter.default.post(name: name, object: self, userInfo: ["message": message.string!, "topic": message.topic, "id": id, "animal": animal as Any])
     }
     
     func mqtt(_ mqtt: CocoaMQTT, didSubscribeTopics success: NSDictionary, failed: [String]) {
@@ -216,6 +229,8 @@ extension ViewController: CocoaMQTTDelegate {
 
     func mqttDidDisconnect(_ mqtt: CocoaMQTT, withError err: Error?) {
         TRACE("\(err.description)")
+        let name = NSNotification.Name(rawValue: "MQTTMessageNotificationDisconnect")
+        NotificationCenter.default.post(name: name, object: nil)
     }
 }
 
@@ -223,6 +238,11 @@ extension ViewController: UITabBarControllerDelegate {
     // Prevent automatic popToRootViewController on double-tap of UITabBarController
     func tabBarController(_ tabBarController: UITabBarController, shouldSelect viewController: UIViewController) -> Bool {
         return viewController != tabBarController.selectedViewController
+    }
+
+    func tabBarController(_ tabBarController: UITabBarController, didSelect viewController: UIViewController) {
+        print("---- \(tabBarController.selectedIndex)")
+        print("----- \(String(describing: tabBarController.selectedViewController))")
     }
 }
 

@@ -26,30 +26,6 @@ import CocoaAsyncSocket
     }
 }
 
-/**
- * Conn Ack
- */
-//@objc public enum CocoaMQTTConnAck: UInt8, CustomStringConvertible {
-//    case accept  = 0
-//    case unacceptableProtocolVersion
-//    case identifierRejected
-//    case serverUnavailable
-//    case badUsernameOrPassword
-//    case notAuthorized
-//    case reserved
-//
-//    public var description: String {
-//        switch self {
-//            case .accept:                       return "accept"
-//            case .unacceptableProtocolVersion:  return "unacceptableProtocolVersion"
-//            case .identifierRejected:           return "identifierRejected"
-//            case .serverUnavailable:            return "serverUnavailable"
-//            case .badUsernameOrPassword:        return "badUsernameOrPassword"
-//            case .notAuthorized:                return "notAuthorized"
-//            case .reserved:                     return "reserved"
-//        }
-//    }
-//}
 
 /// CocoaMQTT Delegate
 @objc public protocol CocoaMQTTDelegate {
@@ -108,7 +84,12 @@ protocol CocoaMQTTClient {
     var cleanSession: Bool {get set}
     var keepAlive: UInt16 {get set}
     var willMessage: CocoaMQTTMessage? {get set}
-
+    var sessionExpiryInterval: UInt32 {get set}
+    var receiveMaximum: UInt16 {get set}
+    var topicAliasMaximum: UInt16 {get set}
+    var willDelayInterval: UInt32 {get set}
+    var messageExpiryInterval: UInt32 {get set}
+    var contentType: String {get set}
     /* Basic Properties */
 
     /* CONNNEC/DISCONNECT */
@@ -224,10 +205,32 @@ public class CocoaMQTT: NSObject, CocoaMQTTClient {
     /// After that, it uses this value for subsequent requests.
     public var maxAutoReconnectTimeInterval: UInt16 = 128 // 128 seconds
 
+
+    ///3.1.2.11.2 Session Expiry Interval
+    ///Followed by the Four Byte Integer representing the Session Expiry Interval in seconds. It is a Protocol Error to include the Session Expiry Interval more than once.
+    public var sessionExpiryInterval: UInt32 = 0
+
+    ///3.1.2.11.3 Receive Maximum
+    public var receiveMaximum: UInt16 = 65535
+
+    ///3.1.2.11.5 Topic Alias Maximum
+    public var topicAliasMaximum: UInt16 = 0
+
+    ///3.1.3.2.2 Will Delay Interval
+    public var willDelayInterval: UInt32 = 0
+
+    ///3.1.3.2.4 Message Expiry Interval
+    public var messageExpiryInterval: UInt32 = 0
+
+    ///3.1.3.2.5 Content Type
+    public var contentType: String = "JSON"
+
+
     private var reconnectTimeInterval: UInt16 = 0
 
     private var autoReconnTimer: CocoaMQTTTimer?
     private var is_internal_disconnected = false
+    
 
     /// Console log level
     public var logLevel: CocoaMQTTLoggerLevel {
@@ -326,6 +329,13 @@ public class CocoaMQTT: NSObject, CocoaMQTTClient {
         connect.password = password
         connect.willMsg = willMessage
         connect.cleansess = cleanSession
+
+        connect.sessionExpiryInterval = sessionExpiryInterval
+        connect.receiveMaximum = receiveMaximum
+        connect.topicAliasMaximum = topicAliasMaximum
+        connect.willDelayInterval = willDelayInterval
+        connect.messageExpiryInterval = messageExpiryInterval
+        connect.contentType = contentType
 
         send(connect)
         reader!.start()
@@ -601,6 +611,7 @@ extension CocoaMQTT: CocoaMQTTSocketDelegate {
         // Clean up
         socket.setDelegate(nil, delegateQueue: nil)
         connState = .disconnected
+      
         delegate?.mqttDidDisconnect(self, withError: err)
         didDisconnect(self, err)
 
@@ -732,7 +743,7 @@ extension CocoaMQTT: CocoaMQTTReaderDelegate {
 
     func didReceive(_ reader: CocoaMQTTReader, suback: FrameSubAck) {
         printDebug("RECV: \(suback)")
-//        print(suback.reasonCodes)
+        print("suback \(suback)")
         guard let topicsAndQos = subscriptionsWaitingAck.removeValue(forKey: suback.msgid) else {
             printWarning("UNEXPECT SUBACK Received: \(suback)")
             return
