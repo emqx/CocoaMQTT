@@ -49,15 +49,15 @@ extension FramePubComp {
     
     func variableHeader() -> [UInt8] {
         //3.7.2 MSB+LSB
-        var head = msgid.hlBytes
+        var header = msgid.hlBytes
         //3.7.2.1 PUBACK Reason Code
-        head += [reasonCode!.rawValue]
+        header += [reasonCode!.rawValue]
 
         //MQTT 5.0
-        head.append(UInt8(self.properties().count))
-        head += self.properties()
+        header += beVariableByteInteger(length: self.properties().count)
+     
 
-        return head
+        return header
     }
     
     func payload() -> [UInt8] { return [] }
@@ -72,7 +72,6 @@ extension FramePubComp {
 
         //3.7.2.2.3 User Property
         if let userProperty = self.userProperties {
-            //propertiesData += MQTTProperty<[String : String]>(.userProperty, value: userProperty).mqttData
             let dictValues = [String](userProperty.values)
             for (value) in dictValues {
                 properties += getMQTTPropertyData(type: CocoaMQTTPropertyName.userProperty.rawValue, value: value.bytesWithLength)
