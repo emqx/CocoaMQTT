@@ -48,8 +48,8 @@ extension FrameDisconnect {
         header += [disconnectReasonCode!.rawValue]
 
         //MQTT 5.0
-        header.append(UInt8(self.properties().count))
-        header += self.properties()
+        header += beVariableByteInteger(length: self.properties().count)
+   
 
         return header
     }
@@ -69,7 +69,6 @@ extension FrameDisconnect {
         }
         //3.14.2.2.4 User Property
         if let userProperty = self.userProperties {
-            //propertiesData += MQTTProperty<[String : String]>(.userProperty, value: userProperty).mqttData
             let dictValues = [String](userProperty.values)
             for (value) in dictValues {
                 properties += getMQTTPropertyData(type: CocoaMQTTPropertyName.userProperty.rawValue, value: value.bytesWithLength)
