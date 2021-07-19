@@ -48,7 +48,7 @@ class ViewController: UIViewController {
     }
     
     func mqttSetting() {
-        let clientID = "sheep"
+        let clientID = "CocoaMQTT-\(animal!)-" + String(ProcessInfo().processIdentifier)
         mqtt = CocoaMQTT(clientID: clientID, host: defaultHost, port: 6301)
         mqtt!.username = ""
         mqtt!.password = ""
@@ -171,7 +171,7 @@ extension ViewController: CocoaMQTTDelegate {
         TRACE("ack: \(ack)")
 
         if ack == .success {
-            mqtt.subscribe("wlw", qos: CocoaMQTTQoS.qos1)
+            mqtt.subscribe("zoo", qos: CocoaMQTTQoS.qos1)
             
             let chatViewController = storyboard?.instantiateViewController(withIdentifier: "ChatViewController") as? ChatViewController
             chatViewController?.mqtt = mqtt
@@ -193,9 +193,8 @@ extension ViewController: CocoaMQTTDelegate {
     
     func mqtt(_ mqtt: CocoaMQTT, didReceiveMessage message: CocoaMQTTMessage, id: UInt16 ) {
         TRACE("message: \(message.string.description), id: \(id)")
-
         let name = NSNotification.Name(rawValue: "MQTTMessageNotification" + animal!)
-        NotificationCenter.default.post(name: name, object: self, userInfo: ["message": message.string!, "topic": message.topic, "id": id])
+        NotificationCenter.default.post(name: name, object: self, userInfo: ["message": message.string!, "topic": message.topic, "id": id, "animal": tabBarController?.selectedViewController?.tabBarItem.title! as Any])
     }
     
     func mqtt(_ mqtt: CocoaMQTT, didSubscribeTopics success: NSDictionary, failed: [String]) {
@@ -222,6 +221,7 @@ extension ViewController: CocoaMQTTDelegate {
 extension ViewController: UITabBarControllerDelegate {
     // Prevent automatic popToRootViewController on double-tap of UITabBarController
     func tabBarController(_ tabBarController: UITabBarController, shouldSelect viewController: UIViewController) -> Bool {
+        animal = tabBarController.selectedViewController?.tabBarItem.title
         return viewController != tabBarController.selectedViewController
     }
 }

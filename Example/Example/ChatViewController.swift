@@ -29,7 +29,8 @@ class ChatViewController: UIViewController {
         }
     }
     var mqtt: CocoaMQTT?
-    var client: UInt16?
+    var client: String?
+
     var messages: [ChatMessage] = [] {
         didSet {
             tableView.reloadData()
@@ -58,7 +59,7 @@ class ChatViewController: UIViewController {
     @IBAction func sendMessage() {
         let message = messageTextView.text
 
-        mqtt!.publish("wlw", withString: message!, qos: .qos1)
+        mqtt!.publish("zoo", withString: message!, qos: .qos1)
         messageTextView.text = ""
         sendMessageButton.isEnabled = false
         messageTextViewHeightConstraint.constant = messageTextView.contentSize.height
@@ -74,6 +75,7 @@ class ChatViewController: UIViewController {
         super.viewDidLoad()
         navigationController?.navigationBar.isHidden = true
         animal = tabBarController?.selectedViewController?.tabBarItem.title
+
        // automaticallyAdjustsScrollViewInsets = false
         if #available(iOS 11.0, *) {
             self.tableView.contentInsetAdjustmentBehavior = .never
@@ -113,11 +115,13 @@ class ChatViewController: UIViewController {
         let userInfo = notification.userInfo as! [String: AnyObject]
         let message = userInfo["message"] as! String
         let topic = userInfo["topic"] as! String
-        client = UInt16(userInfo["id"] as! UInt16)
-        let sender = topic.replacingOccurrences(of: "wlw", with: "")
+        let qos = UInt16(userInfo["id"] as! UInt16)
+        let sender = userInfo["animal"] as! String
         let content = String(message.filter { !"\0".contains($0) })
-        let chatMessage = ChatMessage(sender: sender, content: content, id: client!)
+        let chatMessage = ChatMessage(sender: sender, content: content, id: qos)
+        print("sendersendersender =  \(sender)")
         messages.append(chatMessage)
+
     }
     
     func scrollToBottom() {
@@ -155,8 +159,19 @@ extension ChatViewController: UITableViewDataSource, UITableViewDelegate {
     
     func tableView(_ tableView: UITableView, cellForRowAt indexPath: IndexPath) -> UITableViewCell {
         let message = messages[indexPath.row]
+        print("message.sender: \(message.sender)    animal:\(animal)"   )
 
-        if message.id != 0 {
+
+        //print(client)
+//        var isRightCell: Bool = true
+//        if message.id != 0 {
+//            if animal?.description == message.sender {
+//                isRightCell = true
+//            }else{
+//                isRightCell = false
+//            }
+//        }
+        if message.sender == animal {
             let cell = tableView.dequeueReusableCell(withIdentifier: "rightMessageCell", for: indexPath) as! ChatRightMessageCell
             print(message.content)
             cell.contentLabel.text = message.content

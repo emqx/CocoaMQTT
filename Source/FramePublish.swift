@@ -119,7 +119,6 @@ extension FramePublish {
         }
         //3.3.2.3.7 Property Length User Property
         if let userProperty = self.userProperty {
-            //propertiesData += MQTTProperty<[String : String]>(.userProperty, value: userProperty).mqttData
             let dictValues = [String](userProperty.values)
             for (value) in dictValues {
                 properties += getMQTTPropertyData(type: CocoaMQTTPropertyName.userProperty.rawValue, value: value.bytesWithLength)
