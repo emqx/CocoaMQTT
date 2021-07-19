@@ -173,7 +173,6 @@ extension FrameConnect {
         }
         // 3.1.2.11.8 User Property
         if let userProperty = self.userProperties {
-            //propertiesData += MQTTProperty<[String : String]>(.userProperty, value: userProperty).mqttData
             let dictValues = [String](userProperty.values)
             for (value) in dictValues {
                 properties += getMQTTPropertyData(type: CocoaMQTTPropertyName.userProperty.rawValue, value: value.bytesWithLength)
