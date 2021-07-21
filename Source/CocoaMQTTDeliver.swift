@@ -154,8 +154,8 @@ class CocoaMQTTDeliver: NSObject {
     func cleanAll() {
         deliverQueue.sync { [weak self] in
             guard let self = self else { return }
-            _ = self.mqueue.removeAll()
-            _ = self.inflight.removeAll()
+            self.mqueue.removeAll()
+            self.inflight.removeAll()
         }
     }
 }
