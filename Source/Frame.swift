@@ -69,12 +69,13 @@ enum FrameType: UInt8 {
     case pingreq = 0xC0
     case pingresp = 0xD0
     case disconnect = 0xE0
+    case auth = 0xF0
 }
 
 /// The frame can be initialized with a bytes
 protocol InitialWithBytes {
     
-    init?(fixedHeader: UInt8, bytes: [UInt8])
+    init?(packetFixedHeaderType: UInt8, bytes: [UInt8])
 }
 
 
@@ -82,24 +83,47 @@ protocol InitialWithBytes {
 protocol Frame {
     
     /// Each MQTT Control Packet contains a fixed header
-    var fixedHeader: UInt8 {get set}
-    
+    var packetFixedHeaderType: UInt8 {get set}
+    func fixedHeader() -> [UInt8]
+
     /// Some types of MQTT Control Packets contain a variable header component
     func variableHeader() -> [UInt8]
-    
+
+    /// MQTT 5.0 The last field in the Variable Header of the CONNECT, CONNACK, PUBLISH, PUBACK, PUBREC, PUBREL, PUBCOMP, SUBSCRIBE, SUBACK, UNSUBSCRIBE, UNSUBACK, DISCONNECT, and AUTH packet is a set of Properties. In the CONNECT packet there is also an optional set of Properties in the Will Properties field with the Payload.
+    func properties() -> [UInt8]
+
     /// Some MQTT Control Packets contain a payload as the final part of the packet
     func payload() -> [UInt8]
+
+    /// fixedHeader + variableHeader + properties + payload
+    func allData() -> [UInt8]
 }
 
 extension Frame {
-    
+//    /// ping two byte
+//    public static func fixedHeader(MQTTControlPacketType: UInt8, RemainingLength: UInt8) -> [UInt8] {
+//        var data = [UInt8]()
+//        data.append(MQTTControlPacketType)
+//        data.append(RemainingLength)
+//        return data
+//    }
+
     /// Pack struct to binary
     func bytes() -> [UInt8] {
+        let fixedHeader = self.fixedHeader()
         let variableHeader = self.variableHeader()
+
         let payload = self.payload()
-        
-        let len = UInt32(variableHeader.count + payload.count)
-        return [fixedHeader] + remainingLen(len: len) + variableHeader + payload
+        let properties = self.properties()
+        let len = UInt32(variableHeader.count + properties.count + payload.count)
+
+        //payload = [0, 21, 67, 111, 99, 111, 97, 77, 81, 84, 84, 45, 83, 104, 101, 101, 112, 45, 49, 52, 54, 54, 50, 0, 5, 47, 119, 105, 108, 108, 0, 6, 100, 105, 101, 111, 117, 116, 0, 0, 0, 0]
+        print("packetFixedHeaderType \(packetFixedHeaderType)")
+        print("remainingLen(len: len) \(remainingLen(len: len))")
+        print("variableHeader \(variableHeader)")
+        print("properties \(properties)")
+        print("payload \(payload)")
+        return [packetFixedHeaderType] + remainingLen(len: len) + variableHeader + properties + payload
     }
     
     private func remainingLen(len: UInt32) -> [UInt8] {
@@ -135,36 +159,38 @@ extension Frame {
     
     /// The type of the Frame
     var type: FrameType {
-        return  FrameType(rawValue: fixedHeader & 0xF0)!
+        return  FrameType(rawValue: packetFixedHeaderType & 0xF0)!
     }
     
     /// Dup flag
     var dup: Bool {
         get {
-            return ((fixedHeader & 0x08) >> 3) == 0 ? false : true
+            return ((packetFixedHeaderType & 0x08) >> 3) == 0 ? false : true
         }
         set {
-            fixedHeader = (fixedHeader & 0xF7) | (newValue.bit  << 3)
+            packetFixedHeaderType = (packetFixedHeaderType & 0xF7) | (newValue.bit  << 3)
         }
     }
     
     /// Qos level
     var qos: CocoaMQTTQoS {
         get {
-            return CocoaMQTTQoS(rawValue: (fixedHeader & 0x06) >> 1)!
+            return CocoaMQTTQoS(rawValue: (packetFixedHeaderType & 0x06) >> 1)!
         }
         set {
-            fixedHeader = (fixedHeader & 0xF9) | (newValue.rawValue << 1)
+            packetFixedHeaderType = (packetFixedHeaderType & 0xF9) | (newValue.rawValue << 1)
         }
     }
     
     /// Retained flag
     var retained: Bool {
         get {
-            return (fixedHeader & 0x01) == 0 ? false : true
+            return (packetFixedHeaderType & 0x01) == 0 ? false : true
         }
         set {
-            fixedHeader = (fixedHeader & 0xFE) | newValue.bit
+            packetFixedHeaderType = (packetFixedHeaderType & 0xFE) | newValue.bit
         }
     }
 }
+
+

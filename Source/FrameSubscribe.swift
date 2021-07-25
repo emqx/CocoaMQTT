@@ -12,7 +12,7 @@ import Foundation
 /// MQTT SUBSCRIBE Frame
 struct FrameSubscribe: Frame {
     
-    var fixedHeader: UInt8 = FrameType.subscribe.rawValue
+    var packetFixedHeaderType: UInt8 = UInt8(FrameType.subscribe.rawValue + 2)
     
     // --- Attributes
     
@@ -21,13 +21,24 @@ struct FrameSubscribe: Frame {
     var topics: [(String, CocoaMQTTQoS)]
     
     // --- Attributes End
-    
+
+
+    //3.8.2 SUBSCRIBE Variable Header
+    public var packetIdentifier: UInt16?
+
+    //3.8.2.1.2 Subscription Identifier
+    public var subscriptionIdentifier: UInt32?
+
+    //3.8.2.1.3 User Property
+    public var userProperty: [String: String]?
+
+
     init(msgid: UInt16, topic: String, reqos: CocoaMQTTQoS) {
         self.init(msgid: msgid, topics: [(topic, reqos)])
     }
     
     init(msgid: UInt16, topics: [(String, CocoaMQTTQoS)]) {
-        fixedHeader = FrameType.subscribe.rawValue
+        packetFixedHeaderType = FrameType.subscribe.rawValue
         self.msgid = msgid
         self.topics = topics
         
@@ -36,8 +47,28 @@ struct FrameSubscribe: Frame {
 }
 
 extension FrameSubscribe {
+    func fixedHeader() -> [UInt8] {
+        var header = [UInt8]()
+        header += [FrameType.subscribe.rawValue]
+        header += [UInt8(variableHeader().count + payload().count)]
+
+        return header
+    }
     
-    func variableHeader() -> [UInt8] { return msgid.hlBytes }
+    func variableHeader() -> [UInt8] {
+        
+        //3.8.2 SUBSCRIBE Variable Header
+        //The Variable Header of the SUBSCRIBE Packet contains the following fields in the order: Packet Identifier, and Properties.
+
+
+        //MQTT 5.0
+        var header = [UInt8]()
+        header = msgid.hlBytes
+        header += beVariableByteInteger(length: self.properties().count)
+        header += self.properties()
+
+        return header
+    }
     
     func payload() -> [UInt8] {
         
@@ -49,6 +80,37 @@ extension FrameSubscribe {
         }
         
         return payload
+    }
+
+    func properties() -> [UInt8] {
+        var properties = [UInt8]()
+
+        //3.8.2.1.2 Subscription Identifier
+        if let subscriptionIdentifier = self.subscriptionIdentifier {
+            properties += getMQTTPropertyData(type: CocoaMQTTPropertyName.subscriptionIdentifier.rawValue, value: subscriptionIdentifier.byteArrayLittleEndian)
+        }
+
+        //3.8.2.1.3 User Property
+        if let userProperty = self.userProperty {
+            let dictValues = [String](userProperty.values)
+            for (value) in dictValues {
+                properties += getMQTTPropertyData(type: CocoaMQTTPropertyName.userProperty.rawValue, value: value.bytesWithLength)
+            }
+        }
+
+        return properties
+
+    }
+
+    func allData() -> [UInt8] {
+        var allData = [UInt8]()
+
+        allData += fixedHeader()
+        allData += variableHeader()
+        allData += properties()
+        allData += payload()
+
+        return allData
     }
 }
 
