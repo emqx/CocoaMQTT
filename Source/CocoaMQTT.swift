@@ -26,30 +26,6 @@ import CocoaAsyncSocket
     }
 }
 
-/**
- * Conn Ack
- */
-//@objc public enum CocoaMQTTConnAck: UInt8, CustomStringConvertible {
-//    case accept  = 0
-//    case unacceptableProtocolVersion
-//    case identifierRejected
-//    case serverUnavailable
-//    case badUsernameOrPassword
-//    case notAuthorized
-//    case reserved
-//
-//    public var description: String {
-//        switch self {
-//            case .accept:                       return "accept"
-//            case .unacceptableProtocolVersion:  return "unacceptableProtocolVersion"
-//            case .identifierRejected:           return "identifierRejected"
-//            case .serverUnavailable:            return "serverUnavailable"
-//            case .badUsernameOrPassword:        return "badUsernameOrPassword"
-//            case .notAuthorized:                return "notAuthorized"
-//            case .reserved:                     return "reserved"
-//        }
-//    }
-//}
 
 /// CocoaMQTT Delegate
 @objc public protocol CocoaMQTTDelegate {
