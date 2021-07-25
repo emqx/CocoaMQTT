@@ -12,7 +12,7 @@ import CocoaMQTT
 
 class ViewController: UIViewController {
 
-    let defaultHost = "localhost"
+    //let defaultHost = "localhost"
 
     var mqtt: CocoaMQTT?
     var animal: String?
@@ -53,14 +53,14 @@ class ViewController: UIViewController {
         mqtt?.topicAliasMaximum = 60
         mqtt?.sessionExpiryInterval = 0
         mqtt?.receiveMaximum = 100
-        mqtt?.contentType = "JSON"
-        mqtt?.messageExpiryInterval = 0
-        mqtt?.willDelayInterval = 0
 
         mqtt!.username = ""
         mqtt!.password = ""
         let lastWillMessage = CocoaMQTTMessage(topic: "/will", string: "dieout")
-        lastWillMessage.contentType = "json"
+        lastWillMessage.contentType = "JSON"
+        lastWillMessage.willExpiryInterval = 0
+        lastWillMessage.willDelayInterval = 0
+
         mqtt!.willMessage = lastWillMessage
         mqtt!.keepAlive = 60
         mqtt!.delegate = self
