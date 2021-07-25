@@ -49,9 +49,18 @@ class ViewController: UIViewController {
     func mqttSetting() {
         let clientID = "CocoaMQTT-\(animal!)-" + String(ProcessInfo().processIdentifier)
         mqtt = CocoaMQTT(clientID: clientID, host: defaultHost, port: 6301)
+
+        mqtt?.topicAliasMaximum = 60
+        mqtt?.sessionExpiryInterval = 0
+        mqtt?.receiveMaximum = 100
+        mqtt?.contentType = "JSON"
+        mqtt?.messageExpiryInterval = 0
+        mqtt?.willDelayInterval = 0
+
         mqtt!.username = ""
         mqtt!.password = ""
         let lastWillMessage = CocoaMQTTMessage(topic: "/will", string: "dieout")
+        lastWillMessage.contentType = "json"
         mqtt!.willMessage = lastWillMessage
         mqtt!.keepAlive = 60
         mqtt!.delegate = self

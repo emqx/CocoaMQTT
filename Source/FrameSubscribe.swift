@@ -65,7 +65,6 @@ extension FrameSubscribe {
         var header = [UInt8]()
         header = msgid.hlBytes
         header += beVariableByteInteger(length: self.properties().count)
-        header += self.properties()
 
         return header
     }
