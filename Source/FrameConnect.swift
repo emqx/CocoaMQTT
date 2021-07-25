@@ -38,25 +38,13 @@ struct FrameConnect: Frame {
     var keepAlive: UInt16 = 10
     var cleansess: Bool = true
 
-    //3.1.2.11.1 Property Length
-    var propertyLength: UInt8?
-    //3.1.2.11.2 Session Expiry Interval
-    var sessionExpiryInterval: UInt32?
-    //3.1.2.11.3 Receive Maximum
-    var receiveMaximum: UInt16?
-    //3.1.2.11.4 Maximum Packet Size
-    var maximumPacketSize: UInt32?
-    //3.1.2.11.5 Topic Alias Maximum
-    var topicAliasMaximum: UInt16?
-    //3.1.2.11.6 Request Response Information
-    var requestResponseInformation: UInt8?
-    //3.1.2.11.7 Request Problem Information
-    var requestProblemInfomation: UInt8?
-    //3.1.2.11.8 User Property
-    var userProperties: [String: String]?
-    //3.1.2.11.9 Authentication Method
-    var authenticationMethod: String?
-    //3.1.2.11.10 Authentication Data
+    //3.1.2
+
+
+    //3.1.2.11 CONNECT Properties
+    var connectProperties: FrameConnectProperties?
+
+
     var authenticationData: Data?
 
 
@@ -125,53 +113,7 @@ extension FrameConnect {
     }
 
     func properties() -> [UInt8] {
-        var properties = [UInt8]()
-
-        //3.1.2.11.2 Session Expiry Interval
-        if let sessionExpiryInterval = self.sessionExpiryInterval {
-            properties += getMQTTPropertyData(type: CocoaMQTTPropertyName.sessionExpiryInterval.rawValue, value: sessionExpiryInterval.byteArrayLittleEndian)
-        }
-
-        // 3.1.2.11.3 Receive Maximum
-        if let receiveMaximum = self.receiveMaximum {
-            properties += getMQTTPropertyData(type: CocoaMQTTPropertyName.receiveMaximum.rawValue, value: receiveMaximum.hlBytes)
-        }
-
-        // 3.1.2.11.4 Maximum Packet Size
-        if let maximumPacketSize = self.maximumPacketSize {
-            properties += getMQTTPropertyData(type: CocoaMQTTPropertyName.maximumPacketSize.rawValue, value: maximumPacketSize.byteArrayLittleEndian)
-        }
-
-        // 3.1.2.11.5 Topic Alias Maximum
-        if let topicAliasMaximum = self.topicAliasMaximum {
-            properties += getMQTTPropertyData(type: CocoaMQTTPropertyName.topicAliasMaximum.rawValue, value: topicAliasMaximum.hlBytes)
-        }
-
-        // 3.1.2.11.6 Request Response Information
-        if let requestResponseInformation = self.requestResponseInformation {
-            properties += getMQTTPropertyData(type: CocoaMQTTPropertyName.requestResponseInformation.rawValue, value: [requestResponseInformation])
-        }
-        // 3.1.2.11.7 Request Problem Information
-        if let requestProblemInfomation = self.requestProblemInfomation {
-            properties += getMQTTPropertyData(type: CocoaMQTTPropertyName.requestProblemInfomation.rawValue, value: [requestProblemInfomation])
-        }
-        // 3.1.2.11.8 User Property
-        if let userProperty = self.userProperties {
-            let dictValues = [String](userProperty.values)
-            for (value) in dictValues {
-                properties += getMQTTPropertyData(type: CocoaMQTTPropertyName.userProperty.rawValue, value: value.bytesWithLength)
-            }
-        }
-        // 3.1.2.11.9 Authentication Method
-        if let authenticationMethod = self.authenticationMethod {
-            properties += getMQTTPropertyData(type: CocoaMQTTPropertyName.authenticationMethod.rawValue, value: authenticationMethod.bytesWithLength)
-        }
-        // 3.1.2.11.10 Authentication Data
-        if let authenticationData = self.authenticationData {
-            properties += authenticationData
-        }
-
-        return properties
+        return connectProperties!.properties
     }
 
     func payload() -> [UInt8] {
