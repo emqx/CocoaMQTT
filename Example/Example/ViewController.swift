@@ -12,7 +12,7 @@ import CocoaMQTT
 
 class ViewController: UIViewController {
 
-    //let defaultHost = "localhost"
+    let defaultHost = "localhost"
 
     var mqtt: CocoaMQTT?
     var animal: String?
@@ -50,12 +50,16 @@ class ViewController: UIViewController {
         let clientID = "CocoaMQTT-\(animal!)-" + String(ProcessInfo().processIdentifier)
         mqtt = CocoaMQTT(clientID: clientID, host: defaultHost, port: 6301)
 
-        mqtt?.topicAliasMaximum = 60
-        mqtt?.sessionExpiryInterval = 0
-        mqtt?.receiveMaximum = 100
+        let connectProperties = FrameConnectProperties.init()
+        connectProperties.topicAliasMaximum = 60
+        connectProperties.sessionExpiryInterval = 0
+        connectProperties.receiveMaximum = 100
+        connectProperties.maximumPacketSize = 500
 
+        mqtt!.connectProperties = connectProperties
         mqtt!.username = ""
         mqtt!.password = ""
+
         let lastWillMessage = CocoaMQTTMessage(topic: "/will", string: "dieout")
         lastWillMessage.contentType = "JSON"
         lastWillMessage.willExpiryInterval = 0
