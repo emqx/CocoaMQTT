@@ -85,20 +85,19 @@ public class CocoaMQTTMessage: NSObject {
         /// 3.1.3.2.5 Content Type
         if var contentType = self.contentType {
             if isUTF8EncodedData {
-                contentType = (NSString(bytes: contentType, length: payload.count, encoding: String.Encoding.utf8.rawValue) as String?)!
+                contentType = (NSString(bytes: contentType, length: contentType.count, encoding: String.Encoding.utf8.rawValue) as String?)!
             }else{
-                contentType = (NSString(bytes: contentType, length: payload.count, encoding: String.Encoding.ascii.rawValue) as String?)!
+                contentType = (NSString(bytes: contentType, length: contentType.count, encoding: String.Encoding.ascii.rawValue) as String?)!
             }
             properties += getMQTTPropertyData(type: CocoaMQTTPropertyName.contentType.rawValue, value: contentType.bytesWithLength)
         }
-//        print(self.contentType)
-//        print(properties)
+
         /// 3.1.3.2.6 Response Topic
         if var willResponseTopic = self.willResponseTopic {
             if isUTF8EncodedData {
-                willResponseTopic = (NSString(bytes: willResponseTopic, length: payload.count, encoding: String.Encoding.utf8.rawValue) as String?)!
+                willResponseTopic = (NSString(bytes: willResponseTopic, length: willResponseTopic.count, encoding: String.Encoding.utf8.rawValue) as String?)!
             }else{
-                willResponseTopic = (NSString(bytes: willResponseTopic, length: payload.count, encoding: String.Encoding.ascii.rawValue) as String?)!
+                willResponseTopic = (NSString(bytes: willResponseTopic, length: willResponseTopic.count, encoding: String.Encoding.ascii.rawValue) as String?)!
             }
             properties += getMQTTPropertyData(type: CocoaMQTTPropertyName.responseTopic.rawValue, value: willResponseTopic.bytesWithLength)
         }
@@ -112,17 +111,15 @@ public class CocoaMQTTMessage: NSObject {
             for (value) in dictValues {
                 var res = value
                 if isUTF8EncodedData {
-                    res = (NSString(bytes: res, length: payload.count, encoding: String.Encoding.utf8.rawValue) as String?)!
+                    res = (NSString(bytes: res, length: res.count, encoding: String.Encoding.utf8.rawValue) as String?)!
                 }else{
-                    res = (NSString(bytes: res, length: payload.count, encoding: String.Encoding.ascii.rawValue) as String?)!
+                    res = (NSString(bytes: res, length: res.count, encoding: String.Encoding.ascii.rawValue) as String?)!
                 }
                 properties += getMQTTPropertyData(type: CocoaMQTTPropertyName.userProperty.rawValue, value: res.bytesWithLength)
             }
         }
 
 
-//        /// 3.1.3.2.1 Property Length
-//        retVal += [UInt8(properties.count)]
         retVal += properties
         return retVal
     }
