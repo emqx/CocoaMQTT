@@ -48,11 +48,13 @@ class ViewController: UIViewController {
     }
     
     func mqttSetting() {
-        let clientID = "CocoaMQTT-\(animal!)-" + String(ProcessInfo().processIdentifier)
+        //let clientID = "CocoaMQTT-\(animal!)-" + String(ProcessInfo().processIdentifier)
+        let clientID = "asd"
         mqtt = CocoaMQTT(clientID: clientID, host: defaultHost, port: 6301)
         mqtt!.username = ""
         mqtt!.password = ""
-        //mqtt!.willMessage = CocoaMQTTMessage(topic: "wlw", string: "dieout")
+        let lastWillMessage = CocoaMQTTMessage(topic: "/will", string: "dieout")
+        mqtt!.willMessage = lastWillMessage
         mqtt!.keepAlive = 60
         mqtt!.delegate = self
     }
@@ -108,6 +110,7 @@ class ViewController: UIViewController {
         mqtt!.willMessage = CocoaMQTTMessage(topic: "/will", string: "dieout")
         mqtt!.keepAlive = 60
         mqtt!.delegate = self
+
     }
     
     func getClientCertFromP12File(certName: String, certPassword: String) -> CFArray? {
