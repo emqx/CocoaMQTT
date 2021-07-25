@@ -62,27 +62,10 @@ struct FrameConnect: Frame {
 
     //3.1.3.1 Client Identifier (ClientID)
     var clientID: String
-    //3.1.3.2 Will Properties
-    var willProperties: Data?
-    //3.1.3.2.2 Will Delay Interval
-    var willDelayInterval: UInt32?
-    //3.1.3.2.3 Payload Format Indicator
-    var payloadFormatIndicator: UInt8?
-    //3.1.3.2.4 Message Expiry Interval
-    var messageExpiryInterval: UInt32?
 
-    //3.1.3.2.5 Content Type
-    var contentType: String?
-    //3.1.3.2.6 Response Topic
-    var responseTopic: String?
-    //3.1.3.2.7 Correlation Data
-    var correlationData: Data?
-    //3.1.3.2.8 User Property
-    var willUserProperties: [String: String]?
-    //3.1.3.3 Will Topic
-    var willTopic: String?
-    //3.1.3.4 Will Payload
-    var willPayload: Data?
+
+
+
 
 
     // --- Attributes End
