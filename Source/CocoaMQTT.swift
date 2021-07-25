@@ -84,9 +84,8 @@ protocol CocoaMQTTClient {
     var cleanSession: Bool {get set}
     var keepAlive: UInt16 {get set}
     var willMessage: CocoaMQTTMessage? {get set}
-    var sessionExpiryInterval: UInt32 {get set}
-    var receiveMaximum: UInt16 {get set}
-    var topicAliasMaximum: UInt16 {get set}
+    var connectProperties: FrameConnectProperties? {get set}
+
 
     /* Basic Properties */
 
@@ -204,16 +203,8 @@ public class CocoaMQTT: NSObject, CocoaMQTTClient {
     public var maxAutoReconnectTimeInterval: UInt16 = 128 // 128 seconds
 
 
-    ///3.1.2.11.2 Session Expiry Interval
-    ///Followed by the Four Byte Integer representing the Session Expiry Interval in seconds. It is a Protocol Error to include the Session Expiry Interval more than once.
-    public var sessionExpiryInterval: UInt32 = 0
-
-    ///3.1.2.11.3 Receive Maximum
-    public var receiveMaximum: UInt16 = 65535
-
-    ///3.1.2.11.5 Topic Alias Maximum
-    public var topicAliasMaximum: UInt16 = 0
-
+    /// 3.1.2.11 CONNECT Properties
+    public var connectProperties: FrameConnectProperties?
 
 
 
@@ -321,10 +312,7 @@ public class CocoaMQTT: NSObject, CocoaMQTTClient {
         connect.willMsg = willMessage
         connect.cleansess = cleanSession
 
-        connect.sessionExpiryInterval = sessionExpiryInterval
-        connect.receiveMaximum = receiveMaximum
-        connect.topicAliasMaximum = topicAliasMaximum
-
+        connect.connectProperties = connectProperties
 
         send(connect)
         reader!.start()
