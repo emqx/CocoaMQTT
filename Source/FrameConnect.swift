@@ -136,7 +136,7 @@ extension FrameConnect {
 
         //MQTT 5.0
         header += beVariableByteInteger(length: self.properties().count)
-        header += self.properties()
+        
 
         return header
     }
