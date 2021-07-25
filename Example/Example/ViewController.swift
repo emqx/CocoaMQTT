@@ -11,9 +11,8 @@ import CocoaMQTT
 
 
 class ViewController: UIViewController {
-    //let defaultHost = "broker.emqx.io"
-    let defaultHost = "iot-platform.cloud"
-    //let defaultHost = "mqtt.p2hp.com"
+
+    let defaultHost = "localhost"
 
     var mqtt: CocoaMQTT?
     var animal: String?
@@ -48,8 +47,7 @@ class ViewController: UIViewController {
     }
     
     func mqttSetting() {
-        //let clientID = "CocoaMQTT-\(animal!)-" + String(ProcessInfo().processIdentifier)
-        let clientID = "asd"
+        let clientID = "CocoaMQTT-\(animal!)-" + String(ProcessInfo().processIdentifier)
         mqtt = CocoaMQTT(clientID: clientID, host: defaultHost, port: 6301)
         mqtt!.username = ""
         mqtt!.password = ""
