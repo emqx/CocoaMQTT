@@ -31,7 +31,7 @@ import CocoaAsyncSocket
 @objc public protocol CocoaMQTTDelegate {
 
     ///
-    func mqtt(_ mqtt: CocoaMQTT, didConnectAck ack: CocoaMQTTCONNACKReasonCode)
+    func mqtt(_ mqtt: CocoaMQTT, didConnectAck ack: CocoaMQTTCONNACKReasonCode, connectAckProperties properties: FrameConnAckProperties)
 
     ///
     func mqtt(_ mqtt: CocoaMQTT, didPublishMessage message: CocoaMQTTMessage, id: UInt16)
@@ -666,7 +666,8 @@ extension CocoaMQTT: CocoaMQTTReaderDelegate {
             internal_disconnect()
         }
 
-        delegate?.mqtt(self, didConnectAck: connack.reasonCode)
+
+        delegate?.mqtt(self, didConnectAck: connack.reasonCode, connectAckProperties: connack.connackProperties!)
         didConnectAck(self, connack.reasonCode)
     }
 

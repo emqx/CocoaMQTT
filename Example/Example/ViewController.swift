@@ -14,6 +14,7 @@ class ViewController: UIViewController {
 
     let defaultHost = "localhost"
 
+
     var mqtt: CocoaMQTT?
     var animal: String?
 
@@ -181,12 +182,14 @@ extension ViewController: CocoaMQTTDelegate {
         completionHandler(true)
     }
     
-    func mqtt(_ mqtt: CocoaMQTT, didConnectAck ack: CocoaMQTTCONNACKReasonCode) {
+    func mqtt(_ mqtt: CocoaMQTT, didConnectAck ack: CocoaMQTTCONNACKReasonCode, connectAckProperties properties: FrameConnAckProperties) {
         TRACE("ack: \(ack)")
 
         if ack == .success {
+            print("properties maximumPacketSize: \(String(describing: properties.maximumPacketSize))")
+            print("properties topicAliasMaximum: \(String(describing: properties.topicAliasMaximum))")
             mqtt.subscribe("chat/room/animals/client/+", qos: CocoaMQTTQoS.qos1)
-            
+
             let chatViewController = storyboard?.instantiateViewController(withIdentifier: "ChatViewController") as? ChatViewController
             chatViewController?.mqtt = mqtt
             navigationController!.pushViewController(chatViewController!, animated: true)
