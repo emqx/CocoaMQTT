@@ -8,7 +8,12 @@
 import Foundation
 
 public class FrameConnectProperties: NSObject {
-
+    
+    public static let shared = FrameConnectProperties()
+    private override init() {
+        super.init()
+    }
+    
     //3.1.2.11.1 Property Length
     //public var propertyLength: UInt8?
     //3.1.2.11.2 Session Expiry Interval
@@ -80,4 +85,7 @@ public class FrameConnectProperties: NSObject {
 
         return properties
     }
+
+
+
 }

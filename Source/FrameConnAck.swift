@@ -83,8 +83,8 @@ extension FrameConnAck: InitialWithBytes {
         reasonCode = ack
 
         propertiesBytes = bytes
-        self.connackProperties = FrameConnAckProperties.init(connackData: bytes)
-        self.connackProperties!.properties()
+        self.connackProperties = FrameConnAckProperties.shared
+        self.connackProperties!.properties(connackData: bytes)
     }
 }
 

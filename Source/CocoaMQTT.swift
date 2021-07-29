@@ -40,7 +40,7 @@ import CocoaAsyncSocket
     func mqtt(_ mqtt: CocoaMQTT, didPublishAck id: UInt16)
 
     ///
-    func mqtt(_ mqtt: CocoaMQTT, didReceiveMessage message: CocoaMQTTMessage, id: UInt16 )
+    func mqtt(_ mqtt: CocoaMQTT, didReceiveMessage message: CocoaMQTTMessage, id: UInt16, publish: DecodeFramePublish)
 
     ///
     func mqtt(_ mqtt: CocoaMQTT, didSubscribeTopics success: NSDictionary, failed: [String])
@@ -106,8 +106,8 @@ protocol CocoaMQTTClient {
     func unsubscribe(_ topic: String)
     func unsubscribe(_ topics: [String])
 
-    func publish(_ topic: String, withString string: String, qos: CocoaMQTTQoS, retained: Bool) -> Int
-    func publish(_ message: CocoaMQTTMessage) -> Int
+    func publish(_ topic: String, withString string: String, qos: CocoaMQTTQoS,  DUP: Bool, retained: Bool, properties: FramePublishProperties) -> Int
+    func publish(_ message: CocoaMQTTMessage, qos: CocoaMQTTQoS, DUP: Bool, retained: Bool, properties: FramePublishProperties) -> Int
 
     /* PUBLISH/SUBSCRIBE */
 }
@@ -415,9 +415,10 @@ public class CocoaMQTT: NSObject, CocoaMQTTClient {
     ///     - 1-65535 will be returned, if the messages's qos is qos1/qos2
     ///     - -1 will be returned, if the messages queue is full
     @discardableResult
-    public func publish(_ topic: String, withString string: String, qos: CocoaMQTTQoS = .qos1, retained: Bool = false) -> Int {
+    public func publish(_ topic: String, withString string: String, qos: CocoaMQTTQoS = .qos1, DUP: Bool = false
+, retained: Bool = false, properties: FramePublishProperties) -> Int {
         let message = CocoaMQTTMessage(topic: topic, string: string, qos: qos, retained: retained)
-        return publish(message)
+        return publish(message, qos: qos ,DUP: DUP,retained: retained, properties: properties)
     }
 
     /// Publish a message to broker
@@ -425,7 +426,7 @@ public class CocoaMQTT: NSObject, CocoaMQTTClient {
     /// - Parameters:
     ///   - message: Message
     @discardableResult
-    public func publish(_ message: CocoaMQTTMessage) -> Int {
+    public func publish(_ message: CocoaMQTTMessage, qos: CocoaMQTTQoS = .qos1, DUP: Bool = false, retained: Bool = false, properties: FramePublishProperties) -> Int {
         let msgid: UInt16
 
         if message.qos == .qos0 {
@@ -440,7 +441,9 @@ public class CocoaMQTT: NSObject, CocoaMQTTClient {
                                  payload: message.payload,
                                  qos: message.qos,
                                  msgid: msgid)
-
+        frame.QoS = qos
+        frame.DUP = DUP
+        frame.publishProperties = properties
         frame.retained = message.retained
 
         delegateQueue.async {
@@ -674,12 +677,12 @@ extension CocoaMQTT: CocoaMQTTReaderDelegate {
     func didReceive(_ reader: CocoaMQTTReader, publish: FramePublish) {
         printDebug("RECV: \(publish)")
 
-        let message = CocoaMQTTMessage(topic: publish.topic, payload: publish.payload(), qos: publish.qos, retained: publish.retained)
+        let message = CocoaMQTTMessage(topic: publish.recTopic, payload: publish.payload(), qos: publish.qos, retained: publish.retained)
 
         message.duplicated = publish.dup
 
         printInfo("Received message: \(message)")
-        delegate?.mqtt(self, didReceiveMessage: message, id: publish.msgid)
+        delegate?.mqtt(self, didReceiveMessage: message, id: publish.msgid,  publish: publish.publishRecProperties!)
         didReceiveMessage(self, message, publish.msgid)
 
         if message.qos == .qos1 {

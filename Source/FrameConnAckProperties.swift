@@ -10,16 +10,23 @@ import Foundation
 
 public class FrameConnAckProperties: NSObject {
 
+    static let shared = FrameConnAckProperties()
+
+//    var connackData: [UInt8]
+//
+//    init(connackData: [UInt8]) {
+//        connackData = connackData
+//    }
 
     //3.2.2.3 CONNACK Properties
     //3.2.2.3.1 Property Length
-    public var propertyLength: UInt32?
+    public var propertyLength: Int?
     //3.2.2.3.2 Session Expiry Interval
     public var sessionExpiryInterval: UInt32?
     //3.2.2.3.3 Receive Maximum
     public var receiveMaximum: UInt16?
     //3.2.2.3.4 Maximum QoS
-    public var maximumQoS: CocoaMQTTCONNACKMaximumQoS?
+    public var maximumQoS: CocoaMQTTQoS?
     //3.2.2.3.5 Retain Available
     public var retainAvailable: Bool?
     //3.2.2.3.6 Maximum Packet Size
@@ -31,7 +38,7 @@ public class FrameConnAckProperties: NSObject {
     //3.2.2.3.9 Reason String
     public var reasonString: String?
     //3.2.2.3.10 User Property
-    public var userProperties: [String: String]?
+    public var userProperty: [String: String]?
     //3.2.2.3.11 Wildcard Subscription Available
     public var wildcardSubscriptionAvailable: Bool?
     //3.2.2.3.12 Subscription Identifiers Available
@@ -49,24 +56,20 @@ public class FrameConnAckProperties: NSObject {
     //3.2.2.3.18 Authentication Data
     public var authenticationData = [UInt8]()
 
-    var connackData: [UInt8]
 
-    init(connackData: [UInt8]) {
-        self.connackData = connackData
-    }
 
-    public func properties(){
+    public func properties(connackData: [UInt8]){
         //3.2.2.3 CONNACK Properties
-        var index = 2
-        let propertyLengthVariableByteInteger = decodeVariableByteInteger(data: self.connackData, offset: index)
-        propertyLength = UInt32(propertyLengthVariableByteInteger.res)
+        var index = 2  //sessPresent 0 reasonCode 1 
+        let propertyLengthVariableByteInteger = decodeVariableByteInteger(data: connackData, offset: index)
+        propertyLength = propertyLengthVariableByteInteger.res
         index = propertyLengthVariableByteInteger.newOffset
-
+        var occupyIndex = index
 
         // properties
 
-        while UInt32(index) - UInt32(propertyLengthVariableByteInteger.newOffset) < propertyLength! {
-            let resVariableByteInteger = decodeVariableByteInteger(data: self.connackData, offset: index)
+        while index - occupyIndex < propertyLength! {
+            let resVariableByteInteger = decodeVariableByteInteger(data: connackData, offset: index)
             index = resVariableByteInteger.newOffset
             let propertyNameByte = resVariableByteInteger.res
             guard let propertyName = CocoaMQTTPropertyName(rawValue: UInt8(propertyNameByte)) else {
@@ -74,16 +77,25 @@ public class FrameConnAckProperties: NSObject {
             }
             switch propertyName.rawValue {
             case CocoaMQTTPropertyName.sessionExpiryInterval.rawValue:
-                sessionExpiryInterval = UInt32(integerCompute(data: self.connackData, formatType: formatInt.formatUint32.rawValue, offset: index)!)
-                index += 4
+//                sessionExpiryInterval = UInt32(integerCompute(data: connackData, formatType: formatInt.formatUint32.rawValue, offset: index)!)
+//                index += 4
+
+                let comRes = integerCompute(data: connackData, formatType: formatInt.formatUint32.rawValue, offset: index)
+                sessionExpiryInterval = UInt32(comRes!.res)
+                index = comRes!.newOffset
+
             case CocoaMQTTPropertyName.receiveMaximum.rawValue:
-                receiveMaximum = UInt16(integerCompute(data: self.connackData, formatType: formatInt.formatUint16.rawValue, offset: index)!)
-                index += 2
+//                receiveMaximum = UInt16(integerCompute(data: connackData, formatType: formatInt.formatUint16.rawValue, offset: index)!)
+//                index += 2
+
+                let comRes = integerCompute(data: connackData, formatType: formatInt.formatUint16.rawValue, offset: index)
+                receiveMaximum = UInt16(comRes!.res)
+                index = comRes!.newOffset
             case CocoaMQTTPropertyName.maximumQoS.rawValue:
-                if index > self.connackData.count {
+                if index > connackData.count {
                     break
                 }
-                if self.connackData[index] & 0x01 > 0 {
+                if connackData[index] & 0x01 > 0 {
                     maximumQoS = .qos0
                 } else {
                     maximumQoS = .qos1
@@ -91,29 +103,38 @@ public class FrameConnAckProperties: NSObject {
 
                 index += 1
             case CocoaMQTTPropertyName.retainAvailable.rawValue:
-                if index > self.connackData.count  {
+                if index > connackData.count  {
                     break
                 }
-                if self.connackData[index] & 0x01 > 0 {
+                if connackData[index] & 0x01 > 0 {
                     retainAvailable = true
                 } else {
                     retainAvailable = false
                 }
                 index += 1
             case CocoaMQTTPropertyName.maximumPacketSize.rawValue:
-                maximumPacketSize = UInt32(integerCompute(data: self.connackData, formatType: formatInt.formatUint32.rawValue, offset: index)!)
-                index += 4
+//                maximumPacketSize = UInt32(integerCompute(data: connackData, formatType: formatInt.formatUint32.rawValue, offset: index)!)
+//                index += 4
+
+                let comRes = integerCompute(data: connackData, formatType: formatInt.formatUint32.rawValue, offset: index)
+                maximumPacketSize = UInt32(comRes!.res)
+                index = comRes!.newOffset
             case CocoaMQTTPropertyName.assignedClientIdentifier.rawValue:
-                guard let result = unsignedByteToString(data: self.connackData, offset: index) else {
+                guard let result = unsignedByteToString(data: connackData, offset: index) else {
                     break
                 }
                 assignedClientIdentifier = result.resStr
                 index = result.newOffset
             case CocoaMQTTPropertyName.topicAliasMaximum.rawValue:
-                topicAliasMaximum = UInt16(integerCompute(data: self.connackData, formatType: formatInt.formatUint16.rawValue, offset: index)!)
-                index += 2
+//                topicAliasMaximum = UInt16(integerCompute(data: connackData, formatType: formatInt.formatUint16.rawValue, offset: index)!)
+//                index += 2
+
+                let comRes = integerCompute(data: connackData, formatType: formatInt.formatUint16.rawValue, offset: index)
+                topicAliasMaximum = UInt16(comRes!.res)
+                index = comRes!.newOffset
+
             case CocoaMQTTPropertyName.reasonString.rawValue:
-                guard let result = unsignedByteToString(data: self.connackData, offset: index) else {
+                guard let result = unsignedByteToString(data: connackData, offset: index) else {
                     break
                 }
                 reasonString = result.resStr
@@ -121,73 +142,78 @@ public class FrameConnAckProperties: NSObject {
             case CocoaMQTTPropertyName.userProperty.rawValue:
                 var key:String?
                 var value:String?
-                guard let keyRes = unsignedByteToString(data: self.connackData, offset: index) else {
+                guard let keyRes = unsignedByteToString(data: connackData, offset: index) else {
                     break
                 }
                 key = keyRes.resStr
                 index = keyRes.newOffset
 
-                guard let valRes = unsignedByteToString(data: self.connackData, offset: index) else {
+                guard let valRes = unsignedByteToString(data: connackData, offset: index) else {
                     break
                 }
                 value = valRes.resStr
                 index = valRes.newOffset
 
-                userProperties![key!] = value
+                userProperty![key!] = value
 
             case CocoaMQTTPropertyName.wildcardSubscriptionAvailable.rawValue:
-                if index > self.connackData.count  {
+                if index > connackData.count  {
                     break
                 }
-                if self.connackData[index] & 0x01 > 0 {
+                if connackData[index] & 0x01 > 0 {
                     wildcardSubscriptionAvailable = true
                 } else {
                     wildcardSubscriptionAvailable = false
                 }
                 index += 1
             case CocoaMQTTPropertyName.subscriptionIdentifiersAvailable.rawValue:
-                if index > self.connackData.count  {
+                if index > connackData.count  {
                     break
                 }
-                if self.connackData[index] & 0x01 > 0 {
+                if connackData[index] & 0x01 > 0 {
                     subscriptionIdentifiersAvailable = true
                 } else {
                     subscriptionIdentifiersAvailable = false
                 }
                 index += 1
             case CocoaMQTTPropertyName.sharedSubscriptionAvailable.rawValue:
-                if index > self.connackData.count  {
+                if index > connackData.count  {
                     break
                 }
-                if self.connackData[index] & 0x01 > 0 {
+                if connackData[index] & 0x01 > 0 {
                     sharedSubscriptionAvailable = true
                 } else {
                     sharedSubscriptionAvailable = false
                 }
                 index += 1
             case CocoaMQTTPropertyName.serverKeepAlive.rawValue:
-                serverKeepAlive = UInt16(integerCompute(data: self.connackData, formatType: formatInt.formatUint16.rawValue, offset: index)!)
-                    index += 2
+//                serverKeepAlive = UInt16(integerCompute(data: connackData, formatType: formatInt.formatUint16.rawValue, offset: index)!)
+//                    index += 2
+
+                let comRes = integerCompute(data: connackData, formatType: formatInt.formatUint16.rawValue, offset: index)
+                serverKeepAlive = UInt16(comRes!.res)
+                index = comRes!.newOffset
+
             case CocoaMQTTPropertyName.responseInformation.rawValue:
-                guard let valRes = unsignedByteToString(data: self.connackData, offset: index) else {
+                guard let valRes = unsignedByteToString(data: connackData, offset: index) else {
                     break
                 }
                 responseInformation = valRes.resStr
                 index = valRes.newOffset
             case CocoaMQTTPropertyName.serverReference.rawValue:
-                guard let valRes = unsignedByteToString(data: self.connackData, offset: index) else {
+                guard let valRes = unsignedByteToString(data: connackData, offset: index) else {
                     break
                 }
                 serverReference = valRes.resStr
                 index = valRes.newOffset
             case CocoaMQTTPropertyName.authenticationMethod.rawValue:
-                guard let valRes = unsignedByteToString(data: self.connackData, offset: index) else {
+                guard let valRes = unsignedByteToString(data: connackData, offset: index) else {
                     break
                 }
                 authenticationMethod = valRes.resStr
                 index = valRes.newOffset
             case CocoaMQTTPropertyName.authenticationData.rawValue:
-                guard let valRes = unsignedByteToBinary(data: self.connackData, offset: index) else {
+                guard let valRes = unsignedByteToBinary(data: connackData, offset: index) else {
                     break
                 }
                 authenticationData = valRes.resStr

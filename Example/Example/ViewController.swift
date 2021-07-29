@@ -12,8 +12,10 @@ import CocoaMQTT
 
 class ViewController: UIViewController {
 
-    let defaultHost = "localhost"
-
+    //let defaultHost = "localhost"
+    //let defaultHost = "broker.emqx.io"
+    let defaultHost = "iot-platform.cloud"
+    //let defaultHost = "mqtt.p2hp.com"
 
     var mqtt: CocoaMQTT?
     var animal: String?
@@ -51,8 +53,8 @@ class ViewController: UIViewController {
         let clientID = "CocoaMQTT-\(animal!)-" + String(ProcessInfo().processIdentifier)
         mqtt = CocoaMQTT(clientID: clientID, host: defaultHost, port: 6301)
 
-        let connectProperties = FrameConnectProperties.init()
-        connectProperties.topicAliasMaximum = 60
+        let connectProperties = FrameConnectProperties.shared
+        connectProperties.topicAliasMaximum = 0
         connectProperties.sessionExpiryInterval = 0
         connectProperties.receiveMaximum = 100
         connectProperties.maximumPacketSize = 500
@@ -211,7 +213,8 @@ extension ViewController: CocoaMQTTDelegate {
         TRACE("id: \(id)")
     }
     
-    func mqtt(_ mqtt: CocoaMQTT, didReceiveMessage message: CocoaMQTTMessage, id: UInt16 ) {
+    func mqtt(_ mqtt: CocoaMQTT, didReceiveMessage message: CocoaMQTTMessage, id: UInt16, publish: DecodeFramePublish ) {
+        print("publish.contentType \(String(describing: publish.contentType))")
         TRACE("message: \(message.string.description), id: \(id)")
         let name = NSNotification.Name(rawValue: "MQTTMessageNotification" + animal!)
 
