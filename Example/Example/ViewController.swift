@@ -12,10 +12,8 @@ import CocoaMQTT
 
 class ViewController: UIViewController {
 
-    //let defaultHost = "localhost"
-    //let defaultHost = "broker.emqx.io"
-    let defaultHost = "iot-platform.cloud"
-    //let defaultHost = "mqtt.p2hp.com"
+    let defaultHost = "localhost"
+
 
     var mqtt: CocoaMQTT?
     var animal: String?
@@ -215,6 +213,7 @@ extension ViewController: CocoaMQTTDelegate {
     
     func mqtt(_ mqtt: CocoaMQTT, didReceiveMessage message: CocoaMQTTMessage, id: UInt16, publish: DecodeFramePublish ) {
         print("publish.contentType \(String(describing: publish.contentType))")
+        
         TRACE("message: \(message.string.description), id: \(id)")
         let name = NSNotification.Name(rawValue: "MQTTMessageNotification" + animal!)
 
