@@ -57,9 +57,16 @@ class ChatViewController: UIViewController {
     }
     
     @IBAction func sendMessage() {
+
+        
         let message = messageTextView.text
 
-        mqtt!.publish("chat/room/animals/client/" + animal!, withString: message!, qos: .qos1)
+        let publishProperties = MqttPublishProperties.shared
+        publishProperties.contentType = "JSON"
+
+
+        mqtt!.publish("chat/room/animals/client/" + animal!, withString: message!, qos: .qos2, DUP: false, retained: false, properties: publishProperties)
+        
         messageTextView.text = ""
         sendMessageButton.isEnabled = false
         messageTextViewHeightConstraint.constant = messageTextView.contentSize.height
@@ -170,19 +177,8 @@ extension ChatViewController: UITableViewDataSource, UITableViewDelegate {
         let message = messages[indexPath.row]
         print("message.sender: \(message.sender)    animal:\(String(describing: tabBarController?.selectedViewController?.tabBarItem.title!))   message.content:\( message.content)"   )
 
-
-        //print(client)
-//        var isRightCell: Bool = true
-//        if message.id != 0 {
-//            if animal?.description == message.sender {
-//                isRightCell = true
-//            }else{
-//                isRightCell = false
-//            }
-//        }
         if message.sender == animal {
             let cell = tableView.dequeueReusableCell(withIdentifier: "rightMessageCell", for: indexPath) as! ChatRightMessageCell
-            print(message.content)
             cell.contentLabel.text = message.content
             cell.avatarImageView.image = UIImage(named: animal!)
             return cell
