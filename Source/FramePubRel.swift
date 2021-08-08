@@ -22,7 +22,8 @@ struct FramePubRel: Frame {
 
 
     //3.6.2.1 PUBREL Reason Code
-    public var reasonCode: CocoaMQTTPUBRELReasonCode?
+    public var reasonCode: CocoaMQTTPUBRELReasonCode = .success
+
 
     //3.6.2.2 PUBREL Properties
     //3.6.2.2.2 Reason String
@@ -50,8 +51,7 @@ extension FramePubRel {
         //3.6.2 MSB+LSB
         var header = msgid.hlBytes
         //3.6.2.1 PUBACK Reason Code
-        header += [reasonCode!.rawValue]
-
+        header += [reasonCode.rawValue]
         //MQTT 5.0
         header += beVariableByteInteger(length: self.properties().count)
 
@@ -98,7 +98,7 @@ extension FramePubRel: InitialWithBytes {
         guard packetFixedHeaderType == 0x62 else {
             return nil
         }
-        guard bytes.count == 2 || bytes.count == 4 else {
+        guard bytes.count >= 2 else {
             return nil
         }
         

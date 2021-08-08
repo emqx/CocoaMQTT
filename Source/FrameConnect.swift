@@ -42,7 +42,7 @@ struct FrameConnect: Frame {
 
 
     //3.1.2.11 CONNECT Properties
-    var connectProperties: FrameConnectProperties?
+    var connectProperties: MqttConnectProperties?
 
 
     var authenticationData: Data?
@@ -118,9 +118,9 @@ extension FrameConnect {
 
     func payload() -> [UInt8] {
         var payload = [UInt8]()
-        print("0 payload \(payload)")
+
         payload += clientID.bytesWithLength
-        print("1 payload \(payload)")
+
         if let will = willMsg {
             payload += beVariableByteInteger(length: will.properties.count)
             payload += will.properties
@@ -128,7 +128,7 @@ extension FrameConnect {
             payload += UInt16(will.payload.count).hlBytes
             payload += will.payload
         }
-        print("2 payload \(payload)")
+
         if let username = username {
             payload += username.bytesWithLength
 
