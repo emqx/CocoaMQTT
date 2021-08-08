@@ -100,7 +100,7 @@ extension FramePubComp: InitialWithBytes {
             return nil
         }
         
-        guard bytes.count == 2 else {
+        guard bytes.count >= 2 else {
             return nil
         }
         
