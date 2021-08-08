@@ -66,21 +66,21 @@ func getMQTTPropertyLength(type:UInt8, value:[UInt8]) -> [UInt8] {
 }
 
 
-func integerCompute(data:[UInt8], formatType:Int, offset:Int) -> (Int)?{
+func integerCompute(data:[UInt8], formatType:Int, offset:Int) -> (res: Int, newOffset: Int)?{
 
     switch formatType {
     case formatInt.formatUint8.rawValue:
-        return unsignedByteToInt(data: data[offset])
+        return (unsignedByteToInt(data: data[offset]), offset + 1)
     case formatInt.formatUint16.rawValue:
-        return unsignedBytesToInt(data0: data[offset], data1: data[offset + 1])
+        return (unsignedBytesToInt(data0: data[offset], data1: data[offset + 1]), offset + 2)
     case formatInt.formatUint32.rawValue:
-        return unsignedBytesToInt(data0: data[offset], data1: data[offset + 1], data2: data[offset + 2], data3: data[offset + 3])
+        return (unsignedBytesToInt(data0: data[offset], data1: data[offset + 1], data2: data[offset + 2], data3: data[offset + 3]), offset + 4)
     case formatInt.formatSint8.rawValue:
-        return unsignedToSigned(unsign: unsignedByteToInt(data: data[offset]), size: 8)
+        return (unsignedToSigned(unsign: unsignedByteToInt(data: data[offset]), size: 8), offset + 1)
     case formatInt.formatSint16.rawValue:
-        return unsignedToSigned(unsign: unsignedBytesToInt(data0: data[offset], data1: data[offset + 1]), size: 16)
+        return (unsignedToSigned(unsign: unsignedBytesToInt(data0: data[offset], data1: data[offset + 1]), size: 16), offset + 2)
     case formatInt.formatSint32.rawValue:
-        return unsignedToSigned(unsign: unsignedBytesToInt(data0: data[offset], data1: data[offset + 1], data2: data[offset + 2], data3: data[offset + 3]), size: 32)
+        return (unsignedToSigned(unsign: unsignedBytesToInt(data0: data[offset], data1: data[offset + 1], data2: data[offset + 2], data3: data[offset + 3]), size: 32), offset + 4)
     default:
         print("integerCompute nothing")
     }
@@ -93,12 +93,12 @@ func unsignedByteToInt(data: UInt8) -> (Int){
 }
 
 func unsignedBytesToInt(data0: UInt8, data1: UInt8) -> (Int){
-    return (unsignedByteToInt(data: data1) << 8) + unsignedByteToInt(data: data0)
+    return (unsignedByteToInt(data: data0) << 8) + unsignedByteToInt(data: data1)
 }
 
 
 func unsignedBytesToInt(data0: UInt8, data1: UInt8, data2: UInt8, data3: UInt8) -> (Int){
-    return unsignedByteToInt(data: data0) + (unsignedByteToInt(data: data1) << 8) + (unsignedByteToInt(data: data2) << 16) + (unsignedByteToInt(data: data3) << 24)
+    return unsignedByteToInt(data: data3) + (unsignedByteToInt(data: data2) << 8) + (unsignedByteToInt(data: data1) << 16) + (unsignedByteToInt(data: data0) << 24)
 }
 
 
@@ -118,8 +118,11 @@ func unsignedByteToString(data:[UInt8], offset:Int) -> (resStr: String, newOffse
         return nil
     }
 
-    let length: UInt16 =  UInt16(integerCompute(data: data, formatType: formatInt.formatUint16.rawValue, offset: offset)!)
-    newOffset += 2
+    var length = 0
+    let comRes = integerCompute(data: data, formatType: formatInt.formatUint16.rawValue, offset: newOffset)
+    length = comRes!.res
+    newOffset = comRes!.newOffset
+
 
     var stringData = Data()
     for _ in 0 ..< length {
@@ -141,8 +144,11 @@ func unsignedByteToBinary(data:[UInt8], offset:Int) -> (resStr: [UInt8], newOffs
         return nil
     }
 
-    let length: UInt16 =  UInt16(integerCompute(data: data, formatType: formatInt.formatUint16.rawValue, offset: offset)!)
-    newOffset += 2
+    var length = 0
+    let comRes = integerCompute(data: data, formatType: formatInt.formatUint16.rawValue, offset: newOffset)
+    length = comRes!.res
+    newOffset = comRes!.newOffset
+
 
     var res = [UInt8]()
     for _ in 0 ..< length {

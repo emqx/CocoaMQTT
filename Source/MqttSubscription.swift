@@ -1,0 +1,76 @@
+//
+//  CocoaMMQTTopicFilter.swift
+//  CocoaMQTT
+//
+//  Created by liwei wang on 2021/7/15.
+//
+
+import Foundation
+
+///3.8.3.1 Subscription Options
+public class MqttSubscription {
+    public var topic: [String]
+    public var qos = CocoaMQTTQoS.qos1
+    public var noLocal:Bool = false
+    public var retainAsPublished:Bool = false
+    public var retainHandling:UInt16 = 0;
+
+    init(topic: [String]) {
+        self.topic = topic
+        self.qos = CocoaMQTTQoS.qos1
+        self.noLocal = false
+        self.retainAsPublished = false
+        self.retainHandling = 0
+    }
+
+    var subscriptionData:[UInt8]{
+        var data = [UInt8]()
+
+        for t in self.topic {
+            data += t.bytesWithLength
+        }
+
+
+        var options:Int = 0;
+        switch qos {
+        case .qos0:
+            options = options | 0b0000_0000
+        case .qos1:
+            options = options | 0b0000_0001
+        case .qos2:
+            options = options | 0b0000_0010
+        default:
+            printDebug("topucFilter qos failure")
+        }
+
+        switch noLocal {
+        case true:
+            options = options | 0b0000_0100
+        case false:
+            options = options | 0b0000_0000
+        }
+
+        switch retainAsPublished {
+        case true:
+            options = options | 0b0000_1000
+        case false:
+            options = options | 0b0000_0000
+        }
+
+        switch retainHandling {
+        case 0:
+            options = options | 0b0000_0000
+        case 1:
+            options = options | 0b0001_0000
+        case 2:
+            options = options | 0b0010_0000
+        default:
+            printDebug("topucFilter retainHandling failure")
+        }
+
+        data += [UInt8(options)]
+
+        return data
+    }
+
+}

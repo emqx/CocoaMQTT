@@ -23,12 +23,12 @@ struct FramePubRec: Frame {
     public var reasonCode: CocoaMQTTPUBRECReasonCode?
 
     //3.5.2.2 PUBREC Properties
+    public var pubRecProperties: MqttDecodePubRec?
     //3.5.2.2.2 Reason String
     public var reasonString: String?
     //3.5.2.2.3 User Property
     public var userProperties: [String: String]?
-    //3.8.3.1 Subscription Options
-    public var topicFilters: [CocoaMMQTTopicFilter]?
+
     
     
     init(msgid: UInt16, reasonCode: CocoaMQTTPUBRECReasonCode) {
@@ -99,11 +99,15 @@ extension FramePubRec: InitialWithBytes {
         guard packetFixedHeaderType == FrameType.pubrec.rawValue else {
             return nil
         }
-        guard bytes.count == 2 else {
+        guard bytes.count >= 2 else {
             return nil
         }
         
         msgid = UInt16(bytes[0]) << 8 + UInt16(bytes[1])
+
+
+        self.pubRecProperties = MqttDecodePubRec.shared
+        self.pubRecProperties!.decodePubRec(fixedHeader: packetFixedHeaderType, pubAckData: bytes)
     }
 }
 
