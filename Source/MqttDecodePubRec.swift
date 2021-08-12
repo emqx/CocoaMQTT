@@ -1,16 +1,15 @@
 //
-//  MqttDecodePuback.swift
+//  MqttDecodePubRec.swift
 //  CocoaMQTT
 //
-//  Created by liwei wang on 2021/8/3.
+//  Created by liwei wang on 2021/8/4.
 //
 
 import Foundation
 
+public class MqttDecodePubRec: NSObject {
 
-public class MqttDecodePubAck: NSObject {
-
-    static let shared = MqttDecodePubAck()
+    static let shared = MqttDecodePubRec()
 
 
     var totalCount = 0
@@ -24,19 +23,17 @@ public class MqttDecodePubAck: NSObject {
 
 
 
-
-    
-    public func decodePubAck(fixedHeader: UInt8, pubAckData: [UInt8]){
+    public func decodePubRec(fixedHeader: UInt8, pubAckData: [UInt8]){
         totalCount = pubAckData.count
-        dataIndex = 0
+        dataIndex = 0;
         //msgid
         let msgidResult = integerCompute(data: pubAckData, formatType: formatInt.formatUint16.rawValue, offset: dataIndex)
         msgid = UInt16(msgidResult!.res)
         dataIndex = msgidResult!.newOffset
 
-        // 3.4.2.1 PUBACK Reason Code
+        // 3.5.2.1 PUBREC Reason Code
 
-        // The Reason Code and Property Length can be omitted if the Reason Code is 0x00 (Success) and there are no Properties. In this case the PUBACK has a Remaining Length of 2.
+        //The Reason Code and Property Length can be omitted if the Reason Code is 0x00 (Success) and there are no Properties. In this case the PUBACK has a Remaining Length of 2.
         if dataIndex + 1 > pubAckData.count {
             return
         }
@@ -48,8 +45,8 @@ public class MqttDecodePubAck: NSObject {
         dataIndex += 1
 
 
-        // 3.4.2.2 PUBACK Properties
-        // 3.4.2.2.1 Property Length
+        // 3.5.2.2 PUBACK Properties
+        // 3.5.2.2.1 Property Length
         let propertyLengthVariableByteInteger = decodeVariableByteInteger(data: pubAckData, offset: dataIndex)
         propertyLength = propertyLengthVariableByteInteger.res
         dataIndex = propertyLengthVariableByteInteger.newOffset
@@ -66,7 +63,7 @@ public class MqttDecodePubAck: NSObject {
             }
 
             switch propertyName.rawValue {
-            // 3.4.2.2.2 Reason String
+            // 3.5.2.2.2 Reason String
             case CocoaMQTTPropertyName.reasonString.rawValue:
                 guard let result = unsignedByteToString(data: pubAckData, offset: dataIndex) else {
                     break
@@ -74,7 +71,7 @@ public class MqttDecodePubAck: NSObject {
                 reasonString = result.resStr
                 dataIndex = result.newOffset
 
-            // 3.4.2.2.3 User Property
+            // 3.5.2.2.3 User Property
             case CocoaMQTTPropertyName.userProperty.rawValue:
                 var key:String?
                 var value:String?
@@ -100,4 +97,5 @@ public class MqttDecodePubAck: NSObject {
         }
 
     }
+    
 }
