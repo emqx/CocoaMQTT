@@ -18,7 +18,7 @@ struct FrameSubscribe: Frame {
     
     var msgid: UInt16
     
-    var topics: [(String, CocoaMQTTQoS)]
+    //var topics: [(String, CocoaMQTTQoS)]
     
     // --- Attributes End
 
@@ -32,18 +32,15 @@ struct FrameSubscribe: Frame {
     //3.8.2.1.3 User Property
     public var userProperty: [String: String]?
 
+    //3.8.3 SUBSCRIBE Payload
+    public var subscriptionList: [MqttSubscription]
 
-    init(msgid: UInt16, topic: String, reqos: CocoaMQTTQoS) {
-        self.init(msgid: msgid, topics: [(topic, reqos)])
-    }
     
-    init(msgid: UInt16, topics: [(String, CocoaMQTTQoS)]) {
-        packetFixedHeaderType = FrameType.subscribe.rawValue
+    init(msgid: UInt16, subscriptionList: [MqttSubscription]) {
         self.msgid = msgid
-        self.topics = topics
-        
-        qos = CocoaMQTTQoS.qos1
+        self.subscriptionList = subscriptionList
     }
+
 }
 
 extension FrameSubscribe {
@@ -73,11 +70,16 @@ extension FrameSubscribe {
         
         var payload = [UInt8]()
         
-        for (topic, qos) in topics {
-            payload += topic.bytesWithLength
-            payload.append(qos.rawValue)
+//        for (topic, qos) in topics {
+//            payload += topic.bytesWithLength
+//            payload.append(qos.rawValue)
+//        }
+
+        for subscription in self.subscriptionList {
+            payload += subscription.subscriptionData
         }
-        
+
+
         return payload
     }
 
@@ -115,6 +117,10 @@ extension FrameSubscribe {
 
 extension FrameSubscribe: CustomStringConvertible {
     var description: String {
-        return "SUBSCRIBE(id: \(msgid), topics: \(topics))"
+        var desc = ""
+        for subscription in self.subscriptionList {
+            desc += "SUBSCRIBE(id: \(msgid), topics: \(subscription.topic))  "
+        }
+        return desc
     }
 }

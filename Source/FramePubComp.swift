@@ -25,6 +25,7 @@ struct FramePubComp: Frame {
     public var reasonCode: CocoaMQTTPUBCOMPReasonCode?
 
     //3.7.2.2 PUBCOMP Properties
+    public var pubCompProperties: MqttDecodePubComp?
     //3.7.2.2.2 Reason String
     public var reasonString: String?
     //3.7.2.2.3 User Property
@@ -105,6 +106,9 @@ extension FramePubComp: InitialWithBytes {
         }
         
         msgid = UInt16(bytes[0]) << 8 + UInt16(bytes[1])
+
+        self.pubCompProperties = MqttDecodePubComp.shared
+        self.pubCompProperties!.decodePubComp(fixedHeader: packetFixedHeaderType, pubAckData: bytes)
     }
 }
 

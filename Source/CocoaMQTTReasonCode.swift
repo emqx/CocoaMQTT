@@ -109,3 +109,11 @@ public enum CocoaMQTTUNSUBACKReasonCode: UInt8 {
     case topicFilterInvalid = 0x8F
     case packetIdentifierInUse = 0x91
 }
+
+
+
+public enum CocoaRetainHandlingOption: UInt8 {
+    case sendOnSubscribe = 0
+    case sendOnlyWhenSubscribeIsNew = 1
+    case none = 2
+}
