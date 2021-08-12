@@ -64,7 +64,7 @@ public class MqttDecodeConnAck: NSObject {
         let propertyLengthVariableByteInteger = decodeVariableByteInteger(data: connackData, offset: index)
         propertyLength = propertyLengthVariableByteInteger.res
         index = propertyLengthVariableByteInteger.newOffset
-        var occupyIndex = index
+        let occupyIndex = index
 
         // properties
 
