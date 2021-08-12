@@ -26,6 +26,7 @@ struct FramePubRel: Frame {
 
 
     //3.6.2.2 PUBREL Properties
+    public var pubRelProperties: MqttDecodePubRel?
     //3.6.2.2.2 Reason String
     public var reasonString: String?
     //3.6.2.2.3 User Property
@@ -104,6 +105,10 @@ extension FramePubRel: InitialWithBytes {
         
         self.packetFixedHeaderType = packetFixedHeaderType
         msgid = UInt16(bytes[0]) << 8 + UInt16(bytes[1])
+
+
+        self.pubRelProperties = MqttDecodePubRel.shared
+        self.pubRelProperties!.decodePubRel(fixedHeader: packetFixedHeaderType, pubAckData: bytes)
     }
 }
 
