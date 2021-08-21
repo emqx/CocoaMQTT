@@ -1,29 +1,29 @@
 //
-//  MqttDecodeSubAck.swift
+//  MqttDecodeUnsubAck.swift
 //  CocoaMQTT
 //
-//  Created by liwei wang on 2021/8/12.
+//  Created by liwei wang on 2021/8/16.
 //
 
 import Foundation
 
 
-public class MqttDecodeSubAck: NSObject {
+public class MqttDecodeUnsubAck: NSObject {
 
-    static let shared = MqttDecodeSubAck()
+    static let shared = MqttDecodeUnsubAck()
 
     var totalCount = 0
     var dataIndex = 0
     var propertyLength: Int = 0
 
-    public var reasonCodes: [CocoaMQTTSUBACKReasonCode] = []
-    //public var reasonCode: CocoaMQTTSUBACKReasonCode?
+    public var reasonCodes: [CocoaMQTTUNSUBACKReasonCode] = []
+
     public var msgid: UInt16 = 0
     public var reasonString: String?
     public var userProperty: [String: String]?
 
 
-    public func decodeSubAck(fixedHeader: UInt8, pubAckData: [UInt8]){
+    public func decodeUnSubAck(fixedHeader: UInt8, pubAckData: [UInt8]){
         totalCount = pubAckData.count
         dataIndex = 0
         //msgid
@@ -32,8 +32,8 @@ public class MqttDecodeSubAck: NSObject {
         dataIndex = msgidResult!.newOffset
 
 
-        // 3.9.2.1  SUBACK Properties
-        // 3.9.2.1.1  Property Length
+        // 3.11.2.1 UNSUBACK Properties
+        // 3.11.2.1.1 Property Length
         let propertyLengthVariableByteInteger = decodeVariableByteInteger(data: pubAckData, offset: dataIndex)
         propertyLength = propertyLengthVariableByteInteger.res
         dataIndex = propertyLengthVariableByteInteger.newOffset
@@ -47,9 +47,9 @@ public class MqttDecodeSubAck: NSObject {
                 break
             }
 
-            
+
             switch propertyName.rawValue {
-            // 3.9.2.1.2 Reason String
+            // 3.11.2.1.2 Reason String
             case CocoaMQTTPropertyName.reasonString.rawValue:
                 guard let result = unsignedByteToString(data: pubAckData, offset: dataIndex) else {
                     break
@@ -57,7 +57,7 @@ public class MqttDecodeSubAck: NSObject {
                 reasonString = result.resStr
                 dataIndex = result.newOffset
 
-            // 3.9.2.1.3 User Property
+            // 3.11.2.1.3 User Property
             case CocoaMQTTPropertyName.userProperty.rawValue:
                 var key:String?
                 var value:String?
@@ -85,17 +85,16 @@ public class MqttDecodeSubAck: NSObject {
         }
 
 
-
         if dataIndex < totalCount {
             while dataIndex < totalCount {
-                guard let reasonCode = CocoaMQTTSUBACKReasonCode(rawValue: pubAckData[dataIndex]) else {
+                guard let reasonCode = CocoaMQTTUNSUBACKReasonCode(rawValue: pubAckData[dataIndex]) else {
                     return
                 }
                 reasonCodes.append(reasonCode)
                 dataIndex += 1
             }
         }
-        
+
     }
 
 }

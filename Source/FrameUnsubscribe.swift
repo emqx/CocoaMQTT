@@ -18,27 +18,21 @@ struct FrameUnsubscribe: Frame {
     
     var msgid: UInt16
     
-    var topics: [String]
+    var topicFilters: [MqttSubscription]
     
     // --- Attribetes end
 
     //3.10.2.1.2 User Property
     public var userProperty: [String: String]?
 
-    init(msgid: UInt16, topics: [String]) {
+    init(msgid: UInt16, topics: [MqttSubscription]) {
         self.msgid = msgid
-        self.topics = topics
+        self.topicFilters = topics
 
         qos = CocoaMQTTQoS.qos1
     }
 
-//    init(msgid: UInt16, topicFilters: [CocoaMMQTTopicFilter]) {
-//        //qos = CocoaMQTTQoS.qos1
-//
-//        self.msgid = msgid
-//        self.topicFilters = topicFilters
-//
-//    }
+
 }
 
 extension FrameUnsubscribe {
@@ -50,21 +44,40 @@ extension FrameUnsubscribe {
         return header
     }
     
-    func variableHeader() -> [UInt8] { return msgid.hlBytes }
+    func variableHeader() -> [UInt8] {
+        //MQTT 5.0
+        var header = [UInt8]()
+        header = msgid.hlBytes
+        header += beVariableByteInteger(length: self.properties().count)
+        return header
+    }
     
     func payload() -> [UInt8] {
         
         var payload = [UInt8]()
         
-        for t in topics {
-            payload += t.bytesWithLength
+        for subscription in self.topicFilters {
+            subscription.subscriptionOptions = false
+            payload += subscription.subscriptionData
         }
-        
+
         return payload
     }
 
 
-    func properties() -> [UInt8] { return [] }
+    func properties() -> [UInt8] {
+        var properties = [UInt8]()
+
+        // 3.10.2.1.2 User Property
+        if let userProperty = self.userProperty {
+            let dictValues = [String](userProperty.values)
+            for (value) in dictValues {
+                properties += getMQTTPropertyData(type: CocoaMQTTPropertyName.userProperty.rawValue, value: value.bytesWithLength)
+            }
+        }
+
+        return properties
+    }
 
     func allData() -> [UInt8] {
         var allData = [UInt8]()
@@ -81,6 +94,10 @@ extension FrameUnsubscribe {
 
 extension FrameUnsubscribe: CustomStringConvertible {
     var description: String {
-        return "UNSUBSCRIBE(id: \(msgid), topics: \(topics))"
+        var desc = ""
+        for subscription in self.topicFilters {
+            desc += "UNSUBSCRIBE(id: \(msgid), topics: \(subscription.topic))  "
+        }
+        return desc
     }
 }
