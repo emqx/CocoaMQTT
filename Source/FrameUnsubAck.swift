@@ -21,6 +21,8 @@ struct FrameUnsubAck: Frame {
     
     // --- Attributes End
 
+    //3.10.2.1 UNSUBSCRIBE Properties
+    public var unSubAckProperties: MqttDecodeUnsubAck?
     //3.11.2 Property
     public var userProperty: [String: String]?
     //3.11.2.1.2 Reason String
@@ -94,11 +96,15 @@ extension FrameUnsubAck: InitialWithBytes {
             return nil
         }
         
-        guard bytes.count == 2 else {
+        guard bytes.count >= 2 else {
             return nil
         }
 
         msgid = UInt16(bytes[0]) << 8 + UInt16(bytes[1])
+
+        self.unSubAckProperties = MqttDecodeUnsubAck.shared
+        self.unSubAckProperties!.decodeUnSubAck(fixedHeader: packetFixedHeaderType, pubAckData: bytes)
+        
     }
 }
 
