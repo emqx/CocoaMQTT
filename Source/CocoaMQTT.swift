@@ -49,7 +49,7 @@ import CocoaAsyncSocket
     func mqtt(_ mqtt: CocoaMQTT, didSubscribeTopics success: NSDictionary, failed: [String], subAckData: MqttDecodeSubAck)
 
     ///
-    func mqtt(_ mqtt: CocoaMQTT, didUnsubscribeTopics topics: [String])
+    func mqtt(_ mqtt: CocoaMQTT, didUnsubscribeTopics topics: [String], UnsubAckData: MqttDecodeUnsubAck)
 
     ///
     func mqttDidPing(_ mqtt: CocoaMQTT)
@@ -107,7 +107,7 @@ protocol CocoaMQTTClient {
     func subscribe(_ topics: [MqttSubscription])
 
     func unsubscribe(_ topic: String)
-    func unsubscribe(_ topics: [String])
+    func unsubscribe(_ topics: [MqttSubscription])
 
     func publish(_ topic: String, withString string: String, qos: CocoaMQTTQoS,  DUP: Bool, retained: Bool, properties: MqttPublishProperties) -> Int
     func publish(_ message: CocoaMQTTMessage, qos: CocoaMQTTQoS, DUP: Bool, retained: Bool, properties: MqttPublishProperties) -> Int
@@ -251,7 +251,7 @@ public class CocoaMQTT: NSObject, CocoaMQTTClient {
     public var subscriptions: [String: CocoaMQTTQoS] = [:]
 
     fileprivate var subscriptionsWaitingAck: [UInt16: [MqttSubscription]] = [:]
-    fileprivate var unsubscriptionsWaitingAck: [UInt16: [String]] = [:]
+    fileprivate var unsubscriptionsWaitingAck: [UInt16: [MqttSubscription]] = [:]
 
 
     /// Sending messages
@@ -269,7 +269,7 @@ public class CocoaMQTT: NSObject, CocoaMQTTClient {
     public var didPublishRec: (CocoaMQTT, UInt16, MqttDecodePubRec) -> Void = { _, _, _ in }
     public var didReceiveMessage: (CocoaMQTT, CocoaMQTTMessage, UInt16, MqttDecodePublish) -> Void = { _, _, _, _ in }
     public var didSubscribeTopics: (CocoaMQTT, NSDictionary, [String], MqttDecodeSubAck) -> Void = { _, _, _, _  in }
-    public var didUnsubscribeTopics: (CocoaMQTT, [String]) -> Void = { _, _ in }
+    public var didUnsubscribeTopics: (CocoaMQTT, [String], MqttDecodeUnsubAck) -> Void = { _, _, _ in }
     public var didPing: (CocoaMQTT) -> Void = { _ in }
     public var didReceivePong: (CocoaMQTT) -> Void = { _ in }
     public var didDisconnect: (CocoaMQTT, Error?) -> Void = { _, _ in }
@@ -496,14 +496,15 @@ public class CocoaMQTT: NSObject, CocoaMQTTClient {
     /// - Parameters:
     ///   - topic: A Topic Name or Topic Filter
     public func unsubscribe(_ topic: String) {
-        return unsubscribe([topic])
+        let filter = MqttSubscription(topic: topic)
+        return unsubscribe([filter])
     }
 
     /// Unsubscribe a list of topics
     ///
     /// - Parameters:
     ///   - topics: A list of `<Topic Names>/<Topic Filters>`
-    public func unsubscribe(_ topics: [String]) {
+    public func unsubscribe(_ topics: [MqttSubscription]) {
         let msgid = nextMessageID()
         let frame = FrameUnsubscribe(msgid: msgid, topics: topics)
         unsubscriptionsWaitingAck[msgid] = topics
@@ -769,11 +770,14 @@ extension CocoaMQTT: CocoaMQTTReaderDelegate {
             return
         }
         // Remove local subscription
+        var removeTopics : [String] = []
         for t in topics {
-            subscriptions.removeValue(forKey: t)
+            removeTopics.append(t.topic)
+            subscriptions.removeValue(forKey: t.topic)
         }
-        delegate?.mqtt(self, didUnsubscribeTopics: topics)
-        didUnsubscribeTopics(self, topics)
+
+        delegate?.mqtt(self, didUnsubscribeTopics: removeTopics, UnsubAckData: unsuback.unSubAckProperties!)
+        didUnsubscribeTopics(self, removeTopics, unsuback.unSubAckProperties!)
     }
 
     func didReceive(_ reader: CocoaMQTTReader, pingresp: FramePingResp) {
