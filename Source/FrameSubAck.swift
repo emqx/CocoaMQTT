@@ -30,7 +30,7 @@ struct FrameSubAck: Frame {
     //3.9.3 The order of Reason Codes in the SUBACK packet MUST match the order of Topic Filters in the SUBSCRIBE packet [MQTT-3.9.3-1].
     public var reasonCodes: [CocoaMQTTSUBACKReasonCode]?
 
-    //3.9.2.1 SUBACK  SUBACK Properties
+    //3.9.2.1 SUBACK Properties
     public var subAckProperties: MqttDecodeSubAck?
 
     

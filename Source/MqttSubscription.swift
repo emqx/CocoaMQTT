@@ -1,5 +1,5 @@
 //
-//  CocoaMMQTTopicFilter.swift
+//  MqttSubscription.swift
 //  CocoaMQTT
 //
 //  Created by liwei wang on 2021/7/15.
@@ -15,7 +15,7 @@ public class MqttSubscription {
     public var noLocal: Bool = false
     public var retainAsPublished: Bool = false
     public var retainHandling: CocoaRetainHandlingOption
-
+    public var subscriptionOptions: Bool = false
 
     public init(topic: String) {
         self.topic = topic
@@ -67,7 +67,11 @@ public class MqttSubscription {
             printDebug("topucFilter retainHandling failure")
         }
 
-        data += [UInt8(options)]
+
+        if subscriptionOptions {
+            data += [UInt8(options)]
+        }
+
 
         return data
     }
