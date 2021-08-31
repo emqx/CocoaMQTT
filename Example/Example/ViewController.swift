@@ -94,7 +94,8 @@ class ViewController: UIViewController {
             mqtt!.willMessage = CocoaMQTTMessage(topic: "/will", string: "dieout")
             mqtt!.keepAlive = 60
             mqtt!.delegate = self
-
+            //mqtt!.autoReconnect = true
+            
         }else if mqttVesion == "5.0" {
 
             let clientID = "CocoaMQTT5-\(animal!)-" + String(ProcessInfo().processIdentifier)
@@ -110,8 +111,9 @@ class ViewController: UIViewController {
             mqtt5!.username = ""
             mqtt5!.password = ""
 
-            let lastWillMessage = CocoaMQTTMessage(topic: "/chat/room/animals/client/Sheep", string: "dieout")
+            let lastWillMessage = CocoaMQTT5Message(topic: "/chat/room/animals/client/Sheep", string: "dieout")
             lastWillMessage.contentType = "JSON"
+            lastWillMessage.willResponseTopic = "/chat/room/animals/client/Sheep"
             lastWillMessage.willExpiryInterval = 0
             lastWillMessage.willDelayInterval = 0
             lastWillMessage.qos = .qos1
@@ -119,6 +121,7 @@ class ViewController: UIViewController {
             mqtt5!.willMessage = lastWillMessage
             mqtt5!.keepAlive = 60
             mqtt5!.delegate = self
+            //mqtt5!.autoReconnect = true
 
         }
 
@@ -152,7 +155,7 @@ class ViewController: UIViewController {
 
             mqtt5!.username = ""
             mqtt5!.password = ""
-            mqtt5!.willMessage = CocoaMQTTMessage(topic: "/will", string: "dieout")
+            mqtt5!.willMessage = CocoaMQTT5Message(topic: "/will", string: "dieout")
             mqtt5!.keepAlive = 60
             mqtt5!.delegate = self
 
@@ -197,7 +200,7 @@ class ViewController: UIViewController {
 
             mqtt5!.username = ""
             mqtt5!.password = ""
-            mqtt5!.willMessage = CocoaMQTTMessage(topic: "/will", string: "dieout")
+            mqtt5!.willMessage = CocoaMQTT5Message(topic: "/will", string: "dieout")
             mqtt5!.keepAlive = 60
             mqtt5!.delegate = self
 
@@ -242,7 +245,7 @@ class ViewController: UIViewController {
             mqtt5!.username = ""
             mqtt5!.password = ""
 
-            let lastWillMessage = CocoaMQTTMessage(topic: "/will", string: "dieout")
+            let lastWillMessage = CocoaMQTT5Message(topic: "/will", string: "dieout")
             lastWillMessage.contentType = "JSON"
             lastWillMessage.willExpiryInterval = 0
             lastWillMessage.willDelayInterval = 0
@@ -286,7 +289,7 @@ class ViewController: UIViewController {
             mqtt5!.enableSSL = true
             mqtt5!.username = ""
             mqtt5!.password = ""
-            mqtt5!.willMessage = CocoaMQTTMessage(topic: "/will", string: "dieout")
+            mqtt5!.willMessage = CocoaMQTT5Message(topic: "/will", string: "dieout")
             mqtt5!.keepAlive = 60
             mqtt5!.delegate = self
 
@@ -337,6 +340,14 @@ class ViewController: UIViewController {
 
 extension ViewController: CocoaMQTT5Delegate {
     
+    func mqtt5(_ mqtt5: CocoaMQTT5, didReceiveDisconnectReasonCode reasonCode: CocoaMQTTDISCONNECTReasonCode) {
+        print("disconnect res : \(reasonCode)")
+    }
+    
+    func mqtt5(_ mqtt5: CocoaMQTT5, didReceiveAuthReasonCode reasonCode: CocoaMQTTAUTHReasonCode) {
+        print("auth res : \(reasonCode)")
+    }
+    
     // Optional ssl CocoaMQTT5Delegate
     func mqtt5(_ mqtt5: CocoaMQTT5, didReceive trust: SecTrust, completionHandler: @escaping (Bool) -> Void) {
         TRACE("trust: \(trust)")
@@ -379,8 +390,8 @@ extension ViewController: CocoaMQTT5Delegate {
         }
     }
     
-    func mqtt5(_ mqtt5: CocoaMQTT5, didPublishMessage message: CocoaMQTTMessage, id: UInt16) {
-        TRACE("message: \(message.string.description), id: \(id)")
+    func mqtt5(_ mqtt5: CocoaMQTT5, didPublishMessage message: CocoaMQTT5Message, id: UInt16) {
+        TRACE("message: \(message.description), id: \(id)")
     }
     
     func mqtt5(_ mqtt5: CocoaMQTT5, didPublishAck id: UInt16, pubAckData: MqttDecodePubAck) {
@@ -398,9 +409,7 @@ extension ViewController: CocoaMQTT5Delegate {
         print("pubCompData reasonCode: \(String(describing: pubCompData.reasonCode))")
     }
 
-
-
-    func mqtt5(_ mqtt5: CocoaMQTT5, didReceiveMessage message: CocoaMQTTMessage, id: UInt16, publishData: MqttDecodePublish ) {
+    func mqtt5(_ mqtt5: CocoaMQTT5, didReceiveMessage message: CocoaMQTT5Message, id: UInt16, publishData: MqttDecodePublish){
         print("publish.contentType \(String(describing: publishData.contentType))")
         
         TRACE("message: \(message.string.description), id: \(id)")
