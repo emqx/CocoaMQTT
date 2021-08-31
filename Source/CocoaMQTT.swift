@@ -393,13 +393,25 @@ public class CocoaMQTT: NSObject, CocoaMQTTClient {
         internal_disconnect()
     }
 
+    public func disconnect(reasonCode : CocoaMQTTDISCONNECTReasonCode,userProperties : [String: String] ) {
+        is_internal_disconnected = false
+        internal_disconnect_withProperties(reasonCode: reasonCode,userProperties: userProperties)
+    }
+
     /// Disconnect unexpectedly
     func internal_disconnect() {
         is_internal_disconnected = true
-        send(FrameDisconnect(disconnectReasonCode: CocoaMQTTDISCONNECTReasonCode.success), tag: -0xE0)
+        send(FrameDisconnect(disconnectReasonCode: CocoaMQTTDISCONNECTReasonCode.normalDisconnection), tag: -0xE0)
         socket.disconnect()
     }
 
+    func internal_disconnect_withProperties(reasonCode : CocoaMQTTDISCONNECTReasonCode,userProperties : [String: String] ) {
+        is_internal_disconnected = true
+        var frameDisconnect = FrameDisconnect(disconnectReasonCode: reasonCode)
+        frameDisconnect.userProperties = userProperties
+        send(frameDisconnect, tag: -0xE0)
+        socket.disconnect()
+    }
     /// Send a PING request to broker
     public func ping() {
         printDebug("ping")
