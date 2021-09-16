@@ -15,17 +15,13 @@ struct FrameAuth: Frame {
 
     //3.15.2.1 Authenticate Reason Code
     var reasonCode: CocoaMQTTAUTHReasonCode
-    //3.15.2.2.2 Authentication Method
-    public var authenticationMethod: String?
-    //3.15.2.2.3 Authentication Data
-    public var authenticationData: [UInt8]?
-    //3.15.2.2.4 Reason String
-    public var reasonString: String?
-    //3.15.2.2.5 User Property
-    public var userProperties: [String: String]?
+    
+    //3.15.2.2 AUTH Properties
+    var authProperties: MqttAuthProperties?
 
-    init(reasonCode: CocoaMQTTAUTHReasonCode) {
+    init(reasonCode: CocoaMQTTAUTHReasonCode,authProperties: MqttAuthProperties) {
         self.reasonCode = reasonCode
+        self.authProperties = authProperties
     }
 
 }
@@ -53,29 +49,7 @@ extension FrameAuth {
     func payload() -> [UInt8] { return []}
 
     func properties() -> [UInt8] {
-        var properties = [UInt8]()
-
-        //3.15.2.2.2 Authentication Method
-        if let authenticationMethod = self.authenticationMethod {
-            properties += getMQTTPropertyData(type: CocoaMQTTPropertyName.authenticationMethod.rawValue, value: authenticationMethod.bytesWithLength)
-        }
-        //3.15.2.2.3 Authentication Data
-        if let authenticationData = self.authenticationData {
-            properties += getMQTTPropertyData(type: CocoaMQTTPropertyName.authenticationData.rawValue, value: authenticationData)
-        }
-        //3.15.2.2.4 Reason String
-        if let reasonString = self.reasonString {
-            properties += getMQTTPropertyData(type: CocoaMQTTPropertyName.reasonString.rawValue, value: reasonString.bytesWithLength)
-        }
-        //3.15.2.2.5 User Property
-        if let userProperty = self.userProperties {
-            let dictValues = [String](userProperty.values)
-            for (value) in dictValues {
-                properties += getMQTTPropertyData(type: CocoaMQTTPropertyName.userProperty.rawValue, value: value.bytesWithLength)
-            }
-        }
-        
-        return properties
+        return authProperties!.properties
     }
 
     func allData() -> [UInt8] {
