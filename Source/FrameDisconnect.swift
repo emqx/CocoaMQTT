@@ -38,7 +38,6 @@ extension FrameDisconnect {
     func fixedHeader() -> [UInt8] {
         var header = [UInt8]()
         header += [FrameType.disconnect.rawValue]
-        header += [UInt8(variableHeader().count)]
 
         return header
     }
