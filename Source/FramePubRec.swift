@@ -41,7 +41,6 @@ extension FramePubRec {
     func fixedHeader() -> [UInt8] {
         var header = [UInt8]()
         header += [FrameType.pubrec.rawValue]
-        header += [UInt8(variableHeader().count)]
 
         return header
     }

@@ -40,7 +40,6 @@ extension FrameUnsubAck {
     func fixedHeader() -> [UInt8] {
         var header = [UInt8]()
         header += [FrameType.unsuback.rawValue]
-        header += [UInt8(variableHeader().count + payload().count)]
 
         return header
     }
