@@ -12,8 +12,10 @@ import CocoaMQTT
 
 class ViewController: UIViewController {
 
-
     let defaultHost = "localhost"
+    //OR
+    //TEST Broker
+    //let defaultHost = "broker-cn.emqx.io"
 
     var mqtt: CocoaMQTT?
     var animal: String?
@@ -29,6 +31,12 @@ class ViewController: UIViewController {
     
     @IBAction func connectToServer() {
         _ = mqtt!.connect()
+    }
+    
+    
+    func sendAuthToServer(){
+        let authProperties = MqttAuthProperties()
+        mqtt!.auth(reasonCode: CocoaMQTTAUTHReasonCode.continueAuthentication, authProperties: authProperties)
     }
     
     override func viewDidLoad() {
@@ -51,7 +59,7 @@ class ViewController: UIViewController {
         let clientID = "CocoaMQTT-\(animal!)-" + String(ProcessInfo().processIdentifier)
         mqtt = CocoaMQTT(clientID: clientID, host: defaultHost, port: 1883)
 
-        let connectProperties = MqttConnectProperties.shared
+        let connectProperties = MqttConnectProperties()
         connectProperties.topicAliasMaximum = 0
         connectProperties.sessionExpiryInterval = 0
         connectProperties.receiveMaximum = 100
@@ -65,6 +73,7 @@ class ViewController: UIViewController {
         lastWillMessage.contentType = "JSON"
         lastWillMessage.willExpiryInterval = 0
         lastWillMessage.willDelayInterval = 0
+        lastWillMessage.qos = .qos1
 
         mqtt!.willMessage = lastWillMessage
         mqtt!.keepAlive = 60
@@ -74,6 +83,15 @@ class ViewController: UIViewController {
     func simpleSSLSetting() {
         let clientID = "CocoaMQTT-\(animal!)-" + String(ProcessInfo().processIdentifier)
         mqtt = CocoaMQTT(clientID: clientID, host: defaultHost, port: 8883)
+        
+        let connectProperties = MqttConnectProperties()
+        connectProperties.topicAliasMaximum = 0
+        connectProperties.sessionExpiryInterval = 0
+        connectProperties.receiveMaximum = 100
+        connectProperties.maximumPacketSize = 500
+
+        mqtt!.connectProperties = connectProperties
+        
         mqtt!.username = ""
         mqtt!.password = ""
         mqtt!.willMessage = CocoaMQTTMessage(topic: "/will", string: "dieout")
@@ -86,6 +104,15 @@ class ViewController: UIViewController {
     func selfSignedSSLSetting() {
         let clientID = "CocoaMQTT-\(animal!)-" + String(ProcessInfo().processIdentifier)
         mqtt = CocoaMQTT(clientID: clientID, host: defaultHost, port: 8883)
+        
+        let connectProperties = MqttConnectProperties()
+        connectProperties.topicAliasMaximum = 0
+        connectProperties.sessionExpiryInterval = 0
+        connectProperties.receiveMaximum = 100
+        connectProperties.maximumPacketSize = 500
+
+        mqtt!.connectProperties = connectProperties
+        
         mqtt!.username = ""
         mqtt!.password = ""
         mqtt!.willMessage = CocoaMQTTMessage(topic: "/will", string: "dieout")
@@ -105,9 +132,25 @@ class ViewController: UIViewController {
         let clientID = "CocoaMQTT-\(animal!)-" + String(ProcessInfo().processIdentifier)
         let websocket = CocoaMQTTWebSocket(uri: "/mqtt")
         mqtt = CocoaMQTT(clientID: clientID, host: defaultHost, port: 8083, socket: websocket)
+        
+        let connectProperties = MqttConnectProperties()
+        connectProperties.topicAliasMaximum = 0
+        connectProperties.sessionExpiryInterval = 0
+        connectProperties.receiveMaximum = 100
+        connectProperties.maximumPacketSize = 500
+
+        mqtt!.connectProperties = connectProperties
+        
         mqtt!.username = ""
         mqtt!.password = ""
-        mqtt!.willMessage = CocoaMQTTMessage(topic: "/will", string: "dieout")
+        
+        let lastWillMessage = CocoaMQTTMessage(topic: "/will", string: "dieout")
+        lastWillMessage.contentType = "JSON"
+        lastWillMessage.willExpiryInterval = 0
+        lastWillMessage.willDelayInterval = 0
+        lastWillMessage.qos = .qos1
+        
+        mqtt!.willMessage = lastWillMessage
         mqtt!.keepAlive = 60
         mqtt!.delegate = self
     }
@@ -116,6 +159,15 @@ class ViewController: UIViewController {
         let clientID = "CocoaMQTT-\(animal!)-" + String(ProcessInfo().processIdentifier)
         let websocket = CocoaMQTTWebSocket(uri: "/mqtt")
         mqtt = CocoaMQTT(clientID: clientID, host: defaultHost, port: 8084, socket: websocket)
+        
+        let connectProperties = MqttConnectProperties()
+        connectProperties.topicAliasMaximum = 0
+        connectProperties.sessionExpiryInterval = 0
+        connectProperties.receiveMaximum = 100
+        connectProperties.maximumPacketSize = 500
+
+        mqtt!.connectProperties = connectProperties
+        
         mqtt!.enableSSL = true
         mqtt!.username = ""
         mqtt!.password = ""
@@ -189,11 +241,10 @@ extension ViewController: CocoaMQTTDelegate {
             print("properties maximumPacketSize: \(String(describing: connAckData.maximumPacketSize))")
             print("properties topicAliasMaximum: \(String(describing: connAckData.topicAliasMaximum))")
             
-            //mqtt.subscribe("chat/room/animals/client/+", qos: CocoaMQTTQoS.qos1)
+            mqtt.subscribe("chat/room/animals/client/+", qos: CocoaMQTTQoS.qos1)
             //or
-            let subscriptions : [MqttSubscription] = [MqttSubscription(topic: "chat/room/animals/client/+"),MqttSubscription(topic: "chat/room/foods/client/+"),MqttSubscription(topic: "chat/room/trees/client/+")]
-
-            mqtt.subscribe(subscriptions)
+            //let subscriptions : [MqttSubscription] = [MqttSubscription(topic: "chat/room/animals/client/+"),MqttSubscription(topic: "chat/room/foods/client/+"),MqttSubscription(topic: "chat/room/trees/client/+")]
+            //mqtt.subscribe(subscriptions)
 
             let chatViewController = storyboard?.instantiateViewController(withIdentifier: "ChatViewController") as? ChatViewController
             chatViewController?.mqtt = mqtt

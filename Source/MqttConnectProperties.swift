@@ -8,11 +8,7 @@
 import Foundation
 
 public class MqttConnectProperties: NSObject {
-    
-    public static let shared = MqttConnectProperties()
-    private override init() {
-        super.init()
-    }
+
     
     //3.1.2.11.1 Property Length
     //public var propertyLength: UInt8?
