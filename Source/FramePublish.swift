@@ -8,7 +8,7 @@
 
 import Foundation
 
-/// MQTT PUBLISH Frame
+// MQTT PUBLISH Frame
 struct FramePublish: Frame {
 
     //3.3.1.1 DUP
@@ -50,7 +50,7 @@ struct FramePublish: Frame {
         self.topic = topic
         self._payload = payload
         self.msgid = msgid
-        self.qos = qos
+        self.QoS = qos
     }
 }
 
@@ -86,19 +86,19 @@ extension FramePublish {
 
 
         header += [flags]
-        header += [UInt8(variableHeader().count + payload().count)]
 
         return header
     }
     
     func variableHeader() -> [UInt8] {
 
-        print(self.topic)
         //3.3.2.1 Topic Name
         var header = self.topic.bytesWithLength
         //3.3.2.2 Packet Identifier qos1 or qos2
-        if qos > .qos0 {
+        if QoS > .qos0 {
             header += msgid.hlBytes
+//            header.append(UInt8(0))
+//            header.append(QoS.rawValue)
         }
 
         //MQTT 5.0
