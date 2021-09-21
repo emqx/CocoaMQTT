@@ -11,12 +11,12 @@ import CocoaMQTT
 
 
 class ViewController: UIViewController {
-
+    
     let defaultHost = "localhost"
     //OR
     //TEST Broker
     //let defaultHost = "broker-cn.emqx.io"
-
+    
     var mqtt: CocoaMQTT?
     var animal: String?
 
@@ -323,8 +323,7 @@ extension ViewController: UITabBarControllerDelegate {
     }
 
     func tabBarController(_ tabBarController: UITabBarController, didSelect viewController: UIViewController) {
-        print("---- \(tabBarController.selectedIndex)")
-        print("----- \(String(describing: tabBarController.selectedViewController))")
+        print("tabbar index: \(tabBarController.selectedIndex)")
     }
 }
 
