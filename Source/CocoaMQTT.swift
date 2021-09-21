@@ -530,7 +530,7 @@ public class CocoaMQTT: NSObject, CocoaMQTTClient {
     ///
     public func auth(reasonCode : CocoaMQTTAUTHReasonCode,authProperties : MqttAuthProperties) {
         printDebug("auth")
-        var frame = FrameAuth(reasonCode: reasonCode, authProperties: authProperties)
+        let frame = FrameAuth(reasonCode: reasonCode, authProperties: authProperties)
 
         send(frame)
     }
@@ -620,7 +620,7 @@ extension CocoaMQTT: CocoaMQTTSocketDelegate {
         delegate?.mqttDidDisconnect(self, withError: err)
         didDisconnect(self, err)
 
-        guard is_internal_disconnected else {
+        guard !is_internal_disconnected else {
             return
         }
 
