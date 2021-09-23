@@ -59,7 +59,6 @@ extension UInt8 {
 }
 
 public enum CocoaMQTTError: Error {
-
     @available(OSX 10.15, iOS 13.0, watchOS 6.0, tvOS 13.0, *)
     enum FoundationConnection : Error {
         case closed(URLSessionWebSocketTask.CloseCode)
