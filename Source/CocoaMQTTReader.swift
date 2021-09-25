@@ -102,25 +102,21 @@ class CocoaMQTTReader {
     }
     
     private func frameReady() {
-
-
+        
         guard let frameType = FrameType(rawValue: UInt8(header & 0xF0)) else {
             printError("Received unknown frame type, header: \(header), data:\(data)")
             readHeader()
             return
         }
-
+        
         // XXX: stupid implement
         
         switch frameType {
         case .connack:
             guard let connack = FrameConnAck(fixedHeader: header, bytes: data) else {
-
                 printError("Reader parse \(frameType) failed, data: \(data)")
-                //print("rawValue - \(FrameConnAck(fixedHeader: header, bytes: data).description)")
                 break
             }
-
             delegate?.didReceive(self, connack: connack)
         case .publish:
             guard let publish = FramePublish(fixedHeader: header, bytes: data) else {
