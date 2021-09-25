@@ -11,6 +11,8 @@ import Foundation
 
 /// MQTT Message
 public class CocoaMQTTMessage: NSObject {
+    //3.3.2.3.4 Topic Alias
+    public var topicAlias: UInt16?
 
     public var qos = CocoaMQTTQoS.qos1
     
@@ -20,19 +22,21 @@ public class CocoaMQTTMessage: NSObject {
     
     public var retained = false
 
-    ///3.1.3.2.3 Payload Format Indicator
+
     public var isUTF8EncodedData: Bool = true
-    ///3.1.3.2.2 Will Delay Interval
+
     public var willDelayInterval: UInt32? = 0
-    ///3.1.3.2.4 Message Expiry Interval
+
+    public var willPayloadFormatIndicator: UInt8?
+
     public var willExpiryInterval: UInt32? = 0
-    ///3.1.3.2.5 Content Type
+
     public var contentType: String?
-    ///3.1.3.2.6 Response Topic
+
     public var willResponseTopic: String?
-    ///3.1.3.2.7 Correlation Data
+
     public var willCorrelationData: Data?
-    ///3.1.3.2.8 User Property
+
     public var willUserProperty: [String: String]?
     
     /// The `duplicated` property show that this message maybe has be received before

@@ -87,7 +87,9 @@ protocol CocoaMQTTClient {
     var sessionExpiryInterval: UInt32 {get set}
     var receiveMaximum: UInt16 {get set}
     var topicAliasMaximum: UInt16 {get set}
-
+    var willDelayInterval: UInt32 {get set}
+    var messageExpiryInterval: UInt32 {get set}
+    var contentType: String {get set}
     /* Basic Properties */
 
     /* CONNNEC/DISCONNECT */
@@ -214,7 +216,14 @@ public class CocoaMQTT: NSObject, CocoaMQTTClient {
     ///3.1.2.11.5 Topic Alias Maximum
     public var topicAliasMaximum: UInt16 = 0
 
+    ///3.1.3.2.2 Will Delay Interval
+    public var willDelayInterval: UInt32 = 0
 
+    ///3.1.3.2.4 Message Expiry Interval
+    public var messageExpiryInterval: UInt32 = 0
+
+    ///3.1.3.2.5 Content Type
+    public var contentType: String = "JSON"
 
 
     private var reconnectTimeInterval: UInt16 = 0
@@ -324,7 +333,9 @@ public class CocoaMQTT: NSObject, CocoaMQTTClient {
         connect.sessionExpiryInterval = sessionExpiryInterval
         connect.receiveMaximum = receiveMaximum
         connect.topicAliasMaximum = topicAliasMaximum
-
+        connect.willDelayInterval = willDelayInterval
+        connect.messageExpiryInterval = messageExpiryInterval
+        connect.contentType = contentType
 
         send(connect)
         reader!.start()
