@@ -12,7 +12,7 @@ import Foundation
 /// MQTT UNSUBSCRIBE packet
 struct FrameUnsubscribe: Frame {
     
-    var packetFixedHeaderType: UInt8 = UInt8(FrameType.unsubscribe.rawValue + 2)
+    var packetFixedHeaderType: UInt8 = FrameType.unsubscribe.rawValue
     
     // --- Attributes
     

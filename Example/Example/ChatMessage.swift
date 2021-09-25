@@ -14,7 +14,6 @@ class ChatMessage {
     let sender: String
     let content: String
     
-    
     init(sender: String, content: String, id: UInt16) {
         self.sender = sender
         self.content = content

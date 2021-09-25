@@ -45,12 +45,13 @@ extension FrameUnsubAck {
     
     func variableHeader() -> [UInt8] {
         //3.11.2 MSB+LSB
-        var header = msgid.hlBytes
+        var head = msgid.hlBytes
 
         //MQTT 5.0
-        header += beVariableByteInteger(length: self.properties().count)
+        head.append(UInt8(self.properties().count))
+        head += self.properties()
 
-        return header
+        return head
     }
     
     func payload() -> [UInt8] { return _payload }
@@ -65,6 +66,7 @@ extension FrameUnsubAck {
 
         //3.11.2.1.3 User Property
         if let userProperty = self.userProperty {
+            //propertiesData += MQTTProperty<[String : String]>(.userProperty, value: userProperty).mqttData
             let dictValues = [String](userProperty.values)
             for (value) in dictValues {
                 properties += getMQTTPropertyData(type: CocoaMQTTPropertyName.userProperty.rawValue, value: value.bytesWithLength)

@@ -120,7 +120,7 @@ extension FrameConnAck: InitialWithBytes {
 
         //3.2.2.3 CONNACK Properties
         var index = 2
-        let propertyLengthVariableByteInteger = decodeVariableByteInteger(data: bytes, offset: index)
+        let propertyLengthVariableByteInteger = variableByteInteger(data: bytes, offset: index)
         propertyLength = UInt32(propertyLengthVariableByteInteger.res)
         index = propertyLengthVariableByteInteger.newOffset
 
@@ -128,7 +128,7 @@ extension FrameConnAck: InitialWithBytes {
         // properties
 
         while UInt32(index) - UInt32(propertyLengthVariableByteInteger.newOffset) < propertyLength! {
-            let resVariableByteInteger = decodeVariableByteInteger(data: bytes, offset: index)
+            let resVariableByteInteger = variableByteInteger(data: bytes, offset: index)
             index = resVariableByteInteger.newOffset
             let propertyNameByte = resVariableByteInteger.res
             guard let propertyName = CocoaMQTTPropertyName(rawValue: UInt8(propertyNameByte)) else {

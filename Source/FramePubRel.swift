@@ -12,7 +12,7 @@ import Foundation
 /// A PUBREL packet is the response to a PUBREC packet. It is the third packet of the QoS 2 protocol exchange.
 struct FramePubRel: Frame {
     
-    var packetFixedHeaderType: UInt8 = UInt8(FrameType.pubrel.rawValue + 2)
+    var packetFixedHeaderType: UInt8 = FrameType.pubrel.rawValue
     
     // --- Attributes
     
@@ -48,15 +48,15 @@ extension FramePubRel {
     
     func variableHeader() -> [UInt8] {
         //3.6.2 MSB+LSB
-        var header = msgid.hlBytes
+        var head = msgid.hlBytes
         //3.6.2.1 PUBACK Reason Code
-        header += [reasonCode!.rawValue]
+        head += [reasonCode!.rawValue]
 
         //MQTT 5.0
-        header += beVariableByteInteger(length: self.properties().count)
+        head.append(UInt8(self.properties().count))
+        head += self.properties()
 
-
-        return header
+        return head
     }
     
     func payload() -> [UInt8] { return [] }
@@ -71,6 +71,7 @@ extension FramePubRel {
 
         //3.6.2.2.3 User Property
         if let userProperty = self.userProperties {
+            //propertiesData += MQTTProperty<[String : String]>(.userProperty, value: userProperty).mqttData
             let dictValues = [String](userProperty.values)
             for (value) in dictValues {
                 properties += getMQTTPropertyData(type: CocoaMQTTPropertyName.userProperty.rawValue, value: value.bytesWithLength)
@@ -98,7 +99,7 @@ extension FramePubRel: InitialWithBytes {
         guard packetFixedHeaderType == 0x62 else {
             return nil
         }
-        guard bytes.count == 2 || bytes.count == 4 else {
+        guard bytes.count == 2 else {
             return nil
         }
         

@@ -60,11 +60,11 @@ enum FrameType: UInt8 {
     case publish = 0x30
     case puback = 0x40
     case pubrec = 0x50
-    case pubrel = 0x60
+    case pubrel = 0x62
     case pubcomp = 0x70
-    case subscribe = 0x80
+    case subscribe = 0x82
     case suback = 0x90
-    case unsubscribe = 0xA0
+    case unsubscribe = 0xA2
     case unsuback = 0xB0
     case pingreq = 0xC0
     case pingresp = 0xD0
@@ -110,19 +110,10 @@ extension Frame {
 
     /// Pack struct to binary
     func bytes() -> [UInt8] {
-        let fixedHeader = self.fixedHeader()
         let variableHeader = self.variableHeader()
-
         let payload = self.payload()
         let properties = self.properties()
-        let len = UInt32(variableHeader.count + properties.count + payload.count)
-
-        //payload = [0, 21, 67, 111, 99, 111, 97, 77, 81, 84, 84, 45, 83, 104, 101, 101, 112, 45, 49, 52, 54, 54, 50, 0, 5, 47, 119, 105, 108, 108, 0, 6, 100, 105, 101, 111, 117, 116, 0, 0, 0, 0]
-        print("packetFixedHeaderType \(packetFixedHeaderType)")
-        print("remainingLen(len: len) \(remainingLen(len: len))")
-        print("variableHeader \(variableHeader)")
-        print("properties \(properties)")
-        print("payload \(payload)")
+        let len = UInt32(variableHeader.count + payload.count)
         return [packetFixedHeaderType] + remainingLen(len: len) + variableHeader + properties + payload
     }
     

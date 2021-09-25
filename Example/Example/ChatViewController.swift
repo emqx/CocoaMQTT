@@ -29,8 +29,7 @@ class ChatViewController: UIViewController {
         }
     }
     var mqtt: CocoaMQTT?
-    var client: String?
-
+    var client: UInt16?
     var messages: [ChatMessage] = [] {
         didSet {
             tableView.reloadData()
@@ -59,7 +58,7 @@ class ChatViewController: UIViewController {
     @IBAction func sendMessage() {
         let message = messageTextView.text
 
-        mqtt!.publish("chat/room/animals/client/" + animal!, withString: message!, qos: .qos1)
+        mqtt!.publish("wlw", withString: message!, qos: .qos1)
         messageTextView.text = ""
         sendMessageButton.isEnabled = false
         messageTextViewHeightConstraint.constant = messageTextView.contentSize.height
@@ -75,7 +74,6 @@ class ChatViewController: UIViewController {
         super.viewDidLoad()
         navigationController?.navigationBar.isHidden = true
         animal = tabBarController?.selectedViewController?.tabBarItem.title
-
        // automaticallyAdjustsScrollViewInsets = false
         if #available(iOS 11.0, *) {
             self.tableView.contentInsetAdjustmentBehavior = .never
@@ -91,8 +89,6 @@ class ChatViewController: UIViewController {
         
         let name = NSNotification.Name(rawValue: "MQTTMessageNotification" + animal!)
         NotificationCenter.default.addObserver(self, selector: #selector(ChatViewController.receivedMessage(notification:)), name: name, object: nil)
-        let disconnectNotification = NSNotification.Name(rawValue: "MQTTMessageNotificationDisconnect")
-        NotificationCenter.default.addObserver(self, selector: #selector(ChatViewController.disconnectMessage(notification:)), name: disconnectNotification, object: nil)
         NotificationCenter.default.addObserver(self, selector: #selector(ChatViewController.keyboardChanged(notification:)), name: UIResponder.keyboardWillChangeFrameNotification, object: nil)
     }
     
@@ -112,27 +108,18 @@ class ChatViewController: UIViewController {
         }
         view.layoutIfNeeded()
     }
-
-
-    @objc func disconnectMessage(notification: NSNotification) {
-        disconnect()
-    }
-
-
+    
     @objc func receivedMessage(notification: NSNotification) {
         let userInfo = notification.userInfo as! [String: AnyObject]
         let message = userInfo["message"] as! String
         let topic = userInfo["topic"] as! String
-        let id = UInt16(userInfo["id"] as! UInt16)
-        //let sender = userInfo["animal"] as! String
-        let sender = topic.replacingOccurrences(of: "chat/room/animals/client/", with: "")
+        client = UInt16(userInfo["id"] as! UInt16)
+        let sender = topic.replacingOccurrences(of: "wlw", with: "")
         let content = String(message.filter { !"\0".contains($0) })
-        let chatMessage = ChatMessage(sender: sender, content: content, id: id)
-        print("sendersendersender =  \(sender)")
+        let chatMessage = ChatMessage(sender: sender, content: content, id: client!)
         messages.append(chatMessage)
     }
-
-
+    
     func scrollToBottom() {
         let count = messages.count
         if count > 3 {
@@ -168,19 +155,8 @@ extension ChatViewController: UITableViewDataSource, UITableViewDelegate {
     
     func tableView(_ tableView: UITableView, cellForRowAt indexPath: IndexPath) -> UITableViewCell {
         let message = messages[indexPath.row]
-        print("message.sender: \(message.sender)    animal:\(String(describing: tabBarController?.selectedViewController?.tabBarItem.title!))   message.content:\( message.content)"   )
 
-
-        //print(client)
-//        var isRightCell: Bool = true
-//        if message.id != 0 {
-//            if animal?.description == message.sender {
-//                isRightCell = true
-//            }else{
-//                isRightCell = false
-//            }
-//        }
-        if message.sender == animal {
+        if message.id != 0 {
             let cell = tableView.dequeueReusableCell(withIdentifier: "rightMessageCell", for: indexPath) as! ChatRightMessageCell
             print(message.content)
             cell.contentLabel.text = message.content

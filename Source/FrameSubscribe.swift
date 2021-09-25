@@ -12,7 +12,7 @@ import Foundation
 /// MQTT SUBSCRIBE Frame
 struct FrameSubscribe: Frame {
     
-    var packetFixedHeaderType: UInt8 = UInt8(FrameType.subscribe.rawValue + 2)
+    var packetFixedHeaderType: UInt8 = FrameType.subscribe.rawValue
     
     // --- Attributes
     
@@ -62,11 +62,12 @@ extension FrameSubscribe {
 
 
         //MQTT 5.0
-        var header = [UInt8]()
-        header = msgid.hlBytes
-        header += beVariableByteInteger(length: self.properties().count)
+        var head = [UInt8]()
+        head = msgid.hlBytes
+        head.append(UInt8(self.properties().count))
+        head += self.properties()
 
-        return header
+        return head
     }
     
     func payload() -> [UInt8] {
@@ -91,6 +92,7 @@ extension FrameSubscribe {
 
         //3.8.2.1.3 User Property
         if let userProperty = self.userProperty {
+            //propertiesData += MQTTProperty<[String : String]>(.userProperty, value: userProperty).mqttData
             let dictValues = [String](userProperty.values)
             for (value) in dictValues {
                 properties += getMQTTPropertyData(type: CocoaMQTTPropertyName.userProperty.rawValue, value: value.bytesWithLength)

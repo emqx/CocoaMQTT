@@ -65,7 +65,7 @@ struct FrameConnect: Frame {
     //3.1.3.2 Will Properties
     var willProperties: Data?
     //3.1.3.2.2 Will Delay Interval
-    var willDelayInterval: UInt32?
+    var willDelayInterval: Int?
     //3.1.3.2.3 Payload Format Indicator
     var payloadFormatIndicator: UInt8?
     //3.1.3.2.4 Message Expiry Interval
@@ -104,14 +104,13 @@ extension FrameConnect {
     func variableHeader() -> [UInt8] {
         var header = [UInt8]()
         var flags = ConnFlags()
-    
+
         //-----------------------
         //3.1.2.1 Protocol Name
         header += protocolName.bytesWithLength
 
         //3.1.2.2 Protocol Version
         header.append(protocolVersion)
-
 
         //3.1.2.3 Connect Flags
         if let will = willMsg {
@@ -135,8 +134,8 @@ extension FrameConnect {
         header += keepAlive.hlBytes
 
         //MQTT 5.0
-        header += beVariableByteInteger(length: self.properties().count)
-        
+        header.append(UInt8(self.properties().count))
+        header += self.properties()
 
         return header
     }
@@ -174,6 +173,7 @@ extension FrameConnect {
         }
         // 3.1.2.11.8 User Property
         if let userProperty = self.userProperties {
+            //propertiesData += MQTTProperty<[String : String]>(.userProperty, value: userProperty).mqttData
             let dictValues = [String](userProperty.values)
             for (value) in dictValues {
                 properties += getMQTTPropertyData(type: CocoaMQTTPropertyName.userProperty.rawValue, value: value.bytesWithLength)
@@ -193,17 +193,14 @@ extension FrameConnect {
 
     func payload() -> [UInt8] {
         var payload = [UInt8]()
-        print("0 payload \(payload)")
+
         payload += clientID.bytesWithLength
-        print("1 payload \(payload)")
+
         if let will = willMsg {
-            payload += beVariableByteInteger(length: will.properties.count)
-            payload += will.properties
             payload += will.topic.bytesWithLength
             payload += UInt16(will.payload.count).hlBytes
             payload += will.payload
         }
-        print("2 payload \(payload)")
         if let username = username {
             payload += username.bytesWithLength
 

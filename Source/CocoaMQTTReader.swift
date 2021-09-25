@@ -103,6 +103,7 @@ class CocoaMQTTReader {
     
     private func frameReady() {
 
+
         guard let frameType = FrameType(rawValue: UInt8(header & 0xF0)) else {
             printError("Received unknown frame type, header: \(header), data:\(data)")
             readHeader()
