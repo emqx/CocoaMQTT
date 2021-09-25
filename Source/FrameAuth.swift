@@ -44,9 +44,7 @@ extension FrameAuth {
     func variableHeader() -> [UInt8] {
         var header = [UInt8]()
         header += [reasonCode.rawValue]
-        //MQTT 5.0
-        header += beVariableByteInteger(length: self.properties().count)
-   
+
         return header
     }
 

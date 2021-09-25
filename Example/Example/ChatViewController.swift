@@ -75,8 +75,6 @@ class ChatViewController: UIViewController {
     }
     @IBAction func disconnect() {
         mqtt!.disconnect()
-        //or
-        //mqtt!.disconnect(reasonCode: CocoaMQTTDISCONNECTReasonCode.disconnectWithWillMessage, userProperties: ["userone":"hi"])
         _ = navigationController?.popViewController(animated: true)
     }
     
