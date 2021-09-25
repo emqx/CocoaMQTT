@@ -25,6 +25,11 @@ public enum CocoaMQTTAUTHReasonCode: UInt8 {
     case payloadFormatInvalid = 0x99
 }
 
+public enum CocoaMQTTCONNACKMaximumQoS {
+    case qos0
+    case qos1
+    case qos2
+}
 
 public enum PayloadFormatIndicator: UInt8 {
     case unspecified = 0x00

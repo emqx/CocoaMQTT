@@ -12,8 +12,7 @@ import CocoaMQTT
 
 class ViewController: UIViewController {
 
-    let defaultHost = "iot-platform.cloud"
-    //let defaultHost = "localhost"
+    let defaultHost = "localhost"
 
     var mqtt: CocoaMQTT?
     var animal: String?
@@ -51,8 +50,8 @@ class ViewController: UIViewController {
         let clientID = "CocoaMQTT-\(animal!)-" + String(ProcessInfo().processIdentifier)
         mqtt = CocoaMQTT(clientID: clientID, host: defaultHost, port: 6301)
 
-        let connectProperties = MqttConnectProperties.shared
-        connectProperties.topicAliasMaximum = 0
+        let connectProperties = FrameConnectProperties.init()
+        connectProperties.topicAliasMaximum = 60
         connectProperties.sessionExpiryInterval = 0
         connectProperties.receiveMaximum = 100
         connectProperties.maximumPacketSize = 500
@@ -182,14 +181,12 @@ extension ViewController: CocoaMQTTDelegate {
         completionHandler(true)
     }
     
-    func mqtt(_ mqtt: CocoaMQTT, didConnectAck ack: CocoaMQTTCONNACKReasonCode, connAckData: MqttDecodeConnAck) {
+    func mqtt(_ mqtt: CocoaMQTT, didConnectAck ack: CocoaMQTTCONNACKReasonCode) {
         TRACE("ack: \(ack)")
 
         if ack == .success {
-            print("properties maximumPacketSize: \(String(describing: connAckData.maximumPacketSize))")
-            print("properties topicAliasMaximum: \(String(describing: connAckData.topicAliasMaximum))")
             mqtt.subscribe("chat/room/animals/client/+", qos: CocoaMQTTQoS.qos1)
-
+            
             let chatViewController = storyboard?.instantiateViewController(withIdentifier: "ChatViewController") as? ChatViewController
             chatViewController?.mqtt = mqtt
             navigationController!.pushViewController(chatViewController!, animated: true)
@@ -207,19 +204,11 @@ extension ViewController: CocoaMQTTDelegate {
         TRACE("message: \(message.string.description), id: \(id)")
     }
     
-    func mqtt(_ mqtt: CocoaMQTT, didPublishAck id: UInt16, pubAckData: MqttDecodePubAck) {
+    func mqtt(_ mqtt: CocoaMQTT, didPublishAck id: UInt16) {
         TRACE("id: \(id)")
-        print("pubAckData reasonCode: \(String(describing: pubAckData.reasonCode))")
-    }
-
-    func mqtt(_ mqtt: CocoaMQTT, didPublishRec id: UInt16, pubRecData: MqttDecodePubRec) {
-        TRACE("id: \(id)")
-        print("pubRecData reasonCode: \(String(describing: pubRecData.reasonCode))")
     }
     
-    func mqtt(_ mqtt: CocoaMQTT, didReceiveMessage message: CocoaMQTTMessage, id: UInt16, publishData: MqttDecodePublish ) {
-        print("publish.contentType \(String(describing: publishData.contentType))")
-        
+    func mqtt(_ mqtt: CocoaMQTT, didReceiveMessage message: CocoaMQTTMessage, id: UInt16 ) {
         TRACE("message: \(message.string.description), id: \(id)")
         let name = NSNotification.Name(rawValue: "MQTTMessageNotification" + animal!)
 

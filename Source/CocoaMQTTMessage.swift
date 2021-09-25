@@ -31,7 +31,7 @@ public class CocoaMQTTMessage: NSObject {
     ///3.1.3.2.6 Response Topic
     public var willResponseTopic: String?
     ///3.1.3.2.7 Correlation Data
-    public var willCorrelationData: [UInt8]?
+    public var willCorrelationData: Data?
     ///3.1.3.2.8 User Property
     public var willUserProperty: [String: String]?
     

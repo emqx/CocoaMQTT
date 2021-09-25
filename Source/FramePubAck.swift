@@ -25,12 +25,10 @@ struct FramePubAck: Frame {
     public var reasonCode: CocoaMQTTPUBACKReasonCode?
 
     //3.4.2.2 PUBACK Properties
-    public var pubAckProperties: MqttDecodePubAck?
     //3.4.2.2.2 Reason String
     public var reasonString: String?
     //3.4.2.2.3 User Property
     public var userProperties: [String: String]?
-
     
     init(msgid: UInt16, reasonCode: CocoaMQTTPUBACKReasonCode) {
         self.msgid = msgid
@@ -101,17 +99,13 @@ extension FramePubAck: InitialWithBytes {
             return nil
         }
         //MQTT 5.0 bytes.count == 4
-        guard bytes.count >= 2 else {
+        guard bytes.count == 2 || bytes.count == 4 else {
             return nil
         }
 
         self.reasonCode = CocoaMQTTPUBACKReasonCode(rawValue: bytes[2])
-
+        print(self.reasonCode)
         msgid = UInt16(bytes[0]) << 8 + UInt16(bytes[1])
-
-
-        self.pubAckProperties = MqttDecodePubAck.shared
-        self.pubAckProperties!.decodePubAck(fixedHeader: packetFixedHeaderType, pubAckData: bytes)
     }
 }
 

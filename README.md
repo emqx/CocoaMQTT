@@ -6,7 +6,7 @@
 ![Swift version](https://img.shields.io/badge/swift-5-orange.svg)
 [![Coverage Status](https://coveralls.io/repos/github/emqx/CocoaMQTT/badge.svg?branch=master)](https://coveralls.io/github/emqx/CocoaMQTT?branch=master)
 
-MQTT v5.0 client library for iOS/macOS/tvOS  written with Swift 5
+MQTT v3.1.1 client library for iOS/macOS/tvOS  written with Swift 5
 
 
 ## Build
@@ -45,8 +45,6 @@ Then, run the following command:
 $ carthage update --platform iOS,macOS,tvOS
 ```
 
-
-
 Last if you're building for OS X:
 
 - On your application targets “General” settings tab, in the "Embedded Binaries" section, drag and drop CocoaMQTT.framework from the Carthage/Build/Mac folder on disk.
@@ -74,14 +72,6 @@ Create a client to connect [MQTT broker](https://www.emqx.io/products/broker):
 ```swift
 let clientID = "CocoaMQTT-" + String(ProcessInfo().processIdentifier)
 let mqtt = CocoaMQTT(clientID: clientID, host: "localhost", port: 1883)
-
-let connectProperties = MqttConnectProperties.shared
-connectProperties.topicAliasMaximum = 0
-connectProperties.sessionExpiryInterval = 0
-connectProperties.receiveMaximum = 100
-connectProperties.maximumPacketSize = 500
-mqtt.connectProperties = connectProperties
-
 mqtt.username = "test"
 mqtt.password = "public"
 mqtt.willMessage = CocoaMQTTWill(topic: "/will", message: "dieout")
@@ -209,7 +199,7 @@ MIT License (see `LICENSE`)
 - Feng Lee <feng@emqx.io>
 - CrazyWisdom <zh.whong@gmail.com>
 - Alex Yu <alexyu.dc@gmail.com>
-- Leeway <leeway1208@gmail.com>
+
 
 ## Twitter
 

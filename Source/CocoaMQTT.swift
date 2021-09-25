@@ -31,19 +31,16 @@ import CocoaAsyncSocket
 @objc public protocol CocoaMQTTDelegate {
 
     ///
-    func mqtt(_ mqtt: CocoaMQTT, didConnectAck ack: CocoaMQTTCONNACKReasonCode, connAckData: MqttDecodeConnAck)
+    func mqtt(_ mqtt: CocoaMQTT, didConnectAck ack: CocoaMQTTCONNACKReasonCode)
 
     ///
     func mqtt(_ mqtt: CocoaMQTT, didPublishMessage message: CocoaMQTTMessage, id: UInt16)
 
     ///
-    func mqtt(_ mqtt: CocoaMQTT, didPublishAck id: UInt16, pubAckData: MqttDecodePubAck)
+    func mqtt(_ mqtt: CocoaMQTT, didPublishAck id: UInt16)
 
     ///
-    func mqtt(_ mqtt: CocoaMQTT, didPublishRec id: UInt16, pubRecData: MqttDecodePubRec)
-
-    ///
-    func mqtt(_ mqtt: CocoaMQTT, didReceiveMessage message: CocoaMQTTMessage, id: UInt16, publishData: MqttDecodePublish)
+    func mqtt(_ mqtt: CocoaMQTT, didReceiveMessage message: CocoaMQTTMessage, id: UInt16 )
 
     ///
     func mqtt(_ mqtt: CocoaMQTT, didSubscribeTopics success: NSDictionary, failed: [String])
@@ -87,7 +84,7 @@ protocol CocoaMQTTClient {
     var cleanSession: Bool {get set}
     var keepAlive: UInt16 {get set}
     var willMessage: CocoaMQTTMessage? {get set}
-    var connectProperties: MqttConnectProperties? {get set}
+    var connectProperties: FrameConnectProperties? {get set}
 
 
     /* Basic Properties */
@@ -109,8 +106,8 @@ protocol CocoaMQTTClient {
     func unsubscribe(_ topic: String)
     func unsubscribe(_ topics: [String])
 
-    func publish(_ topic: String, withString string: String, qos: CocoaMQTTQoS,  DUP: Bool, retained: Bool, properties: MqttPublishProperties) -> Int
-    func publish(_ message: CocoaMQTTMessage, qos: CocoaMQTTQoS, DUP: Bool, retained: Bool, properties: MqttPublishProperties) -> Int
+    func publish(_ topic: String, withString string: String, qos: CocoaMQTTQoS, retained: Bool) -> Int
+    func publish(_ message: CocoaMQTTMessage) -> Int
 
     /* PUBLISH/SUBSCRIBE */
 }
@@ -207,7 +204,7 @@ public class CocoaMQTT: NSObject, CocoaMQTTClient {
 
 
     /// 3.1.2.11 CONNECT Properties
-    public var connectProperties: MqttConnectProperties?
+    public var connectProperties: FrameConnectProperties?
 
 
 
@@ -263,11 +260,10 @@ public class CocoaMQTT: NSObject, CocoaMQTTClient {
     fileprivate var reader: CocoaMQTTReader?
 
     // Closures
-    public var didConnectAck: (CocoaMQTT, CocoaMQTTCONNACKReasonCode, MqttDecodeConnAck) -> Void = { _, _, _ in }
+    public var didConnectAck: (CocoaMQTT, CocoaMQTTCONNACKReasonCode) -> Void = { _, _ in }
     public var didPublishMessage: (CocoaMQTT, CocoaMQTTMessage, UInt16) -> Void = { _, _, _ in }
-    public var didPublishAck: (CocoaMQTT, UInt16, MqttDecodePubAck) -> Void = { _, _, _ in }
-    public var didPublishRec: (CocoaMQTT, UInt16, MqttDecodePubRec) -> Void = { _, _, _ in }
-    public var didReceiveMessage: (CocoaMQTT, CocoaMQTTMessage, UInt16, MqttDecodePublish) -> Void = { _, _, _, _ in }
+    public var didPublishAck: (CocoaMQTT, UInt16) -> Void = { _, _ in }
+    public var didReceiveMessage: (CocoaMQTT, CocoaMQTTMessage, UInt16) -> Void = { _, _, _ in }
     public var didSubscribeTopics: (CocoaMQTT, NSDictionary, [String]) -> Void = { _, _, _  in }
     public var didUnsubscribeTopics: (CocoaMQTT, [String]) -> Void = { _, _ in }
     public var didPing: (CocoaMQTT) -> Void = { _ in }
@@ -419,10 +415,9 @@ public class CocoaMQTT: NSObject, CocoaMQTTClient {
     ///     - 1-65535 will be returned, if the messages's qos is qos1/qos2
     ///     - -1 will be returned, if the messages queue is full
     @discardableResult
-    public func publish(_ topic: String, withString string: String, qos: CocoaMQTTQoS = .qos1, DUP: Bool = false
-, retained: Bool = false, properties: MqttPublishProperties) -> Int {
+    public func publish(_ topic: String, withString string: String, qos: CocoaMQTTQoS = .qos1, retained: Bool = false) -> Int {
         let message = CocoaMQTTMessage(topic: topic, string: string, qos: qos, retained: retained)
-        return publish(message, qos: qos ,DUP: DUP,retained: retained, properties: properties)
+        return publish(message)
     }
 
     /// Publish a message to broker
@@ -430,7 +425,7 @@ public class CocoaMQTT: NSObject, CocoaMQTTClient {
     /// - Parameters:
     ///   - message: Message
     @discardableResult
-    public func publish(_ message: CocoaMQTTMessage, qos: CocoaMQTTQoS = .qos1, DUP: Bool = false, retained: Bool = false, properties: MqttPublishProperties) -> Int {
+    public func publish(_ message: CocoaMQTTMessage) -> Int {
         let msgid: UInt16
 
         if message.qos == .qos0 {
@@ -445,9 +440,7 @@ public class CocoaMQTT: NSObject, CocoaMQTTClient {
                                  payload: message.payload,
                                  qos: message.qos,
                                  msgid: msgid)
-        frame.QoS = qos
-        frame.DUP = DUP
-        frame.publishProperties = properties
+
         frame.retained = message.retained
 
         delegateQueue.async {
@@ -499,7 +492,7 @@ public class CocoaMQTT: NSObject, CocoaMQTTClient {
     ///   - topics: A list of `<Topic Names>/<Topic Filters>`
     public func unsubscribe(_ topics: [String]) {
         let msgid = nextMessageID()
-        let filter = MqttSubscription(topic: topics)
+        let filter = CocoaMMQTTopicFilter(topic: topics)
         let frame = FrameUnsubscribe(msgid: msgid, topics: topics, topicFilters: [filter])
         unsubscriptionsWaitingAck[msgid] = topics
         send(frame, tag: Int(msgid))
@@ -673,21 +666,20 @@ extension CocoaMQTT: CocoaMQTTReaderDelegate {
             internal_disconnect()
         }
 
-
-        delegate?.mqtt(self, didConnectAck: connack.reasonCode, connAckData: connack.connackProperties!)
-        didConnectAck(self, connack.reasonCode, connack.connackProperties!)
+        delegate?.mqtt(self, didConnectAck: connack.reasonCode)
+        didConnectAck(self, connack.reasonCode)
     }
 
     func didReceive(_ reader: CocoaMQTTReader, publish: FramePublish) {
         printDebug("RECV: \(publish)")
 
-        let message = CocoaMQTTMessage(topic: publish.recTopic, payload: publish.payload(), qos: publish.qos, retained: publish.retained)
+        let message = CocoaMQTTMessage(topic: publish.topic, payload: publish.payload(), qos: publish.qos, retained: publish.retained)
 
         message.duplicated = publish.dup
 
         printInfo("Received message: \(message)")
-        delegate?.mqtt(self, didReceiveMessage: message, id: publish.msgid,  publishData: publish.publishRecProperties!)
-        didReceiveMessage(self, message, publish.msgid, publish.publishRecProperties!)
+        delegate?.mqtt(self, didReceiveMessage: message, id: publish.msgid)
+        didReceiveMessage(self, message, publish.msgid)
 
         if message.qos == .qos1 {
             puback(FrameType.puback, msgid: publish.msgid)
@@ -701,17 +693,14 @@ extension CocoaMQTT: CocoaMQTTReaderDelegate {
 
         deliver.ack(by: puback)
 
-        delegate?.mqtt(self, didPublishAck: puback.msgid, pubAckData: puback.pubAckProperties!)
-        didPublishAck(self, puback.msgid, puback.pubAckProperties!)
+        delegate?.mqtt(self, didPublishAck: puback.msgid)
+        didPublishAck(self, puback.msgid)
     }
 
     func didReceive(_ reader: CocoaMQTTReader, pubrec: FramePubRec) {
         printDebug("RECV: \(pubrec)")
 
         deliver.ack(by: pubrec)
-
-        delegate?.mqtt(self, didPublishRec: pubrec.msgid, pubRecData: pubrec.pubRecProperties!)
-        didPublishRec(self, pubrec.msgid, pubrec.pubRecProperties!)
     }
 
     func didReceive(_ reader: CocoaMQTTReader, pubrel: FramePubRel) {
