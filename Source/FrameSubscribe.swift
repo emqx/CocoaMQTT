@@ -33,12 +33,12 @@ struct FrameSubscribe: Frame {
     public var userProperty: [String: String]?
 
     //3.8.3 SUBSCRIBE Payload
-    public var topicFilters: [MqttSubscription]
+    public var subscriptionList: [MqttSubscription]
 
     
     init(msgid: UInt16, subscriptionList: [MqttSubscription]) {
         self.msgid = msgid
-        self.topicFilters = subscriptionList
+        self.subscriptionList = subscriptionList
     }
 
 }
@@ -69,9 +69,13 @@ extension FrameSubscribe {
     func payload() -> [UInt8] {
         
         var payload = [UInt8]()
+        
+//        for (topic, qos) in topics {
+//            payload += topic.bytesWithLength
+//            payload.append(qos.rawValue)
+//        }
 
-        for subscription in self.topicFilters {
-            subscription.subscriptionOptions = true
+        for subscription in self.subscriptionList {
             payload += subscription.subscriptionData
         }
 
@@ -114,7 +118,7 @@ extension FrameSubscribe {
 extension FrameSubscribe: CustomStringConvertible {
     var description: String {
         var desc = ""
-        for subscription in self.topicFilters {
+        for subscription in self.subscriptionList {
             desc += "SUBSCRIBE(id: \(msgid), topics: \(subscription.topic))  "
         }
         return desc

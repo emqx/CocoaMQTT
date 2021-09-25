@@ -12,8 +12,8 @@ import CocoaMQTT
 
 class ViewController: UIViewController {
 
-
-    let defaultHost = "localhost"
+    let defaultHost = "iot-platform.cloud"
+    //let defaultHost = "localhost"
 
     var mqtt: CocoaMQTT?
     var animal: String?
@@ -37,10 +37,10 @@ class ViewController: UIViewController {
         tabBarController?.delegate = self
         animal = tabBarController?.selectedViewController?.tabBarItem.title
         mqttSetting()
-        //selfSignedSSLSetting()
-        //simpleSSLSetting()
+        // selfSignedSSLSetting()
+        // simpleSSLSetting()
         //mqttWebsocketsSetting()
-        //mqttWebsocketSSLSetting()
+        // mqttWebsocketSSLSetting()
     }
     
     override func viewWillAppear(_ animated: Bool) {
@@ -198,7 +198,6 @@ extension ViewController: CocoaMQTTDelegate {
             let chatViewController = storyboard?.instantiateViewController(withIdentifier: "ChatViewController") as? ChatViewController
             chatViewController?.mqtt = mqtt
             navigationController!.pushViewController(chatViewController!, animated: true)
-
         }
     }
     
@@ -244,10 +243,8 @@ extension ViewController: CocoaMQTTDelegate {
         print("subAckData.reasonCodes \(String(describing: subAckData.reasonCodes))")
     }
     
-    func mqtt(_ mqtt: CocoaMQTT, didUnsubscribeTopics topics: [String], UnsubAckData: MqttDecodeUnsubAck) {
+    func mqtt(_ mqtt: CocoaMQTT, didUnsubscribeTopics topics: [String]) {
         TRACE("topic: \(topics)")
-        print("UnsubAckData.reasonCodes \(String(describing: UnsubAckData.reasonCodes))")
-        print("----------------------")
     }
     
     func mqttDidPing(_ mqtt: CocoaMQTT) {

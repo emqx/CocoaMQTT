@@ -49,7 +49,7 @@ public class MqttDecodeSubAck: NSObject {
 
             
             switch propertyName.rawValue {
-            // 3.9.2.1.2 Reason String
+            //3.9.2.1.2 Reason String
             case CocoaMQTTPropertyName.reasonString.rawValue:
                 guard let result = unsignedByteToString(data: pubAckData, offset: dataIndex) else {
                     break
