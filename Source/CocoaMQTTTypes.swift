@@ -64,18 +64,9 @@ public enum CocoaMQTTError: Error {
     case readTimeout
     case writeTimeout
     
-
-//    @available(OSX 10.15, iOS 13.0, watchOS 6.0, tvOS 13.0, *)
-//    case closed(URLSessionWebSocketTask.CloseCode)
-    
-}
-
-@available(OSX 10.15, iOS 13.0, watchOS 6.0, tvOS 13.0, *)
-public enum CocoaMQTTError_GREATERTHAN_IOS13_OSX1015_TVOS13_W0S6: Error {
+    @available(OSX 10.15, iOS 13.0, watchOS 6.0, tvOS 13.0, *)
     case closed(URLSessionWebSocketTask.CloseCode)
 }
-
-
 
 extension Array where Element == UInt8 {
     var summary: String {

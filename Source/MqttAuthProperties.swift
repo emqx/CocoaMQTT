@@ -5,6 +5,7 @@
 //  Created by liwei wang on 1/9/2021.
 //
 
+import UIKit
 
 public class MqttAuthProperties: NSObject {
     

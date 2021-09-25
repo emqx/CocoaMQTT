@@ -1,20 +1,20 @@
 # CocoaMQTT
 
-![PodVersion](https://img.shields.io/cocoapods/v/CocoaMQTT5.svg)
-![Platforms](https://img.shields.io/cocoapods/p/CocoaMQTT5.svg)
+![PodVersion](https://img.shields.io/cocoapods/v/CocoaMQTT.svg)
+![Platforms](https://img.shields.io/cocoapods/p/CocoaMQTT.svg)
 ![License](https://img.shields.io/cocoapods/l/BadgeSwift.svg?style=flat)
 ![Swift version](https://img.shields.io/badge/swift-5-orange.svg)
+[![Coverage Status](https://coveralls.io/repos/github/emqx/CocoaMQTT/badge.svg?branch=master)](https://coveralls.io/github/emqx/CocoaMQTT?branch=master)
 
-MQTT v5.0 client library for iOS/macOS/tvOS written with Swift 5
+MQTT v5.0 client library for iOS/macOS/tvOS  written with Swift 5
 
 
 ## Build
 
 Build with Xcode 11.1 / Swift 5.1
 
-IOS Target: 10.0 or above
-OSX Target: 10.12 or above
-TVOS Target: 10.0 or above
+iOS Target: 10.0 or above
+
 
 ## Installation
 ### CocoaPods
@@ -22,7 +22,8 @@ TVOS Target: 10.0 or above
 Install using [CocoaPods](http://cocoapods.org) by adding this line to your Podfile:
 
 ```ruby
-pod 'CocoaMQTT5'
+use_frameworks! # Add this if you are targeting iOS 8+ or using Swift
+pod 'CocoaMQTT'  
 ```
 
 Then, run the following command:
@@ -30,13 +31,6 @@ Then, run the following command:
 ```bash
 $ pod install
 ```
-
-At last, import "CocoaMQTT5" to your project:
-
-```swift
-import CocoaMQTT5
-```
-
 
 ### Carthage
 Install using [Carthage](https://github.com/Carthage/Carthage) by adding the following lines to your Cartfile:
@@ -51,13 +45,15 @@ Then, run the following command:
 $ carthage update --platform iOS,macOS,tvOS
 ```
 
+
+
 Last if you're building for OS X:
 
 - On your application targets “General” settings tab, in the "Embedded Binaries" section, drag and drop CocoaMQTT.framework from the Carthage/Build/Mac folder on disk.
 
 If you're building for iOS, tvOS:
 
-- On your application targets “General” settings tab, in the "Frameworks and Libraries" section, drag and drop each framework you want to use from the Carthage/Build folder on disk.
+- On your application targets “General” settings tab, in the "Linked Frameworks and Libraries" section, drag and drop each framework you want to use from the Carthage/Build folder on disk.
 
 - On your application targets "Build Phases" settings tab, click the "+" icon and choose "New Run Script Phase". Create a Run Script with the following contents: 
 
@@ -150,10 +146,7 @@ Then, Create a MQTT instance over Websocket:
 ```swift
 let websocket = CocoaMQTTWebSocket(uri: "/mqtt")
 let mqtt = CocoaMQTT(clientID: clientID, host: host, port: 8083, socket: websocket)
-let connectProperties = MqttConnectProperties.shared
-connectProperties.topicAliasMaximum = 0
-// ...
-mqtt.connectProperties = connectProperties
+
 // ...
 
 _ = mqtt.connect()
@@ -195,7 +188,7 @@ Then, open the `Example.xcworkspace/` by Xcode and start it!
 These third-party functions are used:
 
 * [GCDAsyncSocket](https://github.com/robbiehanson/CocoaAsyncSocket)
-* [Starscream](https://github.com/daltoniam/Starscream）
+* [Starscream](https://github.com/daltoniam/Starscream)
 
 
 ## LICENSE
@@ -217,7 +210,6 @@ MIT License (see `LICENSE`)
 - CrazyWisdom <zh.whong@gmail.com>
 - Alex Yu <alexyu.dc@gmail.com>
 - Leeway <leeway1208@gmail.com>
-
 
 ## Twitter
 
