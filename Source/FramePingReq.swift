@@ -19,7 +19,8 @@ extension FramePingReq {
     func fixedHeader() -> [UInt8] {
         var header = [UInt8]()
         header += [FrameType.pingreq.rawValue]
-     
+        header += [0]
+
         return header
     }
     

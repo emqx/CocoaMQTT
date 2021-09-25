@@ -43,6 +43,7 @@ extension FramePubRel {
     func fixedHeader() -> [UInt8] {
         var header = [UInt8]()
         header += [FrameType.pubrel.rawValue]
+        header += [UInt8(variableHeader().count + payload().count)]
 
         return header
     }

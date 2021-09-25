@@ -67,6 +67,7 @@ extension FrameConnect {
     func fixedHeader() -> [UInt8] {
         var header = [UInt8]()
         header += [FrameType.connect.rawValue]
+        header += [UInt8(variableHeader().count + payload().count)]
 
         return header
     }

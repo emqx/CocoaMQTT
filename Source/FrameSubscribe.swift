@@ -47,6 +47,7 @@ extension FrameSubscribe {
     func fixedHeader() -> [UInt8] {
         var header = [UInt8]()
         header += [FrameType.subscribe.rawValue]
+        header += [UInt8(variableHeader().count + payload().count)]
 
         return header
     }

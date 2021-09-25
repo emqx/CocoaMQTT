@@ -10,6 +10,10 @@ import Foundation
 
 public class MqttPublishProperties: NSObject {
 
+    public static let shared = MqttPublishProperties()
+    private override init() {
+        super.init()
+    }
 
     //3.3.2.3 PUBLISH Properties
     //3.3.2.3.1 Property Length

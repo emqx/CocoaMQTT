@@ -88,8 +88,8 @@ protocol CocoaMQTTClient {
     var keepAlive: UInt16 {get set}
     var willMessage: CocoaMQTTMessage? {get set}
     var connectProperties: MqttConnectProperties? {get set}
-    var authProperties: MqttAuthProperties? {get set}
-    
+
+
     /* Basic Properties */
 
     /* CONNNEC/DISCONNECT */
@@ -110,7 +110,7 @@ protocol CocoaMQTTClient {
     func unsubscribe(_ topics: [MqttSubscription])
 
     func publish(_ topic: String, withString string: String, qos: CocoaMQTTQoS,  DUP: Bool, retained: Bool, properties: MqttPublishProperties) -> Int
-    func publish(_ message: CocoaMQTTMessage, DUP: Bool, retained: Bool, properties: MqttPublishProperties) -> Int
+    func publish(_ message: CocoaMQTTMessage, qos: CocoaMQTTQoS, DUP: Bool, retained: Bool, properties: MqttPublishProperties) -> Int
 
     /* PUBLISH/SUBSCRIBE */
 }
@@ -209,8 +209,7 @@ public class CocoaMQTT: NSObject, CocoaMQTTClient {
     /// 3.1.2.11 CONNECT Properties
     public var connectProperties: MqttConnectProperties?
 
-    /// 3.15.2.2 AUTH Properties
-    public var authProperties: MqttAuthProperties?
+
 
     private var reconnectTimeInterval: UInt16 = 0
 
@@ -439,7 +438,7 @@ public class CocoaMQTT: NSObject, CocoaMQTTClient {
     public func publish(_ topic: String, withString string: String, qos: CocoaMQTTQoS = .qos1, DUP: Bool = false
 , retained: Bool = false, properties: MqttPublishProperties) -> Int {
         let message = CocoaMQTTMessage(topic: topic, string: string, qos: qos, retained: retained)
-        return publish(message, DUP: DUP, retained: retained, properties: properties)
+        return publish(message, qos: qos ,DUP: DUP,retained: retained, properties: properties)
     }
 
     /// Publish a message to broker
@@ -447,7 +446,7 @@ public class CocoaMQTT: NSObject, CocoaMQTTClient {
     /// - Parameters:
     ///   - message: Message
     @discardableResult
-    public func publish(_ message: CocoaMQTTMessage, DUP: Bool = false, retained: Bool = false, properties: MqttPublishProperties) -> Int {
+    public func publish(_ message: CocoaMQTTMessage, qos: CocoaMQTTQoS = .qos1, DUP: Bool = false, retained: Bool = false, properties: MqttPublishProperties) -> Int {
         let msgid: UInt16
 
         if message.qos == .qos0 {
@@ -463,7 +462,7 @@ public class CocoaMQTT: NSObject, CocoaMQTTClient {
                                  payload: message.payload,
                                  qos: message.qos,
                                  msgid: msgid)
-        frame.QoS = message.qos
+        frame.QoS = qos
         frame.DUP = DUP
         frame.publishProperties = properties
         frame.retained = message.retained
@@ -528,11 +527,9 @@ public class CocoaMQTT: NSObject, CocoaMQTTClient {
     ///  Authentication exchange
     ///
     ///
-    public func auth(reasonCode : CocoaMQTTAUTHReasonCode,authProperties : MqttAuthProperties) {
+    public func auth() {
         printDebug("auth")
-        var frame = FrameAuth(reasonCode: reasonCode, authProperties: authProperties)
-
-        send(frame)
+       // send(FrameAuth(reasonCode: CocoaMQTTAUTHReasonCode.success), tag: -0xC0)
     }
 }
 

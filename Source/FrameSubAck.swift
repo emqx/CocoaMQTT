@@ -44,6 +44,7 @@ extension FrameSubAck {
     func fixedHeader() -> [UInt8] {
         var header = [UInt8]()
         header += [FrameType.suback.rawValue]
+        header += [UInt8(variableHeader().count + payload().count)]
 
         return header
     }

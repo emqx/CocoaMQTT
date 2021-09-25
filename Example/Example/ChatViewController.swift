@@ -61,11 +61,11 @@ class ChatViewController: UIViewController {
         
         let message = messageTextView.text
 
-        let publishProperties = MqttPublishProperties()
+        let publishProperties = MqttPublishProperties.shared
         publishProperties.contentType = "JSON"
 
 
-        mqtt!.publish("chat/room/animals/client/" + animal!, withString: message!, qos: .qos1, DUP: false, retained: false, properties: publishProperties)
+        mqtt!.publish("chat/room/animals/client/" + animal!, withString: message!, qos: .qos2, DUP: false, retained: false, properties: publishProperties)
         
         messageTextView.text = ""
         sendMessageButton.isEnabled = false
