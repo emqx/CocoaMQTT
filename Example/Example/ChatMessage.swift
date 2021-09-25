@@ -9,14 +9,12 @@
 import Foundation
 
 class ChatMessage {
-
-    let id: UInt16
+    
     let sender: String
     let content: String
     
-    init(sender: String, content: String, id: UInt16) {
+    init(sender: String, content: String) {
         self.sender = sender
         self.content = content
-        self.id = id
     }
 }
