@@ -118,13 +118,11 @@ extension Frame {
         let len = UInt32(variableHeader.count + properties.count + payload.count)
 
         //payload = [0, 21, 67, 111, 99, 111, 97, 77, 81, 84, 84, 45, 83, 104, 101, 101, 112, 45, 49, 52, 54, 54, 50, 0, 5, 47, 119, 105, 108, 108, 0, 6, 100, 105, 101, 111, 117, 116, 0, 0, 0, 0]
-        if UserDefaults.standard.bool(forKey: "printDebug") {
-            print("packetFixedHeaderType \(packetFixedHeaderType)")
-            print("remainingLen(len: len) \(remainingLen(len: len))")
-            print("variableHeader \(variableHeader)")
-            print("properties \(properties)")
-            print("payload \(payload)")
-        }
+        print("packetFixedHeaderType \(packetFixedHeaderType)")
+        print("remainingLen(len: len) \(remainingLen(len: len))")
+        print("variableHeader \(variableHeader)")
+        print("properties \(properties)")
+        print("payload \(payload)")
         return [packetFixedHeaderType] + remainingLen(len: len) + variableHeader + properties + payload
     }
     

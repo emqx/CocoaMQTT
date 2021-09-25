@@ -30,9 +30,6 @@ struct FrameSubAck: Frame {
     //3.9.3 The order of Reason Codes in the SUBACK packet MUST match the order of Topic Filters in the SUBSCRIBE packet [MQTT-3.9.3-1].
     public var reasonCodes: [CocoaMQTTSUBACKReasonCode]?
 
-    //3.9.2.1 SUBACK  SUBACK Properties
-    public var subAckProperties: MqttDecodeSubAck?
-
     
     init(msgid: UInt16, grantedQos: [CocoaMQTTQoS]) {
         self.msgid = msgid
@@ -103,11 +100,6 @@ extension FrameSubAck: InitialWithBytes {
             }
             self.reasonCodes! += [qos]
         }
-
-
-        self.subAckProperties = MqttDecodeSubAck.shared
-        self.subAckProperties!.decodeSubAck(fixedHeader: packetFixedHeaderType, pubAckData: bytes)
-        
     }
 }
 

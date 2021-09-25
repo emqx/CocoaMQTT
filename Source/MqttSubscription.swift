@@ -9,26 +9,27 @@ import Foundation
 
 ///3.8.3.1 Subscription Options
 public class MqttSubscription {
- 
-    public var topic: String
+    public var topic: [String]
     public var qos = CocoaMQTTQoS.qos1
-    public var noLocal: Bool = false
-    public var retainAsPublished: Bool = false
-    public var retainHandling: CocoaRetainHandlingOption
+    public var noLocal:Bool = false
+    public var retainAsPublished:Bool = false
+    public var retainHandling:UInt16 = 0;
 
-
-    public init(topic: String) {
+    init(topic: [String]) {
         self.topic = topic
         self.qos = CocoaMQTTQoS.qos1
         self.noLocal = false
         self.retainAsPublished = false
-        self.retainHandling = CocoaRetainHandlingOption.none
+        self.retainHandling = 0
     }
 
     var subscriptionData:[UInt8]{
         var data = [UInt8]()
 
-        data += topic.bytesWithLength
+        for t in self.topic {
+            data += t.bytesWithLength
+        }
+
 
         var options:Int = 0;
         switch qos {
@@ -57,11 +58,11 @@ public class MqttSubscription {
         }
 
         switch retainHandling {
-        case CocoaRetainHandlingOption.none:
+        case 0:
             options = options | 0b0000_0000
-        case CocoaRetainHandlingOption.sendOnlyWhenSubscribeIsNew:
+        case 1:
             options = options | 0b0001_0000
-        case CocoaRetainHandlingOption.sendOnSubscribe:
+        case 2:
             options = options | 0b0010_0000
         default:
             printDebug("topucFilter retainHandling failure")

@@ -81,7 +81,7 @@ extension FramePublish {
         case .qos2:
             flags = flags | 0b0011_0100
         case .FAILTURE:
-            printDebug("FAILTURE")
+            print("FAILTURE")
         }
 
 
@@ -166,7 +166,7 @@ extension FramePublish: InitialWithBytes {
         case .qos2:
             flags = flags | 0b0011_0100
         case .FAILTURE:
-            printDebug("FAILTURE")
+            print("FAILTURE")
         }
         
         self.packetFixedHeaderType = flags

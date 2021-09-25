@@ -24,10 +24,13 @@ struct FrameUnsubscribe: Frame {
 
     //3.10.2.1.2 User Property
     public var userProperty: [String: String]?
+    //3.10.3 UNSUBSCRIBE Payload
+    public var topicFilters: [MqttSubscription]
 
-    init(msgid: UInt16, topics: [String]) {
+    init(msgid: UInt16, topics: [String], topicFilters: [MqttSubscription]) {
         self.msgid = msgid
         self.topics = topics
+        self.topicFilters = topicFilters
 
         qos = CocoaMQTTQoS.qos1
     }

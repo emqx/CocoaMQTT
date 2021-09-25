@@ -82,7 +82,7 @@ func integerCompute(data:[UInt8], formatType:Int, offset:Int) -> (res: Int, newO
     case formatInt.formatSint32.rawValue:
         return (unsignedToSigned(unsign: unsignedBytesToInt(data0: data[offset], data1: data[offset + 1], data2: data[offset + 2], data3: data[offset + 3]), size: 32), offset + 4)
     default:
-        printDebug("integerCompute nothing")
+        print("integerCompute nothing")
     }
 
     return nil

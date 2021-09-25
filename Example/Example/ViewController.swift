@@ -188,12 +188,7 @@ extension ViewController: CocoaMQTTDelegate {
         if ack == .success {
             print("properties maximumPacketSize: \(String(describing: connAckData.maximumPacketSize))")
             print("properties topicAliasMaximum: \(String(describing: connAckData.topicAliasMaximum))")
-            
-            //mqtt.subscribe("chat/room/animals/client/+", qos: CocoaMQTTQoS.qos1)
-            //or
-            let subscriptions : [MqttSubscription] = [MqttSubscription(topic: "chat/room/animals/client/+"),MqttSubscription(topic: "chat/room/foods/client/+"),MqttSubscription(topic: "chat/room/trees/client/+")]
-
-            mqtt.subscribe(subscriptions)
+            mqtt.subscribe("chat/room/animals/client/+", qos: CocoaMQTTQoS.qos1)
 
             let chatViewController = storyboard?.instantiateViewController(withIdentifier: "ChatViewController") as? ChatViewController
             chatViewController?.mqtt = mqtt
@@ -221,14 +216,7 @@ extension ViewController: CocoaMQTTDelegate {
         TRACE("id: \(id)")
         print("pubRecData reasonCode: \(String(describing: pubRecData.reasonCode))")
     }
-
-    func mqtt(_ mqtt: CocoaMQTT, didPublishComplete id: UInt16,  pubCompData: MqttDecodePubComp){
-        TRACE("id: \(id)")
-        print("pubCompData reasonCode: \(String(describing: pubCompData.reasonCode))")
-    }
-
-
-
+    
     func mqtt(_ mqtt: CocoaMQTT, didReceiveMessage message: CocoaMQTTMessage, id: UInt16, publishData: MqttDecodePublish ) {
         print("publish.contentType \(String(describing: publishData.contentType))")
         
@@ -238,9 +226,8 @@ extension ViewController: CocoaMQTTDelegate {
         NotificationCenter.default.post(name: name, object: self, userInfo: ["message": message.string!, "topic": message.topic, "id": id, "animal": animal as Any])
     }
     
-    func mqtt(_ mqtt: CocoaMQTT, didSubscribeTopics success: NSDictionary, failed: [String], subAckData: MqttDecodeSubAck) {
+    func mqtt(_ mqtt: CocoaMQTT, didSubscribeTopics success: NSDictionary, failed: [String]) {
         TRACE("subscribed: \(success), failed: \(failed)")
-        print("subAckData.reasonCodes \(String(describing: subAckData.reasonCodes))")
     }
     
     func mqtt(_ mqtt: CocoaMQTT, didUnsubscribeTopics topics: [String]) {

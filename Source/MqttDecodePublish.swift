@@ -49,9 +49,8 @@ public class MqttDecodePublish: NSObject {
         }
         self.topic = result.resStr
         dataIndex = result.newOffset
-        if UserDefaults.standard.bool(forKey: "printDebug") {
-            print("topic = \(topic)")
-        }
+        print("topic = \(topic)")
+
 
         guard let recQos = CocoaMQTTQoS(rawValue: (fixedHeader & 0b0000_0110) >> 1) else {
             return

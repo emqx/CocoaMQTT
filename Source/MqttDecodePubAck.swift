@@ -13,7 +13,7 @@ public class MqttDecodePubAck: NSObject {
     static let shared = MqttDecodePubAck()
 
 
-    var totalCount = 0
+    let totalCount = 0
     var dataIndex = 0
     var propertyLength: Int = 0
 
@@ -27,8 +27,6 @@ public class MqttDecodePubAck: NSObject {
 
     
     public func decodePubAck(fixedHeader: UInt8, pubAckData: [UInt8]){
-        totalCount = pubAckData.count
-        dataIndex = 0
         //msgid
         let msgidResult = integerCompute(data: pubAckData, formatType: formatInt.formatUint16.rawValue, offset: dataIndex)
         msgid = UInt16(msgidResult!.res)
