@@ -11,20 +11,13 @@ import Foundation
 
 /// MQTT PINGRESP packet
 struct FramePingResp: Frame {
-
-    var packetFixedHeaderType: UInt8 = FrameType.pingresp.rawValue
+    
+    var fixedHeader: UInt8 = FrameType.pingresp.rawValue
     
     init() { /* Nothing to do */ }
 }
 
 extension FramePingResp {
-    func fixedHeader() -> [UInt8] {
-        var header = [UInt8]()
-        header += [FrameType.pingresp.rawValue]
-        header += [0]
-
-        return header
-    }
     
     func variableHeader() -> [UInt8] { return [] }
     
@@ -35,7 +28,7 @@ extension FramePingResp {
     func allData() -> [UInt8] {
         var allData = [UInt8]()
 
-        allData += fixedHeader()
+        allData.append(fixedHeader)
         allData += variableHeader()
         allData += properties()
         allData += payload()
@@ -46,8 +39,8 @@ extension FramePingResp {
 
 extension FramePingResp: InitialWithBytes {
     
-    init?(packetFixedHeaderType: UInt8, bytes: [UInt8]) {
-        guard packetFixedHeaderType == FrameType.pingresp.rawValue else {
+    init?(fixedHeader: UInt8, bytes: [UInt8]) {
+        guard fixedHeader == FrameType.pingresp.rawValue else {
             return nil
         }
         

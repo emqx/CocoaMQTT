@@ -12,7 +12,7 @@ import Foundation
 /// MQTT SUBSCRIBE Frame
 struct FrameSubscribe: Frame {
     
-    var packetFixedHeaderType: UInt8 = FrameType.subscribe.rawValue
+    var fixedHeader: UInt8 = FrameType.subscribe.rawValue
     
     // --- Attributes
     
@@ -38,7 +38,7 @@ struct FrameSubscribe: Frame {
     }
     
     init(msgid: UInt16, topics: [(String, CocoaMQTTQoS)]) {
-        packetFixedHeaderType = FrameType.subscribe.rawValue
+        fixedHeader = FrameType.subscribe.rawValue
         self.msgid = msgid
         self.topics = topics
         
@@ -47,13 +47,6 @@ struct FrameSubscribe: Frame {
 }
 
 extension FrameSubscribe {
-    func fixedHeader() -> [UInt8] {
-        var header = [UInt8]()
-        header += [FrameType.subscribe.rawValue]
-        header += [UInt8(variableHeader().count + payload().count)]
-
-        return header
-    }
     
     func variableHeader() -> [UInt8] {
         
@@ -106,7 +99,7 @@ extension FrameSubscribe {
     func allData() -> [UInt8] {
         var allData = [UInt8]()
 
-        allData += fixedHeader()
+        allData.append(fixedHeader)
         allData += variableHeader()
         allData += properties()
         allData += payload()
