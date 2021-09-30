@@ -10,8 +10,6 @@ import Foundation
 
 public class MqttDecodeConnAck: NSObject {
 
-    static let shared = MqttDecodeConnAck()
-
 //    var connackData: [UInt8]
 //
 //    init(connackData: [UInt8]) {
