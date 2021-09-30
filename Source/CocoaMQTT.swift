@@ -589,7 +589,7 @@ extension CocoaMQTT: CocoaMQTTSocketDelegate {
             }
         }
 
-        guard autoReconnect else {
+        guard autoReconnect else {            
             return
         }
         
