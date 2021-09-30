@@ -11,7 +11,6 @@ import Foundation
 
 /// Encode and Decode big-endian UInt16
 extension UInt16 {
-    
     /// Most Significant Byte (MSB)
     private var highByte: UInt8 {
         return UInt8( (self & 0xFF00) >> 8)
@@ -29,7 +28,6 @@ extension UInt16 {
 
 
 extension String {
-    
     /// String with two bytes length
     var bytesWithLength: [UInt8] {
         return UInt16(utf8.count).hlBytes + utf8
@@ -38,7 +36,6 @@ extension String {
 
 
 extension Bool {
-    
     /// Bool to bit of UInt8
     var bit: UInt8 {
         return self ? 1 : 0
@@ -51,7 +48,6 @@ extension Bool {
 }
 
 extension UInt8 {
-    
     /// Read a bit value
     func bitAt(_ offset: UInt8) -> UInt8 {
         return (self >> offset) & 0x01
@@ -63,18 +59,11 @@ public enum CocoaMQTTError: Error {
     case invalidURL
     case readTimeout
     case writeTimeout
-    
-
-//    @available(OSX 10.15, iOS 13.0, watchOS 6.0, tvOS 13.0, *)
-//    case closed(URLSessionWebSocketTask.CloseCode)
-    
+    @available(OSX 10.15, iOS 13.0, watchOS 6.0, tvOS 13.0, *)
+    public enum FoundationConnection : Error {
+        case closed(URLSessionWebSocketTask.CloseCode)
+    }
 }
-
-@available(OSX 10.15, iOS 13.0, watchOS 6.0, tvOS 13.0, *)
-public enum CocoaMQTTError_GREATERTHAN_IOS13_OSX1015_TVOS13_W0S6: Error {
-    case closed(URLSessionWebSocketTask.CloseCode)
-}
-
 
 
 extension Array where Element == UInt8 {
@@ -94,7 +83,6 @@ extension Array where Element == UInt8 {
 
 
 extension Data {
-
     var uint8: UInt8 {
         var number: UInt8 = 0
         self.copyBytes(to:&number, count: MemoryLayout<UInt8>.size)

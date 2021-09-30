@@ -368,7 +368,7 @@ extension CocoaMQTTWebSocket.FoundationConnection: URLSessionWebSocketDelegate {
 
     public func urlSession(_ session: URLSession, webSocketTask: URLSessionWebSocketTask, didCloseWith closeCode: URLSessionWebSocketTask.CloseCode, reason: Data?) {
         queue.async {
-            self.delegate?.connectionClosed(self, withError: CocoaMQTTError_GREATERTHAN_IOS13_OSX1015_TVOS13_W0S6.closed(closeCode))
+            self.delegate?.connectionClosed(self, withError: CocoaMQTTError.FoundationConnection.closed(closeCode))
         }
     }
 }
