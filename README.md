@@ -173,7 +173,10 @@ _ = mqtt5.connect()
 ///MQTT 3.1.1
 let websocket = CocoaMQTTWebSocket(uri: "/mqtt")
 let mqtt = CocoaMQTT(clientID: clientID, host: host, port: 8083, socket: websocket)
-
+let connectProperties = MqttConnectProperties.shared
+connectProperties.topicAliasMaximum = 0
+// ...
+mqtt.connectProperties = connectProperties
 // ...
 
 _ = mqtt.connect()
