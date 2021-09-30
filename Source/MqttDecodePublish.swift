@@ -9,8 +9,6 @@ import Foundation
 
 public class MqttDecodePublish: NSObject {
 
-    static let shared = MqttDecodePublish()
-
     //3.3.2.3 PUBLISH Properties
     //3.3.2.3.1 Property Length
     public var propertyLength: Int?
@@ -49,9 +47,8 @@ public class MqttDecodePublish: NSObject {
         }
         self.topic = result.resStr
         dataIndex = result.newOffset
-        if UserDefaults.standard.bool(forKey: "printDebug") {
-            print("topic = \(topic)")
-        }
+
+        printDebug("topic = \(topic)")
 
         guard let recQos = CocoaMQTTQoS(rawValue: (fixedHeader & 0b0000_0110) >> 1) else {
             return

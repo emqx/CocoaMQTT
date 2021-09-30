@@ -1,9 +1,9 @@
 <?xml version="1.0" encoding="UTF-8"?>
-<document type="com.apple.InterfaceBuilder3.CocoaTouch.Storyboard.XIB" version="3.0" toolsVersion="18122" targetRuntime="iOS.CocoaTouch" propertyAccessControl="none" useAutolayout="YES" useTraitCollections="YES" colorMatched="YES" initialViewController="8ly-lq-dg0">
+<document type="com.apple.InterfaceBuilder3.CocoaTouch.Storyboard.XIB" version="3.0" toolsVersion="19162" targetRuntime="iOS.CocoaTouch" propertyAccessControl="none" useAutolayout="YES" useTraitCollections="YES" colorMatched="YES" initialViewController="8ly-lq-dg0">
     <device id="retina4_7" orientation="portrait" appearance="light"/>
     <dependencies>
         <deployment identifier="iOS"/>
-        <plugIn identifier="com.apple.InterfaceBuilder.IBCocoaTouchPlugin" version="18093"/>
+        <plugIn identifier="com.apple.InterfaceBuilder.IBCocoaTouchPlugin" version="19144"/>
         <capability name="documents saved in the Xcode 8 format" minToolsVersion="8.0"/>
     </dependencies>
     <scenes>
@@ -65,6 +65,16 @@
                                 <color key="textColor" systemColor="darkTextColor"/>
                                 <nil key="highlightedColor"/>
                             </label>
+                            <segmentedControl opaque="NO" contentMode="scaleToFill" contentHorizontalAlignment="left" contentVerticalAlignment="top" segmentControlStyle="plain" selectedSegmentIndex="0" translatesAutoresizingMaskIntoConstraints="NO" id="yhz-YA-TNa">
+                                <rect key="frame" x="142" y="516" width="91" height="32"/>
+                                <segments>
+                                    <segment title="3.1.1"/>
+                                    <segment title="5.0"/>
+                                </segments>
+                                <connections>
+                                    <action selector="mqttVersionControl:" destination="BYZ-38-t0r" eventType="valueChanged" id="IG0-29-1h4"/>
+                                </connections>
+                            </segmentedControl>
                         </subviews>
                         <color key="backgroundColor" red="1" green="1" blue="1" alpha="1" colorSpace="custom" customColorSpace="sRGB"/>
                         <constraints>
@@ -73,6 +83,7 @@
                             <constraint firstItem="Dfd-f4-RTW" firstAttribute="top" secondItem="R5O-Ag-dWm" secondAttribute="bottom" constant="8" id="HAd-gl-jno"/>
                             <constraint firstItem="P3O-TN-Tea" firstAttribute="top" secondItem="tHm-fg-eAh" secondAttribute="bottom" constant="4" id="JR9-Qa-wm9"/>
                             <constraint firstItem="Dfd-f4-RTW" firstAttribute="centerX" secondItem="R5O-Ag-dWm" secondAttribute="centerX" id="Jar-hB-Dkb"/>
+                            <constraint firstItem="yhz-YA-TNa" firstAttribute="centerX" secondItem="R5O-Ag-dWm" secondAttribute="centerX" id="LcO-l7-EUT"/>
                             <constraint firstItem="tHm-fg-eAh" firstAttribute="centerX" secondItem="8bC-Xf-vdC" secondAttribute="centerX" id="NAn-SU-JDa"/>
                             <constraint firstItem="R5O-Ag-dWm" firstAttribute="top" secondItem="MBo-g0-dbn" secondAttribute="bottom" constant="10" id="bft-DK-mQi"/>
                             <constraint firstItem="8Nd-Lc-bWb" firstAttribute="centerX" secondItem="R5O-Ag-dWm" secondAttribute="centerX" id="daG-Ik-lvQ"/>
@@ -82,6 +93,7 @@
                             <constraint firstItem="MBo-g0-dbn" firstAttribute="top" secondItem="P3O-TN-Tea" secondAttribute="bottom" constant="10" id="mIY-GY-Kp1"/>
                             <constraint firstItem="MBo-g0-dbn" firstAttribute="centerX" secondItem="8bC-Xf-vdC" secondAttribute="centerX" id="pdk-gf-BsY"/>
                             <constraint firstItem="Dfd-f4-RTW" firstAttribute="centerY" secondItem="8bC-Xf-vdC" secondAttribute="centerY" constant="109" id="v3k-Ko-Hhk"/>
+                            <constraint firstItem="yhz-YA-TNa" firstAttribute="top" secondItem="8Nd-Lc-bWb" secondAttribute="bottom" constant="25" id="xjh-et-X1j"/>
                         </constraints>
                         <variation key="default">
                             <mask key="constraints">
@@ -94,6 +106,7 @@
                     <connections>
                         <outlet property="animalsImageView" destination="R5O-Ag-dWm" id="hJg-sr-zkp"/>
                         <outlet property="connectButton" destination="8Nd-Lc-bWb" id="Qze-do-lLV"/>
+                        <outlet property="versionControl" destination="yhz-YA-TNa" id="ien-TR-V4A"/>
                     </connections>
                 </viewController>
                 <placeholder placeholderIdentifier="IBFirstResponder" id="dkx-z0-nzr" sceneMemberID="firstResponder"/>
@@ -153,7 +166,7 @@
                                 <color key="backgroundColor" red="1" green="1" blue="1" alpha="1" colorSpace="custom" customColorSpace="sRGB"/>
                                 <prototypes>
                                     <tableViewCell clipsSubviews="YES" contentMode="scaleToFill" selectionStyle="default" indentationWidth="10" reuseIdentifier="leftMessageCell" rowHeight="94" id="l2O-8p-AZo" customClass="ChatLeftMessageCell" customModule="Example" customModuleProvider="target">
-                                        <rect key="frame" x="0.0" y="24.5" width="383" height="94"/>
+                                        <rect key="frame" x="0.0" y="44.5" width="383" height="94"/>
                                         <autoresizingMask key="autoresizingMask"/>
                                         <tableViewCellContentView key="contentView" opaque="NO" clipsSubviews="YES" multipleTouchEnabled="YES" contentMode="center" tableViewCell="l2O-8p-AZo" id="T8B-tZ-PQw">
                                             <rect key="frame" x="0.0" y="0.0" width="383" height="94"/>
@@ -201,7 +214,7 @@
                                         </connections>
                                     </tableViewCell>
                                     <tableViewCell clipsSubviews="YES" contentMode="scaleToFill" selectionStyle="default" indentationWidth="10" reuseIdentifier="rightMessageCell" rowHeight="106" id="Zfb-BL-X5O" userLabel="rightMessageCell" customClass="ChatRightMessageCell" customModule="Example" customModuleProvider="target">
-                                        <rect key="frame" x="0.0" y="118.5" width="383" height="106"/>
+                                        <rect key="frame" x="0.0" y="138.5" width="383" height="106"/>
                                         <autoresizingMask key="autoresizingMask"/>
                                         <tableViewCellContentView key="contentView" opaque="NO" clipsSubviews="YES" multipleTouchEnabled="YES" contentMode="center" tableViewCell="Zfb-BL-X5O" id="e0L-Zc-WhI">
                                             <rect key="frame" x="0.0" y="0.0" width="383" height="106"/>
@@ -446,10 +459,21 @@
                                 <color key="textColor" systemColor="darkTextColor"/>
                                 <nil key="highlightedColor"/>
                             </label>
+                            <segmentedControl opaque="NO" contentMode="scaleToFill" contentHorizontalAlignment="left" contentVerticalAlignment="top" segmentControlStyle="plain" selectedSegmentIndex="0" translatesAutoresizingMaskIntoConstraints="NO" id="eiw-0K-4C3">
+                                <rect key="frame" x="142" y="516" width="91" height="32"/>
+                                <segments>
+                                    <segment title="3.1.1"/>
+                                    <segment title="5.0"/>
+                                </segments>
+                                <connections>
+                                    <action selector="mqttVersionControl:" destination="UJJ-07-Xhh" eventType="valueChanged" id="cHy-oj-lqD"/>
+                                </connections>
+                            </segmentedControl>
                         </subviews>
                         <color key="backgroundColor" red="1" green="1" blue="1" alpha="1" colorSpace="custom" customColorSpace="sRGB"/>
                         <constraints>
                             <constraint firstItem="mL8-ck-y9a" firstAttribute="top" secondItem="gWP-JX-DCb" secondAttribute="bottom" constant="4" id="1U0-9e-clZ"/>
+                            <constraint firstItem="eiw-0K-4C3" firstAttribute="top" secondItem="NSI-qJ-ccp" secondAttribute="bottom" constant="25" id="3BK-5O-6Qe"/>
                             <constraint firstItem="NSI-qJ-ccp" firstAttribute="centerX" secondItem="tw1-Dc-w4P" secondAttribute="centerX" id="5JB-zI-aci"/>
                             <constraint firstItem="5TB-m4-TFf" firstAttribute="top" secondItem="gWP-JX-DCb" secondAttribute="bottom" constant="10" id="DMv-1k-y1s"/>
                             <constraint firstItem="5TB-m4-TFf" firstAttribute="centerX" secondItem="FKF-5L-ceq" secondAttribute="centerX" id="Hxt-2V-YDi"/>
@@ -457,6 +481,7 @@
                             <constraint firstItem="5TB-m4-TFf" firstAttribute="centerY" secondItem="FKF-5L-ceq" secondAttribute="centerY" constant="-40" id="QEE-tW-zvc"/>
                             <constraint firstItem="L2p-0g-bTv" firstAttribute="centerY" secondItem="FKF-5L-ceq" secondAttribute="centerY" constant="109" id="UhL-2J-jU1"/>
                             <constraint firstItem="NSI-qJ-ccp" firstAttribute="top" secondItem="L2p-0g-bTv" secondAttribute="bottom" constant="30" id="Xld-IP-ZAG"/>
+                            <constraint firstItem="eiw-0K-4C3" firstAttribute="centerX" secondItem="tw1-Dc-w4P" secondAttribute="centerX" id="YBj-hk-CYs"/>
                             <constraint firstItem="5TB-m4-TFf" firstAttribute="top" secondItem="mL8-ck-y9a" secondAttribute="bottom" constant="10" id="YX3-v6-D1O"/>
                             <constraint firstItem="L2p-0g-bTv" firstAttribute="centerX" secondItem="tw1-Dc-w4P" secondAttribute="centerX" id="iHD-Js-mBH"/>
                             <constraint firstItem="tw1-Dc-w4P" firstAttribute="centerX" secondItem="FKF-5L-ceq" secondAttribute="centerX" id="jEl-L8-PWP"/>
@@ -475,6 +500,7 @@
                     <connections>
                         <outlet property="animalsImageView" destination="tw1-Dc-w4P" id="Pjg-ay-8rG"/>
                         <outlet property="connectButton" destination="NSI-qJ-ccp" id="nCs-1f-VPV"/>
+                        <outlet property="versionControl" destination="eiw-0K-4C3" id="1Va-Ak-905"/>
                     </connections>
                 </viewController>
                 <placeholder placeholderIdentifier="IBFirstResponder" id="Uys-iX-Gg1" sceneMemberID="firstResponder"/>
@@ -539,6 +565,16 @@
                                 <color key="textColor" systemColor="darkTextColor"/>
                                 <nil key="highlightedColor"/>
                             </label>
+                            <segmentedControl opaque="NO" contentMode="scaleToFill" contentHorizontalAlignment="left" contentVerticalAlignment="top" segmentControlStyle="plain" selectedSegmentIndex="0" translatesAutoresizingMaskIntoConstraints="NO" id="QVp-9U-PzF">
+                                <rect key="frame" x="142" y="516" width="91" height="32"/>
+                                <segments>
+                                    <segment title="3.1.1"/>
+                                    <segment title="5.0"/>
+                                </segments>
+                                <connections>
+                                    <action selector="mqttVersionControl:" destination="vcs-oh-YrS" eventType="valueChanged" id="gon-Ad-mSq"/>
+                                </connections>
+                            </segmentedControl>
                         </subviews>
                         <color key="backgroundColor" red="1" green="1" blue="1" alpha="1" colorSpace="custom" customColorSpace="sRGB"/>
                         <constraints>
@@ -546,6 +582,7 @@
                             <constraint firstItem="WhZ-pQ-9GS" firstAttribute="centerX" secondItem="NXy-lo-AmE" secondAttribute="centerX" id="7Q4-mQ-9bG"/>
                             <constraint firstItem="qcl-QJ-obT" firstAttribute="top" secondItem="8N8-ql-9AH" secondAttribute="bottom" constant="8" id="DSE-bs-VxG"/>
                             <constraint firstItem="qcl-QJ-obT" firstAttribute="centerX" secondItem="8N8-ql-9AH" secondAttribute="centerX" id="OAG-bp-bhv"/>
+                            <constraint firstItem="QVp-9U-PzF" firstAttribute="top" secondItem="ePa-UP-88l" secondAttribute="bottom" constant="25" id="PTZ-3L-Tms"/>
                             <constraint firstItem="ePa-UP-88l" firstAttribute="top" secondItem="qcl-QJ-obT" secondAttribute="bottom" constant="30" id="QSJ-eW-tAg"/>
                             <constraint firstItem="pkU-OL-DMa" firstAttribute="top" secondItem="o3i-zW-8dv" secondAttribute="bottom" constant="4" id="R48-PY-6hf"/>
                             <constraint firstItem="8N8-ql-9AH" firstAttribute="centerX" secondItem="NXy-lo-AmE" secondAttribute="centerX" id="RrG-bw-sd6"/>
@@ -553,6 +590,7 @@
                             <constraint firstItem="8N8-ql-9AH" firstAttribute="top" secondItem="WhZ-pQ-9GS" secondAttribute="bottom" constant="10" id="fT6-1y-Vxg"/>
                             <constraint firstItem="qcl-QJ-obT" firstAttribute="centerY" secondItem="NXy-lo-AmE" secondAttribute="centerY" constant="109" id="g3d-Pl-8P9"/>
                             <constraint firstItem="o3i-zW-8dv" firstAttribute="centerX" secondItem="NXy-lo-AmE" secondAttribute="centerX" id="jaT-RA-QnN"/>
+                            <constraint firstItem="QVp-9U-PzF" firstAttribute="centerX" secondItem="8N8-ql-9AH" secondAttribute="centerX" id="mtr-k5-XpS"/>
                             <constraint firstItem="ePa-UP-88l" firstAttribute="centerX" secondItem="8N8-ql-9AH" secondAttribute="centerX" id="p5y-X9-0yZ"/>
                             <constraint firstItem="pkU-OL-DMa" firstAttribute="centerX" secondItem="NXy-lo-AmE" secondAttribute="centerX" id="xJE-4i-Bxn"/>
                             <constraint firstItem="WhZ-pQ-9GS" firstAttribute="top" secondItem="pkU-OL-DMa" secondAttribute="bottom" constant="10" id="zd2-3x-9A1"/>
@@ -568,6 +606,7 @@
                     <connections>
                         <outlet property="animalsImageView" destination="8N8-ql-9AH" id="lvF-jp-yb0"/>
                         <outlet property="connectButton" destination="ePa-UP-88l" id="MCC-Ow-X2I"/>
+                        <outlet property="versionControl" destination="QVp-9U-PzF" id="Pcd-d8-B1V"/>
                     </connections>
                 </viewController>
                 <placeholder placeholderIdentifier="IBFirstResponder" id="flo-6C-nmy" sceneMemberID="firstResponder"/>

@@ -76,16 +76,27 @@ If you're building for iOS, tvOS:
 Create a client to connect [MQTT broker](https://www.emqx.io/products/broker):
 
 ```swift
+///MQTT 5.0
 let clientID = "CocoaMQTT-" + String(ProcessInfo().processIdentifier)
-let mqtt = CocoaMQTT(clientID: clientID, host: "localhost", port: 1883)
+let mqtt5 = CocoaMQTT5(clientID: clientID, host: "localhost", port: 1883)
 
-let connectProperties = MqttConnectProperties.shared
+let connectProperties = MqttConnectProperties()
 connectProperties.topicAliasMaximum = 0
 connectProperties.sessionExpiryInterval = 0
 connectProperties.receiveMaximum = 100
 connectProperties.maximumPacketSize = 500
-mqtt.connectProperties = connectProperties
+mqtt5.connectProperties = connectProperties
 
+mqtt5.username = "test"
+mqtt5.password = "public"
+mqtt5.willMessage = CocoaMQTTWill(topic: "/will", message: "dieout")
+mqtt5.keepAlive = 60
+mqtt5.delegate = self
+mqtt5.connect()
+
+///MQTT 3.1.1
+let clientID = "CocoaMQTT-" + String(ProcessInfo().processIdentifier)
+let mqtt = CocoaMQTT(clientID: clientID, host: "localhost", port: 1883)
 mqtt.username = "test"
 mqtt.password = "public"
 mqtt.willMessage = CocoaMQTTWill(topic: "/will", message: "dieout")
@@ -98,7 +109,7 @@ Now you can use closures instead of `CocoaMQTTDelegate`:
 
 ```swift 
 mqtt.didReceiveMessage = { mqtt, message, id in
-	print("Message received in topic \(message.topic) with payload \(message.string!)")           
+    print("Message received in topic \(message.topic) with payload \(message.string!)")           
 }
 ```
 
@@ -141,23 +152,31 @@ If you're using CocoaMQTT in a project with only a `.podspec` and no `Podfile`, 
 ```ruby
 Pod::Spec.new do |s|
   ...
-  s.dependency "Starscream", "~> 3.0.2"
+  s.dependency "Starscream", "~> 3.1.1"
 end
 ```
 
 Then, Create a MQTT instance over Websocket:
 
 ```swift
+///MQTT 5.0
 let websocket = CocoaMQTTWebSocket(uri: "/mqtt")
-let mqtt = CocoaMQTT(clientID: clientID, host: host, port: 8083, socket: websocket)
-let connectProperties = MqttConnectProperties.shared
+let mqtt5 = CocoaMQTT5(clientID: clientID, host: host, port: 8083, socket: websocket)
+let connectProperties = MqttConnectProperties()
 connectProperties.topicAliasMaximum = 0
 // ...
-mqtt.connectProperties = connectProperties
+mqtt5.connectProperties = connectProperties
+// ...
+
+_ = mqtt5.connect()
+
+///MQTT 3.1.1
+let websocket = CocoaMQTTWebSocket(uri: "/mqtt")
+let mqtt = CocoaMQTT(clientID: clientID, host: host, port: 8083, socket: websocket)
+
 // ...
 
 _ = mqtt.connect()
-
 ```
 
 If you want to add additional custom header to the connection, you can use the following:

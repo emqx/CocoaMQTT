@@ -25,9 +25,9 @@ extension FramePingResp {
         return header
     }
     
-    func variableHeader() -> [UInt8] { return [] }
+    func variableHeader5() -> [UInt8] { return [] }
     
-    func payload() -> [UInt8] { return [] }
+    func payload5() -> [UInt8] { return [] }
     
     func properties() -> [UInt8] { return [] }
 
@@ -35,12 +35,16 @@ extension FramePingResp {
         var allData = [UInt8]()
 
         allData += fixedHeader()
-        allData += variableHeader()
+        allData += variableHeader5()
         allData += properties()
-        allData += payload()
+        allData += payload5()
 
         return allData
     }
+    
+    func variableHeader() -> [UInt8] { return [] }
+
+    func payload() -> [UInt8] { return [] }
 }
 
 extension FramePingResp: InitialWithBytes {

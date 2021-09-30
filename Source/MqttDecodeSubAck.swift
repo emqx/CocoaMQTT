@@ -10,8 +10,6 @@ import Foundation
 
 public class MqttDecodeSubAck: NSObject {
 
-    static let shared = MqttDecodeSubAck()
-
     var totalCount = 0
     var dataIndex = 0
     var propertyLength: Int = 0

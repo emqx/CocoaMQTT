@@ -31,8 +31,12 @@ struct FramePubComp: Frame {
     //3.7.2.2.3 User Property
     public var userProperties: [String: String]?
 
+    ///MQTT 3.1.1
+    init(msgid: UInt16) {
+        self.msgid = msgid
+    }
 
-    
+    ///MQTT 5.0
     init(msgid: UInt16,  reasonCode: CocoaMQTTPUBCOMPReasonCode) {
         self.msgid = msgid
         self.reasonCode = reasonCode
@@ -47,7 +51,7 @@ extension FramePubComp {
         return header
     }
     
-    func variableHeader() -> [UInt8] {
+    func variableHeader5() -> [UInt8] {
         //3.7.2 MSB+LSB
         var header = msgid.hlBytes
         //3.7.2.1 PUBACK Reason Code
@@ -60,7 +64,7 @@ extension FramePubComp {
         return header
     }
     
-    func payload() -> [UInt8] { return [] }
+    func payload5() -> [UInt8] { return [] }
 
     func properties() -> [UInt8] {
         var properties = [UInt8]()
@@ -85,12 +89,16 @@ extension FramePubComp {
         var allData = [UInt8]()
 
         allData += fixedHeader()
-        allData += variableHeader()
+        allData += variableHeader5()
         allData += properties()
-        allData += payload()
+        allData += payload5()
 
         return allData
     }
+    
+    func variableHeader() -> [UInt8] { return msgid.hlBytes }
+
+    func payload() -> [UInt8] { return [] }
 }
 
 extension FramePubComp: InitialWithBytes {
@@ -106,7 +114,7 @@ extension FramePubComp: InitialWithBytes {
         
         msgid = UInt16(bytes[0]) << 8 + UInt16(bytes[1])
 
-        self.pubCompProperties = MqttDecodePubComp.shared
+        self.pubCompProperties = MqttDecodePubComp()
         self.pubCompProperties!.decodePubComp(fixedHeader: packetFixedHeaderType, pubAckData: bytes)
     }
 }
