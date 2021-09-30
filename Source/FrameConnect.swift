@@ -12,9 +12,11 @@ import Foundation
 struct FrameConnect: Frame {
 
     var packetFixedHeaderType: UInt8 = FrameType.connect.rawValue
-//    private let PROTOCOL_LEVEL = UInt8(4)
-//    private let PROTOCOL_VERSION: String  = "MQTT/5.0"
-//    private let PROTOCOL_MAGIC: String = "MQTT"
+
+    ///MQTT 3.1.1
+    private let PROTOCOL_LEVEL = UInt8(4)
+    private let PROTOCOL_VERSION: String  = "MQTT/3.1.1"
+    private let PROTOCOL_MAGIC: String = "MQTT"
 
     // --- Attributes
 
@@ -71,7 +73,7 @@ extension FrameConnect {
         return header
     }
 
-    func variableHeader() -> [UInt8] {
+    func variableHeader5() -> [UInt8] {
         var header = [UInt8]()
         var flags = ConnFlags()
     
@@ -115,7 +117,7 @@ extension FrameConnect {
         return connectProperties!.properties
     }
 
-    func payload() -> [UInt8] {
+    func payload5() -> [UInt8] {
         var payload = [UInt8]()
 
         payload += clientID.bytesWithLength
@@ -146,11 +148,65 @@ extension FrameConnect {
         var allData = [UInt8]()
 
         allData += fixedHeader()
-        allData += variableHeader()
+        allData += variableHeader5()
         allData += properties()
-        allData += payload()
+        allData += payload5()
 
         return allData
+    }
+
+
+    func variableHeader() -> [UInt8] {
+        var header = [UInt8]()
+        var flags = ConnFlags()
+
+        // variable header
+        header += PROTOCOL_MAGIC.bytesWithLength
+        header.append(PROTOCOL_LEVEL)
+
+        if let will = willMsg {
+            flags.flagWill = true
+            flags.flagWillQoS = will.qos.rawValue
+            flags.flagWillRetain = will.retained
+        }
+
+        if let _ = username {
+            flags.flagUsername = true
+
+            // Append password attribute if username presented
+            if let _ = password {
+                flags.flagPassword = true
+            }
+        }
+
+        flags.flagCleanSession = cleansess
+
+        header.append(flags.rawValue)
+        header += keepAlive.hlBytes
+
+        return header
+    }
+
+    func payload() -> [UInt8] {
+        var payload = [UInt8]()
+
+        payload += clientID.bytesWithLength
+
+        if let will = willMsg {
+            payload += will.topic.bytesWithLength
+            payload += UInt16(will.payload.count).hlBytes
+            payload += will.payload
+        }
+        if let username = username {
+            payload += username.bytesWithLength
+
+            // Append password attribute if username presented
+            if let password = password {
+                payload += password.bytesWithLength
+            }
+        }
+
+        return payload
     }
 }
 

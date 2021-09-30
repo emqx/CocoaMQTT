@@ -48,9 +48,9 @@ extension FrameSubAck {
         return header
     }
     
-    func variableHeader() -> [UInt8] { return msgid.hlBytes }
+    func variableHeader5() -> [UInt8] { return msgid.hlBytes }
     
-    func payload() -> [UInt8] {
+    func payload5() -> [UInt8] {
         
         var payload = [UInt8]()
         
@@ -67,11 +67,24 @@ extension FrameSubAck {
         var allData = [UInt8]()
 
         allData += fixedHeader()
-        allData += variableHeader()
+        allData += variableHeader5()
         allData += properties()
-        allData += payload()
+        allData += payload5()
 
         return allData
+    }
+    
+    func variableHeader() -> [UInt8] { return msgid.hlBytes }
+
+    func payload() -> [UInt8] {
+
+        var payload = [UInt8]()
+
+        for qos in grantedQos {
+            payload.append(qos.rawValue)
+        }
+
+        return payload
     }
 }
 
@@ -104,7 +117,7 @@ extension FrameSubAck: InitialWithBytes {
         }
 
 
-        self.subAckProperties = MqttDecodeSubAck.shared
+        self.subAckProperties = MqttDecodeSubAck()
         self.subAckProperties!.decodeSubAck(fixedHeader: packetFixedHeaderType, pubAckData: bytes)
         
     }

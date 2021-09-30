@@ -28,7 +28,10 @@ struct FrameDisconnect: Frame {
     //3.14.2.2.5 Server Reference
     public var serverReference: String?
 
+    ///MQTT 3.1.1
+    init() { /* Nothing to do */ }
 
+    ///MQTT 5.0
     init(disconnectReasonCode: CocoaMQTTDISCONNECTReasonCode) {
         self.disconnectReasonCode = disconnectReasonCode
     }
@@ -42,7 +45,7 @@ extension FrameDisconnect {
         return header
     }
     
-    func variableHeader() -> [UInt8] {
+    func variableHeader5() -> [UInt8] {
         var header = [UInt8]()
         header += [disconnectReasonCode!.rawValue]
 
@@ -53,7 +56,7 @@ extension FrameDisconnect {
         return header
     }
     
-    func payload() -> [UInt8] { return [] }
+    func payload5() -> [UInt8] { return [] }
 
     func properties() -> [UInt8] {
         var properties = [UInt8]()
@@ -85,13 +88,16 @@ extension FrameDisconnect {
         var allData = [UInt8]()
 
         allData += fixedHeader()
-        allData += variableHeader()
+        allData += variableHeader5()
         allData += properties()
-        allData += payload()
+        allData += payload5()
 
         return allData
     }
 
+    func variableHeader() -> [UInt8] { return [] }
+
+    func payload() -> [UInt8] { return [] }
 }
 
 extension FrameDisconnect: CustomStringConvertible {

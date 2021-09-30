@@ -46,17 +46,26 @@ final class CocoaMQTTStorage: CocoaMQTTStorageProtocol {
     deinit {
         userDefault.synchronize()
     }
-    
+
+    func setMQTTVersion(_ version : String){
+        userDefault.set(version, forKey: "version")
+    }
+
+    func queryMQTTVersion() -> String{
+        return userDefault.string(forKey: "version")!
+    }
+
+
     func write(_ frame: FramePublish) -> Bool {
         guard frame.qos > .qos0 else {
             return false
         }
-        userDefault.set(frame.bytes(), forKey: key(frame.msgid))
+        userDefault.set(frame.bytes(version: queryMQTTVersion()), forKey: key(frame.msgid))
         return true
     }
     
     func write(_ frame: FramePubRel) -> Bool {
-        userDefault.set(frame.bytes(), forKey: key(frame.msgid))
+        userDefault.set(frame.bytes( version: queryMQTTVersion()), forKey: key(frame.msgid))
         return true
     }
     
