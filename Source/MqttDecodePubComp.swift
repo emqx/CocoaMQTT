@@ -10,9 +10,6 @@ import Foundation
 
 public class MqttDecodePubComp: NSObject {
 
-    static let shared = MqttDecodePubComp()
-
-
     var totalCount = 0
     var dataIndex = 0
     var propertyLength: Int = 0

@@ -28,8 +28,11 @@ class ChatViewController: UIViewController {
             }
         }
     }
+
+    var mqtt5: CocoaMQTT5?
     var mqtt: CocoaMQTT?
     var client: String?
+    var mqttVersion: String?
 
     var messages: [ChatMessage] = [] {
         didSet {
@@ -64,8 +67,11 @@ class ChatViewController: UIViewController {
         let publishProperties = MqttPublishProperties()
         publishProperties.contentType = "JSON"
 
-
-        mqtt!.publish("chat/room/animals/client/" + animal!, withString: message!, qos: .qos1, DUP: false, retained: false, properties: publishProperties)
+        if mqttVersion == "3.1.1" {
+            mqtt!.publish("chat/room/animals/client/" + animal!, withString: message!, qos: .qos1)
+        }else if mqttVersion == "5.0" {
+            mqtt5!.publish("chat/room/animals/client/" + animal!, withString: message!, qos: .qos1, DUP: false, retained: false, properties: publishProperties)
+        }
         
         messageTextView.text = ""
         sendMessageButton.isEnabled = false
@@ -73,10 +79,17 @@ class ChatViewController: UIViewController {
         messageTextView.layoutIfNeeded()
         view.endEditing(true)
     }
+
     @IBAction func disconnect() {
-        mqtt!.disconnect()
-        //or
-        //mqtt!.disconnect(reasonCode: CocoaMQTTDISCONNECTReasonCode.disconnectWithWillMessage, userProperties: ["userone":"hi"])
+
+        if mqttVersion == "3.1.1" {
+            mqtt!.disconnect()
+        }else if mqttVersion == "5.0" {
+            mqtt5!.disconnect()
+            //or
+            //mqtt5!.disconnect(reasonCode: CocoaMQTTDISCONNECTReasonCode.disconnectWithWillMessage, userProperties: ["userone":"hi"])
+        }
+
         _ = navigationController?.popViewController(animated: true)
     }
     
@@ -85,7 +98,7 @@ class ChatViewController: UIViewController {
         navigationController?.navigationBar.isHidden = true
         animal = tabBarController?.selectedViewController?.tabBarItem.title
 
-       // automaticallyAdjustsScrollViewInsets = false
+        // automaticallyAdjustsScrollViewInsets = false
         if #available(iOS 11.0, *) {
             self.tableView.contentInsetAdjustmentBehavior = .never
         } else {
@@ -99,7 +112,13 @@ class ChatViewController: UIViewController {
         tableView.estimatedRowHeight = 50
         
         let name = NSNotification.Name(rawValue: "MQTTMessageNotification" + animal!)
-        NotificationCenter.default.addObserver(self, selector: #selector(ChatViewController.receivedMessage(notification:)), name: name, object: nil)
+
+        if mqttVersion == "3.1.1" {
+            NotificationCenter.default.addObserver(self, selector: #selector(ChatViewController.receivedMessage(notification:)), name: name, object: nil)
+        }else if mqttVersion == "5.0" {
+            NotificationCenter.default.addObserver(self, selector: #selector(ChatViewController.receivedMqtt5Message(notification:)), name: name, object: nil)
+        }
+
         let disconnectNotification = NSNotification.Name(rawValue: "MQTTMessageNotificationDisconnect")
         NotificationCenter.default.addObserver(self, selector: #selector(ChatViewController.disconnectMessage(notification:)), name: disconnectNotification, object: nil)
         NotificationCenter.default.addObserver(self, selector: #selector(ChatViewController.keyboardChanged(notification:)), name: UIResponder.keyboardWillChangeFrameNotification, object: nil)
@@ -129,6 +148,16 @@ class ChatViewController: UIViewController {
 
 
     @objc func receivedMessage(notification: NSNotification) {
+        let userInfo = notification.userInfo as! [String: AnyObject]
+        let content = userInfo["message"] as! String
+        let topic = userInfo["topic"] as! String
+        let id = UInt16(userInfo["id"] as! UInt16)
+        let sender = topic.replacingOccurrences(of: "chat/room/animals/client/", with: "")
+        let chatMessage = ChatMessage(sender: sender, content: content, id: id)
+        messages.append(chatMessage)
+    }
+
+    @objc func receivedMqtt5Message(notification: NSNotification) {
         let userInfo = notification.userInfo as! [String: AnyObject]
         let message = userInfo["message"] as! String
         let topic = userInfo["topic"] as! String

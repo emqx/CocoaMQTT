@@ -16,15 +16,29 @@ struct FrameUnsubscribe: Frame {
     
     // --- Attributes
     
-    var msgid: UInt16
-    
-    var topicFilters: [MqttSubscription]
+    var msgid: UInt16?
+
+    ///MQTT 3.1.1
+    var topics: [String]?
+
+    ///MQTT 5.0
+    var topicFilters: [MqttSubscription]?
     
     // --- Attribetes end
 
     //3.10.2.1.2 User Property
     public var userProperty: [String: String]?
 
+    
+    ///MQTT 3.1.1
+    init(msgid: UInt16, topics: [String]) {
+        self.msgid = msgid
+        self.topics = topics
+
+        qos = CocoaMQTTQoS.qos1
+    }
+
+    ///MQTT 5.0
     init(msgid: UInt16, topics: [MqttSubscription]) {
         self.msgid = msgid
         self.topicFilters = topics
@@ -43,19 +57,19 @@ extension FrameUnsubscribe {
         return header
     }
     
-    func variableHeader() -> [UInt8] {
+    func variableHeader5() -> [UInt8] {
         //MQTT 5.0
         var header = [UInt8]()
-        header = msgid.hlBytes
+        header = msgid!.hlBytes
         header += beVariableByteInteger(length: self.properties().count)
         return header
     }
     
-    func payload() -> [UInt8] {
+    func payload5() -> [UInt8] {
         
         var payload = [UInt8]()
         
-        for subscription in self.topicFilters {
+        for subscription in topicFilters! {
             subscription.subscriptionOptions = false
             payload += subscription.subscriptionData
         }
@@ -82,11 +96,24 @@ extension FrameUnsubscribe {
         var allData = [UInt8]()
 
         allData += fixedHeader()
-        allData += variableHeader()
+        allData += variableHeader5()
         allData += properties()
-        allData += payload()
+        allData += payload5()
 
         return allData
+    }
+
+    func variableHeader() -> [UInt8] { return msgid!.hlBytes }
+
+    func payload() -> [UInt8] {
+
+        var payload = [UInt8]()
+
+        for t in topics! {
+            payload += t.bytesWithLength
+        }
+
+        return payload
     }
     
 }
@@ -94,8 +121,8 @@ extension FrameUnsubscribe {
 extension FrameUnsubscribe: CustomStringConvertible {
     var description: String {
         var desc = ""
-        for subscription in self.topicFilters {
-            desc += "UNSUBSCRIBE(id: \(msgid), topics: \(subscription.topic))  "
+        for subscription in topicFilters! {
+            desc += "UNSUBSCRIBE(id: \(String(describing: msgid)), topics: \(subscription.topic))  "
         }
         return desc
     }
