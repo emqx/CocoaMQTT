@@ -11,15 +11,15 @@ import Foundation
 
 struct FrameConnAck: Frame {
 
-    init(code: CocoaMQTTCONNACKReasonCode) {
-        reasonCode = code
-    }
-
     var packetFixedHeaderType: UInt8 = FrameType.connack.rawValue
     
     // --- Attributes
-    
-    var reasonCode: CocoaMQTTCONNACKReasonCode
+
+    ///MQTT 3.1.1
+    var returnCode: CocoaMQTTConnAck?
+
+    ///MQTT 5.0
+    var reasonCode: CocoaMQTTCONNACKReasonCode?
 
     //3.2.2.1.1 Session Present
     var sessPresent: Bool = false
@@ -33,6 +33,11 @@ struct FrameConnAck: Frame {
     //The CONNACK packet has no Payload.
 
 
+    ///MQTT 5.0
+    init(code: CocoaMQTTCONNACKReasonCode) {
+        reasonCode = code
+    }
+
 }
 
 extension FrameConnAck {
@@ -43,11 +48,11 @@ extension FrameConnAck {
         return header
     }
 
-    func variableHeader() -> [UInt8] {
-        return [sessPresent.bit, reasonCode.rawValue]
+    func variableHeader5() -> [UInt8] {
+        return [sessPresent.bit, reasonCode!.rawValue]
     }
     
-    func payload() -> [UInt8] { return [] }
+    func payload5() -> [UInt8] { return [] }
 
     func properties() -> [UInt8] { return propertiesBytes ?? [] }
 
@@ -55,12 +60,18 @@ extension FrameConnAck {
         var allData = [UInt8]()
 
         allData += fixedHeader()
-        allData += variableHeader()
+        allData += variableHeader5()
         allData += properties()
-        allData += payload()
+        allData += payload5()
 
         return allData
     }
+
+    func variableHeader() -> [UInt8] {
+        return [sessPresent.bit, returnCode!.rawValue]
+    }
+
+    func payload() -> [UInt8] { return [] }
 }
 
 extension FrameConnAck: InitialWithBytes {
@@ -76,19 +87,20 @@ extension FrameConnAck: InitialWithBytes {
 
         sessPresent = Bool(bit: bytes[0] & 0x01)
         
-        guard let ack = CocoaMQTTCONNACKReasonCode(rawValue: bytes[1]) else {
-            return nil
-        }
-        reasonCode = ack
+        let mqtt5ack = CocoaMQTTCONNACKReasonCode(rawValue: bytes[1])
+        reasonCode = mqtt5ack
+
+        let ack = CocoaMQTTConnAck(rawValue: bytes[1]) 
+        returnCode = ack
 
         propertiesBytes = bytes
-        self.connackProperties = MqttDecodeConnAck.shared
+        self.connackProperties = MqttDecodeConnAck()
         self.connackProperties!.properties(connackData: bytes)
     }
 }
 
 extension FrameConnAck: CustomStringConvertible {
     var description: String {
-        return "CONNACK(code: \(reasonCode), sp: \(sessPresent))"
+        return "CONNACK(code: \(String(describing: reasonCode)), sp: \(sessPresent))"
     }
 }

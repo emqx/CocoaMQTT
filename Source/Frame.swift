@@ -74,7 +74,7 @@ enum FrameType: UInt8 {
 
 /// The frame can be initialized with a bytes
 protocol InitialWithBytes {
-    
+
     init?(packetFixedHeaderType: UInt8, bytes: [UInt8])
 }
 
@@ -83,51 +83,73 @@ protocol InitialWithBytes {
 protocol Frame {
     
     /// Each MQTT Control Packet contains a fixed header
+    /// MQTT 3.1.1
     var packetFixedHeaderType: UInt8 {get set}
+    /// MQTT 5.0
     func fixedHeader() -> [UInt8]
 
     /// Some types of MQTT Control Packets contain a variable header component
+    /// MQTT 3.1.1
     func variableHeader() -> [UInt8]
+
+    /// MQTT 5.0
+    func variableHeader5() -> [UInt8]
 
     /// MQTT 5.0 The last field in the Variable Header of the CONNECT, CONNACK, PUBLISH, PUBACK, PUBREC, PUBREL, PUBCOMP, SUBSCRIBE, SUBACK, UNSUBSCRIBE, UNSUBACK, DISCONNECT, and AUTH packet is a set of Properties. In the CONNECT packet there is also an optional set of Properties in the Will Properties field with the Payload.
     func properties() -> [UInt8]
 
     /// Some MQTT Control Packets contain a payload as the final part of the packet
+    /// MQTT 3.1.1
     func payload() -> [UInt8]
+
+    /// MQTT 5.0
+    func payload5() -> [UInt8]
 
     /// fixedHeader + variableHeader + properties + payload
     func allData() -> [UInt8]
 }
 
 extension Frame {
-//    /// ping two byte
-//    public static func fixedHeader(MQTTControlPacketType: UInt8, RemainingLength: UInt8) -> [UInt8] {
-//        var data = [UInt8]()
-//        data.append(MQTTControlPacketType)
-//        data.append(RemainingLength)
-//        return data
-//    }
 
     /// Pack struct to binary
-    func bytes() -> [UInt8] {
-        let fixedHeader = self.fixedHeader()
-        let variableHeader = self.variableHeader()
-        let payload = self.payload()
-        let properties = self.properties()
-        let len = UInt32(variableHeader.count + properties.count + payload.count)
+    func bytes(version: String) -> [UInt8] {
 
-        //payload = [0, 21, 67, 111, 99, 111, 97, 77, 81, 84, 84, 45, 83, 104, 101, 101, 112, 45, 49, 52, 54, 54, 50, 0, 5, 47, 119, 105, 108, 108, 0, 6, 100, 105, 101, 111, 117, 116, 0, 0, 0, 0]
-        if UserDefaults.standard.bool(forKey: "printDebug") {
-            print("=============================================================")
-            print("packetFixedHeaderType \(packetFixedHeaderType)")
-            print("fixedHeader \(fixedHeader)")
-            print("remainingLen(len: len) \(remainingLen(len: len))")
-            print("variableHeader \(variableHeader)")
-            print("properties \(properties)")
-            print("payload \(payload)")
-            print("=============================================================")
+
+        if version == "5.0" {   let fixedHeader = self.fixedHeader()
+            let variableHeader5 = self.variableHeader5()
+            let payload5 = self.payload5()
+            let properties = self.properties()
+            let len5 = UInt32(variableHeader5.count + properties.count + payload5.count)
+
+
+            printDebug("==========================MQTT 5.0==========================")
+            printDebug("packetFixedHeaderType \(packetFixedHeaderType)")
+            printDebug("fixedHeader \(fixedHeader)")
+            printDebug("remainingLen(len: len) \(remainingLen(len: len5))")
+            printDebug("variableHeader \(variableHeader5)")
+            printDebug("properties \(properties)")
+            printDebug("payload \(payload5)")
+            printDebug("=============================================================")
+
+            return fixedHeader + remainingLen(len: len5) + variableHeader5 + properties + payload5
+        }else {
+
+            let variableHeader = self.variableHeader()
+            let payload = self.payload()
+
+            let len = UInt32(variableHeader.count + payload.count)
+
+            printDebug("=========================MQTT 3.1.1=========================")
+            printDebug("packetFixedHeaderType \(packetFixedHeaderType)")
+            printDebug("remainingLen(len: len) \(remainingLen(len: len))")
+            printDebug("variableHeader \(variableHeader)")
+            printDebug("payload \(payload)")
+            printDebug("=============================================================")
+
+
+            return [packetFixedHeaderType] + remainingLen(len: len) + variableHeader + payload
         }
-        return fixedHeader + remainingLen(len: len) + variableHeader + properties + payload
+
     }
     
     private func remainingLen(len: UInt32) -> [UInt8] {

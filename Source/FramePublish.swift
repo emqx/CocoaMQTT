@@ -41,7 +41,7 @@ struct FramePublish: Frame {
     
     var _payload: [UInt8] = []
 
-    var recTopic: String = "";
+    var mqtt5Topic: String = "";
 
 
     // --- Attributes End
@@ -90,7 +90,7 @@ extension FramePublish {
         return header
     }
     
-    func variableHeader() -> [UInt8] {
+    func variableHeader5() -> [UInt8] {
 
         //3.3.2.1 Topic Name
         var header = self.topic.bytesWithLength
@@ -108,7 +108,7 @@ extension FramePublish {
         return header
     }
     
-    func payload() -> [UInt8] { return _payload }
+    func payload5() -> [UInt8] { return _payload }
 
     func properties() -> [UInt8] {
         // Properties
@@ -119,12 +119,25 @@ extension FramePublish {
         var allData = [UInt8]()
 
         allData += fixedHeader()
-        allData += variableHeader()
+        allData += variableHeader5()
         allData += properties()
-        allData += payload()
+        allData += payload5()
 
         return allData
     }
+
+    func variableHeader() -> [UInt8] {
+
+        var header = topic.bytesWithLength
+
+        if qos > .qos0 {
+            header += msgid.hlBytes
+        }
+
+        return header
+    }
+
+    func payload() -> [UInt8] { return _payload }
 }
 
 extension FramePublish: InitialWithBytes {
@@ -187,12 +200,6 @@ extension FramePublish: InitialWithBytes {
         if bytes.count < pos {
             return nil
         }
-//
-//        if len > 0 {
-//            topic = NSString(bytes: [UInt8](bytes[2...(pos-1)]), length: Int(len), encoding: String.Encoding.utf8.rawValue)! as String
-//        }else{
-//            topic = ""
-//        }
 
 
 
@@ -217,10 +224,13 @@ extension FramePublish: InitialWithBytes {
         }
 
 
-        let data = MqttDecodePublish.shared
+        let data = MqttDecodePublish()
         data.decodePublish(fixedHeader: packetFixedHeaderType ,publishData: bytes)
 
-        self.recTopic = data.topic
+        // MQTT 3.1.1
+        topic = NSString(bytes: [UInt8](bytes[2...(pos-1)]), length: Int(len), encoding: String.Encoding.utf8.rawValue)! as String
+        // MQTT 5.0
+        self.mqtt5Topic = data.topic
         self.packetIdentifier = data.packetIdentifier
         self.publishRecProperties = data
     }

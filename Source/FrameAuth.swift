@@ -32,12 +32,12 @@ extension FrameAuth {
     func fixedHeader() -> [UInt8] {
         var header = [UInt8]()
         header += [FrameType.connect.rawValue]
-        header += [UInt8(variableHeader().count)]
+        header += [UInt8(variableHeader5().count)]
 
         return header
     }
 
-    func variableHeader() -> [UInt8] {
+    func variableHeader5() -> [UInt8] {
         var header = [UInt8]()
         header += [reasonCode.rawValue]
         //MQTT 5.0
@@ -46,7 +46,7 @@ extension FrameAuth {
         return header
     }
 
-    func payload() -> [UInt8] { return []}
+    func payload5() -> [UInt8] { return []}
 
     func properties() -> [UInt8] {
         return authProperties!.properties
@@ -56,12 +56,16 @@ extension FrameAuth {
         var allData = [UInt8]()
 
         allData += fixedHeader()
-        allData += variableHeader()
+        allData += variableHeader5()
         allData += properties()
-        allData += payload()
+        allData += payload5()
 
         return allData
     }
+
+    func variableHeader() -> [UInt8] { return [] }
+
+    func payload() -> [UInt8] { return [] }
 }
 
 

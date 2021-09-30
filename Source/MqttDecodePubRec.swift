@@ -9,9 +9,6 @@ import Foundation
 
 public class MqttDecodePubRec: NSObject {
 
-    static let shared = MqttDecodePubRec()
-
-
     var totalCount = 0
     var dataIndex = 0
     var propertyLength: Int = 0
