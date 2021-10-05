@@ -114,7 +114,7 @@ extension FrameConnect {
     }
 
     func properties() -> [UInt8] {
-        return connectProperties!.properties
+        return connectProperties?.properties ?? []
     }
 
     func payload5() -> [UInt8] {
