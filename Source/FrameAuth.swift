@@ -49,7 +49,8 @@ extension FrameAuth {
     func payload5() -> [UInt8] { return []}
 
     func properties() -> [UInt8] {
-        return authProperties!.properties
+        return authProperties?.properties ?? []
+
     }
 
     func allData() -> [UInt8] {
