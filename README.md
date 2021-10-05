@@ -5,7 +5,7 @@
 ![License](https://img.shields.io/cocoapods/l/BadgeSwift.svg?style=flat)
 ![Swift version](https://img.shields.io/badge/swift-5-orange.svg)
 
-MQTT v5.0 client library for iOS/macOS/tvOS written with Swift 5
+MQTT v3.1.1 and v5.0 client library for iOS/macOS/tvOS written with Swift 5
 
 
 ## Build
@@ -22,7 +22,7 @@ TVOS Target: 10.0 or above
 Install using [CocoaPods](http://cocoapods.org) by adding this line to your Podfile:
 
 ```ruby
-pod 'CocoaMQTT5'
+pod 'CocoaMQTT5, '~> 1.0.2''
 ```
 
 Then, run the following command:
@@ -173,10 +173,7 @@ _ = mqtt5.connect()
 ///MQTT 3.1.1
 let websocket = CocoaMQTTWebSocket(uri: "/mqtt")
 let mqtt = CocoaMQTT(clientID: clientID, host: host, port: 8083, socket: websocket)
-let connectProperties = MqttConnectProperties.shared
-connectProperties.topicAliasMaximum = 0
-// ...
-mqtt.connectProperties = connectProperties
+
 // ...
 
 _ = mqtt.connect()
