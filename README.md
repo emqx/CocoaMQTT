@@ -23,7 +23,7 @@ Install using [CocoaPods](http://cocoapods.org) by adding this line to your Podf
 
 ```ruby
 use_frameworks! # Add this if you are targeting iOS 8+ or using Swift
-pod 'CocoaMQTT'  
+pod 'CocoaMQTT', '1.3.0-rc.2'
 ```
 
 Then, run the following command:
@@ -117,7 +117,7 @@ If you integrated by **CocoaPods**, you need to modify you `Podfile` like the fo
 use_frameworks!
 
 target 'Example' do
-    pod 'CocoaMQTT/WebSockets', '1.3.0-rc.1'
+    pod 'CocoaMQTT/WebSockets', '1.3.0-rc.2'
 end
 
 ```
@@ -127,7 +127,7 @@ If you're using CocoaMQTT in a project with only a `.podspec` and no `Podfile`, 
 ```ruby
 Pod::Spec.new do |s|
   ...
-  s.dependency "Starscream", "~> 3.0.2"
+  s.dependency "Starscream", "~> 3.1.1"
 end
 ```
 
