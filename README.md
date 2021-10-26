@@ -22,7 +22,7 @@ TVOS Target: 10.0 or above
 Install using [CocoaPods](http://cocoapods.org) by adding this line to your Podfile:
 
 ```ruby
-pod 'CocoaMQTT5, '~> 1.0.2''
+pod 'CocoaMQTT5, '~> 1.0.3''
 ```
 
 Then, run the following command:

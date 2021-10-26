@@ -37,7 +37,7 @@ public class MqttDecodeSubAck: NSObject {
         dataIndex = propertyLengthVariableByteInteger.newOffset
         let occupyIndex = dataIndex
 
-        while dataIndex < occupyIndex + (propertyLength ?? 0) {
+        while dataIndex < occupyIndex + propertyLength {
             let resVariableByteInteger = decodeVariableByteInteger(data: pubAckData, offset: dataIndex)
             dataIndex = resVariableByteInteger.newOffset
             let propertyNameByte = resVariableByteInteger.res
