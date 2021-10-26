@@ -12,11 +12,11 @@ Pod::Spec.new do |s|
   s.ios.deployment_target = "10.0"
   s.tvos.deployment_target = "10.0"
   # s.watchos.deployment_target = "2.0"
-  s.source   = { :git => "https://github.com/emqx/CocoaMQTT.git", :tag => "1.3.0-rc.1"}
+  s.source   = { :git => "https://github.com/emqx/CocoaMQTT.git", :tag => "1.3.0-rc.2"}
   s.default_subspec = 'Core'
   
   s.subspec 'Core' do |ss|
-    ss.dependency "CocoaAsyncSocket", "~> 7.6.3"
+    ss.dependency "CocoaAsyncSocket", "~> 7.6.5"
     ss.source_files = "Source/*.swift"
     ss.exclude_files = "Source/CocoaMQTTWebSocket.swift"
   end
