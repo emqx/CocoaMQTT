@@ -51,7 +51,7 @@ public class MqttDecodePubRel: NSObject {
 
         let occupyIndex = dataIndex
 
-        while dataIndex < occupyIndex + (propertyLength ?? 0) {
+        while dataIndex < occupyIndex + propertyLength {
 
             let resVariableByteInteger = decodeVariableByteInteger(data: pubAckData, offset: dataIndex)
             dataIndex = resVariableByteInteger.newOffset

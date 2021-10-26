@@ -63,8 +63,8 @@ public class MqttSubscription {
             options = options | 0b0001_0000
         case CocoaRetainHandlingOption.sendOnSubscribe:
             options = options | 0b0010_0000
-        default:
-            printDebug("topucFilter retainHandling failure")
+//        default:
+//            printDebug("topucFilter retainHandling failure")
         }
 
 
