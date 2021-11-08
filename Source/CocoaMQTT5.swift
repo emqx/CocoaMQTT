@@ -50,6 +50,12 @@ import CocoaAsyncSocket
 
     ///
     func mqtt5(_ mqtt5: CocoaMQTT5, didUnsubscribeTopics topics: [String], UnsubAckData: MqttDecodeUnsubAck)
+    
+    ///
+    func mqtt5(_ mqtt5: CocoaMQTT5, didReceiveDisconnectReasonCode reasonCode: CocoaMQTTDISCONNECTReasonCode)
+    
+    ///
+    func mqtt5(_ mqtt5: CocoaMQTT5, didReceiveAuthReasonCode reasonCode: CocoaMQTTAUTHReasonCode)
 
     ///
     func mqtt5DidPing(_ mqtt5: CocoaMQTT5)
@@ -59,7 +65,7 @@ import CocoaAsyncSocket
 
     ///
     func mqtt5DidDisconnect(_ mqtt5: CocoaMQTT5, withError err: Error?)
-
+    
     /// Manually validate SSL/TLS server certificate.
     ///
     /// This method will be called if enable  `allowUntrustCACertificate`
@@ -276,6 +282,8 @@ public class CocoaMQTT5: NSObject, CocoaMQTT5Client {
     public var didPing: (CocoaMQTT5) -> Void = { _ in }
     public var didReceivePong: (CocoaMQTT5) -> Void = { _ in }
     public var didDisconnect: (CocoaMQTT5, Error?) -> Void = { _, _ in }
+    public var didDisconnectReasonCode: (CocoaMQTT5, CocoaMQTTDISCONNECTReasonCode) -> Void = { _, _ in }
+    public var didAuthReasonCode: (CocoaMQTT5, CocoaMQTTAUTHReasonCode) -> Void = { _, _ in }
     public var didReceiveTrust: (CocoaMQTT5, SecTrust, @escaping (Bool) -> Swift.Void) -> Void = { _, _, _ in }
     public var didCompletePublish: (CocoaMQTT5, UInt16, MqttDecodePubComp) -> Void = { _, _, _ in }
     public var didChangeState: (CocoaMQTT5, CocoaMQTTConnState) -> Void = { _, _ in }
@@ -653,7 +661,17 @@ extension CocoaMQTT5: CocoaMQTTSocketDelegate {
 
 // MARK: - CocoaMQTTReaderDelegate
 extension CocoaMQTT5: CocoaMQTTReaderDelegate {
-
+    
+    func didReceive(_ reader: CocoaMQTTReader, disconnect: FrameDisconnect) {
+        delegate?.mqtt5(self, didReceiveDisconnectReasonCode: disconnect.receiveReasonCode!)
+        didDisconnectReasonCode(self, disconnect.receiveReasonCode!)
+    }
+    
+    func didReceive(_ reader: CocoaMQTTReader, auth: FrameAuth) {
+        delegate?.mqtt5(self, didReceiveAuthReasonCode: auth.receiveReasonCode!)
+        didAuthReasonCode(self, auth.receiveReasonCode!)
+    }
+    
     func didReceive(_ reader: CocoaMQTTReader, connack: FrameConnAck) {
         printDebug("RECV: \(connack)")
 

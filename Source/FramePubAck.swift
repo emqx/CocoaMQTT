@@ -20,7 +20,6 @@ struct FramePubAck: Frame {
     
     // --- Attributes End
 
-
     //3.4.2.1 PUBACK Reason Code
     public var reasonCode: CocoaMQTTPUBACKReasonCode?
 
@@ -44,7 +43,9 @@ struct FramePubAck: Frame {
 }
 
 extension FramePubAck {
+    
     func fixedHeader() -> [UInt8] {
+        
         var header = [UInt8]()
         header += [FrameType.puback.rawValue]
 
@@ -52,6 +53,7 @@ extension FramePubAck {
     }
     
     func variableHeader5() -> [UInt8] {
+        
         //3.4.2 MSB+LSB
         var header = msgid.hlBytes
         //3.4.2.1 PUBACK Reason Code
@@ -60,14 +62,13 @@ extension FramePubAck {
         //MQTT 5.0
         header += beVariableByteInteger(length: self.properties().count)
      
-
         return header
-        
     }
     
     func payload5() -> [UInt8] { return [] }
 
     func properties() -> [UInt8] {
+        
         var properties = [UInt8]()
 
         //3.4.2.2.2 Reason String
@@ -87,6 +88,7 @@ extension FramePubAck {
     }
 
     func allData() -> [UInt8] {
+        
         var allData = [UInt8]()
 
         allData += fixedHeader()

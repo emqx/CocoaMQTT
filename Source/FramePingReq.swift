@@ -16,7 +16,9 @@ struct FramePingReq: Frame {
 }
 
 extension FramePingReq {
+    
     func fixedHeader() -> [UInt8] {
+        
         var header = [UInt8]()
         header += [FrameType.pingreq.rawValue]
      
@@ -30,6 +32,7 @@ extension FramePingReq {
     func properties() -> [UInt8] { return [] }
 
     func allData() -> [UInt8] {
+        
         var allData = [UInt8]()
 
         allData += fixedHeader()

@@ -24,8 +24,6 @@ struct FramePublish: Frame {
     public var topicName: String?
     //3.3.2.2 Packet Identifier
     public var packetIdentifier: UInt16?
-   
-
 
     //3.3.2.3 PUBLISH Properties
     public var publishProperties: MqttPublishProperties?
@@ -46,7 +44,8 @@ struct FramePublish: Frame {
 
     // --- Attributes End
     
-    init(topic: String, payload: [UInt8], qos: CocoaMQTTQoS = .qos0, msgid: UInt16 = 0) {
+    init(topic: String, payload: [UInt8], qos: CocoaMQTTQoS = .qos0, msgid: UInt16 = 0){
+        
         self.topic = topic
         self._payload = payload
         self.msgid = msgid
@@ -55,6 +54,7 @@ struct FramePublish: Frame {
 }
 
 extension FramePublish {
+    
     func fixedHeader() -> [UInt8] {
         var header = [UInt8]()
 
@@ -111,11 +111,13 @@ extension FramePublish {
     func payload5() -> [UInt8] { return _payload }
 
     func properties() -> [UInt8] {
+        
         // Properties
         return publishProperties?.properties ?? []
     }
 
     func allData() -> [UInt8] {
+        
         var allData = [UInt8]()
 
         allData += fixedHeader()

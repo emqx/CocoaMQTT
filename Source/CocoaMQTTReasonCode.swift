@@ -7,7 +7,7 @@
 
 import Foundation
 
-public enum CocoaMQTTAUTHReasonCode: UInt8 {
+@objc public enum CocoaMQTTAUTHReasonCode: UInt8 {
     case success = 0x00
     case continueAuthentication = 0x18
     case ReAuthenticate = 0x19
@@ -38,15 +38,7 @@ public enum CocoaMQTTAUTHReasonCode: UInt8 {
     case connectionRateExceeded = 0x9F
 }
 
-
-public enum PayloadFormatIndicator: UInt8 {
-    case unspecified = 0x00
-    case utf8 = 0x01
-}
-
-
-
-public enum CocoaMQTTDISCONNECTReasonCode: UInt8 {
+@objc public enum CocoaMQTTDISCONNECTReasonCode: UInt8 {
     case normalDisconnection = 0x00
     case disconnectWithWillMessage = 0x04
     case unspecifiedError = 0x80
@@ -78,8 +70,7 @@ public enum CocoaMQTTDISCONNECTReasonCode: UInt8 {
     case wildcardSubscriptionsNotSupported = 0xA2
 }
 
-
-public enum CocoaMQTTPUBACKReasonCode: UInt8 {
+@objc public enum CocoaMQTTPUBACKReasonCode: UInt8 {
     case success = 0x00
     case noMatchingSubscribers = 0x10
     case unspecifiedError = 0x80
@@ -91,14 +82,12 @@ public enum CocoaMQTTPUBACKReasonCode: UInt8 {
     case payloadFormatInvalid = 0x99
 }
 
-
-public enum CocoaMQTTPUBCOMPReasonCode: UInt8 {
+@objc public enum CocoaMQTTPUBCOMPReasonCode: UInt8 {
     case success = 0x00
     case packetIdentifierNotFound = 0x92
 }
 
-
-public enum CocoaMQTTPUBRECReasonCode: UInt8 {
+@objc public enum CocoaMQTTPUBRECReasonCode: UInt8 {
     case success = 0x00
     case noMatchingSubscribers = 0x10
     case unspecifiedError = 0x80
@@ -110,14 +99,12 @@ public enum CocoaMQTTPUBRECReasonCode: UInt8 {
     case payloadFormatInvalid = 0x99
 }
 
-
-public enum CocoaMQTTPUBRELReasonCode: UInt8 {
+@objc public enum CocoaMQTTPUBRELReasonCode: UInt8 {
     case success = 0x00
     case packetIdentifierNotFound = 0x92
 }
 
-
-public enum CocoaMQTTSUBACKReasonCode: UInt8 {
+@objc public enum CocoaMQTTSUBACKReasonCode: UInt8 {
     case grantedQoS0 = 0x00
     case grantedQoS1 = 0x01
     case grantedQoS2 = 0x02
@@ -132,8 +119,7 @@ public enum CocoaMQTTSUBACKReasonCode: UInt8 {
     case wildcardSubscriptionsNotSupported = 0xA2
 }
 
-
-public enum CocoaMQTTUNSUBACKReasonCode: UInt8 {
+@objc public enum CocoaMQTTUNSUBACKReasonCode: UInt8 {
     case grantedQoS0 = 0x00
     case noSubscriptionExisted = 0x11
     case unspecifiedError = 0x80
@@ -143,10 +129,13 @@ public enum CocoaMQTTUNSUBACKReasonCode: UInt8 {
     case packetIdentifierInUse = 0x91
 }
 
-
-
-public enum CocoaRetainHandlingOption: UInt8 {
+@objc public enum CocoaRetainHandlingOption: UInt8 {
     case sendOnSubscribe = 0
     case sendOnlyWhenSubscribeIsNew = 1
     case none = 2
+}
+
+@objc public enum PayloadFormatIndicator: UInt8 {
+    case unspecified = 0x00
+    case utf8 = 0x01
 }
