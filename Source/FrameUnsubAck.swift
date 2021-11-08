@@ -12,7 +12,6 @@ import Foundation
 /// MQTT UNSUBACK packet
 struct FrameUnsubAck: Frame {
 
-
     var packetFixedHeaderType: UInt8 = FrameType.unsuback.rawValue
 
     // --- Attributes
@@ -37,7 +36,9 @@ struct FrameUnsubAck: Frame {
 }
 
 extension FrameUnsubAck {
+    
     func fixedHeader() -> [UInt8] {
+        
         var header = [UInt8]()
         header += [FrameType.unsuback.rawValue]
 
@@ -45,6 +46,7 @@ extension FrameUnsubAck {
     }
     
     func variableHeader5() -> [UInt8] {
+        
         //3.11.2 MSB+LSB
         var header = msgid.hlBytes
 
@@ -57,6 +59,7 @@ extension FrameUnsubAck {
     func payload5() -> [UInt8] { return _payload }
 
     func properties() -> [UInt8] {
+        
         var properties = [UInt8]()
 
         //3.11.2.1.2 Reason String
@@ -76,6 +79,7 @@ extension FrameUnsubAck {
     }
 
     func allData() -> [UInt8] {
+        
         var allData = [UInt8]()
 
         allData += fixedHeader()

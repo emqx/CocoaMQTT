@@ -614,6 +614,14 @@ extension CocoaMQTT: CocoaMQTTSocketDelegate {
 // MARK: - CocoaMQTTReaderDelegate
 extension CocoaMQTT: CocoaMQTTReaderDelegate {
     
+    func didReceive(_ reader: CocoaMQTTReader, disconnect: FrameDisconnect) {
+    
+    }
+    
+    func didReceive(_ reader: CocoaMQTTReader, auth: FrameAuth) {
+        
+    }
+    
     func didReceive(_ reader: CocoaMQTTReader, connack: FrameConnAck) {
         printDebug("RECV: \(connack)")
 

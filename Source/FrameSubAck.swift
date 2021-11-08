@@ -41,7 +41,9 @@ struct FrameSubAck: Frame {
 }
 
 extension FrameSubAck {
+    
     func fixedHeader() -> [UInt8] {
+        
         var header = [UInt8]()
         header += [FrameType.suback.rawValue]
 
@@ -64,6 +66,7 @@ extension FrameSubAck {
     func properties() -> [UInt8] { return [] }
 
     func allData() -> [UInt8] {
+        
         var allData = [UInt8]()
 
         allData += fixedHeader()

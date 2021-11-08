@@ -41,22 +41,13 @@ struct FrameConnect: Frame {
     var cleansess: Bool = true
 
     //3.1.2
-
-
     //3.1.2.11 CONNECT Properties
     var connectProperties: MqttConnectProperties?
 
-
     var authenticationData: Data?
-
 
     //3.1.3.1 Client Identifier (ClientID)
     var clientID: String
-
-
-
-
-
 
     // --- Attributes End
 
@@ -66,7 +57,9 @@ struct FrameConnect: Frame {
 }
 
 extension FrameConnect {
+    
     func fixedHeader() -> [UInt8] {
+        
         var header = [UInt8]()
         header += [FrameType.connect.rawValue]
 
@@ -74,10 +67,10 @@ extension FrameConnect {
     }
 
     func variableHeader5() -> [UInt8] {
+        
         var header = [UInt8]()
         var flags = ConnFlags()
     
-        //-----------------------
         //3.1.2.1 Protocol Name
         header += protocolName.bytesWithLength
 
@@ -123,6 +116,7 @@ extension FrameConnect {
         payload += clientID.bytesWithLength
 
         if let will = willMsg {
+            
             payload += beVariableByteInteger(length: will.properties.count)
             payload += will.properties
             payload += will.topic.bytesWithLength
@@ -131,6 +125,7 @@ extension FrameConnect {
         }
 
         if let username = username {
+            
             payload += username.bytesWithLength
 
             // Append password attribute if username presented
@@ -145,6 +140,7 @@ extension FrameConnect {
 
 
     func allData() -> [UInt8] {
+        
         var allData = [UInt8]()
 
         allData += fixedHeader()
@@ -157,6 +153,7 @@ extension FrameConnect {
 
 
     func variableHeader() -> [UInt8] {
+        
         var header = [UInt8]()
         var flags = ConnFlags()
 
@@ -188,6 +185,7 @@ extension FrameConnect {
     }
 
     func payload() -> [UInt8] {
+        
         var payload = [UInt8]()
 
         payload += clientID.bytesWithLength
@@ -211,14 +209,12 @@ extension FrameConnect {
 }
 
 extension FrameConnect: CustomStringConvertible {
-
     var description: String {
         return "CONNECT(id: \(clientID), username: \(username ?? "nil"), " +
                "password: \(password ?? "nil"), keepAlive : \(keepAlive), " +
                "cleansess: \(cleansess))"
     }
 }
-
 
 /// Connect Flags
 private struct ConnFlags {

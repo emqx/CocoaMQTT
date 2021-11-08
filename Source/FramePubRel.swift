@@ -40,7 +40,9 @@ struct FramePubRel: Frame {
 }
 
 extension FramePubRel {
+    
     func fixedHeader() -> [UInt8] {
+        
         var header = [UInt8]()
         header += [FrameType.pubrel.rawValue]
 
@@ -48,6 +50,7 @@ extension FramePubRel {
     }
     
     func variableHeader5() -> [UInt8] {
+        
         //3.6.2 MSB+LSB
         var header = msgid.hlBytes
         //3.6.2.1 PUBACK Reason Code
@@ -62,6 +65,7 @@ extension FramePubRel {
     func payload5() -> [UInt8] { return [] }
     
     func properties() -> [UInt8] {
+        
         var properties = [UInt8]()
 
         //3.6.2.2.2 Reason String
@@ -81,6 +85,7 @@ extension FramePubRel {
     }
 
     func allData() -> [UInt8] {
+        
         var allData = [UInt8]()
 
         allData += fixedHeader()
