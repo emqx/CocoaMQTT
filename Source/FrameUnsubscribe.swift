@@ -50,7 +50,9 @@ struct FrameUnsubscribe: Frame {
 }
 
 extension FrameUnsubscribe {
+    
     func fixedHeader() -> [UInt8] {
+        
         var header = [UInt8]()
         header += [FrameType.unsubscribe.rawValue]
 
@@ -58,6 +60,7 @@ extension FrameUnsubscribe {
     }
     
     func variableHeader5() -> [UInt8] {
+        
         //MQTT 5.0
         var header = [UInt8]()
         header = msgid!.hlBytes
@@ -79,6 +82,7 @@ extension FrameUnsubscribe {
 
 
     func properties() -> [UInt8] {
+        
         var properties = [UInt8]()
 
         // 3.10.2.1.2 User Property
@@ -93,6 +97,7 @@ extension FrameUnsubscribe {
     }
 
     func allData() -> [UInt8] {
+        
         var allData = [UInt8]()
 
         allData += fixedHeader()
@@ -119,6 +124,7 @@ extension FrameUnsubscribe {
 }
 
 extension FrameUnsubscribe: CustomStringConvertible {
+    
     var description: String {
         var desc = ""
         for subscription in topicFilters! {

@@ -44,7 +44,9 @@ struct FramePubComp: Frame {
 }
 
 extension FramePubComp {
+    
     func fixedHeader() -> [UInt8] {
+        
         var header = [UInt8]()
         header += [FrameType.pubcomp.rawValue]
 
@@ -52,6 +54,7 @@ extension FramePubComp {
     }
     
     func variableHeader5() -> [UInt8] {
+        
         //3.7.2 MSB+LSB
         var header = msgid.hlBytes
         //3.7.2.1 PUBACK Reason Code
@@ -60,13 +63,13 @@ extension FramePubComp {
         //MQTT 5.0
         header += beVariableByteInteger(length: self.properties().count)
      
-
         return header
     }
     
     func payload5() -> [UInt8] { return [] }
 
     func properties() -> [UInt8] {
+        
         var properties = [UInt8]()
 
         //3.7.2.2.2 Reason String
@@ -86,6 +89,7 @@ extension FramePubComp {
     }
 
     func allData() -> [UInt8] {
+        
         var allData = [UInt8]()
 
         allData += fixedHeader()
@@ -104,6 +108,7 @@ extension FramePubComp {
 extension FramePubComp: InitialWithBytes {
     
     init?(packetFixedHeaderType: UInt8, bytes: [UInt8]) {
+        
         guard packetFixedHeaderType == FrameType.pubcomp.rawValue else {
             return nil
         }

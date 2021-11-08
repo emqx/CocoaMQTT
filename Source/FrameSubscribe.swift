@@ -57,7 +57,9 @@ struct FrameSubscribe: Frame {
 }
 
 extension FrameSubscribe {
+    
     func fixedHeader() -> [UInt8] {
+        
         var header = [UInt8]()
         header += [FrameType.subscribe.rawValue]
 
@@ -92,6 +94,7 @@ extension FrameSubscribe {
     }
 
     func properties() -> [UInt8] {
+        
         var properties = [UInt8]()
 
         //3.8.2.1.2 Subscription Identifier
@@ -112,6 +115,7 @@ extension FrameSubscribe {
     }
 
     func allData() -> [UInt8] {
+        
         var allData = [UInt8]()
 
         allData += fixedHeader()
