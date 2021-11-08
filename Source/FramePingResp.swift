@@ -18,7 +18,9 @@ struct FramePingResp: Frame {
 }
 
 extension FramePingResp {
+    
     func fixedHeader() -> [UInt8] {
+        
         var header = [UInt8]()
         header += [FrameType.pingresp.rawValue]
 
@@ -32,6 +34,7 @@ extension FramePingResp {
     func properties() -> [UInt8] { return [] }
 
     func allData() -> [UInt8] {
+        
         var allData = [UInt8]()
 
         allData += fixedHeader()
@@ -50,6 +53,7 @@ extension FramePingResp {
 extension FramePingResp: InitialWithBytes {
     
     init?(packetFixedHeaderType: UInt8, bytes: [UInt8]) {
+        
         guard packetFixedHeaderType == FrameType.pingresp.rawValue else {
             return nil
         }
