@@ -28,6 +28,7 @@ struct FrameConnect: Frame {
 
     //3.1.2.5 Will Flag
     var willMsg: CocoaMQTTMessage?
+    var willMsg5: CocoaMQTT5Message?
     //3.1.2.6 Will QoS
     var willQoS: UInt8?
     //3.1.2.7 Will Retain
@@ -79,7 +80,7 @@ extension FrameConnect {
 
 
         //3.1.2.3 Connect Flags
-        if let will = willMsg {
+        if let will = willMsg5 {
             flags.flagWill = true
             flags.flagWillQoS = will.qos.rawValue
             flags.flagWillRetain = will.retained
@@ -115,9 +116,9 @@ extension FrameConnect {
 
         payload += clientID.bytesWithLength
 
-        if let will = willMsg {
+        if let will = willMsg5 {
             
-            payload += beVariableByteInteger(length: will.properties.count)
+            payload += beVariableByteInteger(length: willMsg5!.properties.count)
             payload += will.properties
             payload += will.topic.bytesWithLength
             payload += UInt16(will.payload.count).hlBytes
