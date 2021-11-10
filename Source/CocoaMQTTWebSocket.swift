@@ -304,6 +304,7 @@ public extension CocoaMQTTWebSocket {
         
         public func connect() {
             task?.resume()
+            scheduleRead()
         }
         
         public func disconnect() {
@@ -363,7 +364,6 @@ extension CocoaMQTTWebSocket.FoundationConnection: URLSessionWebSocketDelegate {
         queue.async {
             self.delegate?.connectionOpened(self)
         }
-        scheduleRead()
     }
 
     public func urlSession(_ session: URLSession, webSocketTask: URLSessionWebSocketTask, didCloseWith closeCode: URLSessionWebSocketTask.CloseCode, reason: Data?) {

@@ -11,12 +11,12 @@ import CocoaMQTT
 
 
 class ViewController: UIViewController {
-    
+
     //let defaultHost = "localhost"
     //OR
     //TEST Broker
     let defaultHost = "broker-cn.emqx.io"
-    
+
     var mqtt5: CocoaMQTT5?
     var mqtt: CocoaMQTT?
     var animal: String?
@@ -31,7 +31,7 @@ class ViewController: UIViewController {
             animalsImageView.layer.cornerRadius = animalsImageView.frame.width / 2.0
         }
     }
-    
+
     @IBAction func connectToServer() {
         if mqttVesion == "3.1.1" {
             _ = mqtt!.connect()
@@ -40,13 +40,13 @@ class ViewController: UIViewController {
         }
 
     }
-    
+
     @IBAction func mqttVersionControl(_ sender: UISegmentedControl) {
         animal = tabBarController?.selectedViewController?.tabBarItem.title
         mqttVesion = versionControl.titleForSegment(at: versionControl.selectedSegmentIndex)
 
         mqttSettingList()
-        
+
         print("welcome to MQTT \(String(describing: mqttVesion))  \(String(describing: animal))")
     }
 
@@ -54,7 +54,7 @@ class ViewController: UIViewController {
         let authProperties = MqttAuthProperties()
         mqtt5!.auth(reasonCode: CocoaMQTTAUTHReasonCode.continueAuthentication, authProperties: authProperties)
     }
-    
+
     override func viewDidLoad() {
         super.viewDidLoad()
         navigationController?.interactivePopGestureRecognizer?.isEnabled = false
@@ -67,7 +67,7 @@ class ViewController: UIViewController {
         print("welcome to MQTT \(String(describing: mqttVesion))  \(String(describing: animal))")
 
     }
-    
+
     override func viewWillAppear(_ animated: Bool) {
         navigationController?.navigationBar.isHidden = false
     }
@@ -94,6 +94,7 @@ class ViewController: UIViewController {
             mqtt!.willMessage = CocoaMQTTMessage(topic: "/will", string: "dieout")
             mqtt!.keepAlive = 60
             mqtt!.delegate = self
+            //mqtt!.autoReconnect = true
 
         }else if mqttVesion == "5.0" {
 
@@ -110,8 +111,9 @@ class ViewController: UIViewController {
             mqtt5!.username = ""
             mqtt5!.password = ""
 
-            let lastWillMessage = CocoaMQTTMessage(topic: "/chat/room/animals/client/Sheep", string: "dieout")
+            let lastWillMessage = CocoaMQTT5Message(topic: "/chat/room/animals/client/Sheep", string: "dieout")
             lastWillMessage.contentType = "JSON"
+            lastWillMessage.willResponseTopic = "/chat/room/animals/client/Sheep"
             lastWillMessage.willExpiryInterval = 0
             lastWillMessage.willDelayInterval = 0
             lastWillMessage.qos = .qos1
@@ -119,11 +121,12 @@ class ViewController: UIViewController {
             mqtt5!.willMessage = lastWillMessage
             mqtt5!.keepAlive = 60
             mqtt5!.delegate = self
+            //mqtt5!.autoReconnect = true
 
         }
 
     }
-    
+
     func simpleSSLSetting() {
 
         if mqttVesion == "3.1.1" {
@@ -152,7 +155,7 @@ class ViewController: UIViewController {
 
             mqtt5!.username = ""
             mqtt5!.password = ""
-            mqtt5!.willMessage = CocoaMQTTMessage(topic: "/will", string: "dieout")
+            mqtt5!.willMessage = CocoaMQTT5Message(topic: "/will", string: "dieout")
             mqtt5!.keepAlive = 60
             mqtt5!.delegate = self
 
@@ -161,7 +164,7 @@ class ViewController: UIViewController {
         }
 
     }
-    
+
     func selfSignedSSLSetting() {
         if mqttVesion == "3.1.1" {
 
@@ -197,7 +200,7 @@ class ViewController: UIViewController {
 
             mqtt5!.username = ""
             mqtt5!.password = ""
-            mqtt5!.willMessage = CocoaMQTTMessage(topic: "/will", string: "dieout")
+            mqtt5!.willMessage = CocoaMQTT5Message(topic: "/will", string: "dieout")
             mqtt5!.keepAlive = 60
             mqtt5!.delegate = self
 
@@ -212,7 +215,7 @@ class ViewController: UIViewController {
         }
 
     }
-    
+
     func mqttWebsocketsSetting() {
         if mqttVesion == "3.1.1" {
 
@@ -242,7 +245,7 @@ class ViewController: UIViewController {
             mqtt5!.username = ""
             mqtt5!.password = ""
 
-            let lastWillMessage = CocoaMQTTMessage(topic: "/will", string: "dieout")
+            let lastWillMessage = CocoaMQTT5Message(topic: "/will", string: "dieout")
             lastWillMessage.contentType = "JSON"
             lastWillMessage.willExpiryInterval = 0
             lastWillMessage.willDelayInterval = 0
@@ -255,7 +258,7 @@ class ViewController: UIViewController {
         }
 
     }
-    
+
     func mqttWebsocketSSLSetting() {
         if mqttVesion == "3.1.1" {
 
@@ -286,7 +289,7 @@ class ViewController: UIViewController {
             mqtt5!.enableSSL = true
             mqtt5!.username = ""
             mqtt5!.password = ""
-            mqtt5!.willMessage = CocoaMQTTMessage(topic: "/will", string: "dieout")
+            mqtt5!.willMessage = CocoaMQTT5Message(topic: "/will", string: "dieout")
             mqtt5!.keepAlive = 60
             mqtt5!.delegate = self
 
@@ -294,23 +297,23 @@ class ViewController: UIViewController {
 
 
     }
-    
+
     func getClientCertFromP12File(certName: String, certPassword: String) -> CFArray? {
         // get p12 file path
         let resourcePath = Bundle.main.path(forResource: certName, ofType: "p12")
-        
+
         guard let filePath = resourcePath, let p12Data = NSData(contentsOfFile: filePath) else {
             print("Failed to open the certificate file: \(certName).p12")
             return nil
         }
-        
+
         // create key dictionary for reading p12 file
         let key = kSecImportExportPassphrase as String
         let options : NSDictionary = [key: certPassword]
-        
+
         var items : CFArray?
         let securityError = SecPKCS12Import(p12Data, options, &items)
-        
+
         guard securityError == errSecSuccess else {
             if securityError == errSecAuthFailed {
                 print("ERROR: SecPKCS12Import returned errSecAuthFailed. Incorrect password?")
@@ -319,24 +322,32 @@ class ViewController: UIViewController {
             }
             return nil
         }
-        
+
         guard let theArray = items, CFArrayGetCount(theArray) > 0 else {
             return nil
         }
-        
+
         let dictionary = (theArray as NSArray).object(at: 0)
         guard let identity = (dictionary as AnyObject).value(forKey: kSecImportItemIdentity as String) else {
             return nil
         }
         let certArray = [identity] as CFArray
-        
+
         return certArray
     }
 
 }
 
 extension ViewController: CocoaMQTT5Delegate {
-    
+
+    func mqtt5(_ mqtt5: CocoaMQTT5, didReceiveDisconnectReasonCode reasonCode: CocoaMQTTDISCONNECTReasonCode) {
+        print("disconnect res : \(reasonCode)")
+    }
+
+    func mqtt5(_ mqtt5: CocoaMQTT5, didReceiveAuthReasonCode reasonCode: CocoaMQTTAUTHReasonCode) {
+        print("auth res : \(reasonCode)")
+    }
+
     // Optional ssl CocoaMQTT5Delegate
     func mqtt5(_ mqtt5: CocoaMQTT5, didReceive trust: SecTrust, completionHandler: @escaping (Bool) -> Void) {
         TRACE("trust: \(trust)")
@@ -351,14 +362,14 @@ extension ViewController: CocoaMQTT5Delegate {
         /// }
         completionHandler(true)
     }
-    
+
     func mqtt5(_ mqtt5: CocoaMQTT5, didConnectAck ack: CocoaMQTTCONNACKReasonCode, connAckData: MqttDecodeConnAck) {
         TRACE("ack: \(ack)")
 
         if ack == .success {
             print("properties maximumPacketSize: \(String(describing: connAckData.maximumPacketSize))")
             print("properties topicAliasMaximum: \(String(describing: connAckData.topicAliasMaximum))")
-            
+
             mqtt5.subscribe("chat/room/animals/client/+", qos: CocoaMQTTQoS.qos1)
             //or
             //let subscriptions : [MqttSubscription] = [MqttSubscription(topic: "chat/room/animals/client/+"),MqttSubscription(topic: "chat/room/foods/client/+"),MqttSubscription(topic: "chat/room/trees/client/+")]
@@ -371,18 +382,18 @@ extension ViewController: CocoaMQTT5Delegate {
 
         }
     }
-    
+
     func mqtt5(_ mqtt5: CocoaMQTT5, didStateChangeTo state: CocoaMQTTConnState) {
         TRACE("new state: \(state)")
         if state == .disconnected {
 
         }
     }
-    
-    func mqtt5(_ mqtt5: CocoaMQTT5, didPublishMessage message: CocoaMQTTMessage, id: UInt16) {
-        TRACE("message: \(message.string.description), id: \(id)")
+
+    func mqtt5(_ mqtt5: CocoaMQTT5, didPublishMessage message: CocoaMQTT5Message, id: UInt16) {
+        TRACE("message: \(message.description), id: \(id)")
     }
-    
+
     func mqtt5(_ mqtt5: CocoaMQTT5, didPublishAck id: UInt16, pubAckData: MqttDecodePubAck) {
         TRACE("id: \(id)")
         print("pubAckData reasonCode: \(String(describing: pubAckData.reasonCode))")
@@ -398,32 +409,30 @@ extension ViewController: CocoaMQTT5Delegate {
         print("pubCompData reasonCode: \(String(describing: pubCompData.reasonCode))")
     }
 
-
-
-    func mqtt5(_ mqtt5: CocoaMQTT5, didReceiveMessage message: CocoaMQTTMessage, id: UInt16, publishData: MqttDecodePublish ) {
+    func mqtt5(_ mqtt5: CocoaMQTT5, didReceiveMessage message: CocoaMQTT5Message, id: UInt16, publishData: MqttDecodePublish){
         print("publish.contentType \(String(describing: publishData.contentType))")
-        
+
         TRACE("message: \(message.string.description), id: \(id)")
         let name = NSNotification.Name(rawValue: "MQTTMessageNotification" + animal!)
 
         NotificationCenter.default.post(name: name, object: self, userInfo: ["message": message.string!, "topic": message.topic, "id": id, "animal": animal as Any])
     }
-    
+
     func mqtt5(_ mqtt5: CocoaMQTT5, didSubscribeTopics success: NSDictionary, failed: [String], subAckData: MqttDecodeSubAck) {
         TRACE("subscribed: \(success), failed: \(failed)")
         print("subAckData.reasonCodes \(String(describing: subAckData.reasonCodes))")
     }
-    
+
     func mqtt5(_ mqtt5: CocoaMQTT5, didUnsubscribeTopics topics: [String], UnsubAckData: MqttDecodeUnsubAck) {
         TRACE("topic: \(topics)")
         print("UnsubAckData.reasonCodes \(String(describing: UnsubAckData.reasonCodes))")
         print("----------------------")
     }
-    
+
     func mqtt5DidPing(_ mqtt5: CocoaMQTT5) {
         TRACE()
     }
-    
+
     func mqtt5DidReceivePong(_ mqtt5: CocoaMQTT5) {
         TRACE()
     }
@@ -528,7 +537,7 @@ extension ViewController {
         } else {
             prettyName = names[1]
         }
-        
+
         if fun == "mqttDidDisconnect(_:withError:)" {
             prettyName = "didDisconnect"
         }
