@@ -32,6 +32,11 @@ extension String {
     var bytesWithLength: [UInt8] {
         return UInt16(utf8.count).hlBytes + utf8
     }
+    
+    var stringUTF8: String {
+        let data = self.data(using: .nonLossyASCII)
+        return String(data: data!, encoding: .utf8) ?? ""
+    }
 }
 
 
