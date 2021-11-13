@@ -8,7 +8,6 @@
 
 import Foundation
 
-
 /// MQTT SUBACK packet
 struct FrameSubAck: Frame {
     

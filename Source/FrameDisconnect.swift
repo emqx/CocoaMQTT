@@ -8,7 +8,6 @@
 
 import Foundation
 
-
 /// MQTT Disconnect packet
 struct FrameDisconnect: Frame {
 

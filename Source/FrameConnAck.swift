@@ -8,7 +8,6 @@
 
 import Foundation
 
-
 struct FrameConnAck: Frame {
 
     var packetFixedHeaderType: UInt8 = FrameType.connack.rawValue

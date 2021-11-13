@@ -19,9 +19,9 @@ import CocoaAsyncSocket
 
     public var description: String {
         switch self {
-            case .connecting:   return "connecting"
-            case .connected:    return "connected"
-            case .disconnected: return "disconnected"
+        case .connecting:   return "connecting"
+        case .connected:    return "connected"
+        case .disconnected: return "disconnected"
         }
     }
 }
@@ -319,7 +319,7 @@ public class CocoaMQTT5: NSObject, CocoaMQTT5Client {
     fileprivate func send(_ frame: Frame, tag: Int = 0) {
         printDebug("SEND: \(frame)")
         let data = frame.bytes(version: version)
-      
+
 
         socket.write(Data(bytes: data, count: data.count), withTimeout: 5, tag: tag)
     }
@@ -449,7 +449,7 @@ public class CocoaMQTT5: NSObject, CocoaMQTT5Client {
     ///     - -1 will be returned, if the messages queue is full
     @discardableResult
     public func publish(_ topic: String, withString string: String, qos: CocoaMQTTQoS = .qos1, DUP: Bool = false
-, retained: Bool = false, properties: MqttPublishProperties) -> Int {
+                        , retained: Bool = false, properties: MqttPublishProperties) -> Int {
         let message = CocoaMQTT5Message(topic: topic, string: string, qos: qos, retained: retained)
         return publish(message, DUP: DUP, retained: retained, properties: properties)
     }
@@ -589,8 +589,8 @@ extension CocoaMQTT5: CocoaMQTTSocketDelegate {
     }
 
     public func socket(_ socket: CocoaMQTTSocketProtocol,
-                         didReceive trust: SecTrust,
-                         completionHandler: @escaping (Bool) -> Swift.Void) {
+                       didReceive trust: SecTrust,
+                       completionHandler: @escaping (Bool) -> Swift.Void) {
 
         printDebug("Call the SSL/TLS manually validating function")
 
@@ -627,7 +627,7 @@ extension CocoaMQTT5: CocoaMQTTSocketDelegate {
         // Clean up
         socket.setDelegate(nil, delegateQueue: nil)
         connState = .disconnected
-      
+
         delegate?.mqtt5DidDisconnect(self, withError: err)
         didDisconnect(self, err)
 
