@@ -9,8 +9,6 @@
 import Foundation
 import CocoaAsyncSocket
 
-
-
 /**
  * Conn Ack
  */

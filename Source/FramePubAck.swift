@@ -8,7 +8,6 @@
 
 import Foundation
 
-
 /// MQTT PUBACK packet
 struct FramePubAck: Frame {
     

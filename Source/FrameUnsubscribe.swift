@@ -8,7 +8,6 @@
 
 import Foundation
 
-
 /// MQTT UNSUBSCRIBE packet
 struct FrameUnsubscribe: Frame {
     

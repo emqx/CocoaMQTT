@@ -39,7 +39,7 @@ public class MqttSubscription {
         case .qos2:
             options = options | 0b0000_0010
         default:
-            printDebug("topucFilter qos failure")
+            printDebug("topicFilter qos failure")
         }
 
         switch noLocal {
@@ -63,8 +63,6 @@ public class MqttSubscription {
             options = options | 0b0001_0000
         case CocoaRetainHandlingOption.sendOnSubscribe:
             options = options | 0b0010_0000
-//        default:
-//            printDebug("topucFilter retainHandling failure")
         }
 
 

@@ -8,7 +8,6 @@
 
 import Foundation
 
-
 /// Quality of Service levels
 @objc public enum CocoaMQTTQoS: UInt8, CustomStringConvertible {
     /// At most once delivery

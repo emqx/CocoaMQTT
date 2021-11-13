@@ -7,7 +7,6 @@
 
 import Foundation
 
-
 public enum CocoaMQTTPropertyName: UInt8 {
     case payloadFormatIndicator = 0x01
     case willExpiryInterval = 0x02

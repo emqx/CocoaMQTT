@@ -8,7 +8,6 @@
 
 import Foundation
 
-
 /// MQTT SUBSCRIBE Frame
 struct FrameSubscribe: Frame {
     

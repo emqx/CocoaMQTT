@@ -22,7 +22,7 @@ TVOS Target: 10.0 or above
 Install using [CocoaPods](http://cocoapods.org) by adding this line to your Podfile:
 
 ```ruby
-pod 'CocoaMQTT5, '~> 1.0.5''
+pod 'CocoaMQTT, '~> 2.0.1''
 ```
 
 Then, run the following command:
@@ -31,10 +31,10 @@ Then, run the following command:
 $ pod install
 ```
 
-At last, import "CocoaMQTT5" to your project:
+At last, import "CocoaMQTT" to your project:
 
 ```swift
-import CocoaMQTT5
+import CocoaMQTT
 ```
 
 

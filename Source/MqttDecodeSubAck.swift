@@ -7,7 +7,6 @@
 
 import Foundation
 
-
 public class MqttDecodeSubAck: NSObject {
 
     var totalCount = 0

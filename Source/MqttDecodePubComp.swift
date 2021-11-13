@@ -7,7 +7,6 @@
 
 import Foundation
 
-
 public class MqttDecodePubComp: NSObject {
 
     var totalCount = 0
