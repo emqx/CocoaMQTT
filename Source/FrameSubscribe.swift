@@ -141,17 +141,18 @@ extension FrameSubscribe {
 }
 
 extension FrameSubscribe: CustomStringConvertible {
-    var description: String {
 
-        if topicFilters == nil {
-            return "SUBSCRIBE(id: \(String(describing: msgid)), topics: \(String(describing: topics)))"
-        }else{
-            var desc = ""
-            for subscription in self.topicFilters! {
+    var description5: String {
+        var desc = ""
+        if let unwrappedList = topicFilters, !unwrappedList.isEmpty {
+            for subscription in unwrappedList {
                 desc += "SUBSCRIBE(id: \(String(describing: msgid)), topics: \(subscription.topic))  "
             }
-            return desc
         }
+        return desc
+    }
 
+    var description: String {
+        return "SUBSCRIBE(id: \(String(describing: msgid)), topics: \(String(describing: topics)))"
     }
 }

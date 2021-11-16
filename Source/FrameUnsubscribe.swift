@@ -124,11 +124,18 @@ extension FrameUnsubscribe {
 
 extension FrameUnsubscribe: CustomStringConvertible {
     
-    var description: String {
+    var description5: String {
         var desc = ""
-        for subscription in topicFilters! {
-            desc += "UNSUBSCRIBE(id: \(String(describing: msgid)), topics: \(subscription.topic))  "
+        if let unwrappedList = topicFilters, !unwrappedList.isEmpty {
+            for subscription in unwrappedList {
+                desc += "UNSUBSCRIBE(id: \(String(describing: subscription.topic)), topics: \(subscription.topic))  "
+            }
         }
         return desc
+    }
+
+
+    var description: String {
+        return "UNSUBSCRIBE(id: \(String(describing: msgid)), topics: \(String(describing: topics)))"
     }
 }
