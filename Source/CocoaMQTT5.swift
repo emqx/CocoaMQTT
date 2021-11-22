@@ -443,13 +443,13 @@ public class CocoaMQTT5: NSObject, CocoaMQTT5Client {
     ///    - string: Payload string
     ///    - qos: Qos. Default is Qos1
     ///    - retained: Retained flag. Mark this message is a retained message. default is false
+    ///    - properties: Publish Properties
     /// - Returns:
     ///     - 0 will be returned, if the message's qos is qos0
     ///     - 1-65535 will be returned, if the messages's qos is qos1/qos2
     ///     - -1 will be returned, if the messages queue is full
     @discardableResult
-    public func publish(_ topic: String, withString string: String, qos: CocoaMQTTQoS = .qos1, DUP: Bool = false
-                        , retained: Bool = false, properties: MqttPublishProperties) -> Int {
+    public func publish(_ topic: String, withString string: String, qos: CocoaMQTTQoS = .qos1, DUP: Bool = false, retained: Bool = false, properties: MqttPublishProperties) -> Int {
         let message = CocoaMQTT5Message(topic: topic, string: string, qos: qos, retained: retained)
         return publish(message, DUP: DUP, retained: retained, properties: properties)
     }
@@ -458,6 +458,7 @@ public class CocoaMQTT5: NSObject, CocoaMQTT5Client {
     ///
     /// - Parameters:
     ///   - message: Message
+    ///   - properties: Publish Properties
     @discardableResult
     public func publish(_ message: CocoaMQTT5Message, DUP: Bool = false, retained: Bool = false, properties: MqttPublishProperties) -> Int {
         let msgid: UInt16

@@ -19,7 +19,7 @@ TVOS Target: 10.0 or above
 ## Installation
 ### CocoaPods
 
-Install using [CocoaPods](http://cocoapods.org) by adding this line to your Podfile:
+To integrate CocoaMQTT into your Xcode project using [CocoaPods](http://cocoapods.org), you need to modify you `Podfile` like the followings:
 
 ```ruby
 use_frameworks!
