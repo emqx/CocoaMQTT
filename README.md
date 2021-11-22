@@ -22,7 +22,11 @@ TVOS Target: 10.0 or above
 Install using [CocoaPods](http://cocoapods.org) by adding this line to your Podfile:
 
 ```ruby
-pod 'CocoaMQTT, '~> 2.0.2''
+use_frameworks!
+
+target 'Example' do
+    pod 'CocoaMQTT', '~> 2.0.2'
+end
 ```
 
 Then, run the following command:
@@ -142,7 +146,7 @@ If you integrated by **CocoaPods**, you need to modify you `Podfile` like the fo
 use_frameworks!
 
 target 'Example' do
-    pod 'CocoaMQTT/WebSockets', '1.3.0-rc.1'
+    pod 'CocoaMQTT/WebSockets', '1.3.0-rc.2'
 end
 
 ```
