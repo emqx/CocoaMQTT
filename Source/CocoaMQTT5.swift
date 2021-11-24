@@ -450,7 +450,11 @@ public class CocoaMQTT5: NSObject, CocoaMQTT5Client {
     ///     - -1 will be returned, if the messages queue is full
     @discardableResult
     public func publish(_ topic: String, withString string: String, qos: CocoaMQTTQoS = .qos1, DUP: Bool = false, retained: Bool = false, properties: MqttPublishProperties) -> Int {
-        let message = CocoaMQTT5Message(topic: topic, string: string, qos: qos, retained: retained)
+        var fixQus = qos
+        if !DUP{
+            fixQus = .qos0
+        }
+        let message = CocoaMQTT5Message(topic: topic, string: string, qos: fixQus, retained: retained)
         return publish(message, DUP: DUP, retained: retained, properties: properties)
     }
 
@@ -475,8 +479,8 @@ public class CocoaMQTT5: NSObject, CocoaMQTT5Client {
                                  payload: message.payload,
                                  qos: message.qos,
                                  msgid: msgid)
-        frame.QoS = message.qos
-        frame.DUP = DUP
+        frame.qos = message.qos
+        frame.dup = DUP
         frame.publishProperties = properties
         frame.retained = message.retained
 

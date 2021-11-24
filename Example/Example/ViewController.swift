@@ -88,7 +88,7 @@ class ViewController: UIViewController {
 
             let clientID = "CocoaMQTT-\(animal!)-" + String(ProcessInfo().processIdentifier)
             mqtt = CocoaMQTT(clientID: clientID, host: defaultHost, port: 1883)
-            mqtt!.logLevel = .debug
+            //mqtt!.logLevel = .debug
             mqtt!.username = ""
             mqtt!.password = ""
             mqtt!.willMessage = CocoaMQTTMessage(topic: "/will", string: "dieout")
@@ -100,7 +100,7 @@ class ViewController: UIViewController {
 
             let clientID = "CocoaMQTT5-\(animal!)-" + String(ProcessInfo().processIdentifier)
             mqtt5 = CocoaMQTT5(clientID: clientID, host: defaultHost, port: 1883)
-            mqtt5!.logLevel = .debug
+            //mqtt5!.logLevel = .debug
             let connectProperties = MqttConnectProperties()
             connectProperties.topicAliasMaximum = 0
             connectProperties.sessionExpiryInterval = 0

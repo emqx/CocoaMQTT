@@ -109,18 +109,19 @@ extension FramePubAck: InitialWithBytes {
         guard packetFixedHeaderType == FrameType.puback.rawValue else {
             return nil
         }
+        
         //MQTT 5.0 bytes.count == 4
         guard bytes.count >= 2 else {
             return nil
         }
 
-        self.reasonCode = CocoaMQTTPUBACKReasonCode(rawValue: bytes[2])
-
+        if bytes.count > 2{
+            self.reasonCode = CocoaMQTTPUBACKReasonCode(rawValue: bytes[2])
+            self.pubAckProperties = MqttDecodePubAck()
+            self.pubAckProperties!.decodePubAck(fixedHeader: packetFixedHeaderType, pubAckData: bytes)
+        }
+        
         msgid = UInt16(bytes[0]) << 8 + UInt16(bytes[1])
-
-
-        self.pubAckProperties = MqttDecodePubAck()
-        self.pubAckProperties!.decodePubAck(fixedHeader: packetFixedHeaderType, pubAckData: bytes)
     }
 }
 
