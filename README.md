@@ -25,7 +25,7 @@ To integrate CocoaMQTT into your Xcode project using [CocoaPods](http://cocoapod
 use_frameworks!
 
 target 'Example' do
-    pod 'CocoaMQTT', '~> 2.0.2'
+    pod 'CocoaMQTT'
 end
 ```
 
