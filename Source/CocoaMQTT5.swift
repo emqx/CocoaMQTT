@@ -666,6 +666,9 @@ extension CocoaMQTT5: CocoaMQTTSocketDelegate {
 
 // MARK: - CocoaMQTTReaderDelegate
 extension CocoaMQTT5: CocoaMQTTReaderDelegate {
+    func didReceive(_ reader: CocoaMQTTReader, suback: FrameSubAck) {
+        // not use, for mqtt 3.1.1
+    }
     
     func didReceive(_ reader: CocoaMQTTReader, disconnect: FrameDisconnect) {
         delegate?.mqtt5(self, didReceiveDisconnectReasonCode: disconnect.receiveReasonCode!)
@@ -778,7 +781,7 @@ extension CocoaMQTT5: CocoaMQTTReaderDelegate {
         didCompletePublish(self, pubcomp.msgid, pubcomp.pubCompProperties!)
     }
 
-    func didReceive(_ reader: CocoaMQTTReader, suback: FrameSubAck) {
+    func didReceive(_ reader: CocoaMQTTReader, suback: FrameSubAck5) {
         printDebug("RECV: \(suback)")
         guard let topicsAndQos = subscriptionsWaitingAck.removeValue(forKey: suback.msgid) else {
             printWarning("UNEXPECT SUBACK Received: \(suback)")
