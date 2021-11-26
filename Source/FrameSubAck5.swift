@@ -9,7 +9,7 @@
 import Foundation
 
 /// MQTT SUBACK packet
-struct FrameSubAck: Frame {
+struct FrameSubAck5: Frame {
     
     var packetFixedHeaderType: UInt8 = FrameType.suback.rawValue
     
@@ -39,7 +39,7 @@ struct FrameSubAck: Frame {
     }
 }
 
-extension FrameSubAck {
+extension FrameSubAck5 {
     
     func fixedHeader() -> [UInt8] {
         
@@ -90,12 +90,12 @@ extension FrameSubAck {
     }
 }
 
-extension FrameSubAck: InitialWithBytes {
+extension FrameSubAck5: InitialWithBytes {
     
     init?(packetFixedHeaderType: UInt8, bytes: [UInt8]) {
-        
-        self.packetFixedHeaderType = packetFixedHeaderType
 
+        self.packetFixedHeaderType = packetFixedHeaderType
+        
         // the bytes length must bigger than 3
         guard bytes.count >= 3 else {
             return nil
@@ -103,17 +103,28 @@ extension FrameSubAck: InitialWithBytes {
 
         self.msgid = UInt16(bytes[0]) << 8 + UInt16(bytes[1])
         self.grantedQos = []
-        for i in 2 ..< bytes.count {
+        for i in 3 ..< bytes.count {
             guard let qos = CocoaMQTTQoS(rawValue: bytes[i]) else {
                 return nil
             }
             self.grantedQos.append(qos)
         }
+
+        self.reasonCodes = [CocoaMQTTSUBACKReasonCode]()
+        for i in 3 ..< bytes.count {
+            guard let qos = CocoaMQTTSUBACKReasonCode(rawValue: bytes[i]) else {
+                return nil
+            }
+            self.reasonCodes! += [qos]
+        }
+
+        self.subAckProperties = MqttDecodeSubAck()
+        self.subAckProperties!.decodeSubAck(fixedHeader: packetFixedHeaderType, pubAckData: bytes)
         
     }
 }
 
-extension FrameSubAck: CustomStringConvertible {
+extension FrameSubAck5: CustomStringConvertible {
     var description: String {
         return "SUBACK(id: \(msgid))"
     }

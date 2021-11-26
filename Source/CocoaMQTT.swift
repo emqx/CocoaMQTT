@@ -611,13 +611,16 @@ extension CocoaMQTT: CocoaMQTTSocketDelegate {
 
 // MARK: - CocoaMQTTReaderDelegate
 extension CocoaMQTT: CocoaMQTTReaderDelegate {
+    func didReceive(_ reader: CocoaMQTTReader, suback: FrameSubAck5) {
+        // not use, for mqtt 5.0
+    }
     
     func didReceive(_ reader: CocoaMQTTReader, disconnect: FrameDisconnect) {
-
+        // not use, for mqtt 5.0
     }
     
     func didReceive(_ reader: CocoaMQTTReader, auth: FrameAuth) {
-        
+        // not use, for mqtt 5.0
     }
     
     func didReceive(_ reader: CocoaMQTTReader, connack: FrameConnAck) {
@@ -719,7 +722,6 @@ extension CocoaMQTT: CocoaMQTTReaderDelegate {
 
     func didReceive(_ reader: CocoaMQTTReader, suback: FrameSubAck) {
         printDebug("RECV: \(suback)")
-        
         guard let topicsAndQos = subscriptionsWaitingAck.removeValue(forKey: suback.msgid) else {
             printWarning("UNEXPECT SUBACK Received: \(suback)")
             return

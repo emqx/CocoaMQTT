@@ -31,6 +31,8 @@ protocol CocoaMQTTReaderDelegate: AnyObject {
     func didReceive(_ reader: CocoaMQTTReader, pubcomp: FramePubComp)
     
     func didReceive(_ reader: CocoaMQTTReader, suback: FrameSubAck)
+
+    func didReceive(_ reader: CocoaMQTTReader, suback: FrameSubAck5)
     
     func didReceive(_ reader: CocoaMQTTReader, unsuback: FrameUnsubAck)
     
@@ -157,6 +159,11 @@ class CocoaMQTTReader {
             delegate?.didReceive(self, pubcomp: pubcomp)
         case .suback:
             guard let frame = FrameSubAck(packetFixedHeaderType: header, bytes: data) else {
+                printError("Reader parse \(frameType) failed, data: \(data)")
+                break
+            }
+            delegate?.didReceive(self, suback: frame)
+            guard let frame = FrameSubAck5(packetFixedHeaderType: header, bytes: data) else {
                 printError("Reader parse \(frameType) failed, data: \(data)")
                 break
             }
