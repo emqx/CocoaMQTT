@@ -1,5 +1,5 @@
 //
-//  CocoaMQTTReader.swift
+//  CocoaMQTTReader5.swift
 //  CocoaMQTT
 //
 //  Created by HJianBo on 2019/5/21.
@@ -9,39 +9,43 @@
 import Foundation
 
 /// Read tag for AsyncSocket
-enum CocoaMQTTReadTag: Int {
+enum CocoaMQTTRead5Tag: Int {
     case header = 0
     case length
     case payload
 }
 
 ///
-protocol CocoaMQTTReaderDelegate: AnyObject {
+protocol CocoaMQTTReader5Delegate: AnyObject {
 
-    func didReceive(_ reader: CocoaMQTTReader, connack: FrameConnAck)
+    func didReceive(_ reader: CocoaMQTTReader5, connack: FrameConnAck)
 
-    func didReceive(_ reader: CocoaMQTTReader, publish: FramePublish)
+    func didReceive(_ reader: CocoaMQTTReader5, publish: FramePublish)
 
-    func didReceive(_ reader: CocoaMQTTReader, puback: FramePubAck)
+    func didReceive(_ reader: CocoaMQTTReader5, puback: FramePubAck)
 
-    func didReceive(_ reader: CocoaMQTTReader, pubrec: FramePubRec)
+    func didReceive(_ reader: CocoaMQTTReader5, pubrec: FramePubRec)
 
-    func didReceive(_ reader: CocoaMQTTReader, pubrel: FramePubRel)
+    func didReceive(_ reader: CocoaMQTTReader5, pubrel: FramePubRel)
 
-    func didReceive(_ reader: CocoaMQTTReader, pubcomp: FramePubComp)
+    func didReceive(_ reader: CocoaMQTTReader5, pubcomp: FramePubComp)
 
-    func didReceive(_ reader: CocoaMQTTReader, suback: FrameSubAck)
+    func didReceive(_ reader: CocoaMQTTReader5, suback: FrameSubAck5)
 
-    func didReceive(_ reader: CocoaMQTTReader, unsuback: FrameUnsubAck)
+    func didReceive(_ reader: CocoaMQTTReader5, unsuback: FrameUnsubAck)
 
-    func didReceive(_ reader: CocoaMQTTReader, pingresp: FramePingResp)
+    func didReceive(_ reader: CocoaMQTTReader5, pingresp: FramePingResp)
+
+    func didReceive(_ reader: CocoaMQTTReader5, disconnect: FrameDisconnect)
+
+    func didReceive(_ reader: CocoaMQTTReader5, auth: FrameAuth)
 }
 
-class CocoaMQTTReader {
+class CocoaMQTTReader5 {
 
     private var socket: CocoaMQTTSocketProtocol
 
-    private weak var delegate: CocoaMQTTReaderDelegate?
+    private weak var delegate: CocoaMQTTReader5Delegate?
 
     private let timeout: TimeInterval = 30_000
 
@@ -52,7 +56,7 @@ class CocoaMQTTReader {
     private var multiply = 1
     /*  -- Reader states -- */
 
-    init(socket: CocoaMQTTSocketProtocol, delegate: CocoaMQTTReaderDelegate?) {
+    init(socket: CocoaMQTTSocketProtocol, delegate: CocoaMQTTReader5Delegate?) {
         self.socket = socket
         self.delegate = delegate
     }
@@ -90,15 +94,15 @@ class CocoaMQTTReader {
 
     private func readHeader() {
         reset()
-        socket.readData(toLength: 1, withTimeout: -1, tag: CocoaMQTTReadTag.header.rawValue)
+        socket.readData(toLength: 1, withTimeout: -1, tag: CocoaMQTTRead5Tag.header.rawValue)
     }
 
     private func readLength() {
-        socket.readData(toLength: 1, withTimeout: timeout, tag: CocoaMQTTReadTag.length.rawValue)
+        socket.readData(toLength: 1, withTimeout: timeout, tag: CocoaMQTTRead5Tag.length.rawValue)
     }
 
     private func readPayload() {
-        socket.readData(toLength: length, withTimeout: timeout, tag: CocoaMQTTReadTag.payload.rawValue)
+        socket.readData(toLength: length, withTimeout: timeout, tag: CocoaMQTTRead5Tag.payload.rawValue)
     }
 
     private func frameReady() {
@@ -117,6 +121,7 @@ class CocoaMQTTReader {
                 printError("Reader parse \(frameType) failed, data: \(data)")
                 break
             }
+
             delegate?.didReceive(self, connack: connack)
         case .publish:
             guard let publish = FramePublish(packetFixedHeaderType: header, bytes: data) else {
@@ -149,7 +154,7 @@ class CocoaMQTTReader {
             }
             delegate?.didReceive(self, pubcomp: pubcomp)
         case .suback:
-            guard let frame = FrameSubAck(packetFixedHeaderType: header, bytes: data) else {
+            guard let frame = FrameSubAck5(packetFixedHeaderType: header, bytes: data) else {
                 printError("Reader parse \(frameType) failed, data: \(data)")
                 break
             }
@@ -166,6 +171,18 @@ class CocoaMQTTReader {
                 break
             }
             delegate?.didReceive(self, pingresp: frame)
+        case .disconnect:
+            guard let frame = FrameDisconnect(packetFixedHeaderType: header, bytes: data) else {
+                printError("Reader parse \(frameType) failed, data: \(data)")
+                break
+            }
+            delegate?.didReceive(self, disconnect: frame)
+        case .auth:
+            guard let frame = FrameAuth(packetFixedHeaderType: header, bytes: data) else {
+                printError("Reader parse \(frameType) failed, data: \(data)")
+                break
+            }
+            delegate?.didReceive(self, auth: frame)
         default:
             break
         }
