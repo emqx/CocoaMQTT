@@ -97,7 +97,7 @@ extension FrameSubAck5: InitialWithBytes {
         self.packetFixedHeaderType = packetFixedHeaderType
         
         // the bytes length must bigger than 3
-        guard bytes.count >= 3 else {
+        guard bytes.count >= 4 else {
             return nil
         }
 
