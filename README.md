@@ -52,7 +52,7 @@ github "emqx/CocoaMQTT" "master"
 Then, run the following command:
 
 ```bash
-$ carthage update --platform iOS,macOS,tvOS
+$ carthage update --platform iOS,macOS,tvOS --use-xcframeworks
 ```
 
 Last if you're building for OS X:
