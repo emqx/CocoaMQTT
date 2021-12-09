@@ -55,25 +55,11 @@ Then, run the following command:
 $ carthage update --platform iOS,macOS,tvOS --use-xcframeworks
 ```
 
-Last if you're building for OS X:
+Last:
 
-- On your application targets “General” settings tab, in the "Embedded Binaries" section, drag and drop CocoaMQTT.framework from the Carthage/Build/Mac folder on disk.
+On your application targets “General” settings tab, in the "Frameworks,Libraries,and Embedded content" section, drag and drop CocoaMQTT.xcframework,CocoaAsyncSocket.xcframework and Starscream.xcframework from the Carthage/Build folder on disk. Then select "Embed & Sign". 
 
-If you're building for iOS, tvOS:
 
-- On your application targets “General” settings tab, in the "Frameworks and Libraries" section, drag and drop each framework you want to use from the Carthage/Build folder on disk.
-
-- On your application targets "Build Phases" settings tab, click the "+" icon and choose "New Run Script Phase". Create a Run Script with the following contents: 
-
-    ```
-    /usr/local/bin/carthage copy-frameworks
-    ```
-
-- and add the paths to the frameworks you want to use under "Input Files", e.g.:
-
-    ```
-    $(SRCROOT)/Carthage/Build/iOS/CocoaMQTT.framework
-    ```
 
 ## Usage
 
