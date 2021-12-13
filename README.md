@@ -57,7 +57,7 @@ $ carthage update --platform iOS,macOS,tvOS --use-xcframeworks
 
 Last:
 
-On your application targets “General” settings tab, in the "Frameworks,Libraries,and Embedded content" section, drag and drop CocoaMQTT.xcframework,CocoaAsyncSocket.xcframework and Starscream.xcframework from the Carthage/Build folder on disk. Then select "Embed & Sign". 
+On your application targets “General” settings tab, in the "Frameworks, Libraries, and Embedded content" section, drag and drop CocoaMQTT.xcframework, CocoaAsyncSocket.xcframework and Starscream.xcframework from the Carthage/Build folder on disk. Then select "Embed & Sign". 
 
 
 
