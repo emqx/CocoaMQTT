@@ -12,7 +12,7 @@ MQTT v3.1.1 and v5.0 client library for iOS/macOS/tvOS written with Swift 5
 
 Build with Xcode 11.1 / Swift 5.1
 
-IOS Target: 10.0 or above
+IOS Target: 9.0 or above
 OSX Target: 10.12 or above
 TVOS Target: 10.0 or above
 
@@ -55,7 +55,7 @@ Then, run the following command:
 $ carthage update --platform iOS,macOS,tvOS --use-xcframeworks
 ```
 
-Last:
+At last:
 
 On your application targets “General” settings tab, in the "Frameworks, Libraries, and Embedded content" section, drag and drop CocoaMQTT.xcframework, CocoaAsyncSocket.xcframework and Starscream.xcframework from the Carthage/Build folder on disk. Then select "Embed & Sign". 
 
