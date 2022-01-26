@@ -96,18 +96,52 @@ extension FrameSubAck: InitialWithBytes {
         
         self.packetFixedHeaderType = packetFixedHeaderType
 
-        // the bytes length must bigger than 3
-        guard bytes.count >= 3 else {
-            return nil
+        var protocolVersion = "";
+        if let storage = CocoaMQTTStorage() {
+            protocolVersion = storage.queryMQTTVersion()
         }
 
-        self.msgid = UInt16(bytes[0]) << 8 + UInt16(bytes[1])
-        self.grantedQos = []
-        for i in 2 ..< bytes.count {
-            guard let qos = CocoaMQTTQoS(rawValue: bytes[i]) else {
+        if (protocolVersion == "5.0"){
+            // the bytes length must bigger than 3
+            guard bytes.count >= 4 else {
                 return nil
             }
-            self.grantedQos.append(qos)
+
+            self.msgid = UInt16(bytes[0]) << 8 + UInt16(bytes[1])
+            self.grantedQos = []
+            for i in 3 ..< bytes.count {
+                guard let qos = CocoaMQTTQoS(rawValue: bytes[i]) else {
+                    return nil
+                }
+                self.grantedQos.append(qos)
+            }
+
+            self.reasonCodes = [CocoaMQTTSUBACKReasonCode]()
+            for i in 3 ..< bytes.count {
+                guard let qos = CocoaMQTTSUBACKReasonCode(rawValue: bytes[i]) else {
+                    return nil
+                }
+                self.reasonCodes! += [qos]
+            }
+
+            self.subAckProperties = MqttDecodeSubAck()
+            self.subAckProperties!.decodeSubAck(fixedHeader: packetFixedHeaderType, pubAckData: bytes)
+
+        }else{
+            // the bytes length must bigger than 3
+            guard bytes.count >= 3 else {
+                return nil
+            }
+
+            self.msgid = UInt16(bytes[0]) << 8 + UInt16(bytes[1])
+            self.grantedQos = []
+            for i in 2 ..< bytes.count {
+                guard let qos = CocoaMQTTQoS(rawValue: bytes[i]) else {
+                    return nil
+                }
+                self.grantedQos.append(qos)
+            }
+
         }
         
     }
