@@ -63,97 +63,105 @@ public class MqttDecodePublish: NSObject {
         }
 
 
-        //3.3.2.3.1 Property Length
-        // propertyLength
-        let propertyLengthVariableByteInteger = decodeVariableByteInteger(data: publishData, offset: dataIndex)
-        propertyLength = propertyLengthVariableByteInteger.res
-        dataIndex = propertyLengthVariableByteInteger.newOffset
-
-        let occupyIndex = dataIndex
-
-        while dataIndex < occupyIndex + (propertyLength ?? 0) {
-
-            let resVariableByteInteger = decodeVariableByteInteger(data: publishData, offset: dataIndex)
-            dataIndex = resVariableByteInteger.newOffset
-            let propertyNameByte = resVariableByteInteger.res
-            guard let propertyName = CocoaMQTTPropertyName(rawValue: UInt8(propertyNameByte)) else {
-                break
-            }
-            switch propertyName.rawValue {
-            // 3.3.2.3.2 Payload Format Indicator
-            case CocoaMQTTPropertyName.payloadFormatIndicator.rawValue:
-                if publishData[dataIndex] & 0b0000_0001 > 0 {
-                    payloadFormatIndicator = .utf8
-                } else {
-                    payloadFormatIndicator = .unspecified
-                }
-                dataIndex += 1
-
-            // 3.3.2.3.3 Message Expiry Interval
-            case CocoaMQTTPropertyName.willExpiryInterval.rawValue:
-                let comRes = integerCompute(data: publishData, formatType: formatInt.formatUint32.rawValue, offset: dataIndex)
-                messageExpiryInterval = UInt32(comRes!.res)
-                dataIndex = comRes!.newOffset
-
-            // 3.3.2.3.4 Topic Alias
-            case CocoaMQTTPropertyName.topicAlias.rawValue:
-                let comRes = integerCompute(data: publishData, formatType: formatInt.formatUint16.rawValue, offset: dataIndex)
-                topicAlias = UInt16(comRes!.res)
-                dataIndex = comRes!.newOffset
-
-            // 3.3.2.3.5 Response Topic
-            case CocoaMQTTPropertyName.responseTopic.rawValue:
-                guard let result = unsignedByteToString(data: publishData, offset: dataIndex) else {
-                    break
-                }
-                responseTopic = result.resStr
-                dataIndex = result.newOffset
-
-            // 3.3.2.3.6 Correlation Data
-            case CocoaMQTTPropertyName.correlationData.rawValue:
-                guard let result = unsignedByteToBinary(data: publishData, offset: dataIndex) else {
-                    break
-                }
-                correlationData = result.resStr
-                dataIndex = result.newOffset
-
-            // 3.3.2.3.7 User Property
-            case CocoaMQTTPropertyName.userProperty.rawValue:
-                var key:String?
-                var value:String?
-                guard let keyRes = unsignedByteToString(data: publishData, offset: dataIndex) else {
-                    break
-                }
-                key = keyRes.resStr
-                dataIndex = keyRes.newOffset
-
-                guard let valRes = unsignedByteToString(data: publishData, offset: dataIndex) else {
-                    break
-                }
-                value = valRes.resStr
-                dataIndex = valRes.newOffset
-
-                userProperty![key!] = value
-
-            // 3.3.2.3.8 Subscription Identifier
-            case CocoaMQTTPropertyName.subscriptionIdentifier.rawValue:
-                let valRes = decodeVariableByteInteger(data: publishData, offset: dataIndex)
-                subscriptionIdentifier = valRes.res
-                dataIndex = valRes.newOffset
-
-            // 3.3.2.3.9 Content Type
-            case CocoaMQTTPropertyName.contentType.rawValue:
-                guard let valRes = unsignedByteToString(data: publishData, offset: dataIndex) else {
-                    break
-                }
-                contentType = valRes.resStr
-                dataIndex = valRes.newOffset
-
-            default:
-                return
-            }
-
+        var protocolVersion = "";
+        if let storage = CocoaMQTTStorage() {
+            protocolVersion = storage.queryMQTTVersion()
         }
+
+        if (protocolVersion == "5.0"){
+            //3.3.2.3.1 Property Length
+            // propertyLength
+            let propertyLengthVariableByteInteger = decodeVariableByteInteger(data: publishData, offset: dataIndex)
+            propertyLength = propertyLengthVariableByteInteger.res
+            dataIndex = propertyLengthVariableByteInteger.newOffset
+
+            let occupyIndex = dataIndex
+
+            while dataIndex < occupyIndex + (propertyLength ?? 0) {
+
+                let resVariableByteInteger = decodeVariableByteInteger(data: publishData, offset: dataIndex)
+                dataIndex = resVariableByteInteger.newOffset
+                let propertyNameByte = resVariableByteInteger.res
+                guard let propertyName = CocoaMQTTPropertyName(rawValue: UInt8(propertyNameByte)) else {
+                    break
+                }
+                switch propertyName.rawValue {
+                // 3.3.2.3.2 Payload Format Indicator
+                case CocoaMQTTPropertyName.payloadFormatIndicator.rawValue:
+                    if publishData[dataIndex] & 0b0000_0001 > 0 {
+                        payloadFormatIndicator = .utf8
+                    } else {
+                        payloadFormatIndicator = .unspecified
+                    }
+                    dataIndex += 1
+
+                // 3.3.2.3.3 Message Expiry Interval
+                case CocoaMQTTPropertyName.willExpiryInterval.rawValue:
+                    let comRes = integerCompute(data: publishData, formatType: formatInt.formatUint32.rawValue, offset: dataIndex)
+                    messageExpiryInterval = UInt32(comRes!.res)
+                    dataIndex = comRes!.newOffset
+
+                // 3.3.2.3.4 Topic Alias
+                case CocoaMQTTPropertyName.topicAlias.rawValue:
+                    let comRes = integerCompute(data: publishData, formatType: formatInt.formatUint16.rawValue, offset: dataIndex)
+                    topicAlias = UInt16(comRes!.res)
+                    dataIndex = comRes!.newOffset
+
+                // 3.3.2.3.5 Response Topic
+                case CocoaMQTTPropertyName.responseTopic.rawValue:
+                    guard let result = unsignedByteToString(data: publishData, offset: dataIndex) else {
+                        break
+                    }
+                    responseTopic = result.resStr
+                    dataIndex = result.newOffset
+
+                // 3.3.2.3.6 Correlation Data
+                case CocoaMQTTPropertyName.correlationData.rawValue:
+                    guard let result = unsignedByteToBinary(data: publishData, offset: dataIndex) else {
+                        break
+                    }
+                    correlationData = result.resStr
+                    dataIndex = result.newOffset
+
+                // 3.3.2.3.7 User Property
+                case CocoaMQTTPropertyName.userProperty.rawValue:
+                    var key:String?
+                    var value:String?
+                    guard let keyRes = unsignedByteToString(data: publishData, offset: dataIndex) else {
+                        break
+                    }
+                    key = keyRes.resStr
+                    dataIndex = keyRes.newOffset
+
+                    guard let valRes = unsignedByteToString(data: publishData, offset: dataIndex) else {
+                        break
+                    }
+                    value = valRes.resStr
+                    dataIndex = valRes.newOffset
+
+                    userProperty![key!] = value
+
+                // 3.3.2.3.8 Subscription Identifier
+                case CocoaMQTTPropertyName.subscriptionIdentifier.rawValue:
+                    let valRes = decodeVariableByteInteger(data: publishData, offset: dataIndex)
+                    subscriptionIdentifier = valRes.res
+                    dataIndex = valRes.newOffset
+
+                // 3.3.2.3.9 Content Type
+                case CocoaMQTTPropertyName.contentType.rawValue:
+                    guard let valRes = unsignedByteToString(data: publishData, offset: dataIndex) else {
+                        break
+                    }
+                    contentType = valRes.resStr
+                    dataIndex = valRes.newOffset
+
+                default:
+                    return
+                }
+
+            }
+        }
+
     }
 
 

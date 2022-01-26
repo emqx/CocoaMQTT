@@ -41,53 +41,60 @@ public class MqttDecodePubComp: NSObject {
         reasonCode = ack
         dataIndex += 1
 
+        var protocolVersion = "";
+        if let storage = CocoaMQTTStorage() {
+            protocolVersion = storage.queryMQTTVersion()
+        }
 
-        // 3.6.2.2 PUBREL Properties
-        // 3.6.2.2.1 Property Length
-        let propertyLengthVariableByteInteger = decodeVariableByteInteger(data: pubAckData, offset: dataIndex)
-        propertyLength = propertyLengthVariableByteInteger.res
-        dataIndex = propertyLengthVariableByteInteger.newOffset
+        if (protocolVersion == "5.0"){
+            // 3.6.2.2 PUBREL Properties
+            // 3.6.2.2.1 Property Length
+            let propertyLengthVariableByteInteger = decodeVariableByteInteger(data: pubAckData, offset: dataIndex)
+            propertyLength = propertyLengthVariableByteInteger.res
+            dataIndex = propertyLengthVariableByteInteger.newOffset
 
-        let occupyIndex = dataIndex
+            let occupyIndex = dataIndex
 
-        while dataIndex < occupyIndex + propertyLength {
+            while dataIndex < occupyIndex + propertyLength {
 
-            let resVariableByteInteger = decodeVariableByteInteger(data: pubAckData, offset: dataIndex)
-            dataIndex = resVariableByteInteger.newOffset
-            let propertyNameByte = resVariableByteInteger.res
-            guard let propertyName = CocoaMQTTPropertyName(rawValue: UInt8(propertyNameByte)) else {
-                break
-            }
-
-            switch propertyName.rawValue {
-            // 3.6.2.2.2 Reason String
-            case CocoaMQTTPropertyName.reasonString.rawValue:
-                guard let result = unsignedByteToString(data: pubAckData, offset: dataIndex) else {
+                let resVariableByteInteger = decodeVariableByteInteger(data: pubAckData, offset: dataIndex)
+                dataIndex = resVariableByteInteger.newOffset
+                let propertyNameByte = resVariableByteInteger.res
+                guard let propertyName = CocoaMQTTPropertyName(rawValue: UInt8(propertyNameByte)) else {
                     break
                 }
-                reasonString = result.resStr
-                dataIndex = result.newOffset
 
-            // 3.6.2.2.3 User Property
-                var key:String?
-                var value:String?
-                guard let keyRes = unsignedByteToString(data: pubAckData, offset: dataIndex) else {
-                    break
+                switch propertyName.rawValue {
+                // 3.6.2.2.2 Reason String
+                case CocoaMQTTPropertyName.reasonString.rawValue:
+                    guard let result = unsignedByteToString(data: pubAckData, offset: dataIndex) else {
+                        break
+                    }
+                    reasonString = result.resStr
+                    dataIndex = result.newOffset
+
+                // 3.6.2.2.3 User Property
+                    var key:String?
+                    var value:String?
+                    guard let keyRes = unsignedByteToString(data: pubAckData, offset: dataIndex) else {
+                        break
+                    }
+                    key = keyRes.resStr
+                    dataIndex = keyRes.newOffset
+
+                    guard let valRes = unsignedByteToString(data: pubAckData, offset: dataIndex) else {
+                        break
+                    }
+                    value = valRes.resStr
+                    dataIndex = valRes.newOffset
+
+                    userProperty![key!] = value
+
+
+                default:
+                    return
                 }
-                key = keyRes.resStr
-                dataIndex = keyRes.newOffset
 
-                guard let valRes = unsignedByteToString(data: pubAckData, offset: dataIndex) else {
-                    break
-                }
-                value = valRes.resStr
-                dataIndex = valRes.newOffset
-
-                userProperty![key!] = value
-
-
-            default:
-                return
             }
 
         }

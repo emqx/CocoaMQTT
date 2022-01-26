@@ -286,7 +286,7 @@ public class CocoaMQTT: NSObject, CocoaMQTTClient {
         self.socket = socket
         super.init()
         deliver.delegate = self
-        if let storage = CocoaMQTTStorage(by: clientID) {
+        if let storage = CocoaMQTTStorage() {
             storage.setMQTTVersion("3.1.1")
         } else {
             printWarning("Localstorage initial failed for key: \(clientID)")
