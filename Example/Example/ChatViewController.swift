@@ -70,7 +70,7 @@ class ChatViewController: UIViewController {
         if mqttVersion == "3.1.1" {
             mqtt!.publish("chat/room/animals/client/" + animal!, withString: message!, qos: .qos1)
         }else if mqttVersion == "5.0" {
-            mqtt5!.publish("chat/room/animals/client/" + animal!, withString: message!, qos: .qos1, DUP: false, retained: false, properties: publishProperties)
+            mqtt5!.publish("chat/room/animals/client/" + animal!, withString: message!, qos: .qos1, DUP: true, retained: false, properties: publishProperties)
         }
         
         messageTextView.text = ""
