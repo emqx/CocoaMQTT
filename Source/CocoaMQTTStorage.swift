@@ -37,7 +37,7 @@ final class CocoaMQTTStorage: CocoaMQTTStorageProtocol {
     var versionDefault: UserDefaults = UserDefaults()
 
     init?(){
-        self.versionDefault = UserDefaults()
+        versionDefault = UserDefaults()
     }
 
     init?(by clientId: String) {
@@ -50,7 +50,13 @@ final class CocoaMQTTStorage: CocoaMQTTStorageProtocol {
     }
 
     deinit {
-        userDefault.synchronize()
+        if(userDefault != nil){
+            userDefault.synchronize()
+        }
+
+        if(versionDefault != nil){
+            versionDefault.synchronize()
+        }
     }
 
     func setMQTTVersion(_ version : String){
@@ -112,6 +118,9 @@ final class CocoaMQTTStorage: CocoaMQTTStorageProtocol {
     }
 
     private func parse(_ bytes: [UInt8]) -> (UInt8, [UInt8])? {
+        guard bytes.count > 5 else {
+            return nil
+        }
         /// bytes 1..<5 may be 'Remaining Length'
         for i in 1 ..< 5 {
             if (bytes[i] & 0x80) == 0 {
