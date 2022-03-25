@@ -129,7 +129,7 @@ extension Frame {
             printDebug("payload \(payload5)")
             printDebug("=============================================================")
 
-            return fixedHeader + remainingLen(len: len5) + variableHeader5 + properties + payload5
+            return [packetFixedHeaderType] + remainingLen(len: len5) + variableHeader5 + properties + payload5
         }else {
 
             let variableHeader = self.variableHeader()

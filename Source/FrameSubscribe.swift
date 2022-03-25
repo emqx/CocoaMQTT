@@ -88,7 +88,6 @@ extension FrameSubscribe {
             payload += subscription.subscriptionData
         }
 
-
         return payload
     }
 
@@ -142,17 +141,22 @@ extension FrameSubscribe {
 
 extension FrameSubscribe: CustomStringConvertible {
 
-    var description5: String {
-        var desc = ""
-        if let unwrappedList = topicFilters, !unwrappedList.isEmpty {
-            for subscription in unwrappedList {
-                desc += "SUBSCRIBE(id: \(String(describing: msgid)), topics: \(subscription.topic))  "
-            }
-        }
-        return desc
-    }
-
     var description: String {
-        return "SUBSCRIBE(id: \(String(describing: msgid)), topics: \(String(describing: topics)))"
+        var protocolVersion = "";
+        if let storage = CocoaMQTTStorage() {
+            protocolVersion = storage.queryMQTTVersion()
+        }
+
+        if (protocolVersion == "5.0"){
+            var desc = ""
+            if let unwrappedList = topicFilters, !unwrappedList.isEmpty {
+                for subscription in unwrappedList {
+                    desc += "SUBSCRIBE(id: \(String(describing: msgid)), topics: \(subscription.topic))  "
+                }
+            }
+            return desc
+        }else{
+            return "SUBSCRIBE(id: \(String(describing: msgid)), topics: \(String(describing: topics)))"
+        }
     }
 }

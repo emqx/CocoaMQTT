@@ -29,8 +29,8 @@ extension FrameAuth {
     
     func fixedHeader() -> [UInt8] {
         var header = [UInt8]()
-        header += [FrameType.connect.rawValue]
-        header += [UInt8(variableHeader5().count)]
+        header += [FrameType.auth.rawValue]
+        //header += [UInt8(variableHeader5().count)]
 
         return header
     }

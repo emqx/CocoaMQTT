@@ -50,6 +50,8 @@ public protocol CocoaMQTTWebSocketConnectionBuilder {
 public class CocoaMQTTWebSocket: CocoaMQTTSocketProtocol {
     
     public var enableSSL = false
+
+    public var shouldConnectWithURIOnly = false
     
     public var headers: [String: String] = [:]
 
@@ -91,8 +93,14 @@ public class CocoaMQTTWebSocket: CocoaMQTTSocketProtocol {
     }
     
     public func connect(toHost host: String, onPort port: UInt16, withTimeout timeout: TimeInterval) throws {
-        
-        let urlStr = "\(enableSSL ? "wss": "ws")://\(host):\(port)\(uri)"
+
+        var urlStr = ""
+
+        if shouldConnectWithURIOnly {
+            urlStr = "\(uri)"
+        } else {
+            urlStr = "\(enableSSL ? "wss": "ws")://\(host):\(port)\(uri)"
+        }
         
         guard let url = URL(string: urlStr) else { throw CocoaMQTTError.invalidURL }
         try internalQueue.sync {
