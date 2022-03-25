@@ -56,38 +56,45 @@ struct FramePublish: Frame {
 extension FramePublish {
     
     func fixedHeader() -> [UInt8] {
+        
         var header = [UInt8]()
-
-        // Reserved
-        var flags: UInt8 = 0
-
-        if retain {
-            flags = flags | 0b0011_0001
-        } else {
-            flags = flags | 0b0011_0000
-        }
-
-        if dup {
-            flags = flags | 0b0011_1000
-        } else {
-            flags = flags | 0b0011_0000
-        }
-
-        switch qos {
-        case .qos0:
-            flags = flags | 0b0011_0000
-        case .qos1:
-            flags = flags | 0b0011_0010
-        case .qos2:
-            flags = flags | 0b0011_0100
-        case .FAILTURE:
-            printDebug("FAILTURE")
-        }
-
-
-        header += [flags]
+        header += [FrameType.publish.rawValue]
 
         return header
+
+        //TODO : test
+//        var header = [UInt8]()
+//
+//        // Reserved
+//        var flags: UInt8 = 0
+//
+//        if retain {
+//            flags = flags | 0b0011_0001
+//        } else {
+//            flags = flags | 0b0011_0000
+//        }
+//
+//        if dup {
+//            flags = flags | 0b0011_1000
+//        } else {
+//            flags = flags | 0b0011_0000
+//        }
+//
+//        switch qos {
+//        case .qos0:
+//            flags = flags | 0b0011_0000
+//        case .qos1:
+//            flags = flags | 0b0011_0010
+//        case .qos2:
+//            flags = flags | 0b0011_0100
+//        case .FAILTURE:
+//            printDebug("FAILTURE")
+//        }
+//
+//
+//        header += [flags]
+//
+//        return header
     }
     
     func variableHeader5() -> [UInt8] {

@@ -16,7 +16,7 @@ class ViewController: UIViewController {
     //OR
     //TEST Broker
     let defaultHost = "broker-cn.emqx.io"
-    
+
     var mqtt5: CocoaMQTT5?
     var mqtt: CocoaMQTT?
     var animal: String?
@@ -88,7 +88,7 @@ class ViewController: UIViewController {
 
             let clientID = "CocoaMQTT-\(animal!)-" + String(ProcessInfo().processIdentifier)
             mqtt = CocoaMQTT(clientID: clientID, host: defaultHost, port: 1883)
-            //mqtt!.logLevel = .debug
+            mqtt!.logLevel = .debug
             mqtt!.username = ""
             mqtt!.password = ""
             mqtt!.willMessage = CocoaMQTTMessage(topic: "/will", string: "dieout")
@@ -100,7 +100,7 @@ class ViewController: UIViewController {
 
             let clientID = "CocoaMQTT5-\(animal!)-" + String(ProcessInfo().processIdentifier)
             mqtt5 = CocoaMQTT5(clientID: clientID, host: defaultHost, port: 1883)
-            //mqtt5!.logLevel = .debug
+            mqtt5!.logLevel = .debug
             let connectProperties = MqttConnectProperties()
             connectProperties.topicAliasMaximum = 0
             connectProperties.sessionExpiryInterval = 0
@@ -111,9 +111,9 @@ class ViewController: UIViewController {
             mqtt5!.username = ""
             mqtt5!.password = ""
 
-            let lastWillMessage = CocoaMQTT5Message(topic: "/chat/room/animals/client/Sheep", string: "dieout")
+            let lastWillMessage = CocoaMQTT5Message(topic: "/will", string: "dieout")
             lastWillMessage.contentType = "JSON"
-            lastWillMessage.willResponseTopic = "/chat/room/animals/client/Sheep"
+            lastWillMessage.willResponseTopic = "/will"
             lastWillMessage.willExpiryInterval = 0
             lastWillMessage.willDelayInterval = 0
             lastWillMessage.qos = .qos1
@@ -370,7 +370,7 @@ extension ViewController: CocoaMQTT5Delegate {
             print("properties maximumPacketSize: \(String(describing: connAckData.maximumPacketSize))")
             print("properties topicAliasMaximum: \(String(describing: connAckData.topicAliasMaximum))")
             
-            mqtt5.subscribe("chat/room/animals/client/+", qos: CocoaMQTTQoS.qos1)
+            mqtt5.subscribe("chat/room/animals/client/+", qos: CocoaMQTTQoS.qos0)
             //or
             //let subscriptions : [MqttSubscription] = [MqttSubscription(topic: "chat/room/animals/client/+"),MqttSubscription(topic: "chat/room/foods/client/+"),MqttSubscription(topic: "chat/room/trees/client/+")]
             //mqtt.subscribe(subscriptions)
@@ -394,14 +394,18 @@ extension ViewController: CocoaMQTT5Delegate {
         TRACE("message: \(message.description), id: \(id)")
     }
     
-    func mqtt5(_ mqtt5: CocoaMQTT5, didPublishAck id: UInt16, pubAckData: MqttDecodePubAck) {
+    func mqtt5(_ mqtt5: CocoaMQTT5, didPublishAck id: UInt16, pubAckData: MqttDecodePubAck?) {
         TRACE("id: \(id)")
-        print("pubAckData reasonCode: \(String(describing: pubAckData.reasonCode))")
+        if(pubAckData != nil){
+            print("pubAckData reasonCode: \(String(describing: pubAckData!.reasonCode))")
+        }
     }
 
-    func mqtt5(_ mqtt5: CocoaMQTT5, didPublishRec id: UInt16, pubRecData: MqttDecodePubRec) {
+    func mqtt5(_ mqtt5: CocoaMQTT5, didPublishRec id: UInt16, pubRecData: MqttDecodePubRec?) {
         TRACE("id: \(id)")
-        print("pubRecData reasonCode: \(String(describing: pubRecData.reasonCode))")
+        if(pubRecData != nil){
+            print("pubRecData reasonCode: \(String(describing: pubRecData!.reasonCode))")
+        }
     }
 
     func mqtt5(_ mqtt5: CocoaMQTT5, didPublishComplete id: UInt16,  pubCompData: MqttDecodePubComp){
@@ -468,7 +472,6 @@ extension ViewController: CocoaMQTTDelegate {
 
         if ack == .accept {
             mqtt.subscribe("chat/room/animals/client/+", qos: CocoaMQTTQoS.qos1)
-
             let chatViewController = storyboard?.instantiateViewController(withIdentifier: "ChatViewController") as? ChatViewController
             chatViewController?.mqtt = mqtt
             chatViewController?.mqttVersion = mqttVesion

@@ -25,13 +25,21 @@ public class MqttSubscription {
         self.retainHandling = CocoaRetainHandlingOption.none
     }
 
+    public init(topic: String, qos: CocoaMQTTQoS) {
+        self.topic = topic
+        self.qos = qos
+        self.noLocal = false
+        self.retainAsPublished = false
+        self.retainHandling = CocoaRetainHandlingOption.none
+    }
+
     var subscriptionData:[UInt8]{
         var data = [UInt8]()
 
         data += topic.bytesWithLength
 
         var options:Int = 0;
-        switch qos {
+        switch self.qos {
         case .qos0:
             options = options | 0b0000_0000
         case .qos1:
@@ -42,21 +50,21 @@ public class MqttSubscription {
             printDebug("topicFilter qos failure")
         }
 
-        switch noLocal {
+        switch self.noLocal {
         case true:
             options = options | 0b0000_0100
         case false:
             options = options | 0b0000_0000
         }
 
-        switch retainAsPublished {
+        switch self.retainAsPublished {
         case true:
             options = options | 0b0000_1000
         case false:
             options = options | 0b0000_0000
         }
 
-        switch retainHandling {
+        switch self.retainHandling {
         case CocoaRetainHandlingOption.none:
             options = options | 0b0000_0000
         case CocoaRetainHandlingOption.sendOnlyWhenSubscribeIsNew:
