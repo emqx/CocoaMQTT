@@ -61,40 +61,6 @@ extension FramePublish {
         header += [FrameType.publish.rawValue]
 
         return header
-
-        //TODO : test
-//        var header = [UInt8]()
-//
-//        // Reserved
-//        var flags: UInt8 = 0
-//
-//        if retain {
-//            flags = flags | 0b0011_0001
-//        } else {
-//            flags = flags | 0b0011_0000
-//        }
-//
-//        if dup {
-//            flags = flags | 0b0011_1000
-//        } else {
-//            flags = flags | 0b0011_0000
-//        }
-//
-//        switch qos {
-//        case .qos0:
-//            flags = flags | 0b0011_0000
-//        case .qos1:
-//            flags = flags | 0b0011_0010
-//        case .qos2:
-//            flags = flags | 0b0011_0100
-//        case .FAILTURE:
-//            printDebug("FAILTURE")
-//        }
-//
-//
-//        header += [flags]
-//
-//        return header
     }
     
     func variableHeader5() -> [UInt8] {
@@ -104,8 +70,8 @@ extension FramePublish {
         //3.3.2.2 Packet Identifier qos1 or qos2
         if qos > .qos0 {
             header += msgid.hlBytes
-//            header.append(UInt8(0))
-//            header.append(QoS.rawValue)
+            //            header.append(UInt8(0))
+            //            header.append(QoS.rawValue)
         }
 
         //MQTT 5.0
@@ -157,8 +123,6 @@ extension FramePublish: InitialWithBytes {
             return nil
         }
 
-
-
         let recDup = (packetFixedHeaderType & 0b0000_1000 >> 3) > 0
         guard let recQos = CocoaMQTTQoS(rawValue: (packetFixedHeaderType & 0b0000_0110) >> 1) else {
             return nil
@@ -193,7 +157,6 @@ extension FramePublish: InitialWithBytes {
         
         self.packetFixedHeaderType = flags
 
-
         /// Packet Identifier
         /// The Packet Identifier field is only present in PUBLISH packets where the QoS level is 1 or 2.
 
@@ -204,13 +167,12 @@ extension FramePublish: InitialWithBytes {
 
         let len = UInt16(bytes[0]) << 8 + UInt16(bytes[1])
 
+        //2 is packetFixedHeaderType length
         var pos = 2 + Int(len)
 
         if bytes.count < pos {
             return nil
         }
-
-
 
         // msgid
         if (packetFixedHeaderType & 0x06) >> 1 == CocoaMQTTQoS.qos0.rawValue {
@@ -223,6 +185,31 @@ extension FramePublish: InitialWithBytes {
             pos += 2
         }
 
+
+        var protocolVersion = "";
+        if let storage = CocoaMQTTStorage() {
+            protocolVersion = storage.queryMQTTVersion()
+        }
+
+        if (protocolVersion == "5.0"){
+            let data = MqttDecodePublish()
+            data.decodePublish(fixedHeader: packetFixedHeaderType ,publishData: bytes)
+            pos += 1
+
+            if(data.propertyLength != 0){
+                pos += data.propertyLength!
+            }
+
+            // MQTT 5.0
+            self.mqtt5Topic = data.topic
+            self.packetIdentifier = data.packetIdentifier
+            self.publishRecProperties = data
+
+        }else{
+            // MQTT 3.1.1
+            topic = NSString(bytes: [UInt8](bytes[2...(pos-1)]), length: Int(len), encoding: String.Encoding.utf8.rawValue)! as String
+        }
+
         // payload
         if (pos == bytes.count) {
             _payload = []
@@ -232,16 +219,6 @@ extension FramePublish: InitialWithBytes {
             return nil
         }
 
-
-        let data = MqttDecodePublish()
-        data.decodePublish(fixedHeader: packetFixedHeaderType ,publishData: bytes)
-
-        // MQTT 3.1.1
-        topic = NSString(bytes: [UInt8](bytes[2...(pos-1)]), length: Int(len), encoding: String.Encoding.utf8.rawValue)! as String
-        // MQTT 5.0
-        self.mqtt5Topic = data.topic
-        self.packetIdentifier = data.packetIdentifier
-        self.publishRecProperties = data
     }
 }
 
