@@ -7,6 +7,7 @@
 
 import Foundation
 import CocoaAsyncSocket
+import Network
 
 // MARK: - Interfaces
 
@@ -46,7 +47,8 @@ public class CocoaMQTTSocket: NSObject {
     /// Default is false
     public var allowUntrustCACertificate = false
     
-    fileprivate let reference = GCDAsyncSocket()
+    fileprivate var delegateQueue: DispatchQueue?
+    fileprivate var connection: NWConnection?
     fileprivate weak var delegate: CocoaMQTTSocketDelegate?
     
     public override init() { super.init() }
@@ -55,7 +57,9 @@ public class CocoaMQTTSocket: NSObject {
 extension CocoaMQTTSocket: CocoaMQTTSocketProtocol {
     public func setDelegate(_ theDelegate: CocoaMQTTSocketDelegate?, delegateQueue: DispatchQueue?) {
         delegate = theDelegate
-        reference.setDelegate((delegate != nil ? self : nil), delegateQueue: delegateQueue)
+        self.delegateQueue = delegateQueue
+        
+        //reference.setDelegate((delegate != nil ? self : nil), delegateQueue: delegateQueue)
     }
     
     public func connect(toHost host: String, onPort port: UInt16) throws {
@@ -63,19 +67,72 @@ extension CocoaMQTTSocket: CocoaMQTTSocketProtocol {
     }
     
     public func connect(toHost host: String, onPort port: UInt16, withTimeout timeout: TimeInterval) throws {
-        try reference.connect(toHost: host, onPort: port, withTimeout: timeout)
+        // try reference.connect(toHost: host, onPort: port, withTimeout: timeout)
+        
+        
+        let conn = NWConnection(host: "cocoamqtt.rnd7.de", port: 8883, using: .tls)
+        
+        conn.stateUpdateHandler = { (newState) in
+            //print(newState)
+            
+            switch newState {
+            case .ready:
+                self.delegate?.socketConnected(self)
+            case .waiting(let error):
+                print(error)
+                break
+            case .failed(let error):
+                self.delegate?.socketDidDisconnect(self, withError: error)
+            case .cancelled:
+                self.delegate?.socketDidDisconnect(self, withError: nil)
+            default:
+            break
+            }
+        }
+            
+        if let queue = self.delegateQueue {
+            conn.start(queue: queue)
+            self.connection = conn
+        }
+        else {
+            print("ERROR: No dispatch queue")
+        }
     }
     
     public func disconnect() {
-        reference.disconnect()
+        self.connection?.cancel()
     }
     
     public func readData(toLength length: UInt, withTimeout timeout: TimeInterval, tag: Int) {
-        reference.readData(toLength: length, withTimeout: timeout, tag: tag)
+        // reference.readData(toLength: length, withTimeout: timeout, tag: tag)
+        
+        let len = Int(length)
+        
+        connection?.receive(minimumIncompleteLength: len, maximumLength: len) { (content, contentContext, isComplete, error) in
+            if let error = error {
+                print("ERROR READ DATA \(error)")
+            // Handle error in reading
+            } else {
+                if let data = content {
+                    self.delegate?.socket(self, didRead: data, withTag: tag)
+                }
+            }
+        }
+        
     }
     
     public func write(_ data: Data, withTimeout timeout: TimeInterval, tag: Int) {
-        reference.write(data, withTimeout: timeout, tag: tag)
+        // self.connection?.send(content: data, completion: () => {})
+        // reference.write(data, withTimeout: timeout, tag: tag)
+        connection?.send(content: data, completion: .contentProcessed { (sendError) in
+            if let sendError = sendError {
+             // Handle error in sending
+                print("SEND ERROR \(sendError)")
+            }
+            else {
+                self.delegate?.socket(self, didWriteDataWithTag: tag)
+            }
+        })
     }
 }
 
