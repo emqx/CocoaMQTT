@@ -66,15 +66,31 @@ extension CocoaMQTTSocket: CocoaMQTTSocketProtocol {
         try connect(toHost: host, onPort: port, withTimeout: -1)
     }
     
-    public func connect(toHost host: String, onPort port: UInt16, withTimeout timeout: TimeInterval) throws {
-        // try reference.connect(toHost: host, onPort: port, withTimeout: timeout)
+    private func createConnection(toHost host: String, onPort port: UInt16) -> NWConnection {
+        let nwHost = NWEndpoint.Host(host)
+        let endpoint = NWEndpoint.Port(rawValue: port) ?? 1883
         
-        
-        let conn = NWConnection(host: "cocoamqtt.rnd7.de", port: 8883, using: .tls)
-        
-        conn.stateUpdateHandler = { (newState) in
-            //print(newState)
+        if enableSSL && allowUntrustCACertificate {
+            // see https://developer.apple.com/forums/thread/113312
             
+            let options = NWProtocolTLS.Options()
+            let securityOptions = options.securityProtocolOptions
+            
+            sec_protocol_options_set_verify_block(securityOptions, { (_, trust, completionHandler) in
+                completionHandler(true)
+            }, .main)
+            
+            let params = NWParameters(tls: options)
+            return NWConnection(host: nwHost, port: endpoint, using: params)
+        }
+        
+        return NWConnection(host: nwHost, port: endpoint, using: enableSSL ? .tls : .tcp)
+        
+    }
+    
+    public func connect(toHost host: String, onPort port: UInt16, withTimeout timeout: TimeInterval) throws {
+        let conn = createConnection(toHost: host, onPort: port)
+        conn.stateUpdateHandler = { (newState) in
             switch newState {
             case .ready:
                 self.delegate?.socketConnected(self)
