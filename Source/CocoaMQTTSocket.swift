@@ -6,7 +6,6 @@
 //
 
 import Foundation
-import CocoaAsyncSocket
 import Network
 
 // MARK: - Interfaces
@@ -149,60 +148,5 @@ extension CocoaMQTTSocket: CocoaMQTTSocketProtocol {
                 self.delegate?.socket(self, didWriteDataWithTag: tag)
             }
         })
-    }
-}
-
-extension CocoaMQTTSocket: GCDAsyncSocketDelegate {
-    public func socket(_ sock: GCDAsyncSocket, didConnectToHost host: String, port: UInt16) {
-        printInfo("Connected to \(host) : \(port)")
-        
-         #if os(iOS)
-             if backgroundOnSocket {
-                 sock.perform {
-                     guard sock.enableBackgroundingOnSocket() else {
-                         printWarning("Enable backgrounding socket failed, please check related permissions")
-                         return
-                     }
-                     printInfo("Enable backgrounding socket successfully")
-                 }
-             }
-         #endif
-        
-         if enableSSL {
-             var setting = sslSettings ?? [:]
-             if allowUntrustCACertificate {
-                 setting[GCDAsyncSocketManuallyEvaluateTrust as String] = NSNumber(value: true)
-             }
-             sock.startTLS(setting)
-         } else {
-            delegate?.socketConnected(self)
-         }
-    }
-
-    public func socket(_ sock: GCDAsyncSocket, didReceive trust: SecTrust, completionHandler: @escaping (Bool) -> Swift.Void) {
-        if let theDelegate = delegate {
-            theDelegate.socket(self, didReceive: trust, completionHandler: completionHandler)
-        } else {
-            completionHandler(false)
-        }
-    }
-
-    public func socketDidSecure(_ sock: GCDAsyncSocket) {
-        printDebug("socket did secure")
-        delegate?.socketConnected(self)
-    }
-
-    public func socket(_ sock: GCDAsyncSocket, didWriteDataWithTag tag: Int) {
-        printDebug("socket wrote data \(tag)")
-        delegate?.socket(self, didWriteDataWithTag: tag)
-    }
-
-    public func socket(_ sock: GCDAsyncSocket, didRead data: Data, withTag tag: Int) {
-        delegate?.socket(self, didRead: data, withTag: tag)
-    }
-
-    public func socketDidDisconnect(_ sock: GCDAsyncSocket, withError err: Error?) {
-        printDebug("socket disconnected")
-        delegate?.socketDidDisconnect(self, withError: err)
     }
 }
