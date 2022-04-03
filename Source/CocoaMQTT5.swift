@@ -7,7 +7,6 @@
 //
 
 import Foundation
-import CocoaAsyncSocket
 
 /**
  * Connection State
@@ -604,7 +603,7 @@ extension CocoaMQTT5: CocoaMQTTSocketDelegate {
     }
 
     // ?
-    public func socketDidSecure(_ sock: GCDAsyncSocket) {
+    public func socketDidSecure() {
         printDebug("Socket has successfully completed SSL/TLS negotiation")
         sendConnectFrame()
     }
