@@ -63,25 +63,48 @@ extension CocoaMQTTSocket: CocoaMQTTSocketProtocol {
         try connect(toHost: host, onPort: port, withTimeout: -1)
     }
     
+    private func getClientCertificate() -> SecIdentity? {
+        if let array = sslSettings?["kCFStreamSSLCertificates"] {
+            if let list = array as? NSArray {
+                if list.count == 1 {
+                    let clientIdentity = list[0]
+                    return (clientIdentity as! SecIdentity)
+                }
+            }
+        }
+        return nil
+    }
+    
     private func createConnection(toHost host: String, onPort port: UInt16) -> NWConnection {
         let nwHost = NWEndpoint.Host(host)
         let endpoint = NWEndpoint.Port(rawValue: port) ?? 1883
         
-        if enableSSL && allowUntrustCACertificate {
+        if enableSSL {
             // see https://developer.apple.com/forums/thread/113312
             
             let options = NWProtocolTLS.Options()
             let securityOptions = options.securityProtocolOptions
             
-            sec_protocol_options_set_verify_block(securityOptions, { (_, trust, completionHandler) in
-                completionHandler(true)
-            }, .main)
+            if allowUntrustCACertificate {
+                sec_protocol_options_set_verify_block(securityOptions, { (_, trust, completionHandler) in
+                    completionHandler(true)
+                }, .main)
+            }
+         
+            if let clientIdentity = getClientCertificate() {
+                printDebug("connect using clientIdentity \(clientIdentity)")
+                sec_protocol_options_set_local_identity(
+                   securityOptions,
+                   sec_identity_create(clientIdentity)!
+                )
+            }
+            
             
             let params = NWParameters(tls: options)
             return NWConnection(host: nwHost, port: endpoint, using: params)
         }
         
-        return NWConnection(host: nwHost, port: endpoint, using: enableSSL ? .tls : .tcp)
+        return NWConnection(host: nwHost, port: endpoint, using: .tcp)
         
     }
     
