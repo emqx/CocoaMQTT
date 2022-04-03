@@ -141,8 +141,6 @@ extension CocoaMQTTSocket: CocoaMQTTSocketProtocol {
     }
     
     public func readData(toLength length: UInt, withTimeout timeout: TimeInterval, tag: Int) {
-        // reference.readData(toLength: length, withTimeout: timeout, tag: tag)
-        
         let len = Int(length)
         
         connection?.receive(minimumIncompleteLength: len, maximumLength: len) { (content, contentContext, isComplete, error) in
@@ -158,8 +156,6 @@ extension CocoaMQTTSocket: CocoaMQTTSocketProtocol {
     }
     
     public func write(_ data: Data, withTimeout timeout: TimeInterval, tag: Int) {
-        // self.connection?.send(content: data, completion: () => {})
-        // reference.write(data, withTimeout: timeout, tag: tag)
         connection?.send(content: data, completion: .contentProcessed { (sendError) in
             if let sendError = sendError {
                 printError("Write data caused an error: \(sendError)")
