@@ -57,8 +57,6 @@ extension CocoaMQTTSocket: CocoaMQTTSocketProtocol {
     public func setDelegate(_ theDelegate: CocoaMQTTSocketDelegate?, delegateQueue: DispatchQueue?) {
         delegate = theDelegate
         self.delegateQueue = delegateQueue
-        
-        //reference.setDelegate((delegate != nil ? self : nil), delegateQueue: delegateQueue)
     }
     
     public func connect(toHost host: String, onPort port: UInt16) throws {
@@ -94,9 +92,10 @@ extension CocoaMQTTSocket: CocoaMQTTSocketProtocol {
             case .ready:
                 self.delegate?.socketConnected(self)
             case .waiting(let error):
-                print(error)
+                printError("Connect caused an error: \(error)")
                 break
             case .failed(let error):
+                printError("Connect failed with error: \(error)")
                 self.delegate?.socketDidDisconnect(self, withError: error)
             case .cancelled:
                 self.delegate?.socketDidDisconnect(self, withError: nil)
@@ -110,7 +109,7 @@ extension CocoaMQTTSocket: CocoaMQTTSocketProtocol {
             self.connection = conn
         }
         else {
-            print("ERROR: No dispatch queue")
+            printError("No dispatch queue")
         }
     }
     
@@ -125,8 +124,7 @@ extension CocoaMQTTSocket: CocoaMQTTSocketProtocol {
         
         connection?.receive(minimumIncompleteLength: len, maximumLength: len) { (content, contentContext, isComplete, error) in
             if let error = error {
-                print("ERROR READ DATA \(error)")
-            // Handle error in reading
+                printError("Read data caused an error: \(error)")
             } else {
                 if let data = content {
                     self.delegate?.socket(self, didRead: data, withTag: tag)
@@ -141,8 +139,7 @@ extension CocoaMQTTSocket: CocoaMQTTSocketProtocol {
         // reference.write(data, withTimeout: timeout, tag: tag)
         connection?.send(content: data, completion: .contentProcessed { (sendError) in
             if let sendError = sendError {
-             // Handle error in sending
-                print("SEND ERROR \(sendError)")
+                printError("Write data caused an error: \(sendError)")
             }
             else {
                 self.delegate?.socket(self, didWriteDataWithTag: tag)
