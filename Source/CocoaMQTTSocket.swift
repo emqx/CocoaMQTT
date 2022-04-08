@@ -116,6 +116,7 @@ extension CocoaMQTTSocket: CocoaMQTTSocketProtocol {
                 self.delegate?.socketConnected(self)
             case .waiting(let error):
                 printError("Connect caused an error: \(error)")
+                self.delegate?.socketDidDisconnect(self, withError: error)
                 break
             case .failed(let error):
                 printError("Connect failed with error: \(error)")
