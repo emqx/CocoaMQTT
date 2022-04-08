@@ -31,7 +31,6 @@ Pod::Spec.new do |s|
     ss.ios.deployment_target = "12.0"
     ss.osx.deployment_target = "10.13"
     ss.tvos.deployment_target = "12.0"
-    ss.dependency "Starscream", ">= 4.0.8", "< 6.0"
     ss.source_files = "Source/WebSocket/CocoaMQTTWebSocket.swift"
   end
 end
