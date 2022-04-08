@@ -57,7 +57,7 @@ $ carthage update --platform iOS,macOS,tvOS --use-xcframeworks
 
 At last:
 
-On your application targets “General” settings tab, in the "Frameworks, Libraries, and Embedded content" section, drag and drop CocoaMQTT.xcframework and Starscream.xcframework from the Carthage/Build folder on disk. Then select "Embed & Sign". 
+On your application targets “General” settings tab, in the "Frameworks, Libraries, and Embedded content" section, drag and drop CocoaMQTT.xcframework from the Carthage/Build folder on disk. Then select "Embed & Sign". 
 
 
 
@@ -137,16 +137,7 @@ end
 
 ```
 
-If you're using CocoaMQTT in a project with only a `.podspec` and no `Podfile`, e.g. in a module for React Native, add this line to your `.podspec`:
-
-```ruby
-Pod::Spec.new do |s|
-  ...
-  s.dependency "Starscream", "~> 3.1.1"
-end
-```
-
-Then, Create a MQTT instance over Websocket:
+Create a MQTT instance over Websocket:
 
 ```swift
 ///MQTT 5.0
@@ -201,9 +192,7 @@ Then, open the `Example.xcworkspace/` by Xcode and start it!
 ## Dependencies
 
 
-These third-party functions are used:
-
-* [Starscream](https://github.com/daltoniam/Starscream）
+No third-party dependencies.
 
 
 ## LICENSE
