@@ -60,11 +60,11 @@ final class CocoaMQTTStorage: CocoaMQTTStorageProtocol {
     }
 
     func setMQTTVersion(_ version : String){
-        versionDefault.set(version, forKey: "version")
+        versionDefault.set(version, forKey: "cocoamqtt_mqtt_version")
     }
 
     func queryMQTTVersion() -> String{
-        return versionDefault.string(forKey: "version")!
+        return versionDefault.string(forKey: "cocoamqtt_mqtt_version")!
     }
 
 
