@@ -46,6 +46,35 @@ public protocol CocoaMQTTWebSocketConnectionBuilder {
 
 // MARK: - CocoaMQTTWebSocket
 
+struct WriteItem: Hashable {
+    let uuid = UUID()
+    let tag: Int
+    let timeout: DispatchWallTime
+    func hash(into hasher: inout Hasher) {
+        hasher.combine(uuid)
+    }
+}
+
+actor ScheduleWriteController {
+    private(set) var scheduledWrites = Set<WriteItem>()
+        
+    func insert(_ item: WriteItem) {
+        scheduledWrites.insert(item)
+    }
+    
+    func remove(_ item: WriteItem) -> WriteItem? {
+        return scheduledWrites.remove(item)
+    }
+    
+    func removeAll() {
+        scheduledWrites.removeAll()
+    }
+    
+    func closestTimeout() -> DispatchWallTime? {
+        return scheduledWrites.sorted(by: { a,b in a.timeout < b.timeout }).first?.timeout
+    }
+}
+
 public class CocoaMQTTWebSocket: CocoaMQTTSocketProtocol {
     
     public var enableSSL = false
@@ -125,15 +154,30 @@ public class CocoaMQTTWebSocket: CocoaMQTTSocketProtocol {
     public func write(_ data: Data, withTimeout timeout: TimeInterval, tag: Int) {
         internalQueue.async {
             let newWrite = WriteItem(tag: tag, timeout: (timeout > 0.0) ? .now() + timeout : .distantFuture)
-            self.scheduledWrites.insert(newWrite)
+            
+        // https://swiftsenpai.com/swift/actor-prevent-data-race/
+            
+            Task {
+                await withTaskGroup(of: Void.self, body: { taskGroup in
+                    await self.scheduledWrites.insert(newWrite)
+                })
+            }
             self.checkScheduledWrites()
+
             self.connection?.write(data: data) { possibleError in
                 if let error = possibleError {
                     self.closeConnection(withError: error)
                 } else {
-                    guard self.scheduledWrites.remove(newWrite) != nil else { return }
-                    guard let delegate = self.delegate else { return }
-                    delegate.socket(self, didWriteDataWithTag: tag)
+                    Task {
+                        Task {
+                            await withTaskGroup(of: Void.self, body: { taskGroup in
+                                guard await self.scheduledWrites.remove(newWrite) != nil else { return }
+                            })
+                        }
+                        
+                        guard let delegate = self.delegate else { return }
+                        delegate.socket(self, didWriteDataWithTag: tag)
+                    }
                 }
             }
         }
@@ -154,7 +198,12 @@ public class CocoaMQTTWebSocket: CocoaMQTTSocketProtocol {
         scheduledReads.removeAll()
         readTimeoutTimer.reset()
         
-        scheduledWrites.removeAll()
+        Task {
+            await withTaskGroup(of: Void.self, body: { taskGroup in
+                await scheduledWrites.removeAll()
+            })
+        }
+        
         writeTimeoutTimer.reset()
     }
     
@@ -223,25 +272,22 @@ public class CocoaMQTTWebSocket: CocoaMQTTSocketProtocol {
         }
     }
     
-    private struct WriteItem: Hashable {
-        let uuid = UUID()
-        let tag: Int
-        let timeout: DispatchWallTime
-        func hash(into hasher: inout Hasher) {
-            hasher.combine(uuid)
-        }
-    }
-    private var scheduledWrites = Set<WriteItem>()
+    private var scheduledWrites = ScheduleWriteController()
     private lazy var writeTimeoutTimer = ReusableTimer(queue: internalQueue)
     private func checkScheduledWrites() {
         writeTimeoutTimer.reset()
-        guard let closestTimeout = scheduledWrites.sorted(by: { a,b in a.timeout < b.timeout }).first?.timeout else { return }
-        if closestTimeout < .now() {
-            closeConnection(withError: CocoaMQTTError.writeTimeout)
-        } else {
-            writeTimeoutTimer.schedule(wallDeadline: closestTimeout) { [weak self] in
-                self?.checkScheduledWrites()
-            }
+        Task {
+            await withTaskGroup(of: Void.self, body: { taskGroup in
+                guard let closestTimeout = await scheduledWrites.closestTimeout() else { return }
+                
+                if closestTimeout < .now() {
+                    closeConnection(withError: CocoaMQTTError.writeTimeout)
+                } else {
+                    writeTimeoutTimer.schedule(wallDeadline: closestTimeout) { [weak self] in
+                        self?.checkScheduledWrites()
+                    }
+                }
+            })
         }
     }
 }
