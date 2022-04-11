@@ -47,6 +47,50 @@ extension Array where Element == InflightFrame {
     }
 }
 
+
+class MessageQueueController {
+    fileprivate var mqueue = [Frame]()
+    private let semaphore = DispatchSemaphore(value: 1)
+
+    func append(_ frame: Frame) {
+        semaphore.wait()
+        mqueue.append(frame)
+        semaphore.signal()
+    }
+    
+
+    func takeFirst() -> Frame? {
+        semaphore.wait()
+        if mqueue.isEmpty { return nil}
+        let frame = mqueue.remove(at: 0)
+        semaphore.signal()
+        return frame
+    }
+    
+    func removeAll() {
+        semaphore.wait()
+        mqueue.removeAll()
+        semaphore.signal()
+    }
+    
+    func isQueueEmpty() -> Bool {
+        semaphore.wait()
+        let result = mqueue.count == 0
+        semaphore.signal()
+        return result
+    }
+
+    func isQueueFull(mqueueSize: UInt) -> Bool {
+        semaphore.wait()
+        let result = mqueue.count >= mqueueSize
+        semaphore.signal()
+        return result
+    }
+    
+    
+}
+
+
 // CocoaMQTTDeliver
 class CocoaMQTTDeliver: NSObject {
     
@@ -57,7 +101,7 @@ class CocoaMQTTDeliver: NSObject {
     
     fileprivate var inflight = [InflightFrame]()
     
-    fileprivate var mqueue = [Frame]()
+    fileprivate var mqueue = MessageQueueController()
     
     var mqueueSize: UInt = 1000
     
@@ -68,8 +112,8 @@ class CocoaMQTTDeliver: NSObject {
     
     private var awaitingTimer: CocoaMQTTTimer?
     
-    var isQueueEmpty: Bool { get { return mqueue.count == 0 }}
-    var isQueueFull: Bool { get { return mqueue.count >= mqueueSize }}
+    var isQueueEmpty: Bool { get { return mqueue.isQueueEmpty() }}
+    var isQueueFull: Bool { get { return mqueue.isQueueFull(mqueueSize: mqueueSize) }}
     var isInflightFull: Bool { get { return inflight.count >= inflightWindowSize }}
     var isInflightEmpty: Bool { get { return inflight.count == 0 }}
     
@@ -168,13 +212,12 @@ extension CocoaMQTTDeliver {
         if isQueueEmpty || isInflightFull { return }
         
         // take out the earliest frame
-        if mqueue.isEmpty { return }
-        let frame = mqueue.remove(at: 0)
-        
-        deliver(frame)
-        
-        // keep trying after a transport
-        self.tryTransport()
+        if let frame = mqueue.takeFirst() {
+            deliver(frame)
+            
+            // keep trying after a transport
+            self.tryTransport()
+        }
     }
     
     /// Try to deliver a frame
@@ -293,6 +336,6 @@ extension CocoaMQTTDeliver {
     }
     
     func t_queuedFrames() -> [Frame] {
-        return mqueue
+        return mqueue.mqueue
     }
 }
