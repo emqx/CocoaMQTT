@@ -363,13 +363,15 @@ extension ViewController: CocoaMQTT5Delegate {
         completionHandler(true)
     }
     
-    func mqtt5(_ mqtt5: CocoaMQTT5, didConnectAck ack: CocoaMQTTCONNACKReasonCode, connAckData: MqttDecodeConnAck) {
+    func mqtt5(_ mqtt5: CocoaMQTT5, didConnectAck ack: CocoaMQTTCONNACKReasonCode, connAckData: MqttDecodeConnAck?) {
         TRACE("ack: \(ack)")
 
         if ack == .success {
-            print("properties maximumPacketSize: \(String(describing: connAckData.maximumPacketSize))")
-            print("properties topicAliasMaximum: \(String(describing: connAckData.topicAliasMaximum))")
-            
+            if(connAckData != nil){
+                print("properties maximumPacketSize: \(String(describing: connAckData!.maximumPacketSize))")
+                print("properties topicAliasMaximum: \(String(describing: connAckData!.topicAliasMaximum))")
+            }
+
             mqtt5.subscribe("chat/room/animals/client/+", qos: CocoaMQTTQoS.qos0)
             //or
             //let subscriptions : [MqttSubscription] = [MqttSubscription(topic: "chat/room/animals/client/+"),MqttSubscription(topic: "chat/room/foods/client/+"),MqttSubscription(topic: "chat/room/trees/client/+")]
@@ -408,13 +410,17 @@ extension ViewController: CocoaMQTT5Delegate {
         }
     }
 
-    func mqtt5(_ mqtt5: CocoaMQTT5, didPublishComplete id: UInt16,  pubCompData: MqttDecodePubComp){
+    func mqtt5(_ mqtt5: CocoaMQTT5, didPublishComplete id: UInt16,  pubCompData: MqttDecodePubComp?){
         TRACE("id: \(id)")
-        print("pubCompData reasonCode: \(String(describing: pubCompData.reasonCode))")
+        if(pubCompData != nil){
+            print("pubCompData reasonCode: \(String(describing: pubCompData!.reasonCode))")
+        }
     }
 
-    func mqtt5(_ mqtt5: CocoaMQTT5, didReceiveMessage message: CocoaMQTT5Message, id: UInt16, publishData: MqttDecodePublish){
-        print("publish.contentType \(String(describing: publishData.contentType))")
+    func mqtt5(_ mqtt5: CocoaMQTT5, didReceiveMessage message: CocoaMQTT5Message, id: UInt16, publishData: MqttDecodePublish?){
+        if(publishData != nil){
+            print("publish.contentType \(String(describing: publishData!.contentType))")
+        }
         
         TRACE("message: \(message.string.description), id: \(id)")
         let name = NSNotification.Name(rawValue: "MQTTMessageNotification" + animal!)
@@ -422,14 +428,18 @@ extension ViewController: CocoaMQTT5Delegate {
         NotificationCenter.default.post(name: name, object: self, userInfo: ["message": message.string!, "topic": message.topic, "id": id, "animal": animal as Any])
     }
     
-    func mqtt5(_ mqtt5: CocoaMQTT5, didSubscribeTopics success: NSDictionary, failed: [String], subAckData: MqttDecodeSubAck) {
+    func mqtt5(_ mqtt5: CocoaMQTT5, didSubscribeTopics success: NSDictionary, failed: [String], subAckData: MqttDecodeSubAck?) {
         TRACE("subscribed: \(success), failed: \(failed)")
-        print("subAckData.reasonCodes \(String(describing: subAckData.reasonCodes))")
+        if(subAckData != nil){
+            print("subAckData.reasonCodes \(String(describing: subAckData!.reasonCodes))")
+        }
     }
     
-    func mqtt5(_ mqtt5: CocoaMQTT5, didUnsubscribeTopics topics: [String], UnsubAckData: MqttDecodeUnsubAck) {
+    func mqtt5(_ mqtt5: CocoaMQTT5, didUnsubscribeTopics topics: [String], UnsubAckData: MqttDecodeUnsubAck?) {
         TRACE("topic: \(topics)")
-        print("UnsubAckData.reasonCodes \(String(describing: UnsubAckData.reasonCodes))")
+        if(UnsubAckData != nil){
+            print("UnsubAckData.reasonCodes \(String(describing: UnsubAckData!.reasonCodes))")
+        }
         print("----------------------")
     }
     
