@@ -230,5 +230,4 @@ MIT License (see `LICENSE`)
 
 ## Twitter
 
-https://twitter.com/emqtt
-
+https://twitter.com/EMQTech
