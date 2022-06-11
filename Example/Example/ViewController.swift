@@ -114,7 +114,7 @@ class ViewController: UIViewController {
             let lastWillMessage = CocoaMQTT5Message(topic: "/will", string: "dieout")
             lastWillMessage.contentType = "JSON"
             lastWillMessage.willResponseTopic = "/will"
-            lastWillMessage.willExpiryInterval = 0
+            lastWillMessage.willExpiryInterval = .max
             lastWillMessage.willDelayInterval = 0
             lastWillMessage.qos = .qos1
 
@@ -247,7 +247,7 @@ class ViewController: UIViewController {
 
             let lastWillMessage = CocoaMQTT5Message(topic: "/will", string: "dieout")
             lastWillMessage.contentType = "JSON"
-            lastWillMessage.willExpiryInterval = 0
+            lastWillMessage.willExpiryInterval = .max
             lastWillMessage.willDelayInterval = 0
             lastWillMessage.qos = .qos1
 

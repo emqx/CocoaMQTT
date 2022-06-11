@@ -31,7 +31,7 @@ public class CocoaMQTT5Message: NSObject {
     ///3.1.3.2.2 Will Delay Interval
     public var willDelayInterval: UInt32? = 0
     ///3.1.3.2.4 Message Expiry Interval
-    public var willExpiryInterval: UInt32? = 0
+    public var willExpiryInterval: UInt32? = .max
     ///3.1.3.2.5 Content Type
     public var contentType: String?
     ///3.1.3.2.6 Response Topic
