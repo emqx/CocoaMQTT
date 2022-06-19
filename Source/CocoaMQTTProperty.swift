@@ -179,22 +179,18 @@ func decodeVariableByteInteger(data: [UInt8], offset: Int) -> (res: Int, newOffs
     return (res, newOffset)
 }
 
-
-
-func beVariableByteInteger(length: Int) -> [UInt8]{
+/// 参考c++库修改
+func beVariableByteInteger(length: Int) -> [UInt8] {
     var res = [UInt8]()
-    if length > 0 && length <= 127 {
-        res.append(UInt8(length))
-    }else if length > 127 && length <= 16383 {
-        res += UInt16(length).hlBytes
-    }else if length > 16383 && length <= 2097151 {
-        res += UInt32(length).byteArrayLittleEndian
-    }else if length > 2097151 && length <= 268435455 {
-        res += UInt32(length).byteArrayLittleEndian
-    }else{
-        return [0]
-    }
-
+    var tmpLen:Int = length
+    repeat{
+        var d:UInt8 = UInt8(tmpLen % 128)
+        tmpLen /= 128
+        if(tmpLen > 0) {
+            d |= 0x80
+        }
+        res.append(d)
+    } while(tmpLen > 0)
 
     return res
 }
