@@ -179,7 +179,6 @@ func decodeVariableByteInteger(data: [UInt8], offset: Int) -> (res: Int, newOffs
     return (res, newOffset)
 }
 
-/// 参考c++库修改
 func beVariableByteInteger(length: Int) -> [UInt8] {
     var res = [UInt8]()
     var tmpLen:Int = length
