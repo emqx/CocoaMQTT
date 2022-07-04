@@ -383,8 +383,8 @@ public class CocoaMQTT: NSObject, CocoaMQTTClient {
     ///         If you want to disconnect from inside framework, call internal_disconnect()
     ///         disconnect expectedly
     public func disconnect() {
-        is_internal_disconnected = false
         internal_disconnect()
+        is_internal_disconnected = false
     }
     
     /// Disconnect unexpectedly
@@ -581,10 +581,8 @@ extension CocoaMQTT: CocoaMQTTSocketDelegate {
         delegate?.mqttDidDisconnect(self, withError: err)
         didDisconnect(self, err)
 
-        if !autoReconnect{
-            guard !is_internal_disconnected else {
-                return
-            }
+        guard is_internal_disconnected else {
+            return
         }
 
         guard autoReconnect else {
