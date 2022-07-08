@@ -793,7 +793,7 @@ extension CocoaMQTT5: CocoaMQTTReaderDelegate {
         let success: NSMutableDictionary = NSMutableDictionary()
         var failed = [String]()
         for (idx,subscriptionList) in topicsAndQos.enumerated() {
-            if suback.grantedQos[idx] != .FAILTURE {
+            if suback.grantedQos[idx] != .FAILURE {
                 subscriptions[subscriptionList.topic] = suback.grantedQos[idx]
                 success[subscriptionList.topic] = suback.grantedQos[idx].rawValue
             } else {

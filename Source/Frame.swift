@@ -20,14 +20,14 @@ import Foundation
     case qos2
     
     /// !!! Used SUBACK frame only
-    case FAILTURE = 0x80
+    case FAILURE = 0x80
     
     public var description: String {
         switch self {
         case .qos0: return "qos0"
         case .qos1: return "qos1"
         case .qos2: return "qos2"
-        case .FAILTURE: return "Failure"
+        case .FAILURE: return "Failure"
         }
     }
 }

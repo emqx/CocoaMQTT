@@ -269,7 +269,7 @@ class FrameTests: XCTestCase {
     
     func testFrameSubAck() {
         
-        var suback = FrameSubAck(msgid: 0x1010, grantedQos: [.qos0, .FAILTURE, .qos2])
+        var suback = FrameSubAck(msgid: 0x1010, grantedQos: [.qos0, .FAILURE, .qos2])
         var bytes = [UInt8](suback.bytes()[2...])
         var suback2 = FrameSubAck(fixedHeader: FrameType.suback.rawValue, bytes: bytes)
         

@@ -151,7 +151,7 @@ extension FramePublish: InitialWithBytes {
             flags = flags | 0b0011_0010
         case .qos2:
             flags = flags | 0b0011_0100
-        case .FAILTURE:
+        case .FAILURE:
             printDebug("FAILTURE")
         }
         
