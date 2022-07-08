@@ -19,7 +19,7 @@ public enum CocoaMQTTPropertyName: UInt8 {
     case serverKeepAlive = 0x13
     case authenticationMethod = 0x15
     case authenticationData = 0x16
-    case requestProblemInfomation = 0x17
+    case requestProblemInformation = 0x17
     case willDelayInterval = 0x18
     case requestResponseInformation = 0x19
     case responseInformation = 0x1A
