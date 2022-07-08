@@ -60,7 +60,7 @@ public class MqttConnectProperties: NSObject {
         }
         // 3.1.2.11.7 Request Problem Information
         if let requestProblemInfomation = self.requestProblemInfomation {
-            properties += getMQTTPropertyData(type: CocoaMQTTPropertyName.requestProblemInfomation.rawValue, value: [requestProblemInfomation])
+            properties += getMQTTPropertyData(type: CocoaMQTTPropertyName.requestProblemInformation.rawValue, value: [requestProblemInfomation])
         }
         // 3.1.2.11.8 User Property
         if let userProperty = self.userProperties {
