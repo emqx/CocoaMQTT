@@ -50,20 +50,15 @@ final class CocoaMQTTStorage: CocoaMQTTStorageProtocol {
     }
 
     deinit {
-        if(userDefault != nil){
-            userDefault.synchronize()
-        }
-
-        if(versionDefault != nil){
-            versionDefault.synchronize()
-        }
+        userDefault.synchronize()
+        versionDefault.synchronize()
     }
 
-    func setMQTTVersion(_ version : String){
+    func setMQTTVersion(_ version : String) {
         versionDefault.set(version, forKey: "cocoamqtt_mqtt_version")
     }
 
-    func queryMQTTVersion() -> String{
+    func queryMQTTVersion() -> String {
         return versionDefault.string(forKey: "cocoamqtt_mqtt_version")!
     }
 
