@@ -33,3 +33,5 @@ Carthage/
 Cartfile.resolved
 xcenv.sh
 *.swp
+
+.build/
