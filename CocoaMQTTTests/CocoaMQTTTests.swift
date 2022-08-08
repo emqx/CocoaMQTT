@@ -39,7 +39,7 @@ class CocoaMQTTTests: XCTestCase {
         let mqtt = CocoaMQTT(clientID: clientID, host: host, port: port)
         mqtt.delegateQueue = deleQueue
         mqtt.delegate = caller
-        mqtt.logLevel = .debug
+        mqtt.logLevel = .error
         mqtt.autoReconnect = false
  
         _ = mqtt.connect()
@@ -102,7 +102,7 @@ class CocoaMQTTTests: XCTestCase {
         let mqtt = CocoaMQTT(clientID: clientID, host: "XXXXXXXXXXXX-ats.iot.eu-west-1.amazonaws.com", port: 443, socket: websocket)
         mqtt.delegateQueue = deleQueue
         mqtt.delegate = caller
-        mqtt.logLevel = .debug
+        mqtt.logLevel = .error
         mqtt.autoReconnect = false
         _ = mqtt.connect()
         wait_for { caller.isConnected }
@@ -134,7 +134,7 @@ class CocoaMQTTTests: XCTestCase {
         let mqtt = CocoaMQTT(clientID: clientID, host: host, port: 8083, socket: websocket)
         mqtt.delegateQueue = deleQueue
         mqtt.delegate = caller
-        mqtt.logLevel = .debug
+        mqtt.logLevel = .error
         mqtt.autoReconnect = false
         //mqtt.enableSSL = true
 
@@ -186,7 +186,7 @@ class CocoaMQTTTests: XCTestCase {
         let mqtt = CocoaMQTT(clientID: clientID, host: host, port: port)
         mqtt.delegateQueue = deleQueue
         mqtt.delegate = caller
-        mqtt.logLevel = .debug
+        mqtt.logLevel = .error
         mqtt.autoReconnect = true
         mqtt.autoReconnectTimeInterval = 1
         
@@ -214,7 +214,7 @@ class CocoaMQTTTests: XCTestCase {
         let mqtt = CocoaMQTT(clientID: clientID, host: host, port: port)
         mqtt.delegateQueue = deleQueue
         mqtt.delegate = caller
-        mqtt.logLevel = .debug
+        mqtt.logLevel = .error
         mqtt.autoReconnect = false
         
         _ = mqtt.connect()
@@ -245,7 +245,7 @@ class CocoaMQTTTests: XCTestCase {
         let mqtt = CocoaMQTT(clientID: clientID, host: host, port: port)
         mqtt.delegateQueue = deleQueue
         mqtt.delegate = caller
-        mqtt.logLevel = .debug
+        mqtt.logLevel = .error
         mqtt.autoReconnect = false
         
         _ = mqtt.connect()
@@ -276,13 +276,12 @@ class CocoaMQTTTests: XCTestCase {
         XCTAssertEqual(mqtt.connState, .disconnected)
     }
     
-    
     func testOnyWaySSL() {
         let caller = Caller()
         let mqtt = CocoaMQTT(clientID: clientID, host: host, port: sslport)
         mqtt.delegateQueue = deleQueue
         mqtt.delegate = caller
-        mqtt.logLevel = .debug
+        mqtt.logLevel = .error
         mqtt.enableSSL = true
         mqtt.allowUntrustCACertificate = true
         
@@ -301,7 +300,7 @@ class CocoaMQTTTests: XCTestCase {
         let mqtt = CocoaMQTT(clientID: clientID, host: host, port: sslport)
         mqtt.delegateQueue = deleQueue
         mqtt.delegate = caller
-        mqtt.logLevel = .debug
+        mqtt.logLevel = .error
         mqtt.enableSSL = true
         mqtt.allowUntrustCACertificate = true
         
