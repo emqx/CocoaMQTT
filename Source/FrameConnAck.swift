@@ -31,6 +31,10 @@ struct FrameConnAck: Frame {
     //3.2.3 CONNACK Payload
     //The CONNACK packet has no Payload.
 
+    ///MQTT 3.1.1
+    init(returnCode: CocoaMQTTConnAck) {
+        self.returnCode = returnCode
+    }
 
     ///MQTT 5.0
     init(code: CocoaMQTTCONNACKReasonCode) {
