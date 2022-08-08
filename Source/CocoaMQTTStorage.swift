@@ -113,11 +113,12 @@ final class CocoaMQTTStorage: CocoaMQTTStorageProtocol {
     }
 
     private func parse(_ bytes: [UInt8]) -> (UInt8, [UInt8])? {
-        guard bytes.count > 5 else {
+        // FramePubRel is 4 bytes long
+        guard bytes.count > 3 else {
             return nil
         }
         /// bytes 1..<5 may be 'Remaining Length'
-        for i in 1 ..< 5 {
+        for i in 1 ..< min(5, bytes.count){
             if (bytes[i] & 0x80) == 0 {
                 return (bytes[0], Array(bytes.suffix(from: i+1)))
             }
