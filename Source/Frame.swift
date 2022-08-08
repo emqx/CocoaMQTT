@@ -191,7 +191,6 @@ extension Frame {
             return ((packetFixedHeaderType & 0x08) >> 3) == 0 ? false : true
         }
         set {
-            packetFixedHeaderType = self.fixedHeader().first ?? packetFixedHeaderType
             packetFixedHeaderType = (packetFixedHeaderType & 0xF7) | (newValue.bit  << 3)
         }
     }
@@ -202,7 +201,6 @@ extension Frame {
             return CocoaMQTTQoS(rawValue: (packetFixedHeaderType & 0x06) >> 1)!
         }
         set {
-            packetFixedHeaderType = self.fixedHeader().first ?? packetFixedHeaderType
             packetFixedHeaderType = (packetFixedHeaderType & 0xF9) | (newValue.rawValue << 1)
         }
     }
@@ -213,7 +211,6 @@ extension Frame {
             return (packetFixedHeaderType & 0x01) == 0 ? false : true
         }
         set {
-            packetFixedHeaderType = self.fixedHeader().first ?? packetFixedHeaderType
             packetFixedHeaderType = (packetFixedHeaderType & 0xFE) | newValue.bit
         }
     }
