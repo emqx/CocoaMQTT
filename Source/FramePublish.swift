@@ -11,13 +11,6 @@ import Foundation
 // MQTT PUBLISH Frame
 struct FramePublish: Frame {
 
-    //3.3.1.1 DUP
-    public var dup: Bool = false
-    //3.3.1.2 QoS
-    //public var qos: CocoaMQTTQoS = .qos1
-    //3.3.1.3 RETAIN
-    public var retain: Bool = false
-
     //3.3.1.4 Remaining Length
     public var remainingLength: UInt32?
 
