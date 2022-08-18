@@ -63,12 +63,12 @@ On your application targets “General” settings tab, in the "Frameworks, Libr
 
 ## Usage
 
-Create a client to connect [MQTT broker](https://www.emqx.io/products/broker):
+Create a client to connect [MQTT broker](https://www.emqx.com/en/mqtt/public-mqtt5-broker):
 
 ```swift
 ///MQTT 5.0
 let clientID = "CocoaMQTT-" + String(ProcessInfo().processIdentifier)
-let mqtt5 = CocoaMQTT5(clientID: clientID, host: "localhost", port: 1883)
+let mqtt5 = CocoaMQTT5(clientID: clientID, host: "broker.emqx.io", port: 1883)
 
 let connectProperties = MqttConnectProperties()
 connectProperties.topicAliasMaximum = 0
@@ -86,7 +86,7 @@ mqtt5.connect()
 
 ///MQTT 3.1.1
 let clientID = "CocoaMQTT-" + String(ProcessInfo().processIdentifier)
-let mqtt = CocoaMQTT(clientID: clientID, host: "localhost", port: 1883)
+let mqtt = CocoaMQTT(clientID: clientID, host: "broker.emqx.io", port: 1883)
 mqtt.username = "test"
 mqtt.password = "public"
 mqtt.willMessage = CocoaMQTTWill(topic: "/will", message: "dieout")
@@ -204,7 +204,7 @@ Then, open the `Example.xcworkspace/` by Xcode and start it!
 These third-party functions are used:
 
 * [GCDAsyncSocket](https://github.com/robbiehanson/CocoaAsyncSocket)
-* [Starscream](https://github.com/daltoniam/Starscream）
+* [Starscream](https://github.com/daltoniam/Starscream)
 
 
 ## LICENSE
