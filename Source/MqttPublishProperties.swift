@@ -30,7 +30,27 @@ public class MqttPublishProperties: NSObject {
     //3.3.2.3.9 Content Type
     public var contentType: String?
 
-
+    public init(
+        propertyLength: Int? = nil,
+        payloadFormatIndicator: PayloadFormatIndicator? = nil,
+        messageExpiryInterval: UInt32? = nil,
+        topicAlias: UInt16? = nil,
+        responseTopic: String? = nil,
+        correlationData: [UInt8]? = nil,
+        userProperty: [String: String]? = nil,
+        subscriptionIdentifier: UInt32? = nil,
+        contentType: String? = nil
+    ) {
+        self.propertyLength = propertyLength
+        self.payloadFormatIndicator = payloadFormatIndicator
+        self.messageExpiryInterval = messageExpiryInterval
+        self.topicAlias = topicAlias
+        self.responseTopic = responseTopic
+        self.correlationData = correlationData
+        self.userProperty = userProperty
+        self.subscriptionIdentifier = subscriptionIdentifier
+        self.contentType = contentType
+    }
 
     public var properties: [UInt8] {
         var properties = [UInt8]()
