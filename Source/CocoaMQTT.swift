@@ -7,7 +7,7 @@
 //
 
 import Foundation
-import CocoaAsyncSocket
+import MqttCocoaAsyncSocket
 
 /**
  * Conn Ack

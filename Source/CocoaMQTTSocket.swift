@@ -6,7 +6,7 @@
 //
 
 import Foundation
-import CocoaAsyncSocket
+import MqttCocoaAsyncSocket
 
 // MARK: - Interfaces
 
