@@ -2,12 +2,12 @@
   "object": {
     "pins": [
       {
-        "package": "CocoaAsyncSocket",
-        "repositoryURL": "https://github.com/leeway1208/CocoaAsyncSocket",
+        "package": "MqttCocoaAsyncSocket",
+        "repositoryURL": "https://github.com/leeway1208/MqttCocoaAsyncSocket",
         "state": {
           "branch": null,
-          "revision": "e71772fa04e2efdc35c0ad3ce692a24c5e81cd4d",
-          "version": "1.0.1"
+          "revision": "e26a04366bf5553b22e9e4a2468abf456c5fbe4d",
+          "version": "1.0.4"
         }
       },
       {
