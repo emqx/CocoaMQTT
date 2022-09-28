@@ -76,6 +76,14 @@ import MqttCocoaAsyncSocket
     @objc optional func mqtt(_ mqtt: CocoaMQTT, didStateChangeTo state: CocoaMQTTConnState)
 }
 
+/// set mqtt version to 3.1.1
+public func setMqtt3Version(){
+    if let storage = CocoaMQTTStorage() {
+        storage.setMQTTVersion("3.1.1")
+    }
+}
+
+
 /**
  * Blueprint of the MQTT Client
  */
@@ -292,7 +300,7 @@ public class CocoaMQTT: NSObject, CocoaMQTTClient {
             printWarning("Localstorage initial failed for key: \(clientID)")
         }
     }
-    
+
     deinit {
         aliveTimer?.suspend()
         autoReconnTimer?.suspend()

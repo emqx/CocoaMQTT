@@ -78,6 +78,14 @@ import MqttCocoaAsyncSocket
     @objc optional func mqtt5(_ mqtt5: CocoaMQTT5, didStateChangeTo state: CocoaMQTTConnState)
 }
 
+/// set mqtt version to 5.0
+public func setMqtt5Version(){
+    if let storage = CocoaMQTTStorage() {
+        storage.setMQTTVersion("5.0")
+    }
+}
+
+
 /**
  * Blueprint of the MQTT Client
  */
@@ -307,7 +315,7 @@ public class CocoaMQTT5: NSObject, CocoaMQTT5Client {
             printWarning("Localstorage initial failed for key: \(clientID)")
         }
     }
-
+    
     deinit {
         aliveTimer?.suspend()
         autoReconnTimer?.suspend()
