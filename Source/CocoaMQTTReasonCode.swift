@@ -120,7 +120,7 @@ import Foundation
 }
 
 @objc public enum CocoaMQTTUNSUBACKReasonCode: UInt8 {
-    case grantedQoS0 = 0x00
+    case success = 0x00
     case noSubscriptionExisted = 0x11
     case unspecifiedError = 0x80
     case implementationSpecificError = 0x83
