@@ -78,9 +78,8 @@ extension FramePubRec {
 
         //3.5.2.2.3 User Property
         if let userProperty = self.userProperties {
-            let dictValues = [String](userProperty.values)
-            for (value) in dictValues {
-                properties += getMQTTPropertyData(type: CocoaMQTTPropertyName.userProperty.rawValue, value: value.bytesWithLength)
+            for (key, value) in userProperty {
+                properties += getMQTTPropertyData(type: CocoaMQTTPropertyName.userProperty.rawValue, value: key.bytesWithLength + value.bytesWithLength)
             }
         }
 
