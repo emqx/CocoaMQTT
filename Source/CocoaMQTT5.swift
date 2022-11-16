@@ -132,7 +132,7 @@ protocol CocoaMQTT5Client {
 
 /// MQTT Client
 ///
-/// - Note: GCDAsyncSocket need delegate to extend NSObject
+/// - Note: MGCDAsyncSocket need delegate to extend NSObject
 public class CocoaMQTT5: NSObject, CocoaMQTT5Client {
 
     public weak var delegate: CocoaMQTT5Delegate?
@@ -612,7 +612,7 @@ extension CocoaMQTT5: CocoaMQTTSocketDelegate {
     }
 
     // ?
-    public func socketDidSecure(_ sock: GCDAsyncSocket) {
+    public func socketDidSecure(_ sock: MGCDAsyncSocket) {
         printDebug("Socket has successfully completed SSL/TLS negotiation")
         sendConnectFrame()
     }
