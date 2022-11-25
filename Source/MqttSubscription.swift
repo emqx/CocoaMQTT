@@ -66,11 +66,11 @@ public class MqttSubscription {
 
         switch self.retainHandling {
         case CocoaRetainHandlingOption.none:
-            options = options | 0b0000_0000
+            options = options | 0b0010_0000
         case CocoaRetainHandlingOption.sendOnlyWhenSubscribeIsNew:
             options = options | 0b0001_0000
         case CocoaRetainHandlingOption.sendOnSubscribe:
-            options = options | 0b0010_0000
+            options = options | 0b0000_0000
         }
 
 
