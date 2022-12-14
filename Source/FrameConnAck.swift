@@ -94,7 +94,7 @@ extension FrameConnAck: InitialWithBytes {
         let mqtt5ack = CocoaMQTTCONNACKReasonCode(rawValue: bytes[1])
         reasonCode = mqtt5ack
 
-        let ack = CocoaMQTTConnAck(rawValue: bytes[1]) 
+        let ack = CocoaMQTTConnAck(byte: bytes[1]) 
         returnCode = ack
 
         propertiesBytes = bytes

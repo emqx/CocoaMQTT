@@ -21,6 +21,15 @@ import MqttCocoaAsyncSocket
     case notAuthorized
     case reserved
     
+    public init(byte: UInt8) {
+        switch byte {
+        case CocoaMQTTConnAck.accept.rawValue..<CocoaMQTTConnAck.reserved.rawValue:
+            self.init(rawValue: byte)!
+        default:
+            self = .reserved
+        }
+    }
+    
     public var description: String {
         switch self {
         case .accept:                       return "accept"
