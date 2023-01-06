@@ -411,12 +411,10 @@ public class CocoaMQTT5: NSObject, CocoaMQTT5Client {
     ///         disconnect expectedly
     public func disconnect() {
         internal_disconnect()
-        is_internal_disconnected = false
     }
 
     public func disconnect(reasonCode : CocoaMQTTDISCONNECTReasonCode,userProperties : [String: String] ) {
         internal_disconnect_withProperties(reasonCode: reasonCode,userProperties: userProperties)
-        is_internal_disconnected = false
     }
 
     /// Disconnect unexpectedly
@@ -644,7 +642,7 @@ extension CocoaMQTT5: CocoaMQTTSocketDelegate {
         delegate?.mqtt5DidDisconnect(self, withError: err)
         didDisconnect(self, err)
 
-        guard is_internal_disconnected else {
+        guard !is_internal_disconnected else {
             return
         }
 
