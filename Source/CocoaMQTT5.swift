@@ -564,17 +564,21 @@ extension CocoaMQTT5: CocoaMQTTDeliverProtocol {
     func deliver(_ deliver: CocoaMQTTDeliver, wantToSend frame: Frame) {
         if let publish = frame as? FramePublish {
             let msgid = publish.msgid
-            guard let message = sendingMessages[msgid] else {
-                printError("Want send \(frame), but not found in CocoaMQTT5 cache")
-                return
+            var message: CocoaMQTT5Message? = nil
+                        
+            if let sendingMessage = sendingMessages[msgid] {
+                message = sendingMessage
+                //printError("Want send \(frame), but not found in CocoaMQTT cache")
+            } else {
+                message = CocoaMQTTMessage(topic: publish.topic, payload: publish.payload())
             }
-
+            
             send(publish, tag: Int(msgid))
-
-
-            self.delegate?.mqtt5(self, didPublishMessage: message, id: msgid)
-            self.didPublishMessage(self, message, msgid)
-
+            
+            if let message = message {
+                self.delegate?.mqtt5(self, didPublishMessage: message, id: msgid)
+                self.didPublishMessage(self, message, msgid)
+            }
         } else if let pubrel = frame as? FramePubRel {
             // -- Send PUBREL
             send(pubrel, tag: Int(pubrel.msgid))
