@@ -570,7 +570,7 @@ extension CocoaMQTT5: CocoaMQTTDeliverProtocol {
                 message = sendingMessage
                 //printError("Want send \(frame), but not found in CocoaMQTT cache")
             } else {
-                message = CocoaMQTTMessage(topic: publish.topic, payload: publish.payload())
+                message = CocoaMQTT5Message(topic: publish.topic, payload: publish.payload())
             }
             
             send(publish, tag: Int(msgid))
