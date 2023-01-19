@@ -190,8 +190,10 @@ public class CocoaMQTTWebSocket: CocoaMQTTSocketProtocol {
         }
         
         func reset() {
-            timer?.cancel()
-            timer = nil
+            if(timer != nil){
+                timer?.cancel()
+                timer = nil
+            }
         }
     }
     
