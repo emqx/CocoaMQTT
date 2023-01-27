@@ -8,7 +8,6 @@
 
 import UIKit
 
-
 class ChatLeftMessageCell: UITableViewCell {
     @IBOutlet weak var contentLabel: UILabel! {
         didSet {
@@ -16,7 +15,7 @@ class ChatLeftMessageCell: UITableViewCell {
         }
     }
     @IBOutlet weak var avatarImageView: UIImageView!
-    
+
     override func awakeFromNib() {
         super.awakeFromNib()
         selectionStyle = UITableViewCell.SelectionStyle.none

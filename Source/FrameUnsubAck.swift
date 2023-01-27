@@ -8,25 +8,25 @@
 
 import Foundation
 
-
 /// MQTT UNSUBACK packet
 struct FrameUnsubAck: Frame {
 
     var packetFixedHeaderType: UInt8 = FrameType.unsuback.rawValue
 
     // --- Attributes
-    
+
     var msgid: UInt16
-    
+
     // --- Attributes End
 
-    //3.10.2.1 UNSUBSCRIBE Properties
+    // 3.10.2.1 UNSUBSCRIBE Properties
     public var unSubAckProperties: MqttDecodeUnsubAck?
-    //3.11.2 Property
+    // 3.11.2 Property
     public var userProperty: [String: String]?
-    //3.11.2.1.2 Reason String
+    // 3.11.2.1.2 Reason String
     public var reasonString: String?
 
+    // swiftlint:disable:next identifier_name
     var _payload: [UInt8] = []
 
     init(msgid: UInt16, payload: [UInt8]) {
@@ -36,38 +36,38 @@ struct FrameUnsubAck: Frame {
 }
 
 extension FrameUnsubAck {
-    
+
     func fixedHeader() -> [UInt8] {
-        
+
         var header = [UInt8]()
         header += [FrameType.unsuback.rawValue]
 
         return header
     }
-    
+
     func variableHeader5() -> [UInt8] {
-        
-        //3.11.2 MSB+LSB
+
+        // 3.11.2 MSB+LSB
         var header = msgid.hlBytes
 
-        //MQTT 5.0
+        // MQTT 5.0
         header += beVariableByteInteger(length: self.properties().count)
 
         return header
     }
-    
+
     func payload5() -> [UInt8] { return _payload }
 
     func properties() -> [UInt8] {
-        
+
         var properties = [UInt8]()
 
-        //3.11.2.1.2 Reason String
+        // 3.11.2.1.2 Reason String
         if let reasonString = self.reasonString {
             properties += getMQTTPropertyData(type: CocoaMQTTPropertyName.reasonString.rawValue, value: reasonString.bytesWithLength)
         }
 
-        //3.11.2.1.3 User Property
+        // 3.11.2.1.3 User Property
         if let userProperty = self.userProperty {
             let dictValues = [String](userProperty.values)
             for (value) in dictValues {
@@ -75,11 +75,11 @@ extension FrameUnsubAck {
             }
         }
 
-        return properties;
+        return properties
     }
 
     func allData() -> [UInt8] {
-        
+
         var allData = [UInt8]()
 
         allData += fixedHeader()
@@ -95,14 +95,13 @@ extension FrameUnsubAck {
     func payload() -> [UInt8] { return [] }
 }
 
-
 extension FrameUnsubAck: InitialWithBytes {
-    
+
     init?(packetFixedHeaderType: UInt8, bytes: [UInt8]) {
         guard packetFixedHeaderType == FrameType.unsuback.rawValue else {
             return nil
         }
-        
+
         guard bytes.count >= 2 else {
             return nil
         }
@@ -111,7 +110,7 @@ extension FrameUnsubAck: InitialWithBytes {
 
         self.unSubAckProperties = MqttDecodeUnsubAck()
         self.unSubAckProperties!.decodeUnSubAck(fixedHeader: packetFixedHeaderType, pubAckData: bytes)
-        
+
     }
 }
 

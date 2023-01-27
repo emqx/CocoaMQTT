@@ -8,7 +8,6 @@
 
 import UIKit
 
-
 class ChatRightMessageCell: UITableViewCell {
     @IBOutlet weak var contentLabel: UILabel! {
         didSet {
