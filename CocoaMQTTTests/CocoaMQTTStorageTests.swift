@@ -6,20 +6,11 @@
 //  Copyright © 2019 emqtt.io. All rights reserved.
 //
 
-import XCTest
 @testable import CocoaMQTT
+import XCTest
 
 class CocoaMQTTStorageTests: XCTestCase {
-
     var clientId = "c1"
-
-    override func setUp() {
-        // Put setup code here. This method is called before the invocation of each test method in the class.
-    }
-
-    override func tearDown() {
-        // Put teardown code here. This method is called after the invocation of each test method in the class.
-    }
 
     func testStorage() {
         let frames = [FramePublish(topic: "t/1", payload: [0x01], qos: .qos1, msgid: 1),

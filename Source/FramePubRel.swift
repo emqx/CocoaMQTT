@@ -11,8 +11,7 @@ import Foundation
 /// MQTT PUBREL packet
 /// A PUBREL packet is the response to a PUBREC packet. It is the third packet of the QoS 2 protocol exchange.
 struct FramePubRel: Frame {
-
-    var packetFixedHeaderType: UInt8 = UInt8(FrameType.pubrel.rawValue + 2)
+    var packetFixedHeaderType = UInt8(FrameType.pubrel.rawValue + 2)
 
     // --- Attributes
 
@@ -21,14 +20,14 @@ struct FramePubRel: Frame {
     // --- Attributes End
 
     // 3.6.2.1 PUBREL Reason Code
-    public var reasonCode: CocoaMQTTPUBRELReasonCode = .success
+    var reasonCode: CocoaMQTTPUBRELReasonCode = .success
 
     // 3.6.2.2 PUBREL Properties
-    public var pubRelProperties: MqttDecodePubRel?
+    var pubRelProperties: MqttDecodePubRel?
     // 3.6.2.2.2 Reason String
-    public var reasonString: String?
+    var reasonString: String?
     // 3.6.2.2.3 User Property
-    public var userProperties: [String: String]?
+    var userProperties: [String: String]?
 
     init(msgid: UInt16) {
         self.msgid = msgid
@@ -38,9 +37,7 @@ struct FramePubRel: Frame {
 }
 
 extension FramePubRel {
-
     func fixedHeader() -> [UInt8] {
-
         var header = [UInt8]()
         header += [FrameType.pubrel.rawValue]
 
@@ -48,7 +45,6 @@ extension FramePubRel {
     }
 
     func variableHeader5() -> [UInt8] {
-
         // 3.6.2 MSB+LSB
         var header = msgid.hlBytes
         // 3.6.2.1 PUBACK Reason Code
@@ -62,7 +58,6 @@ extension FramePubRel {
     func payload5() -> [UInt8] { return [] }
 
     func properties() -> [UInt8] {
-
         var properties = [UInt8]()
 
         // 3.6.2.2.2 Reason String
@@ -81,7 +76,6 @@ extension FramePubRel {
     }
 
     func allData() -> [UInt8] {
-
         var allData = [UInt8]()
 
         allData += fixedHeader()
@@ -98,7 +92,6 @@ extension FramePubRel {
 }
 
 extension FramePubRel: InitialWithBytes {
-
     init?(packetFixedHeaderType: UInt8, bytes: [UInt8]) {
         guard packetFixedHeaderType == 0x62 else {
             return nil

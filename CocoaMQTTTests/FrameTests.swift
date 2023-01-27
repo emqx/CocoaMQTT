@@ -6,11 +6,10 @@
 //  Copyright © 2018 emqx.io. All rights reserved.
 //
 
-import XCTest
 @testable import CocoaMQTT
+import XCTest
 
 class FrameTests: XCTestCase {
-
     func testFrameConnect() {
         var conn = FrameConnect(clientID: "sheep")
         conn.keepAlive = 60
@@ -18,9 +17,9 @@ class FrameTests: XCTestCase {
 
         XCTAssertEqual(conn.packetFixedHeaderType, 0x10)
         XCTAssertEqual(conn.type, FrameType.connect)
-        XCTAssertEqual(conn.dup, false)
+        XCTAssertFalse(conn.dup)
         XCTAssertEqual(conn.qos, .qos0)
-        XCTAssertEqual(conn.retained, false)
+        XCTAssertFalse(conn.retained)
 
         XCTAssertEqual(conn.bytes(version: "3.1.1"),
                        [0x10, 0x11,
@@ -66,7 +65,6 @@ class FrameTests: XCTestCase {
     }
 
     func testFramePublish() {
-
         var publish = FramePublish(topic: "t/a", payload: "aaa".utf8 + [], qos: .qos0, msgid: 0x0010)
         var bytes = [UInt8](publish.bytes(version: "3.1.1")[2...])
         var publish2 = FramePublish(packetFixedHeaderType: FrameType.publish.rawValue, bytes: bytes)
@@ -107,9 +105,9 @@ class FrameTests: XCTestCase {
         XCTAssertEqual(f0.packetFixedHeaderType, 0x3D)
         XCTAssertEqual(f0.type, FrameType.publish)
         // TODO: Fix dup
-        XCTAssertEqual(f0.dup, true)
+        XCTAssertTrue(f0.dup)
         XCTAssertEqual(f0.qos, .qos2)
-        XCTAssertEqual(f0.retained, true)
+        XCTAssertTrue(f0.retained)
 
         XCTAssertEqual(f0.topic, "t/a")
         XCTAssertEqual(f0.msgid, 16)
@@ -120,9 +118,9 @@ class FrameTests: XCTestCase {
         f0.retained = false
 
         f0.dup = true
-        XCTAssertEqual(f0.dup, true)
+        XCTAssertTrue(f0.dup)
         f0.dup = false
-        XCTAssertEqual(f0.dup, false)
+        XCTAssertFalse(f0.dup)
 
         XCTAssertEqual(f0.qos, .qos0)
         f0.qos = CocoaMQTTQoS.qos1
@@ -132,11 +130,11 @@ class FrameTests: XCTestCase {
         f0.qos = CocoaMQTTQoS.qos0
         XCTAssertEqual(f0.qos, .qos0)
 
-        XCTAssertEqual(f0.retained, false)
+        XCTAssertFalse(f0.retained)
         f0.retained = true
-        XCTAssertEqual(f0.retained, true)
+        XCTAssertTrue(f0.retained)
         f0.retained = false
-        XCTAssertEqual(f0.retained, false)
+        XCTAssertFalse(f0.retained)
 
         let f1 = FramePublish(packetFixedHeaderType: 0x30, bytes: [
             0, 60, 47, 114, 101, 109, 111, 116, 101, 97, 112, 112, 47, 109, 111, 98, 105,
@@ -148,7 +146,6 @@ class FrameTests: XCTestCase {
     }
 
     func testFramePubAck() {
-
         var puback = FramePubAck(msgid: 0x1010)
         var bytes = [UInt8](puback.bytes(version: "3.1.1")[2...])
         var puback2 = FramePubAck(packetFixedHeaderType: FrameType.puback.rawValue, bytes: bytes)
@@ -197,7 +194,6 @@ class FrameTests: XCTestCase {
     }
 
     func testFramePubRel() {
-
         var pubrel = FramePubRel(msgid: 0x1010)
         var bytes = [UInt8](pubrel.bytes(version: "3.1.1")[2...])
         var pubrel2 = FramePubRel(packetFixedHeaderType: 0x62, bytes: bytes)
@@ -264,7 +260,6 @@ class FrameTests: XCTestCase {
     }
 
     func testFrameSubAck() {
-
         var suback = FrameSubAck(msgid: 0x1010, grantedQos: [.qos0, .FAILURE, .qos2])
         var bytes = [UInt8](suback.bytes(version: "3.1.1")[2...])
         var suback2 = FrameSubAck(packetFixedHeaderType: FrameType.suback.rawValue, bytes: bytes)
@@ -291,7 +286,6 @@ class FrameTests: XCTestCase {
     }
 
     func testFrameUnsubscribe() {
-
         let unsub = FrameUnsubscribe(msgid: 0x1010, topics: ["topic", "t2"])
         XCTAssertEqual(unsub.packetFixedHeaderType, 0xA2)
         XCTAssertEqual(unsub.msgid, 0x1010)
@@ -304,7 +298,6 @@ class FrameTests: XCTestCase {
     }
 
     func testFrameUnsubAck() {
-
         var unsuback = FrameUnsubAck(msgid: 0x1010, payload: [])
         var bytes = [UInt8](unsuback.bytes(version: "3.1.1")[2...])
         var unsuback2 = FrameUnsubAck(packetFixedHeaderType: FrameType.unsuback.rawValue, bytes: bytes)
@@ -329,7 +322,6 @@ class FrameTests: XCTestCase {
     }
 
     func testFramePing() {
-
         let ping = FramePingReq()
 
         XCTAssertEqual(ping.packetFixedHeaderType, 0xC0)
@@ -337,7 +329,6 @@ class FrameTests: XCTestCase {
     }
 
     func testFramePong() {
-
         let pong = FramePingResp()
         let bytes = [UInt8](pong.bytes(version: "3.1.1")[2...])
         let pong2 = FramePingResp(packetFixedHeaderType: FrameType.pingresp.rawValue, bytes: bytes)
@@ -347,7 +338,6 @@ class FrameTests: XCTestCase {
     }
 
     func testFrameDisconnect() {
-
         let disconn = FrameDisconnect()
 
         XCTAssertEqual(disconn.packetFixedHeaderType, 0xE0)

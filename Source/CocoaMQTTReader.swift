@@ -17,7 +17,6 @@ enum CocoaMQTTReadTag: Int {
 
 ///
 protocol CocoaMQTTReaderDelegate: AnyObject {
-
     func didReceive(_ reader: CocoaMQTTReader, connack: FrameConnAck)
 
     func didReceive(_ reader: CocoaMQTTReader, publish: FramePublish)
@@ -38,7 +37,6 @@ protocol CocoaMQTTReaderDelegate: AnyObject {
 }
 
 class CocoaMQTTReader {
-
     private var socket: CocoaMQTTSocketProtocol
 
     private weak var delegate: CocoaMQTTReaderDelegate?
@@ -107,7 +105,6 @@ class CocoaMQTTReader {
     }
 
     private func frameReady() {
-
         guard let frameType = FrameType(rawValue: UInt8(header & 0xF0)) else {
             printError("Received unknown frame type, header: \(header), data:\(data)")
             readHeader()

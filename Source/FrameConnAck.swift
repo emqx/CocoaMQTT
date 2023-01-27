@@ -9,7 +9,6 @@
 import Foundation
 
 struct FrameConnAck: Frame {
-
     var packetFixedHeaderType: UInt8 = FrameType.connack.rawValue
 
     // --- Attributes
@@ -21,7 +20,7 @@ struct FrameConnAck: Frame {
     var reasonCode: CocoaMQTTCONNACKReasonCode?
 
     // 3.2.2.1.1 Session Present
-    var sessPresent: Bool = false
+    var sessPresent = false
 
     // --- Attributes End
 
@@ -40,11 +39,9 @@ struct FrameConnAck: Frame {
     init(code: CocoaMQTTCONNACKReasonCode) {
         reasonCode = code
     }
-
 }
 
 extension FrameConnAck {
-
     func fixedHeader() -> [UInt8] {
         var header = [UInt8]()
         header += [FrameType.connack.rawValue]
@@ -79,7 +76,6 @@ extension FrameConnAck {
 }
 
 extension FrameConnAck: InitialWithBytes {
-
     init?(packetFixedHeaderType: UInt8, bytes: [UInt8]) {
         guard packetFixedHeaderType == FrameType.connack.rawValue else {
             return nil

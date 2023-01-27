@@ -20,7 +20,6 @@ public protocol CocoaMQTTSocketDelegate: AnyObject {
 }
 
 public protocol CocoaMQTTSocketProtocol {
-
     var enableSSL: Bool { get set }
 
     func setDelegate(_ theDelegate: CocoaMQTTSocketDelegate?, delegateQueue: DispatchQueue?)
@@ -34,7 +33,6 @@ public protocol CocoaMQTTSocketProtocol {
 // MARK: - CocoaMQTTSocket
 
 public class CocoaMQTTSocket: NSObject {
-
     public var backgroundOnSocket = true
 
     public var enableSSL = false

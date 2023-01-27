@@ -10,22 +10,21 @@ import Foundation
 
 /// MQTT Disconnect packet
 struct FrameDisconnect: Frame {
-
     var packetFixedHeaderType: UInt8 = FrameType.disconnect.rawValue
 
     // 3.14.2 DISCONNECT Variable Header
-    public var sendReasonCode: CocoaMQTTDISCONNECTReasonCode?
-    public var receiveReasonCode: CocoaMQTTDISCONNECTReasonCode?
+    var sendReasonCode: CocoaMQTTDISCONNECTReasonCode?
+    var receiveReasonCode: CocoaMQTTDISCONNECTReasonCode?
 
     // 3.14.2.2.2 Session Expiry Interval
-    public var sessionExpiryInterval: UInt32?
+    var sessionExpiryInterval: UInt32?
 
     // 3.14.2.2.3 Reason String
-    public var reasonString: String?
+    var reasonString: String?
     // 3.14.2.2.4 User Property
-    public var userProperties: [String: String]?
+    var userProperties: [String: String]?
     // 3.14.2.2.5 Server Reference
-    public var serverReference: String?
+    var serverReference: String?
 
     /// MQTT 3.1.1
     init() { /* Nothing to do */ }
@@ -37,7 +36,6 @@ struct FrameDisconnect: Frame {
 }
 
 extension FrameDisconnect {
-
     func fixedHeader() -> [UInt8] {
         var header = [UInt8]()
         header += [FrameType.disconnect.rawValue]
@@ -46,7 +44,6 @@ extension FrameDisconnect {
     }
 
     func variableHeader5() -> [UInt8] {
-
         var header = [UInt8]()
         header += [sendReasonCode!.rawValue]
 
@@ -59,7 +56,6 @@ extension FrameDisconnect {
     func payload5() -> [UInt8] { return [] }
 
     func properties() -> [UInt8] {
-
         var properties = [UInt8]()
 
         // 3.14.2.2.2 Session Expiry Interval
@@ -85,7 +81,6 @@ extension FrameDisconnect {
     }
 
     func allData() -> [UInt8] {
-
         var allData = [UInt8]()
 
         allData += fixedHeader()
@@ -102,21 +97,18 @@ extension FrameDisconnect {
 }
 
 extension FrameDisconnect: InitialWithBytes {
-
     init?(packetFixedHeaderType: UInt8, bytes: [UInt8]) {
-
         var protocolVersion = ""
         if let storage = CocoaMQTTStorage() {
             protocolVersion = storage.queryMQTTVersion()
         }
 
         if protocolVersion == "5.0" {
-            if bytes.count > 0 {
+            if !bytes.isEmpty {
                 receiveReasonCode = CocoaMQTTDISCONNECTReasonCode(rawValue: bytes[0])
             }
         }
     }
-
 }
 
 extension FrameDisconnect: CustomStringConvertible {

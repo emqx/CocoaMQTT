@@ -33,7 +33,6 @@ import Foundation
 }
 
 extension CocoaMQTTQoS: Comparable {
-
     public static func < (lhs: CocoaMQTTQoS, rhs: CocoaMQTTQoS) -> Bool {
         return lhs.rawValue < rhs.rawValue
     }
@@ -73,13 +72,11 @@ enum FrameType: UInt8 {
 
 /// The frame can be initialized with a bytes
 protocol InitialWithBytes {
-
     init?(packetFixedHeaderType: UInt8, bytes: [UInt8])
 }
 
 /// MQTT Frame protocol
 protocol Frame {
-
     /// Each MQTT Control Packet contains a fixed header
     /// MQTT 3.1.1
     var packetFixedHeaderType: UInt8 {get set}
@@ -111,10 +108,8 @@ protocol Frame {
 }
 
 extension Frame {
-
     /// Pack struct to binary
     func bytes(version: String) -> [UInt8] {
-
         if version == "5.0" {
             let fixedHeader = self.fixedHeader()
             let variableHeader5 = self.variableHeader5()
@@ -133,7 +128,6 @@ extension Frame {
 
             return [packetFixedHeaderType] + remainingLen(len: len5) + variableHeader5 + properties + payload5
         } else {
-
             let variableHeader = self.variableHeader()
             let payload = self.payload()
 
@@ -148,7 +142,6 @@ extension Frame {
 
             return [packetFixedHeaderType] + remainingLen(len: len) + variableHeader + payload
         }
-
     }
 
     private func remainingLen(len: UInt32) -> [UInt8] {
@@ -172,7 +165,6 @@ extension Frame {
 
 /// Fixed Header Attributes
 extension Frame {
-
     /// The Fixed Header consist of the following attritutes
     ///
     /// +---------+----------+-------+--------+
@@ -192,7 +184,7 @@ extension Frame {
             return ((packetFixedHeaderType & 0x08) >> 3) == 0 ? false : true
         }
         set {
-            packetFixedHeaderType = (packetFixedHeaderType & 0xF7) | (newValue.bit  << 3)
+            packetFixedHeaderType = (packetFixedHeaderType & 0xF7) | (newValue.bit << 3)
         }
     }
 

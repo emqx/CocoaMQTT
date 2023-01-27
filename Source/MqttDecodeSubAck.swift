@@ -8,7 +8,6 @@
 import Foundation
 
 public class MqttDecodeSubAck: NSObject {
-
     var totalCount = 0
     var dataIndex = 0
     var propertyLength: Int = 0
@@ -90,7 +89,5 @@ public class MqttDecodeSubAck: NSObject {
                 dataIndex += 1
             }
         }
-
     }
-
 }

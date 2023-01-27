@@ -10,7 +10,6 @@ import Foundation
 
 /// MQTT PUBACK packet
 struct FramePubAck: Frame {
-
     var packetFixedHeaderType: UInt8 = FrameType.puback.rawValue
 
     // --- Attributes
@@ -20,14 +19,14 @@ struct FramePubAck: Frame {
     // --- Attributes End
 
     // 3.4.2.1 PUBACK Reason Code
-    public var reasonCode: CocoaMQTTPUBACKReasonCode?
+    var reasonCode: CocoaMQTTPUBACKReasonCode?
 
     // 3.4.2.2 PUBACK Properties
-    public var pubAckProperties: MqttDecodePubAck?
+    var pubAckProperties: MqttDecodePubAck?
     // 3.4.2.2.2 Reason String
-    public var reasonString: String?
+    var reasonString: String?
     // 3.4.2.2.3 User Property
-    public var userProperties: [String: String]?
+    var userProperties: [String: String]?
 
     /// MQTT 3.1.1
     init(msgid: UInt16) {
@@ -42,9 +41,7 @@ struct FramePubAck: Frame {
 }
 
 extension FramePubAck {
-
     func fixedHeader() -> [UInt8] {
-
         var header = [UInt8]()
         header += [FrameType.puback.rawValue]
 
@@ -52,7 +49,6 @@ extension FramePubAck {
     }
 
     func variableHeader5() -> [UInt8] {
-
         // 3.4.2 MSB+LSB
         var header = msgid.hlBytes
         // 3.4.2.1 PUBACK Reason Code
@@ -67,7 +63,6 @@ extension FramePubAck {
     func payload5() -> [UInt8] { return [] }
 
     func properties() -> [UInt8] {
-
         var properties = [UInt8]()
 
         // 3.4.2.2.2 Reason String
@@ -86,7 +81,6 @@ extension FramePubAck {
     }
 
     func allData() -> [UInt8] {
-
         var allData = [UInt8]()
 
         allData += fixedHeader()
@@ -103,7 +97,6 @@ extension FramePubAck {
 }
 
 extension FramePubAck: InitialWithBytes {
-
     init?(packetFixedHeaderType: UInt8, bytes: [UInt8]) {
         guard packetFixedHeaderType == FrameType.puback.rawValue else {
             return nil

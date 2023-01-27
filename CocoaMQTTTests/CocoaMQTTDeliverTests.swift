@@ -6,19 +6,10 @@
 //  Copyright © 2019 emqtt.io. All rights reserved.
 //
 
-import XCTest
 @testable import CocoaMQTT
+import XCTest
 
 class CocoaMQTTDeliverTests: XCTestCase {
-
-    override func setUp() {
-        // Put setup code here. This method is called before the invocation of each test method in the class.
-    }
-
-    override func tearDown() {
-        // Put teardown code here. This method is called after the invocation of each test method in the class.
-    }
-
     func testSerialDeliver() {
         let caller = Caller()
         let deliver = CocoaMQTTDeliver()
@@ -37,7 +28,6 @@ class CocoaMQTTDeliverTests: XCTestCase {
         for i in 0 ..< frames.count {
             assertEqual(frames[i], caller.frames[i])
         }
-
     }
 
     func testAckMessage() {
@@ -64,7 +54,7 @@ class CocoaMQTTDeliverTests: XCTestCase {
         XCTAssertEqual(inflights.count, 2)
         XCTAssertEqual(deliver.t_queuedFrames().count, 0)
         for i in 0 ..< inflights.count {
-            assertEqual(inflights[i], frames[i+1])
+            assertEqual(inflights[i], frames[i + 1])
         }
 
         deliver.ack(by: FramePubAck(msgid: 1))
@@ -99,10 +89,10 @@ class CocoaMQTTDeliverTests: XCTestCase {
         deliver.mqueueSize = 1
         deliver.delegate = caller
 
-        XCTAssertEqual(true, deliver.add(frames[1]))
+        XCTAssertTrue(deliver.add(frames[1]))
         ms_sleep(100) // Wait the message transfer to inflight-window
-        XCTAssertEqual(true, deliver.add(frames[2]))
-        XCTAssertEqual(false, deliver.add(frames[0]))
+        XCTAssertTrue(deliver.add(frames[2]))
+        XCTAssertFalse(deliver.add(frames[0]))
 
         ms_sleep(1100) // Wait for re-delivering timeout
         XCTAssertEqual(caller.frames.count, 2)
@@ -132,7 +122,6 @@ class CocoaMQTTDeliverTests: XCTestCase {
     }
 
     func testStorage() {
-
         let clientID = "deliver-unit-testing"
         let caller = Caller()
         let deliver = CocoaMQTTDeliver()
@@ -184,9 +173,7 @@ class CocoaMQTTDeliverTests: XCTestCase {
         XCTAssertEqual(storage.readAll().count, 0)
     }
 
-    func testTODO() {
-        // TODO: How to test large of messages combined qos0/qos1/qos2
-    }
+    // TODO: How to test large of messages combined qos0/qos1/qos2
 
     // Helper for assert equality for Frame
     private func assertEqual(_ f1: Frame, _ f2: Frame, _ lines: Int = #line) {
@@ -210,7 +197,6 @@ class CocoaMQTTDeliverTests: XCTestCase {
 }
 
 private class Caller: CocoaMQTTDeliverProtocol {
-
     private let delegateQueueKey = DispatchSpecificKey<String>()
     private let delegateQueueVal = "_custom_delegate_queue_"
 

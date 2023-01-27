@@ -14,12 +14,11 @@ import Foundation
 /// crashes that occur from calling resume multiple times on a timer that is
 /// already resumed (noted by https://github.com/SiftScience/sift-ios/issues/52)
 class CocoaMQTTTimer {
-
     let timeInterval: TimeInterval
     let startDelay: TimeInterval
     let name: String
 
-    init(delay: TimeInterval?=nil, name: String, timeInterval: TimeInterval) {
+    init(delay: TimeInterval? = nil, name: String, timeInterval: TimeInterval) {
         self.name = name
         self.timeInterval = timeInterval
         if let delay = delay {

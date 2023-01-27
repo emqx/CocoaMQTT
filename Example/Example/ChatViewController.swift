@@ -6,8 +6,8 @@
 //  Copyright © 2015年 emqtt.io. All rights reserved.
 //
 
-import UIKit
 import CocoaMQTT
+import UIKit
 
 class ChatViewController: UIViewController {
     var animal: String? {
@@ -40,26 +40,25 @@ class ChatViewController: UIViewController {
         }
     }
 
-    @IBOutlet weak var tableView: UITableView!
-    @IBOutlet weak var messageTextView: UITextView! {
+    @IBOutlet private weak var tableView: UITableView!
+    @IBOutlet private weak var messageTextView: UITextView! {
         didSet {
             messageTextView.layer.cornerRadius = 5
         }
     }
-    @IBOutlet weak var animalAvatarImageView: UIImageView!
-    @IBOutlet weak var sloganLabel: UILabel!
+    @IBOutlet private weak var animalAvatarImageView: UIImageView!
+    @IBOutlet private weak var sloganLabel: UILabel!
 
-    @IBOutlet weak var messageTextViewHeightConstraint: NSLayoutConstraint!
-    @IBOutlet weak var inputViewBottomConstraint: NSLayoutConstraint!
+    @IBOutlet private weak var messageTextViewHeightConstraint: NSLayoutConstraint!
+    @IBOutlet private weak var inputViewBottomConstraint: NSLayoutConstraint!
 
-    @IBOutlet weak var sendMessageButton: UIButton! {
+    @IBOutlet private weak var sendMessageButton: UIButton! {
         didSet {
             sendMessageButton.isEnabled = false
         }
     }
 
-    @IBAction func sendMessage() {
-
+    @IBAction private func sendMessage() {
         let message = messageTextView.text
 
         let publishProperties = MqttPublishProperties()
@@ -78,8 +77,7 @@ class ChatViewController: UIViewController {
         view.endEditing(true)
     }
 
-    @IBAction func disconnect() {
-
+    @IBAction private func disconnect() {
         if mqttVersion == "3.1.1" {
             mqtt!.disconnect()
         } else if mqttVersion == "5.0" {
@@ -194,7 +192,7 @@ extension ChatViewController: UITextViewDelegate {
             }
         }
 
-        if textView.text == "" {
+        if textView.text.isEmpty {
             sendMessageButton.isEnabled = false
         } else {
             sendMessageButton.isEnabled = true

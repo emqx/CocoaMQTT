@@ -8,7 +8,6 @@
 import Foundation
 
 public class MqttDecodeConnAck: NSObject {
-
 //    var connackData: [UInt8]
 //
 //    init(connackData: [UInt8]) {
@@ -77,7 +76,6 @@ public class MqttDecodeConnAck: NSObject {
                 }
 
                 switch propertyName.rawValue {
-
                 case CocoaMQTTPropertyName.sessionExpiryInterval.rawValue:
 
                     let comRes = integerCompute(data: connackData, formatType: FormatInt.formatUint32.rawValue, offset: index)
@@ -227,11 +225,7 @@ public class MqttDecodeConnAck: NSObject {
                 default:
                     break
                 }
-
             }
-
         }
-
     }
-
 }

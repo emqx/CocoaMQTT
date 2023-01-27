@@ -10,7 +10,6 @@ import Foundation
 
 /// MQTT Message
 public class CocoaMQTT5Message: NSObject {
-
     public var qos = CocoaMQTTQoS.qos1
 
     public var topic: String
@@ -25,7 +24,7 @@ public class CocoaMQTT5Message: NSObject {
     public var duplicated = false
 
     /// 3.1.3.2.3 Payload Format Indicator
-    public var isUTF8EncodedData: Bool = true
+    public var isUTF8EncodedData = true
     /// 3.1.3.2.2 Will Delay Interval
     public var willDelayInterval: UInt32? = 0
     /// 3.1.3.2.4 Message Expiry Interval
@@ -47,7 +46,6 @@ public class CocoaMQTT5Message: NSObject {
     }
 
     public var properties: [UInt8] {
-
         var properties = [UInt8]()
         var retVal = [UInt8]()
 
@@ -111,7 +109,6 @@ public class CocoaMQTT5Message: NSObject {
     }
 
     public init(topic: String, string: String, qos: CocoaMQTTQoS = .qos1, retained: Bool = false) {
-
         self.topic = topic
         self.payload = [UInt8](string.utf8)
         self.qos = qos
@@ -119,7 +116,6 @@ public class CocoaMQTT5Message: NSObject {
     }
 
     public init(topic: String, payload: [UInt8], qos: CocoaMQTTQoS = .qos1, retained: Bool = false) {
-
         self.topic = topic
         self.payload = payload
         self.qos = qos
@@ -127,21 +123,18 @@ public class CocoaMQTT5Message: NSObject {
     }
 }
 
-extension CocoaMQTT5Message {
-
-    public override var description: String {
+public extension CocoaMQTT5Message {
+    override var description: String {
         return "CocoaMQTT5Message(topic: \(topic), qos: \(qos), payload: \(payload.summary))"
     }
 }
 
 // For test
 extension CocoaMQTT5Message {
-
     var tPubFrame: FramePublish {
         var frame = FramePublish(topic: topic, payload: payload, qos: qos, msgid: 0)
         frame.retained = retained
         frame.dup = duplicated
         return frame
     }
-
 }

@@ -13,7 +13,7 @@ import MqttCocoaAsyncSocket
  * Conn Ack
  */
 @objc public enum CocoaMQTTConnAck: UInt8, CustomStringConvertible {
-    case accept  = 0
+    case accept = 0
     case unacceptableProtocolVersion
     case identifierRejected
     case serverUnavailable
@@ -45,7 +45,6 @@ import MqttCocoaAsyncSocket
 
 /// CocoaMQTT Delegate
 @objc public protocol CocoaMQTTDelegate {
-
     ///
     func mqtt(_ mqtt: CocoaMQTT, didConnectAck ack: CocoaMQTTConnAck)
 
@@ -98,7 +97,6 @@ public func setMqtt3Version() {
  * Blueprint of the MQTT Client
  */
 protocol CocoaMQTTClient {
-
     /* Basic Properties */
 
     var host: String { get set }
@@ -139,7 +137,6 @@ protocol CocoaMQTTClient {
 ///
 /// - Note: MGCDAsyncSocket need delegate to extend NSObject
 public class CocoaMQTT: NSObject, CocoaMQTTClient {
-
     public weak var delegate: CocoaMQTTDelegate?
 
     private var version = "3.1.1"
@@ -249,7 +246,7 @@ public class CocoaMQTT: NSObject, CocoaMQTTClient {
 
     ///
     public var sslSettings: [String: NSObject]? {
-        get { return (self.socket as? CocoaMQTTSocket)?.sslSettings ?? nil }
+        get { return (self.socket as? CocoaMQTTSocket)?.sslSettings }
         set { (self.socket as? CocoaMQTTSocket)?.sslSettings = newValue }
     }
 
@@ -324,7 +321,6 @@ public class CocoaMQTT: NSObject, CocoaMQTTClient {
     }
 
     fileprivate func sendConnectFrame() {
-
         var connect = FrameConnect(clientID: clientID)
         connect.keepAlive = keepAlive
         connect.username = username
@@ -515,7 +511,6 @@ public class CocoaMQTT: NSObject, CocoaMQTTClient {
 
 // MARK: CocoaMQTTDeliverProtocol
 extension CocoaMQTT: CocoaMQTTDeliverProtocol {
-
     func deliver(_ deliver: CocoaMQTTDeliver, wantToSend frame: Frame) {
         if let publish = frame as? FramePublish {
             let msgid = publish.msgid
@@ -544,7 +539,6 @@ extension CocoaMQTT: CocoaMQTTDeliverProtocol {
 }
 
 extension CocoaMQTT {
-
     func executeOnDelegateQueue(_ fun: @escaping () -> Void) {
         delegateQueue.async { [weak self] in
             guard self != nil else { return }
@@ -555,7 +549,6 @@ extension CocoaMQTT {
 
 // MARK: - CocoaMQTTSocketDelegate
 extension CocoaMQTT: CocoaMQTTSocketDelegate {
-
     public func socketConnected(_ socket: CocoaMQTTSocketProtocol) {
         sendConnectFrame()
     }
@@ -563,7 +556,6 @@ extension CocoaMQTT: CocoaMQTTSocketDelegate {
     public func socket(_ socket: CocoaMQTTSocketProtocol,
                        didReceive trust: SecTrust,
                        completionHandler: @escaping (Bool) -> Swift.Void) {
-
         printDebug("Call the SSL/TLS manually validating function")
 
         delegate?.mqtt?(self, didReceive: trust, completionHandler: completionHandler)
@@ -636,12 +628,10 @@ extension CocoaMQTT: CocoaMQTTSocketDelegate {
 
 // MARK: - CocoaMQTTReaderDelegate
 extension CocoaMQTT: CocoaMQTTReaderDelegate {
-
     func didReceive(_ reader: CocoaMQTTReader, connack: FrameConnAck) {
         printDebug("RECV: \(connack)")
 
         if connack.returnCode == .accept {
-
             // Disable auto-reconnect
 
             reconnectTimeInterval = 0
@@ -650,7 +640,7 @@ extension CocoaMQTT: CocoaMQTTReaderDelegate {
 
             // Start keepalive timer
 
-            let interval = Double(keepAlive <= 0 ? 60: keepAlive)
+            let interval = Double(keepAlive <= 0 ? 60 : keepAlive)
 
             aliveTimer = CocoaMQTTTimer.every(interval, name: "aliveTimer") { [weak self] in
                 guard let self = self else { return }
@@ -676,7 +666,6 @@ extension CocoaMQTT: CocoaMQTTReaderDelegate {
             }
 
             connState = .connected
-
         } else {
             connState = .disconnected
             internal_disconnect()
@@ -746,7 +735,7 @@ extension CocoaMQTT: CocoaMQTTReaderDelegate {
             return
         }
 
-        let success: NSMutableDictionary = NSMutableDictionary()
+        let success = NSMutableDictionary()
         var failed = [String]()
         for (idx, (topic, _)) in topicsAndQos.enumerated() {
             if suback.grantedQos[idx] != .FAILURE {

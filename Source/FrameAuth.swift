@@ -8,7 +8,6 @@
 import Foundation
 
 struct FrameAuth: Frame {
-
     var packetFixedHeaderType: UInt8 = FrameType.auth.rawValue
 
     // 3.15.2.1 Authenticate Reason Code
@@ -22,11 +21,9 @@ struct FrameAuth: Frame {
         self.sendReasonCode = reasonCode
         self.authProperties = authProperties
     }
-
 }
 
 extension FrameAuth {
-
     func fixedHeader() -> [UInt8] {
         var header = [UInt8]()
         header += [FrameType.auth.rawValue]
@@ -48,7 +45,6 @@ extension FrameAuth {
 
     func properties() -> [UInt8] {
         return authProperties?.properties ?? []
-
     }
 
     func allData() -> [UInt8] {
@@ -68,10 +64,7 @@ extension FrameAuth {
 }
 
 extension FrameAuth: InitialWithBytes {
-
     init?(packetFixedHeaderType: UInt8, bytes: [UInt8]) {
-
         receiveReasonCode = CocoaMQTTAUTHReasonCode(rawValue: bytes[0])
     }
-
 }

@@ -8,7 +8,6 @@
 import Foundation
 
 public class MqttDecodePubAck: NSObject {
-
     var totalCount = 0
     var dataIndex = 0
     var propertyLength: Int = 0
@@ -55,7 +54,6 @@ public class MqttDecodePubAck: NSObject {
             let occupyIndex = dataIndex
 
             while dataIndex < occupyIndex + propertyLength {
-
                 let resVariableByteInteger = decodeVariableByteInteger(data: pubAckData, offset: dataIndex)
                 dataIndex = resVariableByteInteger.newOffset
                 let propertyNameByte = resVariableByteInteger.res
@@ -93,10 +91,7 @@ public class MqttDecodePubAck: NSObject {
                 default:
                     return
                 }
-
             }
-
         }
-
     }
 }

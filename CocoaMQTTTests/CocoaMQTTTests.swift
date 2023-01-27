@@ -6,8 +6,8 @@
 //  Copyright © 2015年 emqx.io. All rights reserved.
 //
 
-import XCTest
 @testable import CocoaMQTT
+import XCTest
 #if IS_SWIFT_PACKAGE
 @testable import CocoaMQTTWebSocket
 #endif
@@ -21,7 +21,6 @@ private let delegateQueueKey = DispatchSpecificKey<String>()
 private let delegateQueueVal = "_custom_delegate_queue_"
 
 class CocoaMQTTTests: XCTestCase {
-
     var deleQueue: DispatchQueue!
 
     override func setUp() {
@@ -83,7 +82,6 @@ class CocoaMQTTTests: XCTestCase {
             caller.isConnected == false
         }
         XCTAssertEqual(mqtt.connState, .disconnected)
-
     }
 
     // This is a basic test of the websocket authentication used by AWS IoT Custom Authorizers
@@ -229,7 +227,7 @@ class CocoaMQTTTests: XCTestCase {
 
         mqtt.publish("t/1", withString: longStringGen(), qos: .qos2)
         wait_for {
-            guard caller.recvs.count > 0 else {
+            guard !caller.recvs.isEmpty else {
                 return false
             }
             XCTAssertEqual(caller.recvs[0].topic, "t/1")
@@ -287,7 +285,7 @@ class CocoaMQTTTests: XCTestCase {
 
         _ = mqtt.connect()
         wait_for { caller.isConnected }
-        XCTAssertEqual(caller.isSSL, true)
+        XCTAssertTrue(caller.isSSL)
         XCTAssertEqual(mqtt.connState, .connected)
 
         mqtt.disconnect()
@@ -313,13 +311,12 @@ class CocoaMQTTTests: XCTestCase {
 
         _ = mqtt.connect()
         wait_for { caller.isConnected }
-        XCTAssertEqual(caller.isSSL, true)
+        XCTAssertTrue(caller.isSSL)
         XCTAssertEqual(mqtt.connState, .connected)
 
         mqtt.disconnect()
         wait_for { caller.isConnected == false }
         XCTAssertEqual(mqtt.connState, .disconnected)
-
     }
 }
 
@@ -387,7 +384,6 @@ extension CocoaMQTTTests {
 }
 
 private class Caller: CocoaMQTTDelegate {
-
     var recvs = [FramePublish]()
 
     var sents = [UInt16]()
@@ -434,7 +430,7 @@ private class Caller: CocoaMQTTDelegate {
     func mqtt(_ mqtt: CocoaMQTT, didUnsubscribeTopics topics: [String]) {
         assert_in_del_queue()
 
-        subs = subs.filter { (e) -> Bool in
+        subs = subs.filter { e -> Bool in
             !topics.contains(e)
         }
     }

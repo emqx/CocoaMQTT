@@ -8,7 +8,6 @@
 import Foundation
 
 public class MqttAuthProperties: NSObject {
-
     // 3.15.2.2.2 Authentication Method
     public var authenticationMethod: String?
     // 3.15.2.2.3 Authentication Data
@@ -42,5 +41,4 @@ public class MqttAuthProperties: NSObject {
 
         return properties
     }
-
 }

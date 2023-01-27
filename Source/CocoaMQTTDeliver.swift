@@ -6,25 +6,23 @@
 //  Copyright © 2019 emqx.io. All rights reserved.
 //
 
-import Foundation
 import Dispatch
+import Foundation
 
 protocol CocoaMQTTDeliverProtocol: AnyObject {
-
     var delegateQueue: DispatchQueue { get set }
 
     func deliver(_ deliver: CocoaMQTTDeliver, wantToSend frame: Frame)
 }
 
 private struct InflightFrame {
-
     /// The infligth frame maybe a `FramePublish` or `FramePubRel`
     var frame: Frame
 
     var timestamp: TimeInterval
 
     init(frame: Frame) {
-        self.init(frame: frame, timestamp: Date.init(timeIntervalSinceNow: 0).timeIntervalSince1970)
+        self.init(frame: frame, timestamp: Date(timeIntervalSinceNow: 0).timeIntervalSince1970)
     }
 
     init(frame: Frame, timestamp: TimeInterval) {
@@ -34,7 +32,6 @@ private struct InflightFrame {
 }
 
 extension Array where Element == InflightFrame {
-
     func filterMap(isIncluded: (Element) -> (Bool, Element)) -> [Element] {
         var tmp = [Element]()
         for e in self {
@@ -49,9 +46,8 @@ extension Array where Element == InflightFrame {
 
 // CocoaMQTTDeliver
 class CocoaMQTTDeliver: NSObject {
-
     /// The dispatch queue is used by delivering frames in serially
-    private var deliverQueue = DispatchQueue.init(label: "deliver.cocoamqtt.emqx", qos: .default)
+    private var deliverQueue = DispatchQueue(label: "deliver.cocoamqtt.emqx", qos: .default)
 
     weak var delegate: CocoaMQTTDeliverProtocol?
 
@@ -68,19 +64,18 @@ class CocoaMQTTDeliver: NSObject {
 
     private var awaitingTimer: CocoaMQTTTimer?
 
-    var isQueueEmpty: Bool { return mqueue.count == 0 }
+    var isQueueEmpty: Bool { return mqueue.isEmpty }
     var isQueueFull: Bool { return mqueue.count >= mqueueSize }
     var isInflightFull: Bool { return inflight.count >= inflightWindowSize }
-    var isInflightEmpty: Bool { return inflight.count == 0 }
+    var isInflightEmpty: Bool { return inflight.isEmpty }
 
     var storage: CocoaMQTTStorage?
 
     func recoverSessionBy(_ storage: CocoaMQTTStorage) {
-
         let frames = storage.takeAll()
-        guard frames.count >= 0 else {
-            return
-        }
+        // guard frames.count >= 0 else {
+        //     return
+        // }
 
         // Sync to push the frame to mqueue for avoiding overcommit
         deliverQueue.sync {
@@ -138,7 +133,7 @@ class CocoaMQTTDeliver: NSObject {
         deliverQueue.async { [weak self] in
             guard let self = self else { return }
             let acked = self.ackInflightFrame(withMsgid: msgid, type: frame.type)
-            if acked.count == 0 {
+            if acked.isEmpty {
                 printWarning("Acknowledge by \(frame), but not found in inflight window")
             } else {
                 // TODO: ACK DONT DELETE PUBREL
@@ -167,7 +162,6 @@ class CocoaMQTTDeliver: NSObject {
 
 // MARK: Private Funcs
 extension CocoaMQTTDeliver {
-
     // try transport a frame from mqueue to inflight
     private func tryTransport() {
         if isQueueEmpty || isInflightFull { return }
@@ -189,7 +183,6 @@ extension CocoaMQTTDeliver {
             // TODO: A retrict deliver mode is need?
             sendfun(frame)
         } else {
-
             sendfun(frame)
             inflight.append(InflightFrame(frame: frame))
 
@@ -214,7 +207,7 @@ extension CocoaMQTTDeliver {
         }
 
         let nowTimestamp = Date(timeIntervalSinceNow: 0).timeIntervalSince1970
-        for (idx, frame) in inflight.enumerated() where (nowTimestamp - frame.timestamp) >= (retryTimeInterval/1000.0) {
+        for (idx, frame) in inflight.enumerated() where (nowTimestamp - frame.timestamp) >= (retryTimeInterval / 1000.0) {
             var duplicatedFrame = frame
             duplicatedFrame.frame.dup = true
             duplicatedFrame.timestamp = nowTimestamp
@@ -230,11 +223,9 @@ extension CocoaMQTTDeliver {
     private func ackInflightFrame(withMsgid msgid: UInt16, type: FrameType) -> [Frame] {
         var ackedFrames = [Frame]()
         inflight = inflight.filterMap { frame in
-
             // -- ACK for PUBLISH
             if let publish = frame.frame as? FramePublish,
                 publish.msgid == msgid {
-
                 if publish.qos == .qos2 && type == .pubrec {  // -- Replace PUBLISH with PUBREL
                     let pubrel = FramePubRel(msgid: publish.msgid)
 
@@ -256,7 +247,6 @@ extension CocoaMQTTDeliver {
             // -- ACK for PUBREL
             if let pubrel = frame.frame as? FramePubRel,
                 pubrel.msgid == msgid && type == .pubcomp {
-
                 ackedFrames.append(pubrel)
                 return (false, frame)
             }
@@ -284,7 +274,6 @@ extension CocoaMQTTDeliver {
 
 // For tests
 extension CocoaMQTTDeliver {
-
     func t_inflightFrames() -> [Frame] {
         var frames = [Frame]()
         for f in inflight {

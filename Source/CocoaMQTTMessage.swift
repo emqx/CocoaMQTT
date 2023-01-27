@@ -10,7 +10,6 @@ import Foundation
 
 /// MQTT Message
 public class CocoaMQTTMessage: NSObject {
-
     public var qos = CocoaMQTTQoS.qos1
 
     public var topic: String
@@ -46,21 +45,18 @@ public class CocoaMQTTMessage: NSObject {
     }
 }
 
-extension CocoaMQTTMessage {
-
-    public override var description: String {
+public extension CocoaMQTTMessage {
+    override var description: String {
         return "CocoaMQTTMessage(topic: \(topic), qos: \(qos), payload: \(payload.summary))"
     }
 }
 
 // For test
 extension CocoaMQTTMessage {
-
     var tPubFrame: FramePublish {
         var frame = FramePublish(topic: topic, payload: payload, qos: qos, msgid: 0)
         frame.retained = retained
         frame.dup = duplicated
         return frame
     }
-
 }

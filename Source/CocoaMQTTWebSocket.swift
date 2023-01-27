@@ -14,7 +14,6 @@ import CocoaMQTT
 // MARK: - Interfaces
 
 public protocol CocoaMQTTWebSocketConnectionDelegate: AnyObject {
-
     func connection(_ conn: CocoaMQTTWebSocketConnection, didReceive trust: SecTrust, completionHandler: @escaping (Bool) -> Swift.Void)
 
     func urlSessionConnection(_ conn: CocoaMQTTWebSocketConnection, didReceiveTrust trust: SecTrust, didReceiveChallenge challenge: URLAuthenticationChallenge, completionHandler: @escaping (URLSession.AuthChallengeDisposition, URLCredential?) -> Void)
@@ -29,7 +28,6 @@ public protocol CocoaMQTTWebSocketConnectionDelegate: AnyObject {
 }
 
 public protocol CocoaMQTTWebSocketConnection: NSObjectProtocol {
-
     var delegate: CocoaMQTTWebSocketConnectionDelegate? { get set }
 
     var queue: DispatchQueue { get set }
@@ -42,15 +40,12 @@ public protocol CocoaMQTTWebSocketConnection: NSObjectProtocol {
 }
 
 public protocol CocoaMQTTWebSocketConnectionBuilder {
-
     func buildConnection(forURL url: URL, withHeaders headers: [String: String]) throws -> CocoaMQTTWebSocketConnection
-
 }
 
 // MARK: - CocoaMQTTWebSocket
 
 public class CocoaMQTTWebSocket: CocoaMQTTSocketProtocol {
-
     public var enableSSL = false
 
     public var shouldConnectWithURIOnly = false
@@ -60,7 +55,6 @@ public class CocoaMQTTWebSocket: CocoaMQTTSocketProtocol {
     public typealias ConnectionBuilder = CocoaMQTTWebSocketConnectionBuilder
 
     public struct DefaultConnectionBuilder: ConnectionBuilder {
-
         public init() {}
 
         public func buildConnection(forURL url: URL, withHeaders headers: [String: String]) throws -> CocoaMQTTWebSocketConnection {
@@ -70,7 +64,7 @@ public class CocoaMQTTWebSocket: CocoaMQTTSocketProtocol {
                 return CocoaMQTTWebSocket.FoundationConnection(url: url, config: config)
             } else {
                 var request = URLRequest(url: url)
-                headers.forEach { request.setValue($1, forHTTPHeaderField: $0)}
+                headers.forEach { request.setValue($1, forHTTPHeaderField: $0) }
                 return CocoaMQTTWebSocket.StarscreamConnection(request: request)
             }
         }
@@ -82,8 +76,10 @@ public class CocoaMQTTWebSocket: CocoaMQTTSocketProtocol {
             self.delegateQueue = delegateQueue
         }
     }
+
     let uri: String
     let builder: ConnectionBuilder
+
     public init(uri: String = "", builder: ConnectionBuilder = CocoaMQTTWebSocket.DefaultConnectionBuilder()) {
         self.uri = uri
         self.builder = builder
@@ -94,13 +90,12 @@ public class CocoaMQTTWebSocket: CocoaMQTTSocketProtocol {
     }
 
     public func connect(toHost host: String, onPort port: UInt16, withTimeout timeout: TimeInterval) throws {
-
         var urlStr = ""
 
         if shouldConnectWithURIOnly {
             urlStr = "\(uri)"
         } else {
-            urlStr = "\(enableSSL ? "wss": "ws")://\(host):\(port)\(uri)"
+            urlStr = "\(enableSSL ? "wss" : "ws")://\(host):\(port)\(uri)"
         }
 
         guard let url = URL(string: urlStr) else { throw CocoaMQTTError.invalidURL }
@@ -207,6 +202,7 @@ public class CocoaMQTTWebSocket: CocoaMQTTSocketProtocol {
     private var readBuffer = Data()
     private var scheduledReads: [ReadItem] = []
     private lazy var readTimeoutTimer = ReusableTimer(queue: internalQueue)
+
     private func checkScheduledReads() {
         guard let theDelegate = delegate else { return }
         guard let delegateQueue = delegateQueue else { return }
@@ -237,12 +233,15 @@ public class CocoaMQTTWebSocket: CocoaMQTTSocketProtocol {
         let uuid = UUID()
         let tag: Int
         let timeout: DispatchWallTime
+
         func hash(into hasher: inout Hasher) {
             hasher.combine(uuid)
         }
     }
+
     private var scheduledWrites = Set<WriteItem>()
     private lazy var writeTimeoutTimer = ReusableTimer(queue: internalQueue)
+
     private func checkScheduledWrites() {
         writeTimeoutTimer.reset()
         guard let closestTimeout = scheduledWrites.sorted(by: { a, b in a.timeout < b.timeout }).first?.timeout else { return }
@@ -308,7 +307,6 @@ extension CocoaMQTTWebSocket: CocoaMQTTWebSocketConnectionDelegate {
 @available(OSX 10.15, iOS 13.0, watchOS 6.0, tvOS 13.0, *)
 public extension CocoaMQTTWebSocket {
     class FoundationConnection: NSObject, CocoaMQTTWebSocketConnection {
-
         public weak var delegate: CocoaMQTTWebSocketConnectionDelegate?
         public lazy var queue = DispatchQueue(label: "CocoaMQTTFoundationWebSocketConnection-\(self.hashValue)")
 
@@ -450,7 +448,6 @@ extension CocoaMQTTWebSocket.StarscreamConnection: SSLTrustValidator {
 }
 
 extension CocoaMQTTWebSocket.StarscreamConnection: WebSocketDelegate {
-
     public func websocketDidConnect(socket: WebSocketClient) {
         delegate?.connectionOpened(self)
     }
@@ -471,7 +468,6 @@ extension CocoaMQTTWebSocket.StarscreamConnection: WebSocketDelegate {
 // MARK: - Helper
 
 extension CocoaMQTTWebSocket {
-
     func executeOnDelegateQueue(_ fun: @escaping () -> Void) {
         delegateQueue?.async { [weak self] in
             guard self != nil else { return }

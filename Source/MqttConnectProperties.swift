@@ -8,7 +8,6 @@
 import Foundation
 
 public class MqttConnectProperties: NSObject {
-
     // 3.1.2.11.1 Property Length
     // public var propertyLength: UInt8?
     // 3.1.2.11.2 Session Expiry Interval
@@ -78,5 +77,4 @@ public class MqttConnectProperties: NSObject {
 
         return properties
     }
-
 }

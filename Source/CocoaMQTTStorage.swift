@@ -9,7 +9,6 @@
 import Foundation
 
 protocol CocoaMQTTStorageProtocol {
-
     var clientId: String { get set }
 
     init?(by clientId: String)
@@ -29,12 +28,11 @@ protocol CocoaMQTTStorageProtocol {
 }
 
 final class CocoaMQTTStorage: CocoaMQTTStorageProtocol {
-
     var clientId: String = ""
 
-    var userDefault: UserDefaults = UserDefaults()
+    var userDefault = UserDefaults()
 
-    var versionDefault: UserDefaults = UserDefaults()
+    var versionDefault = UserDefaults()
 
     init?() {
         versionDefault = UserDefaults()
@@ -118,7 +116,7 @@ final class CocoaMQTTStorage: CocoaMQTTStorageProtocol {
         }
         /// bytes 1..<5 may be 'Remaining Length'
         for i in 1 ..< min(5, bytes.count) where (bytes[i] & 0x80) == 0 {
-            return (bytes[0], Array(bytes.suffix(from: i+1)))
+            return (bytes[0], Array(bytes.suffix(from: i + 1)))
         }
 
         return nil
@@ -126,7 +124,7 @@ final class CocoaMQTTStorage: CocoaMQTTStorageProtocol {
 
     private func read(needDelete: Bool) -> [Frame] {
         var frames = [Frame]()
-        let allObjs = userDefault.dictionaryRepresentation().sorted { (k1, k2) in
+        let allObjs = userDefault.dictionaryRepresentation().sorted { k1, k2 in
             return k1.key < k2.key
         }
         for (k, v) in allObjs {
@@ -145,5 +143,4 @@ final class CocoaMQTTStorage: CocoaMQTTStorageProtocol {
         }
         return frames
     }
-
 }

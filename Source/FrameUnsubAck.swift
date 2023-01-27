@@ -10,7 +10,6 @@ import Foundation
 
 /// MQTT UNSUBACK packet
 struct FrameUnsubAck: Frame {
-
     var packetFixedHeaderType: UInt8 = FrameType.unsuback.rawValue
 
     // --- Attributes
@@ -20,11 +19,11 @@ struct FrameUnsubAck: Frame {
     // --- Attributes End
 
     // 3.10.2.1 UNSUBSCRIBE Properties
-    public var unSubAckProperties: MqttDecodeUnsubAck?
+    var unSubAckProperties: MqttDecodeUnsubAck?
     // 3.11.2 Property
-    public var userProperty: [String: String]?
+    var userProperty: [String: String]?
     // 3.11.2.1.2 Reason String
-    public var reasonString: String?
+    var reasonString: String?
 
     // swiftlint:disable:next identifier_name
     var _payload: [UInt8] = []
@@ -36,9 +35,7 @@ struct FrameUnsubAck: Frame {
 }
 
 extension FrameUnsubAck {
-
     func fixedHeader() -> [UInt8] {
-
         var header = [UInt8]()
         header += [FrameType.unsuback.rawValue]
 
@@ -46,7 +43,6 @@ extension FrameUnsubAck {
     }
 
     func variableHeader5() -> [UInt8] {
-
         // 3.11.2 MSB+LSB
         var header = msgid.hlBytes
 
@@ -59,7 +55,6 @@ extension FrameUnsubAck {
     func payload5() -> [UInt8] { return _payload }
 
     func properties() -> [UInt8] {
-
         var properties = [UInt8]()
 
         // 3.11.2.1.2 Reason String
@@ -79,7 +74,6 @@ extension FrameUnsubAck {
     }
 
     func allData() -> [UInt8] {
-
         var allData = [UInt8]()
 
         allData += fixedHeader()
@@ -96,7 +90,6 @@ extension FrameUnsubAck {
 }
 
 extension FrameUnsubAck: InitialWithBytes {
-
     init?(packetFixedHeaderType: UInt8, bytes: [UInt8]) {
         guard packetFixedHeaderType == FrameType.unsuback.rawValue else {
             return nil
@@ -110,7 +103,6 @@ extension FrameUnsubAck: InitialWithBytes {
 
         self.unSubAckProperties = MqttDecodeUnsubAck()
         self.unSubAckProperties!.decodeUnSubAck(fixedHeader: packetFixedHeaderType, pubAckData: bytes)
-
     }
 }
 

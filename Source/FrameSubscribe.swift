@@ -10,8 +10,7 @@ import Foundation
 
 /// MQTT SUBSCRIBE Frame
 struct FrameSubscribe: Frame {
-
-    var packetFixedHeaderType: UInt8 = UInt8(FrameType.subscribe.rawValue + 2)
+    var packetFixedHeaderType = UInt8(FrameType.subscribe.rawValue + 2)
 
     // --- Attributes
 
@@ -22,16 +21,16 @@ struct FrameSubscribe: Frame {
     // --- Attributes End
 
     // 3.8.2 SUBSCRIBE Variable Header
-    public var packetIdentifier: UInt16?
+    var packetIdentifier: UInt16?
 
     // 3.8.2.1.2 Subscription Identifier
-    public var subscriptionIdentifier: UInt32?
+    var subscriptionIdentifier: UInt32?
 
     // 3.8.2.1.3 User Property
-    public var userProperty: [String: String]?
+    var userProperty: [String: String]?
 
     // 3.8.3 SUBSCRIBE Payload
-    public var topicFilters: [MqttSubscription]?
+    var topicFilters: [MqttSubscription]?
 
     /// MQTT 3.1.1
     init(msgid: UInt16, topic: String, reqos: CocoaMQTTQoS) {
@@ -51,13 +50,10 @@ struct FrameSubscribe: Frame {
         self.msgid = msgid
         self.topicFilters = subscriptionList
     }
-
 }
 
 extension FrameSubscribe {
-
     func fixedHeader() -> [UInt8] {
-
         var header = [UInt8]()
         header += [FrameType.subscribe.rawValue]
 
@@ -65,7 +61,6 @@ extension FrameSubscribe {
     }
 
     func variableHeader5() -> [UInt8] {
-
         // 3.8.2 SUBSCRIBE Variable Header
         // The Variable Header of the SUBSCRIBE Packet contains the following fields in the order: Packet Identifier, and Properties.
 
@@ -78,7 +73,6 @@ extension FrameSubscribe {
     }
 
     func payload5() -> [UInt8] {
-
         var payload = [UInt8]()
 
         for subscription in self.topicFilters! {
@@ -90,7 +84,6 @@ extension FrameSubscribe {
     }
 
     func properties() -> [UInt8] {
-
         var properties = [UInt8]()
 
         // 3.8.2.1.2 Subscription Identifier
@@ -107,11 +100,9 @@ extension FrameSubscribe {
         }
 
         return properties
-
     }
 
     func allData() -> [UInt8] {
-
         var allData = [UInt8]()
 
         allData += fixedHeader()
@@ -125,7 +116,6 @@ extension FrameSubscribe {
     func variableHeader() -> [UInt8] { return msgid!.hlBytes }
 
     func payload() -> [UInt8] {
-
         var payload = [UInt8]()
 
         for (topic, qos) in topics! {
@@ -138,7 +128,6 @@ extension FrameSubscribe {
 }
 
 extension FrameSubscribe: CustomStringConvertible {
-
     var description: String {
         var protocolVersion = ""
         if let storage = CocoaMQTTStorage() {

@@ -10,8 +10,7 @@ import Foundation
 
 /// MQTT UNSUBSCRIBE packet
 struct FrameUnsubscribe: Frame {
-
-    var packetFixedHeaderType: UInt8 = UInt8(FrameType.unsubscribe.rawValue + 2)
+    var packetFixedHeaderType = UInt8(FrameType.unsubscribe.rawValue + 2)
 
     // --- Attributes
 
@@ -26,7 +25,7 @@ struct FrameUnsubscribe: Frame {
     // --- Attribetes end
 
     // 3.10.2.1.2 User Property
-    public var userProperty: [String: String]?
+    var userProperty: [String: String]?
 
     /// MQTT 3.1.1
     init(msgid: UInt16, topics: [String]) {
@@ -43,13 +42,10 @@ struct FrameUnsubscribe: Frame {
 
         qos = CocoaMQTTQoS.qos1
     }
-
 }
 
 extension FrameUnsubscribe {
-
     func fixedHeader() -> [UInt8] {
-
         var header = [UInt8]()
         header += [FrameType.unsubscribe.rawValue]
 
@@ -57,7 +53,6 @@ extension FrameUnsubscribe {
     }
 
     func variableHeader5() -> [UInt8] {
-
         // MQTT 5.0
         var header = [UInt8]()
         header = msgid!.hlBytes
@@ -66,7 +61,6 @@ extension FrameUnsubscribe {
     }
 
     func payload5() -> [UInt8] {
-
         var payload = [UInt8]()
 
         for subscription in topicFilters! {
@@ -78,7 +72,6 @@ extension FrameUnsubscribe {
     }
 
     func properties() -> [UInt8] {
-
         var properties = [UInt8]()
 
         // 3.10.2.1.2 User Property
@@ -93,7 +86,6 @@ extension FrameUnsubscribe {
     }
 
     func allData() -> [UInt8] {
-
         var allData = [UInt8]()
 
         allData += fixedHeader()
@@ -107,7 +99,6 @@ extension FrameUnsubscribe {
     func variableHeader() -> [UInt8] { return msgid!.hlBytes }
 
     func payload() -> [UInt8] {
-
         var payload = [UInt8]()
 
         for t in topics! {
@@ -116,11 +107,9 @@ extension FrameUnsubscribe {
 
         return payload
     }
-
 }
 
 extension FrameUnsubscribe: CustomStringConvertible {
-
     var description: String {
         var protocolVersion = ""
         if let storage = CocoaMQTTStorage() {

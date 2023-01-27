@@ -11,7 +11,6 @@ import Foundation
 /// ublish complete (QoS 2 delivery part 3)
 /// The PUBCOMP packet is the response to a PUBREL packet. It is the fourth and final packet of the QoS 2 protocol exchange.
 struct FramePubComp: Frame {
-
     var packetFixedHeaderType: UInt8 = FrameType.pubcomp.rawValue
 
     // --- Attributes
@@ -21,14 +20,14 @@ struct FramePubComp: Frame {
     // --- Attributes End
 
     // 3.7.2.1 PUBCOMP Reason Code
-    public var reasonCode: CocoaMQTTPUBCOMPReasonCode?
+    var reasonCode: CocoaMQTTPUBCOMPReasonCode?
 
     // 3.7.2.2 PUBCOMP Properties
-    public var pubCompProperties: MqttDecodePubComp?
+    var pubCompProperties: MqttDecodePubComp?
     // 3.7.2.2.2 Reason String
-    public var reasonString: String?
+    var reasonString: String?
     // 3.7.2.2.3 User Property
-    public var userProperties: [String: String]?
+    var userProperties: [String: String]?
 
     /// MQTT 3.1.1
     init(msgid: UInt16) {
@@ -43,9 +42,7 @@ struct FramePubComp: Frame {
 }
 
 extension FramePubComp {
-
     func fixedHeader() -> [UInt8] {
-
         var header = [UInt8]()
         header += [FrameType.pubcomp.rawValue]
 
@@ -53,7 +50,6 @@ extension FramePubComp {
     }
 
     func variableHeader5() -> [UInt8] {
-
         // 3.7.2 MSB+LSB
         var header = msgid.hlBytes
         // 3.7.2.1 PUBACK Reason Code
@@ -68,7 +64,6 @@ extension FramePubComp {
     func payload5() -> [UInt8] { return [] }
 
     func properties() -> [UInt8] {
-
         var properties = [UInt8]()
 
         // 3.7.2.2.2 Reason String
@@ -87,7 +82,6 @@ extension FramePubComp {
     }
 
     func allData() -> [UInt8] {
-
         var allData = [UInt8]()
 
         allData += fixedHeader()
@@ -104,9 +98,7 @@ extension FramePubComp {
 }
 
 extension FramePubComp: InitialWithBytes {
-
     init?(packetFixedHeaderType: UInt8, bytes: [UInt8]) {
-
         guard packetFixedHeaderType == FrameType.pubcomp.rawValue else {
             return nil
         }

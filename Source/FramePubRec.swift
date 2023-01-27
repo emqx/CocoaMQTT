@@ -10,7 +10,6 @@ import Foundation
 
 /// MQTT PUBREC packet
 struct FramePubRec: Frame {
-
     var packetFixedHeaderType: UInt8 = FrameType.pubrec.rawValue
 
     // --- Attributes
@@ -20,14 +19,14 @@ struct FramePubRec: Frame {
     // --- Attributes End
 
     // 3.5.2.1 PUBREC Reason Code
-    public var reasonCode: CocoaMQTTPUBRECReasonCode?
+    var reasonCode: CocoaMQTTPUBRECReasonCode?
 
     // 3.5.2.2 PUBREC Properties
-    public var pubRecProperties: MqttDecodePubRec?
+    var pubRecProperties: MqttDecodePubRec?
     // 3.5.2.2.2 Reason String
-    public var reasonString: String?
+    var reasonString: String?
     // 3.5.2.2.3 User Property
-    public var userProperties: [String: String]?
+    var userProperties: [String: String]?
 
     /// MQTT 3.1.1
     init(msgid: UInt16) {
@@ -42,9 +41,7 @@ struct FramePubRec: Frame {
 }
 
 extension FramePubRec {
-
     func fixedHeader() -> [UInt8] {
-
         var header = [UInt8]()
         header += [FrameType.pubrec.rawValue]
 
@@ -52,7 +49,6 @@ extension FramePubRec {
     }
 
     func variableHeader5() -> [UInt8] {
-
         // 3.5.2 MSB+LSB
         var header = msgid.hlBytes
         // 3.5.2.1 PUBACK Reason Code
@@ -67,7 +63,6 @@ extension FramePubRec {
     func payload5() -> [UInt8] { return [] }
 
     func properties() -> [UInt8] {
-
         var properties = [UInt8]()
 
         // 3.5.2.2.2 Reason String
@@ -86,7 +81,6 @@ extension FramePubRec {
     }
 
     func allData() -> [UInt8] {
-
         var allData = [UInt8]()
 
         allData += fixedHeader()
@@ -103,9 +97,7 @@ extension FramePubRec {
 }
 
 extension FramePubRec: InitialWithBytes {
-
     init?(packetFixedHeaderType: UInt8, bytes: [UInt8]) {
-
         guard packetFixedHeaderType == FrameType.pubrec.rawValue else {
             return nil
         }

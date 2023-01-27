@@ -6,11 +6,10 @@
 //  Copyright © 2015年 emqtt.io. All rights reserved.
 //
 
-import UIKit
 import CocoaMQTT
+import UIKit
 
 class ViewController: UIViewController {
-
     // let defaultHost = "localhost"
     // OR
     // TEST Broker
@@ -21,9 +20,9 @@ class ViewController: UIViewController {
     var animal: String?
     var mqttVesion: String?
 
-    @IBOutlet weak var versionControl: UISegmentedControl!
-    @IBOutlet weak var connectButton: UIButton!
-    @IBOutlet weak var animalsImageView: UIImageView! {
+    @IBOutlet private weak var versionControl: UISegmentedControl!
+    @IBOutlet private weak var connectButton: UIButton!
+    @IBOutlet private weak var animalsImageView: UIImageView! {
         didSet {
             animalsImageView.clipsToBounds = true
             animalsImageView.layer.borderWidth = 1.0
@@ -31,16 +30,15 @@ class ViewController: UIViewController {
         }
     }
 
-    @IBAction func connectToServer() {
+    @IBAction private func connectToServer() {
         if mqttVesion == "3.1.1" {
             _ = mqtt!.connect()
         } else if mqttVesion == "5.0"{
             _ = mqtt5!.connect()
         }
-
     }
 
-    @IBAction func mqttVersionControl(_ sender: UISegmentedControl) {
+    @IBAction private func mqttVersionControl(_ sender: UISegmentedControl) {
         animal = tabBarController?.selectedViewController?.tabBarItem.title
         mqttVesion = versionControl.titleForSegment(at: versionControl.selectedSegmentIndex)
 
@@ -64,10 +62,10 @@ class ViewController: UIViewController {
         mqttSettingList()
 
         print("welcome to MQTT \(String(describing: mqttVesion))  \(String(describing: animal))")
-
     }
 
     override func viewWillAppear(_ animated: Bool) {
+        super.viewWillAppear(animated)
         navigationController?.navigationBar.isHidden = false
     }
 
@@ -80,9 +78,7 @@ class ViewController: UIViewController {
     }
 
     func mqttSetting() {
-
         if mqttVesion == "3.1.1" {
-
             let clientID = "CocoaMQTT-\(animal!)-" + String(ProcessInfo().processIdentifier)
             mqtt = CocoaMQTT(clientID: clientID, host: defaultHost, port: 1883)
             mqtt!.logLevel = .debug
@@ -94,7 +90,6 @@ class ViewController: UIViewController {
             // mqtt!.autoReconnect = true
 
         } else if mqttVesion == "5.0" {
-
             let clientID = "CocoaMQTT5-\(animal!)-" + String(ProcessInfo().processIdentifier)
             mqtt5 = CocoaMQTT5(clientID: clientID, host: defaultHost, port: 1883)
             mqtt5!.logLevel = .debug
@@ -121,13 +116,10 @@ class ViewController: UIViewController {
             // mqtt5!.autoReconnect = true
 
         }
-
     }
 
     func simpleSSLSetting() {
-
         if mqttVesion == "3.1.1" {
-
             let clientID = "CocoaMQTT-\(animal!)-" + String(ProcessInfo().processIdentifier)
             mqtt = CocoaMQTT(clientID: clientID, host: defaultHost, port: 8883)
             mqtt!.username = ""
@@ -136,9 +128,7 @@ class ViewController: UIViewController {
             mqtt!.keepAlive = 60
             mqtt!.delegate = self
             mqtt!.enableSSL = true
-
         } else if mqttVesion == "5.0" {
-
             let clientID = "CocoaMQTT5-\(animal!)-" + String(ProcessInfo().processIdentifier)
             mqtt5 = CocoaMQTT5(clientID: clientID, host: defaultHost, port: 8883)
 
@@ -157,14 +147,11 @@ class ViewController: UIViewController {
             mqtt5!.delegate = self
 
             mqtt5!.enableSSL = true
-
         }
-
     }
 
     func selfSignedSSLSetting() {
         if mqttVesion == "3.1.1" {
-
             let clientID = "CocoaMQTT-\(animal!)-" + String(ProcessInfo().processIdentifier)
             mqtt = CocoaMQTT(clientID: clientID, host: defaultHost, port: 8883)
             mqtt!.username = ""
@@ -181,9 +168,7 @@ class ViewController: UIViewController {
             sslSettings[kCFStreamSSLCertificates as String] = clientCertArray
 
             mqtt!.sslSettings = sslSettings
-
         } else if mqttVesion == "5.0" {
-
             let clientID = "CocoaMQTT5-\(animal!)-" + String(ProcessInfo().processIdentifier)
             mqtt5 = CocoaMQTT5(clientID: clientID, host: defaultHost, port: 8883)
 
@@ -208,14 +193,11 @@ class ViewController: UIViewController {
             sslSettings[kCFStreamSSLCertificates as String] = clientCertArray
 
             mqtt5!.sslSettings = sslSettings
-
         }
-
     }
 
     func mqttWebsocketsSetting() {
         if mqttVesion == "3.1.1" {
-
             let clientID = "CocoaMQTT-\(animal!)-" + String(ProcessInfo().processIdentifier)
             let websocket = CocoaMQTTWebSocket(uri: "/mqtt")
             mqtt = CocoaMQTT(clientID: clientID, host: defaultHost, port: 8083, socket: websocket)
@@ -224,9 +206,7 @@ class ViewController: UIViewController {
             mqtt!.willMessage = CocoaMQTTMessage(topic: "/will", string: "dieout")
             mqtt!.keepAlive = 60
             mqtt!.delegate = self
-
         } else if mqttVesion == "5.0" {
-
             let clientID = "CocoaMQTT5-\(animal!)-" + String(ProcessInfo().processIdentifier)
             let websocket = CocoaMQTTWebSocket(uri: "/mqtt")
             mqtt5 = CocoaMQTT5(clientID: clientID, host: defaultHost, port: 8083, socket: websocket)
@@ -251,14 +231,11 @@ class ViewController: UIViewController {
             mqtt5!.willMessage = lastWillMessage
             mqtt5!.keepAlive = 60
             mqtt5!.delegate = self
-
         }
-
     }
 
     func mqttWebsocketSSLSetting() {
         if mqttVesion == "3.1.1" {
-
             let clientID = "CocoaMQTT-\(animal!)-" + String(ProcessInfo().processIdentifier)
             let websocket = CocoaMQTTWebSocket(uri: "/mqtt")
             mqtt = CocoaMQTT(clientID: clientID, host: defaultHost, port: 8084, socket: websocket)
@@ -268,9 +245,7 @@ class ViewController: UIViewController {
             mqtt!.willMessage = CocoaMQTTMessage(topic: "/will", string: "dieout")
             mqtt!.keepAlive = 60
             mqtt!.delegate = self
-
         } else if mqttVesion == "5.0" {
-
             let clientID = "CocoaMQTT5-\(animal!)-" + String(ProcessInfo().processIdentifier)
             let websocket = CocoaMQTTWebSocket(uri: "/mqtt")
             mqtt5 = CocoaMQTT5(clientID: clientID, host: defaultHost, port: 8084, socket: websocket)
@@ -289,9 +264,7 @@ class ViewController: UIViewController {
             mqtt5!.willMessage = CocoaMQTT5Message(topic: "/will", string: "dieout")
             mqtt5!.keepAlive = 60
             mqtt5!.delegate = self
-
         }
-
     }
 
     func getClientCertFromP12File(certName: String, certPassword: String) -> CFArray? {
@@ -331,11 +304,9 @@ class ViewController: UIViewController {
 
         return certArray
     }
-
 }
 
 extension ViewController: CocoaMQTT5Delegate {
-
     func mqtt5(_ mqtt5: CocoaMQTT5, didReceiveDisconnectReasonCode reasonCode: CocoaMQTTDISCONNECTReasonCode) {
         print("disconnect res : \(reasonCode)")
     }
@@ -381,14 +352,12 @@ extension ViewController: CocoaMQTT5Delegate {
             chatViewController?.mqtt5 = mqtt5
             chatViewController?.mqttVersion = mqttVesion
             navigationController!.pushViewController(chatViewController!, animated: true)
-
         }
     }
 
     func mqtt5(_ mqtt5: CocoaMQTT5, didStateChangeTo state: CocoaMQTTConnState) {
         TRACE("new state: \(state)")
         if state == .disconnected {
-
         }
     }
 
@@ -465,7 +434,6 @@ extension ViewController: CocoaMQTT5Delegate {
 let myCert = "myCert"
 
 extension ViewController: CocoaMQTTDelegate {
-
     // self signed delegate
     func mqttUrlSession(_ mqtt: CocoaMQTT, didReceiveTrust trust: SecTrust, didReceiveChallenge challenge: URLAuthenticationChallenge, completionHandler: @escaping (URLSession.AuthChallengeDisposition, URLCredential?) -> Void){
         if (challenge.protectionSpace.authenticationMethod == NSURLAuthenticationMethodServerTrust) {
@@ -483,7 +451,6 @@ extension ViewController: CocoaMQTTDelegate {
         }
 
         completionHandler(URLSession.AuthChallengeDisposition.cancelAuthenticationChallenge, nil)
-
     }
 
 

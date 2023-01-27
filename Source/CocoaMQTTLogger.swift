@@ -31,9 +31,9 @@ public enum CocoaMQTTLoggerLevel: Int {
 }
 
 open class CocoaMQTTLogger: NSObject {
-
     // Singleton
     public static var logger = CocoaMQTTLogger()
+
     public override init() { super.init() }
 
     // min level
@@ -60,5 +60,4 @@ open class CocoaMQTTLogger: NSObject {
     func error(_ message: String) {
         log(level: .error, message: message)
     }
-
 }

@@ -61,7 +61,6 @@ func getMQTTPropertyLength(type: UInt8, value: [UInt8]) -> [UInt8] {
 }
 
 func integerCompute(data: [UInt8], formatType: Int, offset: Int) -> (res: Int, newOffset: Int)? {
-
     switch formatType {
     case FormatInt.formatUint8.rawValue:
         return (unsignedByteToInt(data: data[offset]), offset + 1)
@@ -103,8 +102,8 @@ func unsignedBytesToInt(data0: UInt8, data1: UInt8, data2: UInt8, data3: UInt8) 
 
 func unsignedToSigned(unsign: NSInteger, size: NSInteger) -> (Int) {
     var res = unsign
-    if (res & (1 << size-1)) != 0 {
-        res = -1 * ((1 << size-1) - (res & ((1 << size-1) - 1)))
+    if (res & (1 << size - 1)) != 0 {
+        res = -1 * ((1 << size - 1) - (res & ((1 << size - 1) - 1)))
     }
     return res
 }
@@ -183,7 +182,7 @@ func beVariableByteInteger(length: Int) -> [UInt8] {
     var res = [UInt8]()
     var tmpLen: Int = length
     repeat {
-        var d: UInt8 = UInt8(tmpLen % 128)
+        var d = UInt8(tmpLen % 128)
         tmpLen /= 128
         if tmpLen > 0 {
             d |= 0x80

@@ -8,7 +8,6 @@
 import Foundation
 
 public class MqttDecodePublish: NSObject {
-
     // 3.3.2.3 PUBLISH Properties
     // 3.3.2.3.1 Property Length
     public var propertyLength: Int?
@@ -75,7 +74,6 @@ public class MqttDecodePublish: NSObject {
             let occupyIndex = dataIndex
 
             while dataIndex < occupyIndex + (propertyLength ?? 0) {
-
                 let resVariableByteInteger = decodeVariableByteInteger(data: publishData, offset: dataIndex)
                 dataIndex = resVariableByteInteger.newOffset
                 let propertyNameByte = resVariableByteInteger.res
@@ -159,10 +157,7 @@ public class MqttDecodePublish: NSObject {
                 default:
                     return
                 }
-
             }
         }
-
     }
-
 }
