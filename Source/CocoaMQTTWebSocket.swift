@@ -326,7 +326,9 @@ public extension CocoaMQTTWebSocket {
         
         public func write(data: Data, handler: @escaping (Error?) -> Void) {
             task?.send(.data(data)) { possibleError in
-                handler(possibleError)
+                self.queue.async {
+                    handler(possibleError)
+                }
             }
         }
         
