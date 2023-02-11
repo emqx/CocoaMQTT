@@ -78,7 +78,11 @@ class CocoaMQTTReader {
             // more
         } else {
             let result = multiply.multipliedReportingOverflow(by: 128)
-            multiply = result.partialValue
+            if !result.overflow {
+                multiply = result.partialValue
+            }else{
+                reset()
+            }
             readLength()
         }
     }
