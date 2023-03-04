@@ -14,8 +14,10 @@ import CocoaMQTT
 // MARK: - Interfaces
 
 public protocol CocoaMQTTWebSocketConnectionDelegate: AnyObject {
-    
+
     func connection(_ conn: CocoaMQTTWebSocketConnection, didReceive trust: SecTrust, completionHandler: @escaping (Bool) -> Swift.Void)
+
+    func urlSessionConnection(_ conn: CocoaMQTTWebSocketConnection, didReceiveTrust trust: SecTrust, didReceiveChallenge challenge: URLAuthenticationChallenge, completionHandler: @escaping (URLSession.AuthChallengeDisposition, URLCredential?) -> Void)
     
     func connectionOpened(_ conn: CocoaMQTTWebSocketConnection)
     
@@ -149,7 +151,7 @@ public class CocoaMQTTWebSocket: CocoaMQTTSocketProtocol {
     internal var delegate: CocoaMQTTSocketDelegate?
     internal var delegateQueue: DispatchQueue?
     internal var internalQueue = DispatchQueue(label: "CocoaMQTTWebSocket")
- 
+
     private var connection: CocoaMQTTWebSocketConnection?
     
     private func reset() {
@@ -256,8 +258,17 @@ public class CocoaMQTTWebSocket: CocoaMQTTSocketProtocol {
 }
 
 extension CocoaMQTTWebSocket: CocoaMQTTWebSocketConnectionDelegate {
-    public func connection(_ conn: CocoaMQTTWebSocketConnection, didReceive trust: SecTrust, completionHandler: @escaping (Bool) -> Swift.Void) {
-        guard conn.isEqual(connection) else { return }
+    public func urlSessionConnection(_ conn: CocoaMQTTWebSocketConnection, didReceiveTrust trust: SecTrust, didReceiveChallenge challenge: URLAuthenticationChallenge, completionHandler: @escaping (URLSession.AuthChallengeDisposition, URLCredential?) -> Void) {
+        if let del = delegate {
+            __delegate_queue {
+                del.socketUrlSession(self, didReceiveTrust: trust, didReceiveChallenge: challenge, completionHandler: completionHandler)
+            }
+        } else {
+            completionHandler(.performDefaultHandling, nil)
+        }
+    }
+
+    public func connection(_ conn: CocoaMQTTWebSocketConnection, didReceive trust: SecTrust, completionHandler: @escaping (Bool) -> Void) {
         if let del = delegate {
             __delegate_queue {
                 del.socket(self, didReceive: trust, completionHandler: completionHandler)
@@ -366,6 +377,8 @@ extension CocoaMQTTWebSocket.FoundationConnection: URLSessionWebSocketDelegate {
                 delegate.connection(self, didReceive: trust) { shouldTrust in
                     completionHandler(shouldTrust ? .performDefaultHandling : .rejectProtectionSpace, nil)
                 }
+                delegate.urlSessionConnection(self, didReceiveTrust: trust, didReceiveChallenge: challenge, completionHandler: completionHandler)
+
             } else {
                 completionHandler(.performDefaultHandling, nil)
             }
