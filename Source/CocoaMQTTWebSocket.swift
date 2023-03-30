@@ -6,7 +6,7 @@
 //
 
 import Foundation
-import Starscream
+
 #if IS_SWIFT_PACKAGE
 import CocoaMQTT
 #endif
@@ -63,17 +63,11 @@ public class CocoaMQTTWebSocket: CocoaMQTTSocketProtocol {
         
         public init() {}
         
-        
         public func buildConnection(forURL url: URL, withHeaders headers: [String: String]) throws -> CocoaMQTTWebSocketConnection {
-            if #available(OSX 10.15, iOS 13.0, watchOS 6.0, tvOS 13.0, *) {
-                let config = URLSessionConfiguration.default
-                config.httpAdditionalHeaders = headers
-                return CocoaMQTTWebSocket.FoundationConnection(url: url, config: config)
-            } else {
-                var request = URLRequest(url: url)
-                headers.forEach { request.setValue($1, forHTTPHeaderField: $0)}
-                return CocoaMQTTWebSocket.StarscreamConnection(request: request)
-            }
+            
+            let config = URLSessionConfiguration.default
+            config.httpAdditionalHeaders = headers
+            return CocoaMQTTWebSocket.FoundationConnection(url: url, config: config)
         }
     }
     
@@ -395,74 +389,6 @@ extension CocoaMQTTWebSocket.FoundationConnection: URLSessionWebSocketDelegate {
         queue.async {
             self.delegate?.connectionClosed(self, withError: CocoaMQTTError.FoundationConnection.closed(closeCode))
         }
-    }
-}
-
-// MARK: - CocoaMQTTWebSocket.StarscreamConnection
-
-public extension CocoaMQTTWebSocket {
-    class StarscreamConnection: NSObject, CocoaMQTTWebSocketConnection {
-        public var reference: WebSocket
-        public weak var delegate: CocoaMQTTWebSocketConnectionDelegate?
-        public var queue: DispatchQueue {
-            get { reference.callbackQueue }
-            set { reference.callbackQueue = newValue }
-        }
-        
-        public init(request: URLRequest) {
-            reference = WebSocket(request: request, protocols: ["mqtt"], stream: FoundationStream())
-            super.init()
-            reference.delegate = self
-        }
-        
-        public func connect() {
-            reference.connect()
-        }
-        
-        public func disconnect() {
-            reference.disconnect()
-        }
-        
-        public func write(data: Data, handler: @escaping (Error?) -> Void) {
-            reference.write(data: data) {
-                handler(nil)
-            }
-        }
-    }
-}
-
-extension CocoaMQTTWebSocket.StarscreamConnection: SSLTrustValidator {
-    public func isValid(_ trust: SecTrust, domain: String?) -> Bool {
-        guard let delegate = self.delegate else { return false }
-        
-        var shouldAccept = false
-        let semaphore = DispatchSemaphore(value: 0)
-        delegate.connection(self, didReceive: trust) { result in
-            shouldAccept = result
-            semaphore.signal()
-        }
-        semaphore.wait()
-        
-        return shouldAccept
-    }
-}
-
-extension CocoaMQTTWebSocket.StarscreamConnection: WebSocketDelegate {
-
-    public func websocketDidConnect(socket: WebSocketClient) {
-        delegate?.connectionOpened(self)
-    }
-
-    public func websocketDidDisconnect(socket: WebSocketClient, error: Error?) {
-        delegate?.connectionClosed(self, withError: error)
-    }
-
-    public func websocketDidReceiveMessage(socket: WebSocketClient, text: String) {
-        delegate?.connection(self, receivedString: text)
-    }
-
-    public func websocketDidReceiveData(socket: WebSocketClient, data: Data) {
-        delegate?.connection(self, receivedData: data)
     }
 }
 
