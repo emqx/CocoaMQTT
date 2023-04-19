@@ -435,13 +435,14 @@ let myCert = "myCert"
 
 extension ViewController: CocoaMQTTDelegate {
     // self signed delegate
-    func mqttUrlSession(_ mqtt: CocoaMQTT, didReceiveTrust trust: SecTrust, didReceiveChallenge challenge: URLAuthenticationChallenge, completionHandler: @escaping (URLSession.AuthChallengeDisposition, URLCredential?) -> Void){
-        if (challenge.protectionSpace.authenticationMethod == NSURLAuthenticationMethodServerTrust) {
-
+    func mqttUrlSession(_ mqtt: CocoaMQTT, didReceiveTrust trust: SecTrust, didReceiveChallenge
+                        challenge: URLAuthenticationChallenge,
+                        completionHandler: @escaping (URLSession.AuthChallengeDisposition, URLCredential?) -> Void) {
+        if challenge.protectionSpace.authenticationMethod == NSURLAuthenticationMethodServerTrust {
             let certData = Data(base64Encoded: myCert as String)!
 
             if let trust = challenge.protectionSpace.serverTrust,
-               let cert = SecCertificateCreateWithData(nil,  certData as CFData) {
+               let cert = SecCertificateCreateWithData(nil, certData as CFData) {
                 let certs = [cert]
                 SecTrustSetAnchorCertificates(trust, certs as CFArray)
 
@@ -452,7 +453,6 @@ extension ViewController: CocoaMQTTDelegate {
 
         completionHandler(URLSession.AuthChallengeDisposition.cancelAuthenticationChallenge, nil)
     }
-
 
     func mqtt(_ mqtt: CocoaMQTT, didConnectAck ack: CocoaMQTTConnAck) {
         TRACE("ack: \(ack)")

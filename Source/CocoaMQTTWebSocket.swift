@@ -16,8 +16,9 @@ import CocoaMQTT
 public protocol CocoaMQTTWebSocketConnectionDelegate: AnyObject {
     func connection(_ conn: CocoaMQTTWebSocketConnection, didReceive trust: SecTrust, completionHandler: @escaping (Bool) -> Swift.Void)
 
-    func urlSessionConnection(_ conn: CocoaMQTTWebSocketConnection, didReceiveTrust trust: SecTrust, didReceiveChallenge challenge: URLAuthenticationChallenge, completionHandler: @escaping (URLSession.AuthChallengeDisposition, URLCredential?) -> Void)
-    
+    func urlSessionConnection(_ conn: CocoaMQTTWebSocketConnection, didReceiveTrust trust: SecTrust, didReceiveChallenge challenge: URLAuthenticationChallenge,
+                              completionHandler: @escaping (URLSession.AuthChallengeDisposition, URLCredential?) -> Void)
+
     func connectionOpened(_ conn: CocoaMQTTWebSocketConnection)
 
     func connectionClosed(_ conn: CocoaMQTTWebSocketConnection, withError error: Error?)
@@ -256,7 +257,9 @@ public class CocoaMQTTWebSocket: CocoaMQTTSocketProtocol {
 }
 
 extension CocoaMQTTWebSocket: CocoaMQTTWebSocketConnectionDelegate {
-    public func urlSessionConnection(_ conn: CocoaMQTTWebSocketConnection, didReceiveTrust trust: SecTrust, didReceiveChallenge challenge: URLAuthenticationChallenge, completionHandler: @escaping (URLSession.AuthChallengeDisposition, URLCredential?) -> Void) {
+    public func urlSessionConnection(_ conn: CocoaMQTTWebSocketConnection, didReceiveTrust trust: SecTrust,
+                                     didReceiveChallenge challenge: URLAuthenticationChallenge,
+                                     completionHandler: @escaping (URLSession.AuthChallengeDisposition, URLCredential?) -> Void) {
         if let del = delegate {
             executeOnDelegateQueue {
                 del.socketUrlSession(self, didReceiveTrust: trust, didReceiveChallenge: challenge, completionHandler: completionHandler)
@@ -377,7 +380,6 @@ extension CocoaMQTTWebSocket.FoundationConnection: URLSessionWebSocketDelegate {
                     completionHandler(shouldTrust ? .performDefaultHandling : .rejectProtectionSpace, nil)
                 }
                 delegate.urlSessionConnection(self, didReceiveTrust: trust, didReceiveChallenge: challenge, completionHandler: completionHandler)
-
             } else {
                 completionHandler(.performDefaultHandling, nil)
             }
