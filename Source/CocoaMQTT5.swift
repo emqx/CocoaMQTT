@@ -528,6 +528,20 @@ public class CocoaMQTT5: NSObject, CocoaMQTT5Client {
         subscriptionsWaitingAck[msgid] = topics
     }
 
+    /// Subscribe a lists of topics
+    ///
+    /// - Parameters:
+    ///   - topics: A list of tuples presented by `(<Topic Names>/<Topic Filters>, Qos)`
+    ///   - packetIdentifier: SUBSCRIBE Variable Header
+    ///   - subscriptionIdentifier: Subscription Identifier
+    ///   - userProperty: User Property
+    public func subscribe(_ topics: [MqttSubscription],  packetIdentifier: UInt16? = nil, subscriptionIdentifier: UInt32? = nil, userProperty: [String: String] = [:])  {
+        let msgid = nextMessageID()
+        let frame = FrameSubscribe(msgid: msgid, subscriptionList: topics, packetIdentifier: packetIdentifier, subscriptionIdentifier: subscriptionIdentifier, userProperty: userProperty)
+        send(frame, tag: Int(msgid))
+        subscriptionsWaitingAck[msgid] = topics
+    }
+
     /// Unsubscribe a Topic
     ///
     /// - Parameters:

@@ -53,6 +53,22 @@ struct FrameSubscribe: Frame {
         self.topicFilters = subscriptionList
     }
 
+    ///MQTT 5.0
+    init(msgid: UInt16, subscriptionList: [MqttSubscription], packetIdentifier: UInt16? = nil, subscriptionIdentifier: UInt32? = nil, userProperty: [String: String] = [:]) {
+        self.msgid = msgid
+        self.topicFilters = subscriptionList
+        if(packetIdentifier != nil){
+            self.packetIdentifier = packetIdentifier
+        }
+        if(subscriptionIdentifier != nil){
+            self.subscriptionIdentifier = subscriptionIdentifier
+        }
+        if(!userProperty.isEmpty){
+            self.userProperty = userProperty
+        }
+
+    }
+
 }
 
 extension FrameSubscribe {
