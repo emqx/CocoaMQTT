@@ -112,9 +112,11 @@ extension FrameSubscribe {
         var properties = [UInt8]()
 
         //3.8.2.1.2 Subscription Identifier
-        if let subscriptionIdentifier = self.subscriptionIdentifier {
-            properties += getMQTTPropertyData(type: CocoaMQTTPropertyName.subscriptionIdentifier.rawValue, value: subscriptionIdentifier.byteArrayLittleEndian)
+        if let subscriptionIdentifier = self.subscriptionIdentifier,
+           let subscriptionIdentifier = beVariableByteInteger(subscriptionIdentifier) {
+            properties += getMQTTPropertyData(type: CocoaMQTTPropertyName.subscriptionIdentifier.rawValue, value: subscriptionIdentifier)
         }
+        
 
         //3.8.2.1.3 User Property
         if let userProperty = self.userProperty {

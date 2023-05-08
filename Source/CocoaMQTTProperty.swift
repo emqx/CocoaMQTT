@@ -193,3 +193,10 @@ func beVariableByteInteger(length: Int) -> [UInt8] {
 
     return res
 }
+
+func beVariableByteInteger(_ data: UInt32) -> [UInt8]? {
+    if (data > 0x0fffffff) {
+        return nil
+    }
+    return beVariableByteInteger(length: Int(data))
+}
