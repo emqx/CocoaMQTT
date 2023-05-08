@@ -83,8 +83,9 @@ public class MqttPublishProperties: NSObject {
             }
         }
         //3.3.2.3.8 Subscription Identifier
-        if let subscriptionIdentifier = self.subscriptionIdentifier {
-            properties += getMQTTPropertyData(type: CocoaMQTTPropertyName.subscriptionIdentifier.rawValue, value: subscriptionIdentifier.byteArrayLittleEndian)
+        if let subscriptionIdentifier = self.subscriptionIdentifier,
+           let subscriptionIdentifier = beVariableByteInteger(subscriptionIdentifier) {
+            properties += getMQTTPropertyData(type: CocoaMQTTPropertyName.subscriptionIdentifier.rawValue, value: subscriptionIdentifier)
         }
         //3.3.2.3.9 Content Type
         if let contentType = self.contentType {
