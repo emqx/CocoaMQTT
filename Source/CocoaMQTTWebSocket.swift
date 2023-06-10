@@ -77,6 +77,11 @@ public class CocoaMQTTWebSocket: CocoaMQTTSocketProtocol {
         }
     }
     
+    public func configureSslAlpn(_ alpn:String?){
+        // not implemented
+        abort()
+    }
+    
     public func setDelegate(_ theDelegate: CocoaMQTTSocketDelegate?, delegateQueue: DispatchQueue?) {
         internalQueue.async {
             self.delegate = theDelegate

@@ -156,6 +156,7 @@ public class CocoaMQTT: NSObject, CocoaMQTTClient {
     
     public var password: String?
     
+    public var sslAlpn: String?
     /// Clean Session flag. Default is true
     ///
     /// - TODO: What's behavior each Clean Session flags???
@@ -560,6 +561,9 @@ extension CocoaMQTT {
 extension CocoaMQTT: CocoaMQTTSocketDelegate {
     
     public func socketConnected(_ socket: CocoaMQTTSocketProtocol) {
+        if socket.enableSSL{
+            socket.configureSslAlpn(self.sslAlpn)
+        }
         sendConnectFrame()
     }
     

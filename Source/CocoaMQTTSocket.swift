@@ -23,6 +23,7 @@ public protocol CocoaMQTTSocketProtocol {
     
     var enableSSL: Bool { get set }
     
+    func configureSslAlpn(_ alpn:String?)
     func setDelegate(_ theDelegate: CocoaMQTTSocketDelegate?, delegateQueue: DispatchQueue?)
     func connect(toHost host: String, onPort port: UInt16) throws
     func connect(toHost host: String, onPort port: UInt16, withTimeout timeout: TimeInterval) throws
@@ -38,7 +39,7 @@ public class CocoaMQTTSocket: NSObject {
     public var backgroundOnSocket = true
 
     public var enableSSL = false
-    
+
     ///
     public var sslSettings: [String: NSObject]?
     
@@ -54,6 +55,19 @@ public class CocoaMQTTSocket: NSObject {
 }
 
 extension CocoaMQTTSocket: CocoaMQTTSocketProtocol {
+    public func configureSslAlpn(_ alpn:String?){
+        if let alpn = alpn {
+            if #available(iOS 11.0, *) {
+                // Get the SSL Context
+                guard let context = reference.sslContext() else {
+                    return
+                }
+                // Set ALPN protocol list
+                let protocols = [alpn] as CFArray
+                SSLSetALPNProtocols(context.takeRetainedValue(), protocols)
+            }
+        }
+    }
     public func setDelegate(_ theDelegate: CocoaMQTTSocketDelegate?, delegateQueue: DispatchQueue?) {
         delegate = theDelegate
         reference.setDelegate((delegate != nil ? self : nil), delegateQueue: delegateQueue)
