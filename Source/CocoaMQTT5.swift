@@ -753,8 +753,8 @@ extension CocoaMQTT5: CocoaMQTTReaderDelegate {
         }
 
 
-        delegate?.mqtt5(self, didConnectAck: connack.reasonCode!, connAckData: connack.connackProperties ?? nil)
-        didConnectAck(self, connack.reasonCode!, connack.connackProperties ?? nil)
+        delegate?.mqtt5(self, didConnectAck: connack.reasonCode ?? CocoaMQTTCONNACKReasonCode.unspecifiedError, connAckData: connack.connackProperties ?? nil)
+        didConnectAck(self, connack.reasonCode ?? CocoaMQTTCONNACKReasonCode.unspecifiedError, connack.connackProperties ?? nil)
     }
 
     func didReceive(_ reader: CocoaMQTTReader, publish: FramePublish) {
