@@ -79,9 +79,7 @@ extension FramePubComp {
 
         //3.7.2.2.3 User Property
         if let userProperty = self.userProperties {
-            for (key, value) in userProperty {
-                properties += getMQTTPropertyData(type: CocoaMQTTPropertyName.userProperty.rawValue, value: key.bytesWithLength + value.bytesWithLength)
-            }
+            properties += userProperty.userPropertyBytes
         }
 
         return properties;
