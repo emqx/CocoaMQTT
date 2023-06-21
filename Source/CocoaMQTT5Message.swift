@@ -130,6 +130,14 @@ public class CocoaMQTT5Message: NSObject {
         self.qos = qos
         self.retained = retained
     }
+    
+    public init(topic: String, payload: [String: Any], qos: CocoaMQTTQoS = .qos1, retained: Bool = false) throws {
+        let data = try JSONSerialization.data(withJSONObject: payload)
+        self.topic = topic
+        self.payload = [UInt8](data)
+        self.qos = qos
+        self.retained = retained
+    }
 }
 
 extension CocoaMQTT5Message {

@@ -64,9 +64,7 @@ public class MqttConnectProperties: NSObject {
         }
         // 3.1.2.11.8 User Property
         if let userProperty = self.userProperties {
-            for (key, value) in userProperty {
-                properties += getMQTTPropertyData(type: CocoaMQTTPropertyName.userProperty.rawValue, value: key.bytesWithLength + value.bytesWithLength)
-            }
+            properties += userProperty.userPropertyBytes
         }
         // 3.1.2.11.9 Authentication Method
         if let authenticationMethod = self.authenticationMethod {
