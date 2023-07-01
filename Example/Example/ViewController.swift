@@ -435,10 +435,10 @@ extension ViewController: CocoaMQTT5Delegate {
         }
     }
     
-    func mqtt5(_ mqtt5: CocoaMQTT5, didUnsubscribeTopics topics: [String], UnsubAckData: MqttDecodeUnsubAck?) {
+    func mqtt5(_ mqtt5: CocoaMQTT5, didUnsubscribeTopics topics: [String], unsubAckData: MqttDecodeUnsubAck?) {
         TRACE("topic: \(topics)")
-        if(UnsubAckData != nil){
-            print("UnsubAckData.reasonCodes \(String(describing: UnsubAckData!.reasonCodes))")
+        if(unsubAckData != nil){
+            print("unsubAckData.reasonCodes \(String(describing: unsubAckData!.reasonCodes))")
         }
         print("----------------------")
     }
