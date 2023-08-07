@@ -53,6 +53,22 @@ struct FrameSubscribe: Frame {
         self.topicFilters = subscriptionList
     }
 
+    ///MQTT 5.0
+    init(msgid: UInt16, subscriptionList: [MqttSubscription], packetIdentifier: UInt16? = nil, subscriptionIdentifier: UInt32? = nil, userProperty: [String: String] = [:]) {
+        self.msgid = msgid
+        self.topicFilters = subscriptionList
+        if(packetIdentifier != nil){
+            self.packetIdentifier = packetIdentifier
+        }
+        if(subscriptionIdentifier != nil){
+            self.subscriptionIdentifier = subscriptionIdentifier
+        }
+        if(!userProperty.isEmpty){
+            self.userProperty = userProperty
+        }
+
+    }
+
 }
 
 extension FrameSubscribe {
@@ -96,9 +112,11 @@ extension FrameSubscribe {
         var properties = [UInt8]()
 
         //3.8.2.1.2 Subscription Identifier
-        if let subscriptionIdentifier = self.subscriptionIdentifier {
-            properties += getMQTTPropertyData(type: CocoaMQTTPropertyName.subscriptionIdentifier.rawValue, value: subscriptionIdentifier.byteArrayLittleEndian)
+        if let subscriptionIdentifier = self.subscriptionIdentifier,
+           let subscriptionIdentifier = beVariableByteInteger(subscriptionIdentifier) {
+            properties += getMQTTPropertyData(type: CocoaMQTTPropertyName.subscriptionIdentifier.rawValue, value: subscriptionIdentifier)
         }
+        
 
         //3.8.2.1.3 User Property
         if let userProperty = self.userProperty {
