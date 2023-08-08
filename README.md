@@ -16,6 +16,13 @@ IOS Target: 9.0 or above
 OSX Target: 10.12 or above
 TVOS Target: 10.0 or above
 
+##  xcode 14.3 issue:
+```ruby
+File not found: /Applications/Xcode.app/Contents/Developer/Toolchains/XcodeDefault.xctoolchain/usr/lib/arc/libarclite_iphonesimulator.a
+```
+If you encounter the issue, Please update your project minimum depolyments to 11.0
+
+
 ## Installation
 ### CocoaPods
 

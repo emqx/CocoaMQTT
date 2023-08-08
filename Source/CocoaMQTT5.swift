@@ -267,10 +267,10 @@ public class CocoaMQTT5: NSObject, CocoaMQTT5Client {
     }
 
     /// The subscribed topics in current communication
-    public var subscriptions: [String: CocoaMQTTQoS] = [:]
+    public var subscriptions = ThreadSafeDictionary<String, CocoaMQTTQoS>(label: "subscriptions")
 
-    fileprivate var subscriptionsWaitingAck: [UInt16: [MqttSubscription]] = [:]
-    fileprivate var unsubscriptionsWaitingAck: [UInt16: [MqttSubscription]] = [:]
+    fileprivate var subscriptionsWaitingAck = ThreadSafeDictionary<UInt16, [MqttSubscription]>(label: "subscriptionsWaitingAck")
+    fileprivate var unsubscriptionsWaitingAck = ThreadSafeDictionary<UInt16, [MqttSubscription]>(label: "unsubscriptionsWaitingAck")
 
 
     /// Sending messages
@@ -528,6 +528,20 @@ public class CocoaMQTT5: NSObject, CocoaMQTT5Client {
         subscriptionsWaitingAck[msgid] = topics
     }
 
+    /// Subscribe a lists of topics
+    ///
+    /// - Parameters:
+    ///   - topics: A list of tuples presented by `(<Topic Names>/<Topic Filters>, Qos)`
+    ///   - packetIdentifier: SUBSCRIBE Variable Header
+    ///   - subscriptionIdentifier: Subscription Identifier
+    ///   - userProperty: User Property
+    public func subscribe(_ topics: [MqttSubscription],  packetIdentifier: UInt16? = nil, subscriptionIdentifier: UInt32? = nil, userProperty: [String: String] = [:])  {
+        let msgid = nextMessageID()
+        let frame = FrameSubscribe(msgid: msgid, subscriptionList: topics, packetIdentifier: packetIdentifier, subscriptionIdentifier: subscriptionIdentifier, userProperty: userProperty)
+        send(frame, tag: Int(msgid))
+        subscriptionsWaitingAck[msgid] = topics
+    }
+
     /// Unsubscribe a Topic
     ///
     /// - Parameters:
@@ -739,8 +753,8 @@ extension CocoaMQTT5: CocoaMQTTReaderDelegate {
         }
 
 
-        delegate?.mqtt5(self, didConnectAck: connack.reasonCode!, connAckData: connack.connackProperties ?? nil)
-        didConnectAck(self, connack.reasonCode!, connack.connackProperties ?? nil)
+        delegate?.mqtt5(self, didConnectAck: connack.reasonCode ?? CocoaMQTTCONNACKReasonCode.unspecifiedError, connAckData: connack.connackProperties ?? nil)
+        didConnectAck(self, connack.reasonCode ?? CocoaMQTTCONNACKReasonCode.unspecifiedError, connack.connackProperties ?? nil)
     }
 
     func didReceive(_ reader: CocoaMQTTReader, publish: FramePublish) {
@@ -832,7 +846,7 @@ extension CocoaMQTT5: CocoaMQTTReaderDelegate {
         var removeTopics : [String] = []
         for t in topics {
             removeTopics.append(t.topic)
-            subscriptions.removeValue(forKey: t.topic)
+            _ = subscriptions.removeValue(forKey: t.topic)
         }
 
         delegate?.mqtt5(self, didUnsubscribeTopics: removeTopics, UnsubAckData: unsuback.unSubAckProperties ?? nil)
