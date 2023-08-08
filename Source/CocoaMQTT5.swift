@@ -49,7 +49,7 @@ import MqttCocoaAsyncSocket
     func mqtt5(_ mqtt5: CocoaMQTT5, didSubscribeTopics success: NSDictionary, failed: [String], subAckData: MqttDecodeSubAck?)
 
     ///
-    func mqtt5(_ mqtt5: CocoaMQTT5, didUnsubscribeTopics topics: [String], unsubAckData: MqttDecodeUnsubAck?)
+    func mqtt5(_ mqtt5: CocoaMQTT5, didUnsubscribeTopics topics: [String], UnsubAckData: MqttDecodeUnsubAck?)
     
     ///
     func mqtt5(_ mqtt5: CocoaMQTT5, didReceiveDisconnectReasonCode reasonCode: CocoaMQTTDISCONNECTReasonCode)
@@ -267,10 +267,10 @@ public class CocoaMQTT5: NSObject, CocoaMQTT5Client {
     }
 
     /// The subscribed topics in current communication
-    public var subscriptions: [String: CocoaMQTTQoS] = [:]
+    public var subscriptions = ThreadSafeDictionary<String, CocoaMQTTQoS>(label: "subscriptions")
 
-    fileprivate var subscriptionsWaitingAck: [UInt16: [MqttSubscription]] = [:]
-    fileprivate var unsubscriptionsWaitingAck: [UInt16: [MqttSubscription]] = [:]
+    fileprivate var subscriptionsWaitingAck = ThreadSafeDictionary<UInt16, [MqttSubscription]>(label: "subscriptionsWaitingAck")
+    fileprivate var unsubscriptionsWaitingAck = ThreadSafeDictionary<UInt16, [MqttSubscription]>(label: "unsubscriptionsWaitingAck")
 
 
     /// Sending messages
@@ -846,10 +846,10 @@ extension CocoaMQTT5: CocoaMQTTReaderDelegate {
         var removeTopics : [String] = []
         for t in topics {
             removeTopics.append(t.topic)
-            subscriptions.removeValue(forKey: t.topic)
+            _ = subscriptions.removeValue(forKey: t.topic)
         }
 
-        delegate?.mqtt5(self, didUnsubscribeTopics: removeTopics, unsubAckData: unsuback.unSubAckProperties ?? nil)
+        delegate?.mqtt5(self, didUnsubscribeTopics: removeTopics, UnsubAckData: unsuback.unSubAckProperties ?? nil)
         didUnsubscribeTopics(self, removeTopics, unsuback.unSubAckProperties ?? nil)
     }
 
