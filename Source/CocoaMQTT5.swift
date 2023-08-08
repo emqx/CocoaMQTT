@@ -267,10 +267,10 @@ public class CocoaMQTT5: NSObject, CocoaMQTT5Client {
     }
 
     /// The subscribed topics in current communication
-    public var subscriptions: [String: CocoaMQTTQoS] = [:]
+    public var subscriptions = ThreadSafeDictionary<String, CocoaMQTTQoS>(label: "subscriptions")
 
-    fileprivate var subscriptionsWaitingAck: [UInt16: [MqttSubscription]] = [:]
-    fileprivate var unsubscriptionsWaitingAck: [UInt16: [MqttSubscription]] = [:]
+    fileprivate var subscriptionsWaitingAck = ThreadSafeDictionary<UInt16, [MqttSubscription]>(label: "subscriptionsWaitingAck")
+    fileprivate var unsubscriptionsWaitingAck = ThreadSafeDictionary<UInt16, [MqttSubscription]>(label: "unsubscriptionsWaitingAck")
 
 
     /// Sending messages
