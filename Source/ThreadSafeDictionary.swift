@@ -11,13 +11,13 @@ public class ThreadSafeDictionary<K: Hashable,V>: Collection {
     private let concurrentQueue: DispatchQueue
 
     public var startIndex: Dictionary<K, V>.Index {
-        self.concurrentQueue.sync {
+        concurrentQueue.sync {
             return self.dictionary.startIndex
         }
     }
 
     public var endIndex: Dictionary<K, V>.Index {
-        self.concurrentQueue.sync {
+        concurrentQueue.sync {
             return self.dictionary.endIndex
         }
     }
