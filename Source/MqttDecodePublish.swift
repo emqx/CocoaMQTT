@@ -47,6 +47,7 @@ public class MqttDecodePublish: NSObject {
         }
         self.topic = result.resStr
         dataIndex = result.newOffset
+        mqtt5DataIndex = dataIndex
 
         printDebug("topic = \(topic)")
 
