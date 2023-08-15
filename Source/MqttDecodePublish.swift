@@ -35,7 +35,7 @@ public class MqttDecodePublish: NSObject {
     public var topic: String = ""
     //3.3.2.2 Packet Identifier
     public var packetIdentifier: UInt16?
-
+    public var mqtt5DataIndex = 0
  
 
     public func decodePublish(fixedHeader: UInt8, publishData: [UInt8]){
@@ -47,6 +47,7 @@ public class MqttDecodePublish: NSObject {
         }
         self.topic = result.resStr
         dataIndex = result.newOffset
+        mqtt5DataIndex = dataIndex
 
         printDebug("topic = \(topic)")
 
@@ -74,6 +75,7 @@ public class MqttDecodePublish: NSObject {
             let propertyLengthVariableByteInteger = decodeVariableByteInteger(data: publishData, offset: dataIndex)
             propertyLength = propertyLengthVariableByteInteger.res
             dataIndex = propertyLengthVariableByteInteger.newOffset
+            mqtt5DataIndex = propertyLengthVariableByteInteger.newOffset
 
             let occupyIndex = dataIndex
 

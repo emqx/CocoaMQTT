@@ -685,8 +685,8 @@ extension CocoaMQTT: CocoaMQTTReaderDelegate {
             internal_disconnect()
         }
 
-        delegate?.mqtt(self, didConnectAck: connack.returnCode!)
-        didConnectAck(self, connack.returnCode!)
+        delegate?.mqtt(self, didConnectAck: connack.returnCode ?? CocoaMQTTConnAck.serverUnavailable)
+        didConnectAck(self, connack.returnCode ?? CocoaMQTTConnAck.serverUnavailable)
     }
 
     func didReceive(_ reader: CocoaMQTTReader, publish: FramePublish) {

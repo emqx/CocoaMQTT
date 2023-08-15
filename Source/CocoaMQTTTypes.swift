@@ -166,4 +166,8 @@ extension UInt32 {
     }
 }
 
-
+extension Dictionary where Key == String, Value == String {
+    var userPropertyBytes: [UInt8] {
+        return reduce([UInt8](), { $0 + getMQTTPropertyData(type: CocoaMQTTPropertyName.userProperty.rawValue, value: $1.key.bytesWithLength + $1.value.bytesWithLength) })
+    }
+}
