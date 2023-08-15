@@ -36,7 +36,7 @@ public class MqttPublishProperties: NSObject {
         messageExpiryInterval: UInt32? = nil,
         topicAlias: UInt16? = nil,
         responseTopic: String? = nil,
-        correlationData: [UInt8]? = nil,
+        correlation: String? = nil,
         userProperty: [String: String]? = nil,
         subscriptionIdentifier: UInt32? = nil,
         contentType: String? = nil
@@ -46,7 +46,7 @@ public class MqttPublishProperties: NSObject {
         self.messageExpiryInterval = messageExpiryInterval
         self.topicAlias = topicAlias
         self.responseTopic = responseTopic
-        self.correlationData = correlationData
+        self.correlationData = correlation?.bytesWithLength
         self.userProperty = userProperty
         self.subscriptionIdentifier = subscriptionIdentifier
         self.contentType = contentType

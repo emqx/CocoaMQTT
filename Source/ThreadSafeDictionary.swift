@@ -1,5 +1,5 @@
 //
-// Copyright © 2022 Kindred Group. All rights reserved.
+// Copyright © 2022. All rights reserved.
 //
 
 import Foundation
@@ -11,13 +11,13 @@ public class ThreadSafeDictionary<K: Hashable,V>: Collection {
     private let concurrentQueue: DispatchQueue
 
     public var startIndex: Dictionary<K, V>.Index {
-        self.concurrentQueue.sync {
+        concurrentQueue.sync {
             return self.dictionary.startIndex
         }
     }
 
     public var endIndex: Dictionary<K, V>.Index {
-        self.concurrentQueue.sync {
+        concurrentQueue.sync {
             return self.dictionary.endIndex
         }
     }
@@ -33,7 +33,7 @@ public class ThreadSafeDictionary<K: Hashable,V>: Collection {
         }
     }
 
-    subscript(key: K) -> V? {
+    public subscript(key: K) -> V? {
         set(newValue) {
             concurrentQueue.async(flags: .barrier) {[weak self] in
                 self?.dictionary[key] = newValue
@@ -52,6 +52,7 @@ public class ThreadSafeDictionary<K: Hashable,V>: Collection {
         }
     }
     
+    @discardableResult
     public func removeValue(forKey key: K) -> V? {
         concurrentQueue.sync(flags: .barrier) {
             self.dictionary.removeValue(forKey: key)

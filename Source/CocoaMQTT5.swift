@@ -49,7 +49,7 @@ import MqttCocoaAsyncSocket
     func mqtt5(_ mqtt5: CocoaMQTT5, didSubscribeTopics success: NSDictionary, failed: [String], subAckData: MqttDecodeSubAck?)
 
     ///
-    func mqtt5(_ mqtt5: CocoaMQTT5, didUnsubscribeTopics topics: [String], UnsubAckData: MqttDecodeUnsubAck?)
+    func mqtt5(_ mqtt5: CocoaMQTT5, didUnsubscribeTopics topics: [String], unsubAckData: MqttDecodeUnsubAck?)
     
     ///
     func mqtt5(_ mqtt5: CocoaMQTT5, didReceiveDisconnectReasonCode reasonCode: CocoaMQTTDISCONNECTReasonCode)
@@ -849,7 +849,7 @@ extension CocoaMQTT5: CocoaMQTTReaderDelegate {
             _ = subscriptions.removeValue(forKey: t.topic)
         }
 
-        delegate?.mqtt5(self, didUnsubscribeTopics: removeTopics, UnsubAckData: unsuback.unSubAckProperties ?? nil)
+        delegate?.mqtt5(self, didUnsubscribeTopics: removeTopics, unsubAckData: unsuback.unSubAckProperties ?? nil)
         didUnsubscribeTopics(self, removeTopics, unsuback.unSubAckProperties ?? nil)
     }
 
