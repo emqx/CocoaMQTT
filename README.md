@@ -86,7 +86,7 @@ mqtt5.connectProperties = connectProperties
 
 mqtt5.username = "test"
 mqtt5.password = "public"
-mqtt5.willMessage = CocoaMQTTWill(topic: "/will", message: "dieout")
+mqtt5.willMessage = CocoaMQTTMessage(topic: "/will", string: "dieout")
 mqtt5.keepAlive = 60
 mqtt5.delegate = self
 mqtt5.connect()
@@ -96,7 +96,7 @@ let clientID = "CocoaMQTT-" + String(ProcessInfo().processIdentifier)
 let mqtt = CocoaMQTT(clientID: clientID, host: "broker.emqx.io", port: 1883)
 mqtt.username = "test"
 mqtt.password = "public"
-mqtt.willMessage = CocoaMQTTWill(topic: "/will", message: "dieout")
+mqtt.willMessage = CocoaMQTTMessage(topic: "/will", string: "dieout")
 mqtt.keepAlive = 60
 mqtt.delegate = self
 mqtt.connect()
