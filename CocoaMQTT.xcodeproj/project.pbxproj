@@ -3,7 +3,7 @@
 	archiveVersion = 1;
 	classes = {
 	};
-	objectVersion = 52;
+	objectVersion = 54;
 	objects = {
 
 /* Begin PBXBuildFile section */
@@ -59,9 +59,9 @@
 		111124CE24BB516300E2DFBC /* FramePubComp.swift in Sources */ = {isa = PBXBuildFile; fileRef = 8D43DE5522FAEDDA00D9A06B /* FramePubComp.swift */; };
 		111124CF24BB516300E2DFBC /* CocoaMQTTTypes.swift in Sources */ = {isa = PBXBuildFile; fileRef = 82519C0622ACC6E100FA0815 /* CocoaMQTTTypes.swift */; };
 		111124D024BB516300E2DFBC /* FrameConnect.swift in Sources */ = {isa = PBXBuildFile; fileRef = 8D43DE4B22FAEB8B00D9A06B /* FrameConnect.swift */; };
-		4AB7B69128E455FD003ED9BF /* MqttCocoaAsyncSocket.xcframework in Frameworks */ = {isa = PBXBuildFile; fileRef = 4AB7B69028E455FD003ED9BF /* MqttCocoaAsyncSocket.xcframework */; };
-		4AB7B69428E45604003ED9BF /* MqttCocoaAsyncSocket.xcframework in Frameworks */ = {isa = PBXBuildFile; fileRef = 4AB7B69028E455FD003ED9BF /* MqttCocoaAsyncSocket.xcframework */; };
-		4AB7B69728E45608003ED9BF /* MqttCocoaAsyncSocket.xcframework in Frameworks */ = {isa = PBXBuildFile; fileRef = 4AB7B69028E455FD003ED9BF /* MqttCocoaAsyncSocket.xcframework */; };
+		4AB7B69128E455FD003ED9BF /* MqttCocoaAsyncSocket.xcframework in Frameworks */ = {isa = PBXBuildFile; fileRef = 4AB7B69028E455FD003ED9BF /* MqttCocoaAsyncSocket.xcframework */; settings = {ATTRIBUTES = (Required, ); }; };
+		4AB7B69428E45604003ED9BF /* MqttCocoaAsyncSocket.xcframework in Frameworks */ = {isa = PBXBuildFile; fileRef = 4AB7B69028E455FD003ED9BF /* MqttCocoaAsyncSocket.xcframework */; settings = {ATTRIBUTES = (Required, ); }; };
+		4AB7B69728E45608003ED9BF /* MqttCocoaAsyncSocket.xcframework in Frameworks */ = {isa = PBXBuildFile; fileRef = 4AB7B69028E455FD003ED9BF /* MqttCocoaAsyncSocket.xcframework */; settings = {ATTRIBUTES = (Required, ); }; };
 		6EC871E323A421A200F69AE8 /* CocoaMQTTSocket.swift in Sources */ = {isa = PBXBuildFile; fileRef = 6EC871E223A421A200F69AE8 /* CocoaMQTTSocket.swift */; };
 		6EC871E523A421DE00F69AE8 /* CocoaMQTTWebSocket.swift in Sources */ = {isa = PBXBuildFile; fileRef = 6EC871E423A421DE00F69AE8 /* CocoaMQTTWebSocket.swift */; };
 		8225B53A227C2FC600E4DB51 /* CocoaMQTT.swift in Sources */ = {isa = PBXBuildFile; fileRef = 0409977A1C1B1529006B5A6D /* CocoaMQTT.swift */; };
@@ -144,9 +144,9 @@
 		9228E8D127610AA400063DF2 /* MqttConnectProperties.swift in Sources */ = {isa = PBXBuildFile; fileRef = 9228E8CD27610AA400063DF2 /* MqttConnectProperties.swift */; };
 		9228E8D227610AA400063DF2 /* MqttConnectProperties.swift in Sources */ = {isa = PBXBuildFile; fileRef = 9228E8CD27610AA400063DF2 /* MqttConnectProperties.swift */; };
 		9228E8D327610AA400063DF2 /* MqttConnectProperties.swift in Sources */ = {isa = PBXBuildFile; fileRef = 9228E8CD27610AA400063DF2 /* MqttConnectProperties.swift */; };
-		929A468C27611DAE0046F6C5 /* Starscream.xcframework in Frameworks */ = {isa = PBXBuildFile; fileRef = 929A468827611DAE0046F6C5 /* Starscream.xcframework */; };
-		929A468D27611DAE0046F6C5 /* Starscream.xcframework in Frameworks */ = {isa = PBXBuildFile; fileRef = 929A468827611DAE0046F6C5 /* Starscream.xcframework */; };
-		929A468E27611DAE0046F6C5 /* Starscream.xcframework in Frameworks */ = {isa = PBXBuildFile; fileRef = 929A468827611DAE0046F6C5 /* Starscream.xcframework */; };
+		929A468C27611DAE0046F6C5 /* Starscream.xcframework in Frameworks */ = {isa = PBXBuildFile; fileRef = 929A468827611DAE0046F6C5 /* Starscream.xcframework */; settings = {ATTRIBUTES = (Required, ); }; };
+		929A468D27611DAE0046F6C5 /* Starscream.xcframework in Frameworks */ = {isa = PBXBuildFile; fileRef = 929A468827611DAE0046F6C5 /* Starscream.xcframework */; settings = {ATTRIBUTES = (Required, ); }; };
+		929A468E27611DAE0046F6C5 /* Starscream.xcframework in Frameworks */ = {isa = PBXBuildFile; fileRef = 929A468827611DAE0046F6C5 /* Starscream.xcframework */; settings = {ATTRIBUTES = (Required, ); }; };
 /* End PBXBuildFile section */
 
 /* Begin PBXContainerItemProxy section */
@@ -227,6 +227,7 @@
 		9228E8C827610A9100063DF2 /* CocoaMQTTReasonCode.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = CocoaMQTTReasonCode.swift; sourceTree = "<group>"; };
 		9228E8CC27610AA400063DF2 /* MqttAuthProperties.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = MqttAuthProperties.swift; sourceTree = "<group>"; };
 		9228E8CD27610AA400063DF2 /* MqttConnectProperties.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = MqttConnectProperties.swift; sourceTree = "<group>"; };
+		925CAC2C2ADEEE6400FE7027 /* Starscream.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = Starscream.framework; path = "../../../../../../Library/Developer/Xcode/DerivedData/Starscream-earcrwyojhsjcladkdibqmashkbg/Build/Products/Debug-iphonesimulator/Starscream.framework"; sourceTree = "<group>"; };
 		929A468827611DAE0046F6C5 /* Starscream.xcframework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.xcframework; name = Starscream.xcframework; path = Carthage/Build/Starscream.xcframework; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
@@ -396,6 +397,7 @@
 		C68B087463924483F8568675 /* Frameworks */ = {
 			isa = PBXGroup;
 			children = (
+				925CAC2C2ADEEE6400FE7027 /* Starscream.framework */,
 				4AB7B69028E455FD003ED9BF /* MqttCocoaAsyncSocket.xcframework */,
 				929A468827611DAE0046F6C5 /* Starscream.xcframework */,
 			);
@@ -825,7 +827,8 @@
 				GCC_WARN_UNINITIALIZED_AUTOS = YES_AGGRESSIVE;
 				GCC_WARN_UNUSED_FUNCTION = YES;
 				GCC_WARN_UNUSED_VARIABLE = YES;
-				MACOSX_DEPLOYMENT_TARGET = 10.12;
+				IPHONEOS_DEPLOYMENT_TARGET = 12.0;
+				MACOSX_DEPLOYMENT_TARGET = 10.13;
 				MTL_ENABLE_DEBUG_INFO = YES;
 				ONLY_ACTIVE_ARCH = YES;
 				SDKROOT = "";
@@ -885,7 +888,8 @@
 				GCC_WARN_UNINITIALIZED_AUTOS = YES_AGGRESSIVE;
 				GCC_WARN_UNUSED_FUNCTION = YES;
 				GCC_WARN_UNUSED_VARIABLE = YES;
-				MACOSX_DEPLOYMENT_TARGET = 10.12;
+				IPHONEOS_DEPLOYMENT_TARGET = 12.0;
+				MACOSX_DEPLOYMENT_TARGET = 10.13;
 				MTL_ENABLE_DEBUG_INFO = NO;
 				SDKROOT = "";
 				SUPPORTED_PLATFORMS = "macosx iphoneos iphonesimulator appletvos appletvsimulator";
@@ -1093,7 +1097,7 @@
 				GCC_C_LANGUAGE_STANDARD = gnu11;
 				INFOPLIST_FILE = "$(SRCROOT)/Source/Info.plist";
 				INSTALL_PATH = "$(LOCAL_LIBRARY_DIR)/Frameworks";
-				IPHONEOS_DEPLOYMENT_TARGET = 9.0;
+				IPHONEOS_DEPLOYMENT_TARGET = 12.0;
 				LD_RUNPATH_SEARCH_PATHS = (
 					"$(inherited)",
 					"@executable_path/Frameworks",
@@ -1139,7 +1143,7 @@
 				GCC_C_LANGUAGE_STANDARD = gnu11;
 				INFOPLIST_FILE = "$(SRCROOT)/Source/Info.plist";
 				INSTALL_PATH = "$(LOCAL_LIBRARY_DIR)/Frameworks";
-				IPHONEOS_DEPLOYMENT_TARGET = 9.0;
+				IPHONEOS_DEPLOYMENT_TARGET = 12.0;
 				LD_RUNPATH_SEARCH_PATHS = (
 					"$(inherited)",
 					"@executable_path/Frameworks",
