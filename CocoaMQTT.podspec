@@ -1,6 +1,6 @@
 Pod::Spec.new do |s|
   s.name        = "CocoaMQTT"
-  s.version     = "2.1.6"
+  s.version     = "2.1.7"
   s.summary     = "MQTT v3.1.1 client library for iOS and OS X written with Swift 5"
   s.homepage    = "https://github.com/emqx/CocoaMQTT"
   s.license     = { :type => "MIT" }
@@ -12,7 +12,7 @@ Pod::Spec.new do |s|
   s.ios.deployment_target = "11.0"
   s.tvos.deployment_target = "10.0"
   # s.watchos.deployment_target = "2.0"
-  s.source   = { :git => "https://github.com/emqx/CocoaMQTT.git", :tag => "2.1.6"}
+  s.source   = { :git => "https://github.com/emqx/CocoaMQTT.git", :tag => "2.1.7"}
   s.default_subspec = 'Core'
   
   s.subspec 'Core' do |ss|
@@ -23,7 +23,7 @@ Pod::Spec.new do |s|
   
   s.subspec 'WebSockets' do |ss|
     ss.dependency "CocoaMQTT/Core"
-    ss.dependency "Starscream", "~> 3.1.1"
+    ss.dependency "Starscream", "~> 4.0.6"
     ss.source_files = "Source/CocoaMQTTWebSocket.swift"
   end
 end

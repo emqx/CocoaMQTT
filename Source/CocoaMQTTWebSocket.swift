@@ -410,7 +410,7 @@ public extension CocoaMQTTWebSocket {
         }
         
         public init(request: URLRequest) {
-            reference = WebSocket(request: request, protocols: ["mqtt"], stream: FoundationStream())
+            reference = WebSocket(request: request)
             super.init()
             reference.delegate = self
         }
@@ -431,10 +431,15 @@ public extension CocoaMQTTWebSocket {
     }
 }
 
-extension CocoaMQTTWebSocket.StarscreamConnection: SSLTrustValidator {
-    public func isValid(_ trust: SecTrust, domain: String?) -> Bool {
-        guard let delegate = self.delegate else { return false }
-        
+extension CocoaMQTTWebSocket.StarscreamConnection: CertificatePinning {
+    public func evaluateTrust(trust: SecTrust, domain: String?, completion: ((PinningState) -> ())) {
+        var result: SecTrustResultType = .unspecified
+        SecTrustEvaluate(trust, &result)
+        let e = CFErrorCreate(kCFAllocatorDefault, "FoundationSecurityError" as NSString?, Int(result.rawValue), nil)
+        guard let delegate = self.delegate else {
+            return completion(.failed(e))
+        }
+    
         var shouldAccept = false
         let semaphore = DispatchSemaphore(value: 0)
         delegate.connection(self, didReceive: trust) { result in
@@ -442,12 +447,19 @@ extension CocoaMQTTWebSocket.StarscreamConnection: SSLTrustValidator {
             semaphore.signal()
         }
         semaphore.wait()
-        
-        return shouldAccept
+
+        if(shouldAccept){
+            completion(.success)
+        }else{
+            completion(.failed(e))
+        }
     }
 }
 
 extension CocoaMQTTWebSocket.StarscreamConnection: WebSocketDelegate {
+    public func didReceive(event: Starscream.WebSocketEvent, client: Starscream.WebSocketClient) {
+    }
+    
 
     public func websocketDidConnect(socket: WebSocketClient) {
         delegate?.connectionOpened(self)
