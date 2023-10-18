@@ -21,7 +21,7 @@ public protocol CocoaMQTTWebSocketConnectionDelegate: AnyObject {
     
     func connectionOpened(_ conn: CocoaMQTTWebSocketConnection)
     
-    func connectionClosed(_ conn: CocoaMQTTWebSocketConnection, withError error: Error?)
+    func connectionClosed(_ conn: CocoaMQTTWebSocketConnection, withError error: Error?, withCode code: UInt16?)
     
     func connection(_ conn: CocoaMQTTWebSocketConnection, receivedString string: String)
     
@@ -287,7 +287,7 @@ extension CocoaMQTTWebSocket: CocoaMQTTWebSocketConnectionDelegate {
         }
     }
 
-    public func connectionClosed(_ conn: CocoaMQTTWebSocketConnection, withError error: Error?) {
+    public func connectionClosed(_ conn: CocoaMQTTWebSocketConnection, withError error: Error?, withCode code: UInt16?) {
         guard conn.isEqual(connection) else { return }
         closeConnection(withError: error)
     }
@@ -360,7 +360,7 @@ public extension CocoaMQTTWebSocket {
                             }
                             self.scheduleRead()
                         case .failure(let error):
-                            delegate.connectionClosed(self, withError: error)
+                            delegate.connectionClosed(self, withError: error, withCode: nil)
                         }
                     }
                 }
@@ -393,7 +393,7 @@ extension CocoaMQTTWebSocket.FoundationConnection: URLSessionWebSocketDelegate {
 
     public func urlSession(_ session: URLSession, webSocketTask: URLSessionWebSocketTask, didCloseWith closeCode: URLSessionWebSocketTask.CloseCode, reason: Data?) {
         queue.async {
-            self.delegate?.connectionClosed(self, withError: CocoaMQTTError.FoundationConnection.closed(closeCode))
+            self.delegate?.connectionClosed(self, withError: CocoaMQTTError.FoundationConnection.closed(closeCode), withCode: nil)
         }
     }
 }
@@ -457,24 +457,35 @@ extension CocoaMQTTWebSocket.StarscreamConnection: CertificatePinning {
 }
 
 extension CocoaMQTTWebSocket.StarscreamConnection: WebSocketDelegate {
-    public func didReceive(event: Starscream.WebSocketEvent, client: Starscream.WebSocketClient) {
-    }
-    
-
-    public func websocketDidConnect(socket: WebSocketClient) {
-        delegate?.connectionOpened(self)
-    }
-
-    public func websocketDidDisconnect(socket: WebSocketClient, error: Error?) {
-        delegate?.connectionClosed(self, withError: error)
-    }
-
-    public func websocketDidReceiveMessage(socket: WebSocketClient, text: String) {
-        delegate?.connection(self, receivedString: text)
-    }
-
-    public func websocketDidReceiveData(socket: WebSocketClient, data: Data) {
-        delegate?.connection(self, receivedData: data)
+    public func didReceive(event: Starscream.WebSocketEvent, client: Starscream.WebSocket) {
+        switch event {
+        case .connected(let headers):
+            delegate?.connectionOpened(self)
+            break
+        case .disconnected(let reason, let code):
+            delegate?.connectionClosed(self, withError: nil, withCode: code)
+            break
+        case .text(let string):
+            delegate?.connection(self, receivedString: string)
+            break
+        case .binary(let data):
+            delegate?.connection(self, receivedData: data)
+            break
+        case .ping(_):
+            break
+        case .pong(_):
+            break
+        case .viabilityChanged(_):
+            break
+        case .reconnectSuggested(_):
+            break
+        case .cancelled:
+            delegate?.connectionClosed(self, withError: nil, withCode: nil)
+            break
+        case .error(let error):
+            delegate?.connectionClosed(self, withError: error, withCode: nil)
+            break
+        }
     }
 }
 
