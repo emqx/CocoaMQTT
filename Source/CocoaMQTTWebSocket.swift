@@ -14,9 +14,9 @@ import CocoaMQTT
 // MARK: - Interfaces
 
 public protocol CocoaMQTTWebSocketConnectionDelegate: AnyObject {
-
+    
     func connection(_ conn: CocoaMQTTWebSocketConnection, didReceive trust: SecTrust, completionHandler: @escaping (Bool) -> Swift.Void)
-
+    
     func urlSessionConnection(_ conn: CocoaMQTTWebSocketConnection, didReceiveTrust trust: SecTrust, didReceiveChallenge challenge: URLAuthenticationChallenge, completionHandler: @escaping (URLSession.AuthChallengeDisposition, URLCredential?) -> Void)
     
     func connectionOpened(_ conn: CocoaMQTTWebSocketConnection)
@@ -44,7 +44,7 @@ public protocol CocoaMQTTWebSocketConnection: NSObjectProtocol {
 public protocol CocoaMQTTWebSocketConnectionBuilder {
     
     func buildConnection(forURL url: URL, withHeaders headers: [String: String]) throws -> CocoaMQTTWebSocketConnection
-
+    
 }
 
 // MARK: - CocoaMQTTWebSocket
@@ -52,11 +52,11 @@ public protocol CocoaMQTTWebSocketConnectionBuilder {
 public class CocoaMQTTWebSocket: CocoaMQTTSocketProtocol {
     
     public var enableSSL = false
-
+    
     public var shouldConnectWithURIOnly = false
     
     public var headers: [String: String] = [:]
-
+    
     public typealias ConnectionBuilder = CocoaMQTTWebSocketConnectionBuilder
     
     public struct DefaultConnectionBuilder: ConnectionBuilder {
@@ -95,9 +95,9 @@ public class CocoaMQTTWebSocket: CocoaMQTTSocketProtocol {
     }
     
     public func connect(toHost host: String, onPort port: UInt16, withTimeout timeout: TimeInterval) throws {
-
+        
         var urlStr = ""
-
+        
         if shouldConnectWithURIOnly {
             urlStr = "\(uri)"
         } else {
@@ -151,7 +151,7 @@ public class CocoaMQTTWebSocket: CocoaMQTTSocketProtocol {
     internal var delegate: CocoaMQTTSocketDelegate?
     internal var delegateQueue: DispatchQueue?
     internal var internalQueue = DispatchQueue(label: "CocoaMQTTWebSocket")
-
+    
     private var connection: CocoaMQTTWebSocketConnection?
     
     private func reset() {
@@ -211,7 +211,7 @@ public class CocoaMQTTWebSocket: CocoaMQTTSocketProtocol {
     private func checkScheduledReads() {
         guard let theDelegate = delegate else { return }
         guard let delegateQueue = delegateQueue else { return }
-
+        
         readTimeoutTimer.reset()
         while (scheduledReads.first?.length ?? UInt.max) <= readBuffer.count {
             let nextRead = scheduledReads.removeFirst()
@@ -267,7 +267,7 @@ extension CocoaMQTTWebSocket: CocoaMQTTWebSocketConnectionDelegate {
             completionHandler(.performDefaultHandling, nil)
         }
     }
-
+    
     public func connection(_ conn: CocoaMQTTWebSocketConnection, didReceive trust: SecTrust, completionHandler: @escaping (Bool) -> Void) {
         if let del = delegate {
             __delegate_queue {
@@ -277,7 +277,7 @@ extension CocoaMQTTWebSocket: CocoaMQTTWebSocketConnectionDelegate {
             completionHandler(false)
         }
     }
-
+    
     public func connectionOpened(_ conn: CocoaMQTTWebSocketConnection) {
         guard conn.isEqual(connection) else { return }
         guard let delegate = delegate else { return }
@@ -286,17 +286,17 @@ extension CocoaMQTTWebSocket: CocoaMQTTWebSocketConnectionDelegate {
             delegate.socketConnected(self)
         }
     }
-
+    
     public func connectionClosed(_ conn: CocoaMQTTWebSocketConnection, withError error: Error?, withCode code: UInt16?) {
         guard conn.isEqual(connection) else { return }
         closeConnection(withError: error)
     }
-
+    
     public func connection(_ conn: CocoaMQTTWebSocketConnection, receivedString string: String) {
         guard let data = string.data(using: .utf8) else { return }
         self.connection(conn, receivedData: data)
     }
-
+    
     public func connection(_ conn: CocoaMQTTWebSocketConnection, receivedData data: Data) {
         guard conn.isEqual(connection) else { return }
         readBuffer.append(data)
@@ -309,7 +309,7 @@ extension CocoaMQTTWebSocket: CocoaMQTTWebSocketConnectionDelegate {
 @available(OSX 10.15, iOS 13.0, watchOS 6.0, tvOS 13.0, *)
 public extension CocoaMQTTWebSocket {
     class FoundationConnection: NSObject, CocoaMQTTWebSocketConnection {
-
+        
         public weak var delegate: CocoaMQTTWebSocketConnectionDelegate?
         public lazy var queue = DispatchQueue(label: "CocoaMQTTFoundationWebSocketConnection-\(self.hashValue)")
         
@@ -378,19 +378,19 @@ extension CocoaMQTTWebSocket.FoundationConnection: URLSessionWebSocketDelegate {
                     completionHandler(shouldTrust ? .performDefaultHandling : .rejectProtectionSpace, nil)
                 }
                 delegate.urlSessionConnection(self, didReceiveTrust: trust, didReceiveChallenge: challenge, completionHandler: completionHandler)
-
+                
             } else {
                 completionHandler(.performDefaultHandling, nil)
             }
         }
     }
-
+    
     public func urlSession(_ session: URLSession, webSocketTask: URLSessionWebSocketTask, didOpenWithProtocol protocol: String?) {
         queue.async {
             self.delegate?.connectionOpened(self)
         }
     }
-
+    
     public func urlSession(_ session: URLSession, webSocketTask: URLSessionWebSocketTask, didCloseWith closeCode: URLSessionWebSocketTask.CloseCode, reason: Data?) {
         queue.async {
             self.delegate?.connectionClosed(self, withError: CocoaMQTTError.FoundationConnection.closed(closeCode), withCode: nil)
@@ -439,7 +439,7 @@ extension CocoaMQTTWebSocket.StarscreamConnection: CertificatePinning {
         guard let delegate = self.delegate else {
             return completion(.failed(e))
         }
-    
+        
         var shouldAccept = false
         let semaphore = DispatchSemaphore(value: 0)
         delegate.connection(self, didReceive: trust) { result in
@@ -447,7 +447,7 @@ extension CocoaMQTTWebSocket.StarscreamConnection: CertificatePinning {
             semaphore.signal()
         }
         semaphore.wait()
-
+        
         if(shouldAccept){
             completion(.success)
         }else{
@@ -459,18 +459,14 @@ extension CocoaMQTTWebSocket.StarscreamConnection: CertificatePinning {
 extension CocoaMQTTWebSocket.StarscreamConnection: WebSocketDelegate {
     public func didReceive(event: Starscream.WebSocketEvent, client: Starscream.WebSocket) {
         switch event {
-        case .connected(let headers):
+        case .connected(_):
             delegate?.connectionOpened(self)
-            break
-        case .disconnected(let reason, let code):
+        case .disconnected(_, let code):
             delegate?.connectionClosed(self, withError: nil, withCode: code)
-            break
         case .text(let string):
             delegate?.connection(self, receivedString: string)
-            break
         case .binary(let data):
             delegate?.connection(self, receivedData: data)
-            break
         case .ping(_):
             break
         case .pong(_):
@@ -481,9 +477,9 @@ extension CocoaMQTTWebSocket.StarscreamConnection: WebSocketDelegate {
             break
         case .cancelled:
             delegate?.connectionClosed(self, withError: nil, withCode: nil)
-            break
         case .error(let error):
             delegate?.connectionClosed(self, withError: error, withCode: nil)
+        default:
             break
         }
     }
