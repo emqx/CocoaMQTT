@@ -12,8 +12,8 @@ MQTT v3.1.1 and v5.0 client library for iOS/macOS/tvOS written with Swift 5
 
 Build with Xcode 11.1 / Swift 5.1
 
-IOS Target: 9.0 or above
-OSX Target: 10.12 or above
+IOS Target: 12.0 or above
+OSX Target: 10.13 or above
 TVOS Target: 10.0 or above
 
 ##  xcode 14.3 issue:
