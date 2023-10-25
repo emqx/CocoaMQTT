@@ -29,10 +29,11 @@ If you encounter the issue, Please update your project minimum depolyments to 11
 To integrate CocoaMQTT into your Xcode project using [CocoaPods](http://cocoapods.org), you need to modify you `Podfile` like the followings:
 
 ```ruby
+platform :ios, 12.0
 use_frameworks!
 
-target 'Example' do
-    pod 'CocoaMQTT'
+target 'Morse-MOPP' do
+    pod 'CocoaMQTT/WebSockets'
 end
 ```
 
