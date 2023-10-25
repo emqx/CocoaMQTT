@@ -32,7 +32,7 @@ To integrate CocoaMQTT into your Xcode project using [CocoaPods](http://cocoapod
 platform :ios, 12.0
 use_frameworks!
 
-target 'Morse-MOPP' do
+target 'Example' do
     pod 'CocoaMQTT/WebSockets'
 end
 ```
