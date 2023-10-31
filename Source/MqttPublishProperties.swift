@@ -77,9 +77,8 @@ public class MqttPublishProperties: NSObject {
         }
         //3.3.2.3.7 Property Length User Property
         if let userProperty = self.userProperty {
-            let dictValues = [String](userProperty.values)
-            for (value) in dictValues {
-                properties += getMQTTPropertyData(type: CocoaMQTTPropertyName.userProperty.rawValue, value: value.bytesWithLength)
+            for (key, value) in userProperty {
+                properties += getMQTTPropertyData(type: CocoaMQTTPropertyName.userProperty.rawValue, value: key.bytesWithLength + value.bytesWithLength)
             }
         }
         //3.3.2.3.8 Subscription Identifier
