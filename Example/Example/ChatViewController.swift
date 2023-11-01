@@ -28,7 +28,7 @@ class ChatViewController: UIViewController {
             }
         }
     }
-
+    
     var mqtt5: CocoaMQTT5?
     var mqtt: CocoaMQTT?
     var client: String?
@@ -40,7 +40,7 @@ class ChatViewController: UIViewController {
             scrollToBottom()
         }
     }
-    
+
     @IBOutlet weak var tableView: UITableView!
     @IBOutlet weak var messageTextView: UITextView! {
         didSet {
@@ -49,19 +49,19 @@ class ChatViewController: UIViewController {
     }
     @IBOutlet weak var animalAvatarImageView: UIImageView!
     @IBOutlet weak var sloganLabel: UILabel!
-    
+
     @IBOutlet weak var messageTextViewHeightConstraint: NSLayoutConstraint!
     @IBOutlet weak var inputViewBottomConstraint: NSLayoutConstraint!
-    
+
     @IBOutlet weak var sendMessageButton: UIButton! {
         didSet {
             sendMessageButton.isEnabled = false
         }
     }
-    
+
     @IBAction func sendMessage() {
 
-        
+
         let message = messageTextView.text
 
         let publishProperties = MqttPublishProperties()
@@ -72,7 +72,7 @@ class ChatViewController: UIViewController {
         }else if mqttVersion == "5.0" {
             mqtt5!.publish("chat/room/animals/client/" + animal!, withString: message!, qos: .qos1, DUP: true, retained: false, properties: publishProperties)
         }
-        
+
         messageTextView.text = ""
         sendMessageButton.isEnabled = false
         messageTextViewHeightConstraint.constant = messageTextView.contentSize.height
@@ -92,7 +92,7 @@ class ChatViewController: UIViewController {
 
         _ = navigationController?.popViewController(animated: true)
     }
-    
+
     override func viewDidLoad() {
         super.viewDidLoad()
         navigationController?.navigationBar.isHidden = true
@@ -110,7 +110,7 @@ class ChatViewController: UIViewController {
         tableView.dataSource = self
         tableView.rowHeight = UITableView.automaticDimension
         tableView.estimatedRowHeight = 50
-        
+
         let name = NSNotification.Name(rawValue: "MQTTMessageNotification" + animal!)
 
         if mqttVersion == "3.1.1" {
@@ -123,16 +123,16 @@ class ChatViewController: UIViewController {
         NotificationCenter.default.addObserver(self, selector: #selector(ChatViewController.disconnectMessage(notification:)), name: disconnectNotification, object: nil)
         NotificationCenter.default.addObserver(self, selector: #selector(ChatViewController.keyboardChanged(notification:)), name: UIResponder.keyboardWillChangeFrameNotification, object: nil)
     }
-    
+
     deinit {
         NotificationCenter.default.removeObserver(self)
     }
-    
+
     @objc func keyboardChanged(notification: NSNotification) {
         let userInfo = notification.userInfo as! [String: AnyObject]
         let keyboardValue = userInfo["UIKeyboardFrameEndUserInfoKey"]
-        let bottomDistance = UIScreen.main.bounds.size.height - (navigationController?.navigationBar.frame.height)! - keyboardValue!.cgRectValue.origin.y
-        
+        let bottomDistance = UIScreen.main.bounds.size.height - (navigationController?.navigationBar.frame.height ?? 0) - keyboardValue!.cgRectValue.origin.y
+
         if bottomDistance > 0 {
             inputViewBottomConstraint.constant = bottomDistance
         } else {
@@ -190,7 +190,7 @@ extension ChatViewController: UITextViewDelegate {
                 textView.layoutIfNeeded()
             }
         }
-        
+
         if textView.text == "" {
             sendMessageButton.isEnabled = false
         } else {
@@ -203,7 +203,7 @@ extension ChatViewController: UITableViewDataSource, UITableViewDelegate {
     func tableView(_ tableView: UITableView, numberOfRowsInSection section: Int) -> Int {
         return messages.count
     }
-    
+
     func tableView(_ tableView: UITableView, cellForRowAt indexPath: IndexPath) -> UITableViewCell {
         let message = messages[indexPath.row]
         print("message.sender: \(message.sender)    animal:\(String(describing: tabBarController?.selectedViewController?.tabBarItem.title!))   message.content:\( message.content)"   )
@@ -220,7 +220,7 @@ extension ChatViewController: UITableViewDataSource, UITableViewDelegate {
             return cell
         }
     }
-    
+
     func tableView(_ tableView: UITableView, didSelectRowAt indexPath: IndexPath) {
         view.endEditing(true)
     }
