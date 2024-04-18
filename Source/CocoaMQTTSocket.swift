@@ -6,7 +6,7 @@
 //
 
 import Foundation
-import MqttCocoaAsyncSocket
+import CocoaAsyncSocket
 
 // MARK: - Interfaces
 
@@ -47,7 +47,7 @@ public class CocoaMQTTSocket: NSObject {
     /// Default is false
     public var allowUntrustCACertificate = false
     
-    fileprivate let reference = MGCDAsyncSocket()
+    fileprivate let reference = GCDAsyncSocket()
     fileprivate weak var delegate: CocoaMQTTSocketDelegate?
     
     public override init() { super.init() }
@@ -80,8 +80,8 @@ extension CocoaMQTTSocket: CocoaMQTTSocketProtocol {
     }
 }
 
-extension CocoaMQTTSocket: MGCDAsyncSocketDelegate {
-    public func socket(_ sock: MGCDAsyncSocket, didConnectToHost host: String, port: UInt16) {
+extension CocoaMQTTSocket: GCDAsyncSocketDelegate {
+    public func socket(_ sock: GCDAsyncSocket, didConnectToHost host: String, port: UInt16) {
         printInfo("Connected to \(host) : \(port)")
         
          #if os(iOS)
@@ -99,7 +99,7 @@ extension CocoaMQTTSocket: MGCDAsyncSocketDelegate {
          if enableSSL {
              var setting = sslSettings ?? [:]
              if allowUntrustCACertificate {
-                 setting[MGCDAsyncSocketManuallyEvaluateTrust as String] = NSNumber(value: true)
+                 setting[GCDAsyncSocketManuallyEvaluateTrust as String] = NSNumber(value: true)
              }
              sock.startTLS(setting)
          } else {
@@ -107,7 +107,7 @@ extension CocoaMQTTSocket: MGCDAsyncSocketDelegate {
          }
     }
 
-    public func socket(_ sock: MGCDAsyncSocket, didReceive trust: SecTrust, completionHandler: @escaping (Bool) -> Swift.Void) {
+    public func socket(_ sock: GCDAsyncSocket, didReceive trust: SecTrust, completionHandler: @escaping (Bool) -> Swift.Void) {
         if let theDelegate = delegate {
             theDelegate.socket(self, didReceive: trust, completionHandler: completionHandler)
         } else {
@@ -115,21 +115,21 @@ extension CocoaMQTTSocket: MGCDAsyncSocketDelegate {
         }
     }
 
-    public func socketDidSecure(_ sock: MGCDAsyncSocket) {
+    public func socketDidSecure(_ sock: GCDAsyncSocket) {
         printDebug("socket did secure")
         delegate?.socketConnected(self)
     }
 
-    public func socket(_ sock: MGCDAsyncSocket, didWriteDataWithTag tag: Int) {
+    public func socket(_ sock: GCDAsyncSocket, didWriteDataWithTag tag: Int) {
         printDebug("socket wrote data \(tag)")
         delegate?.socket(self, didWriteDataWithTag: tag)
     }
 
-    public func socket(_ sock: MGCDAsyncSocket, didRead data: Data, withTag tag: Int) {
+    public func socket(_ sock: GCDAsyncSocket, didRead data: Data, withTag tag: Int) {
         delegate?.socket(self, didRead: data, withTag: tag)
     }
 
-    public func socketDidDisconnect(_ sock: MGCDAsyncSocket, withError err: Error?) {
+    public func socketDidDisconnect(_ sock: GCDAsyncSocket, withError err: Error?) {
         printDebug("socket disconnected")
         delegate?.socketDidDisconnect(self, withError: err)
     }
