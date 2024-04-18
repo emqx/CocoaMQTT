@@ -1,2 +1,2 @@
-github "leeway1208/MqttCocoaAsyncSocket" "1.0.8"
-github "daltoniam/Starscream" "4.0.4"
+github "robbiehanson/CocoaAsyncSocket" "master"
+github "daltoniam/Starscream" "4.0.8"
