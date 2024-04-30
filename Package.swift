@@ -23,6 +23,7 @@ let package = Package(
                 dependencies: [ "MqttCocoaAsyncSocket" ],
                 path: "Source",
                 exclude: ["CocoaMQTTWebSocket.swift"],
+                resources: [.process("PrivacyInfo.xcprivacy")],
                 swiftSettings: [ .define("IS_SWIFT_PACKAGE")]),
         .target(name: "CocoaMQTTWebSocket",
                 dependencies: [ "CocoaMQTT", "Starscream" ],
