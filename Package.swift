@@ -16,13 +16,11 @@ let package = Package(
     ],
     dependencies: [
         .package(url: "https://github.com/daltoniam/Starscream.git", .exact("4.0.8")),
-        .package(url: "https://github.com/robbiehanson/CocoaAsyncSocket", from: "7.6.4")
+        .package(url: "https://github.com/leeway1208/MqttCocoaAsyncSocket", from: "1.0.8"),
     ],
     targets: [
         .target(name: "CocoaMQTT",
-                dependencies: [
-                    .product(name: "CocoaAsyncSocket", package: "CocoaAsyncSocket")
-                ],
+                dependencies: [ "MqttCocoaAsyncSocket" ],
                 path: "Source",
                 exclude: ["CocoaMQTTWebSocket.swift"],
                 swiftSettings: [ .define("IS_SWIFT_PACKAGE")]),
