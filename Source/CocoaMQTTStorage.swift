@@ -25,7 +25,7 @@ protocol CocoaMQTTStorageProtocol {
     func synchronize() -> Bool
 
     /// Read all stored messages by saving order
-    func readAll() -> [Frame]?
+    func readAll() -> [Frame]
 }
 
 final class CocoaMQTTStorage: CocoaMQTTStorageProtocol {
@@ -96,11 +96,11 @@ final class CocoaMQTTStorage: CocoaMQTTStorageProtocol {
         return userDefault.synchronize()
     }
 
-    func readAll() -> [Frame]? {
+    func readAll() -> [Frame] {
         return __read(needDelete: false)
     }
 
-    func takeAll() -> [Frame]? {
+    func takeAll() -> [Frame] {
         return __read(needDelete: true)
     }
 
@@ -127,7 +127,7 @@ final class CocoaMQTTStorage: CocoaMQTTStorageProtocol {
         return nil
     }
 
-    private func __read(needDelete: Bool)  -> [Frame]? {
+    private func __read(needDelete: Bool)  -> [Frame] {
         var frames = [Frame]()
         let allObjs = userDefault.dictionaryRepresentation().sorted { (k1, k2) in
             return k1.key < k2.key
@@ -146,7 +146,7 @@ final class CocoaMQTTStorage: CocoaMQTTStorageProtocol {
                 frames.append(f)
             }
         }
-        return nil
+        return frames
     }
 
 }

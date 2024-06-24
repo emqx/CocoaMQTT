@@ -34,6 +34,7 @@ struct FramePublish: Frame {
     var _payload: [UInt8] = []
 
     var mqtt5Topic: String = "";
+    static var isMqtt5: Bool = false
 
 
     // --- Attributes End
@@ -44,6 +45,39 @@ struct FramePublish: Frame {
         self._payload = payload
         self.msgid = msgid
         self.qos = qos
+    }
+    
+    init?(topic: String, packetFixedHeaderType: UInt8, bytes: [UInt8]) {
+        self.topic = topic
+        self.packetFixedHeaderType = packetFixedHeaderType
+        // msgid
+        if (packetFixedHeaderType & 0x06) >> 1 == CocoaMQTTQoS.qos0.rawValue {
+            self.msgid = 0
+        } else {
+            // parse topic
+            if bytes.count < 2 {
+                return nil
+            }
+
+            let len = UInt16(bytes[0]) << 8 + UInt16(bytes[1])
+
+            //2 is packetFixedHeaderType length
+            let pos = 2 + Int(len)
+
+            if bytes.count < pos {
+                return nil
+            }
+
+            // msgid
+            if (packetFixedHeaderType & 0x06) >> 1 == CocoaMQTTQoS.qos0.rawValue {
+                self.msgid = 0
+            } else {
+                if bytes.count < pos + 2 {
+                    return nil
+                }
+                self.msgid = UInt16(bytes[pos]) << 8 + UInt16(bytes[pos+1])
+            }
+        }
     }
 }
 
@@ -179,13 +213,9 @@ extension FramePublish: InitialWithBytes {
         }
 
 
-        var protocolVersion = "";
-        if let storage = CocoaMQTTStorage() {
-            protocolVersion = storage.queryMQTTVersion()
-        }
-
-        if (protocolVersion == "5.0"){
+        if (FramePublish.isMqtt5){
             let data = MqttDecodePublish()
+            data.isMqtt5 = true
             data.decodePublish(fixedHeader: packetFixedHeaderType ,publishData: bytes)
             pos = data.mqtt5DataIndex
 

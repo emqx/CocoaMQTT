@@ -29,6 +29,8 @@ public protocol CocoaMQTTSocketProtocol {
     func disconnect()
     func readData(toLength length: UInt, withTimeout timeout: TimeInterval, tag: Int)
     func write(_ data: Data, withTimeout timeout: TimeInterval, tag: Int)
+    func isTCPConnected() -> Bool
+    func isTCPDisConnected() -> Bool
 }
 
 // MARK: - CocoaMQTTSocket
@@ -77,6 +79,14 @@ extension CocoaMQTTSocket: CocoaMQTTSocketProtocol {
     
     public func write(_ data: Data, withTimeout timeout: TimeInterval, tag: Int) {
         reference.write(data, withTimeout: timeout, tag: tag)
+    }
+    
+    public func isTCPConnected() -> Bool {
+        return reference.isConnected;
+    }
+    
+    public func isTCPDisConnected() -> Bool {
+        return reference.isDisconnected;
     }
 }
 

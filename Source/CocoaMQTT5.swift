@@ -136,6 +136,8 @@ protocol CocoaMQTT5Client {
 ///
 /// - Note: MGCDAsyncSocket need delegate to extend NSObject
 public class CocoaMQTT5: NSObject, CocoaMQTT5Client {
+    
+    public var name: String = ""
 
     public weak var delegate: CocoaMQTT5Delegate?
 
@@ -150,6 +152,8 @@ public class CocoaMQTT5: NSObject, CocoaMQTT5Client {
     public var username: String?
 
     public var password: String?
+    
+    public var unhandlePingCount: Int32 = 0;
 
     /// Clean Session flag. Default is true
     ///
@@ -175,6 +179,9 @@ public class CocoaMQTT5: NSObject, CocoaMQTT5Client {
     public var connState = CocoaMQTTConnState.disconnected {
         didSet {
             __delegate_queue {
+                if self.connState == .connected {
+                    self.unhandlePingCount = 0
+                }
                 self.delegate?.mqtt5?(self, didStateChangeTo: self.connState)
                 self.didChangeState(self, self.connState)
             }
@@ -245,6 +252,9 @@ public class CocoaMQTT5: NSObject, CocoaMQTT5Client {
             CocoaMQTTLogger.logger.minLevel = newValue
         }
     }
+    
+    //最小处理推送数据时间间隔,单位毫秒, 默认10ms
+    public var minReceiveInterval: TimeInterval = 10
 
     /// Enable SSL connection
     public var enableSSL: Bool {
@@ -269,8 +279,8 @@ public class CocoaMQTT5: NSObject, CocoaMQTT5Client {
     /// The subscribed topics in current communication
     public var subscriptions = ThreadSafeDictionary<String, CocoaMQTTQoS>(label: "subscriptions")
 
-    fileprivate var subscriptionsWaitingAck = ThreadSafeDictionary<UInt16, [MqttSubscription]>(label: "subscriptionsWaitingAck")
-    fileprivate var unsubscriptionsWaitingAck = ThreadSafeDictionary<UInt16, [MqttSubscription]>(label: "unsubscriptionsWaitingAck")
+    var subscriptionsWaitingAck = ThreadSafeDictionary<UInt16, [MqttSubscription]>(label: "subscriptionsWaitingAck")
+    var unsubscriptionsWaitingAck = ThreadSafeDictionary<UInt16, [MqttSubscription]>(label: "unsubscriptionsWaitingAck")
 
 
     /// Sending messages
@@ -316,6 +326,13 @@ public class CocoaMQTT5: NSObject, CocoaMQTT5Client {
         } else {
             printWarning("Localstorage initial failed for key: \(clientID)")
         }
+        
+    }
+    
+    @objc func handleNetworkRecover() {
+        //恢复自动重连
+        self.is_internal_disconnected = false
+        _ = self.connect()
     }
     
     deinit {
@@ -326,7 +343,7 @@ public class CocoaMQTT5: NSObject, CocoaMQTT5Client {
         socket.disconnect()
     }
 
-    fileprivate func send(_ frame: Frame, tag: Int = 0) {
+    func send(_ frame: Frame, tag: Int = 0) {
         printDebug("SEND: \(frame)")
         let data = frame.bytes(version: version)
 
@@ -349,7 +366,7 @@ public class CocoaMQTT5: NSObject, CocoaMQTT5Client {
         reader!.start()
     }
 
-    fileprivate func nextMessageID() -> UInt16 {
+    func nextMessageID() -> UInt16 {
         if _msgid == UInt16.max {
             _msgid = 0
         }
@@ -375,7 +392,8 @@ public class CocoaMQTT5: NSObject, CocoaMQTT5Client {
     ///   - Bool: It indicates whether successfully calling socket connect function.
     ///           Not yet established correct MQTT session
     public func connect() -> Bool {
-        return connect(timeout: -1)
+        //超时时间设置为5s，-1代表无穷大，会导致一直处于conneting状态，后面重新connect会被忽略
+        return connect(timeout: 5)
     }
 
     /// Connect to MQTT broker
@@ -385,8 +403,12 @@ public class CocoaMQTT5: NSObject, CocoaMQTT5Client {
     ///   - Bool: It indicates whether successfully calling socket connect function.
     ///           Not yet established correct MQTT session
     public func connect(timeout: TimeInterval) -> Bool {
+        guard connState != .connected, connState != .connecting else { return true }
+        
         socket.setDelegate(self, delegateQueue: delegateQueue)
+        autoReconnTimer = nil
         reader = CocoaMQTTReader(socket: socket, delegate: self)
+        FramePublish.isMqtt5 = true
         do {
             if timeout > 0 {
                 try socket.connect(toHost: self.host, onPort: self.port, withTimeout: timeout)
@@ -436,8 +458,8 @@ public class CocoaMQTT5: NSObject, CocoaMQTT5Client {
     /// Send a PING request to broker
     public func ping() {
         printDebug("ping")
+        self.unhandlePingCount += 1
         send(FramePingReq(), tag: -0xC0)
-
         __delegate_queue {
             self.delegate?.mqtt5DidPing(self)
             self.didPing(self)
@@ -684,6 +706,7 @@ extension CocoaMQTT5: CocoaMQTTSocketDelegate {
         printInfo("Try reconnect to server after \(reconnectTimeInterval)s")
         autoReconnTimer = CocoaMQTTTimer.after(Double(reconnectTimeInterval), name: "autoReconnTimer", { [weak self] in
             guard let self = self else { return }
+            if self.connState == .connected { return }
             if self.reconnectTimeInterval < self.maxAutoReconnectTimeInterval {
                 self.reconnectTimeInterval *= 2
             } else {
@@ -756,6 +779,10 @@ extension CocoaMQTT5: CocoaMQTTReaderDelegate {
         delegate?.mqtt5(self, didConnectAck: connack.reasonCode ?? CocoaMQTTCONNACKReasonCode.unspecifiedError, connAckData: connack.connackProperties ?? nil)
         didConnectAck(self, connack.reasonCode ?? CocoaMQTTCONNACKReasonCode.unspecifiedError, connack.connackProperties ?? nil)
     }
+    
+    func minReceiveUpdateInterval() -> TimeInterval {
+        return self.minReceiveInterval
+    }
 
     func didReceive(_ reader: CocoaMQTTReader, publish: FramePublish) {
         printDebug("RECV: \(publish)")
@@ -771,6 +798,14 @@ extension CocoaMQTT5: CocoaMQTTReaderDelegate {
         if message.qos == .qos1 {
             puback(FrameType.puback, msgid: publish.msgid)
         } else if message.qos == .qos2 {
+            puback(FrameType.pubrec, msgid: publish.msgid)
+        }
+    }
+    
+    func didReceiveJustForAck(_ reader: CocoaMQTTReader, publish: FramePublish) {
+        if publish.qos == .qos1 {
+            puback(FrameType.puback, msgid: publish.msgid)
+        } else if publish.qos == .qos2 {
             puback(FrameType.pubrec, msgid: publish.msgid)
         }
     }
@@ -855,7 +890,7 @@ extension CocoaMQTT5: CocoaMQTTReaderDelegate {
 
     func didReceive(_ reader: CocoaMQTTReader, pingresp: FramePingResp) {
         printDebug("RECV: \(pingresp)")
-
+        self.unhandlePingCount -= 1
         delegate?.mqtt5DidReceivePong(self)
         didReceivePong(self)
     }

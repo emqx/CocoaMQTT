@@ -35,6 +35,22 @@ protocol CocoaMQTTReaderDelegate: AnyObject {
     func didReceive(_ reader: CocoaMQTTReader, unsuback: FrameUnsubAck)
 
     func didReceive(_ reader: CocoaMQTTReader, pingresp: FramePingResp)
+    
+    func didReceiveJustForAck(_ reader: CocoaMQTTReader, publish: FramePublish)
+    
+    func minReceiveUpdateInterval() -> TimeInterval
+}
+
+extension CocoaMQTTReaderDelegate {
+    
+    func didReceiveJustForAck(_ reader: CocoaMQTTReader, publish: FramePublish) {
+        
+    }
+    
+    func minReceiveUpdateInterval() -> TimeInterval {
+        return 10
+    }
+
 }
 
 class CocoaMQTTReader {
@@ -50,7 +66,11 @@ class CocoaMQTTReader {
     private var length: UInt = 0
     private var data: [UInt8] = []
     private var multiply = 1
+    //单位ms
+    public var minUpdateInterval: TimeInterval = 10
     /*  -- Reader states -- */
+    
+    private var topicTimeStampDict: [String: TimeInterval] = [:]
 
     init(socket: CocoaMQTTSocketProtocol, delegate: CocoaMQTTReaderDelegate?) {
         self.socket = socket
@@ -105,6 +125,14 @@ class CocoaMQTTReader {
     private func readPayload() {
         socket.readData(toLength: length, withTimeout: timeout, tag: CocoaMQTTReadTag.payload.rawValue)
     }
+    
+    private func notifyFrame() -> Bool {
+        guard let publish = FramePublish(packetFixedHeaderType: header, bytes: data) else {
+            return false
+        }
+        delegate?.didReceive(self, publish: publish)
+        return true
+    }
 
     private func frameReady() {
 
@@ -124,11 +152,37 @@ class CocoaMQTTReader {
             }
             delegate?.didReceive(self, connack: connack)
         case .publish:
-            guard let publish = FramePublish(packetFixedHeaderType: header, bytes: data) else {
-                printError("Reader parse \(frameType) failed, data: \(data)")
-                break
+            if !FramePublish.isMqtt5 {
+                if !self.notifyFrame() {
+                    printError("Reader parse \(frameType) failed, data: \(data)")
+                    break
+                }
+            } else {
+                if let result = unsignedByteToString(data: data, offset: 0), let interval = self.delegate?.minReceiveUpdateInterval() {
+                    let now = Date().timeIntervalSince1970 * 1000
+                    let topic = result.resStr
+                    if let ts = self.topicTimeStampDict[topic], now - ts < interval {
+                        //指定时间间隔内,不处理，直接发送ack给后端
+                        guard let publish = FramePublish(topic: topic, packetFixedHeaderType: header, bytes: data) else {
+                            printError("Reader parse Ack \(frameType) failed, data: \(data)")
+                            break
+                        }
+                        delegate?.didReceiveJustForAck(self, publish: publish)
+                    } else {
+                        //超过指定时间间隔 或者是第一次推送消息，这个时候更新消息
+                        self.topicTimeStampDict[topic] = Date().timeIntervalSince1970 * 1000
+                        if !self.notifyFrame() {
+                            printError("Reader parse \(frameType) failed, data: \(data)")
+                            break
+                        }
+                    }
+                } else {
+                    if !self.notifyFrame() {
+                        printError("Reader parse \(frameType) failed, data: \(data)")
+                        break
+                    }
+                }
             }
-            delegate?.didReceive(self, publish: publish)
         case .puback:
             guard let puback = FramePubAck(packetFixedHeaderType: header, bytes: data) else {
                 printError("Reader parse \(frameType) failed, data: \(data)")

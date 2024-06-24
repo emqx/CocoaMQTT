@@ -14,16 +14,23 @@ public class MqttSubscription {
     public var qos = CocoaMQTTQoS.qos1
     public var noLocal: Bool = false
     public var retainAsPublished: Bool = false
-    public var retainHandling: CocoaRetainHandlingOption = .sendOnSubscribe
+    public var retainHandling: CocoaRetainHandlingOption
     public var subscriptionOptions: Bool = false
 
     public init(topic: String) {
         self.topic = topic
+        self.qos = CocoaMQTTQoS.qos1
+        self.noLocal = false
+        self.retainAsPublished = false
+        self.retainHandling = CocoaRetainHandlingOption.none
     }
 
     public init(topic: String, qos: CocoaMQTTQoS) {
         self.topic = topic
         self.qos = qos
+        self.noLocal = false
+        self.retainAsPublished = false
+        self.retainHandling = CocoaRetainHandlingOption.none
     }
 
     var subscriptionData:[UInt8]{

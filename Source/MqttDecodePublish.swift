@@ -36,6 +36,7 @@ public class MqttDecodePublish: NSObject {
     //3.3.2.2 Packet Identifier
     public var packetIdentifier: UInt16?
     public var mqtt5DataIndex = 0
+    public var isMqtt5: Bool = false
  
 
     public func decodePublish(fixedHeader: UInt8, publishData: [UInt8]){
@@ -64,12 +65,7 @@ public class MqttDecodePublish: NSObject {
         }
 
 
-        var protocolVersion = "";
-        if let storage = CocoaMQTTStorage() {
-            protocolVersion = storage.queryMQTTVersion()
-        }
-
-        if (protocolVersion == "5.0"){
+        if (self.isMqtt5){
             //3.3.2.3.1 Property Length
             // propertyLength
             let propertyLengthVariableByteInteger = decodeVariableByteInteger(data: publishData, offset: dataIndex)
