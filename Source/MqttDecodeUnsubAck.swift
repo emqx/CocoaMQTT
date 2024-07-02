@@ -24,9 +24,12 @@ public class MqttDecodeUnsubAck: NSObject {
         totalCount = pubAckData.count
         dataIndex = 0
         //msgid
-        let msgidResult = integerCompute(data: pubAckData, formatType: formatInt.formatUint16.rawValue, offset: dataIndex)
-        msgid = UInt16(msgidResult!.res)
-        dataIndex = msgidResult!.newOffset
+        guard let msgidResult = integerCompute(data: pubAckData, formatType: formatInt.formatUint16.rawValue, offset: dataIndex) else {
+            return
+        }
+        
+        msgid = UInt16(msgidResult.res)
+        dataIndex = msgidResult.newOffset
 
         var protocolVersion = "";
         if let storage = CocoaMQTTStorage() {
@@ -72,12 +75,17 @@ public class MqttDecodeUnsubAck: NSObject {
                     guard let valRes = unsignedByteToString(data: pubAckData, offset: dataIndex) else {
                         break
                     }
+                    
                     value = valRes.resStr
                     dataIndex = valRes.newOffset
-
-                    userProperty![key!] = value
-
-
+                
+                    if let key {
+                        if userProperty == nil {
+                            userProperty = [:]
+                        }
+                        
+                        userProperty?[key] = value
+                    }
                 default:
                     return
                 }

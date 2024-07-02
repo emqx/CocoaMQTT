@@ -53,7 +53,11 @@ extension FrameConnAck {
     }
 
     func variableHeader5() -> [UInt8] {
-        return [sessPresent.bit, reasonCode!.rawValue]
+        if let reasonCode {
+            return [sessPresent.bit, reasonCode.rawValue]
+        }
+        
+        return []
     }
     
     func payload5() -> [UInt8] { return [] }
@@ -72,7 +76,11 @@ extension FrameConnAck {
     }
 
     func variableHeader() -> [UInt8] {
-        return [sessPresent.bit, returnCode!.rawValue]
+        if let returnCode {
+            return [sessPresent.bit, returnCode.rawValue]
+        }
+        
+        return []
     }
 
     func payload() -> [UInt8] { return [] }
@@ -99,7 +107,7 @@ extension FrameConnAck: InitialWithBytes {
 
         propertiesBytes = bytes
         self.connackProperties = MqttDecodeConnAck()
-        self.connackProperties!.properties(connackData: bytes)
+        self.connackProperties?.properties(connackData: bytes)
     }
 }
 

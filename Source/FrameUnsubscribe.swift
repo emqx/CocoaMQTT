@@ -62,7 +62,9 @@ extension FrameUnsubscribe {
         
         //MQTT 5.0
         var header = [UInt8]()
-        header = msgid!.hlBytes
+        if let msgid {
+            header = msgid.hlBytes
+        }
         header += beVariableByteInteger(length: self.properties().count)
         return header
     }
@@ -71,7 +73,7 @@ extension FrameUnsubscribe {
         
         var payload = [UInt8]()
         
-        for subscription in topicFilters! {
+        for subscription in (topicFilters ?? []) {
             subscription.subscriptionOptions = false
             payload += subscription.subscriptionData
         }
@@ -104,13 +106,19 @@ extension FrameUnsubscribe {
         return allData
     }
 
-    func variableHeader() -> [UInt8] { return msgid!.hlBytes }
+    func variableHeader() -> [UInt8] {
+        if let msgid {
+            return msgid.hlBytes
+        }
+        
+        return []
+    }
 
     func payload() -> [UInt8] {
 
         var payload = [UInt8]()
 
-        for t in topics! {
+        for t in (topics ?? []) {
             payload += t.bytesWithLength
         }
 

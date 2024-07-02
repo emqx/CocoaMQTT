@@ -33,8 +33,11 @@ extension String {
     }
     
     var stringUTF8: String {
-        let data = self.data(using: .nonLossyASCII)
-        return String(data: data!, encoding: .utf8) ?? ""
+        if let data = self.data(using: .nonLossyASCII) {
+            return String(data: data, encoding: .utf8) ?? ""
+        }
+        
+        return ""
     }
 }
 

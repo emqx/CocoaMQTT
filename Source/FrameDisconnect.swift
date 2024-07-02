@@ -48,7 +48,9 @@ extension FrameDisconnect {
     func variableHeader5() -> [UInt8] {
         
         var header = [UInt8]()
-        header += [sendReasonCode!.rawValue]
+        if let sendReasonCode {
+            header += [sendReasonCode.rawValue]
+        }
 
         //MQTT 5.0
         header += beVariableByteInteger(length: self.properties().count)
