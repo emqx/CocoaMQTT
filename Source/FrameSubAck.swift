@@ -116,16 +116,17 @@ extension FrameSubAck: InitialWithBytes {
                 self.grantedQos.append(qos)
             }
 
-            self.reasonCodes = [CocoaMQTTSUBACKReasonCode]()
+            var tmpReasonCodes: [CocoaMQTTSUBACKReasonCode] = []
             for i in 3 ..< bytes.count {
                 guard let qos = CocoaMQTTSUBACKReasonCode(rawValue: bytes[i]) else {
                     return nil
                 }
-                self.reasonCodes! += [qos]
+                tmpReasonCodes += [qos]
             }
+            self.reasonCodes = tmpReasonCodes
 
             self.subAckProperties = MqttDecodeSubAck()
-            self.subAckProperties!.decodeSubAck(fixedHeader: packetFixedHeaderType, pubAckData: bytes)
+            self.subAckProperties?.decodeSubAck(fixedHeader: packetFixedHeaderType, pubAckData: bytes)
 
         }else{
             // the bytes length must bigger than 3

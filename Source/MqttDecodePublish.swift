@@ -59,9 +59,10 @@ public class MqttDecodePublish: NSObject {
         // 3.3.2.2 Packet Identifier
         // Packet Identifier
         if recQos == .qos1 || recQos == .qos2 {
-            let IdentifierResult = integerCompute(data: publishData, formatType: formatInt.formatUint16.rawValue, offset: dataIndex)
-            packetIdentifier = UInt16(IdentifierResult!.res)
-            dataIndex = IdentifierResult!.newOffset
+            if let IdentifierResult = integerCompute(data: publishData, formatType: formatInt.formatUint16.rawValue, offset: dataIndex) {
+                packetIdentifier = UInt16(IdentifierResult.res)
+                dataIndex = IdentifierResult.newOffset
+            }
         }
 
 
@@ -95,15 +96,17 @@ public class MqttDecodePublish: NSObject {
 
                 // 3.3.2.3.3 Message Expiry Interval
                 case CocoaMQTTPropertyName.willExpiryInterval.rawValue:
-                    let comRes = integerCompute(data: publishData, formatType: formatInt.formatUint32.rawValue, offset: dataIndex)
-                    messageExpiryInterval = UInt32(comRes!.res)
-                    dataIndex = comRes!.newOffset
+                    if let comRes = integerCompute(data: publishData, formatType: formatInt.formatUint32.rawValue, offset: dataIndex) {
+                        messageExpiryInterval = UInt32(comRes.res)
+                        dataIndex = comRes.newOffset
+                    }
 
                 // 3.3.2.3.4 Topic Alias
                 case CocoaMQTTPropertyName.topicAlias.rawValue:
-                    let comRes = integerCompute(data: publishData, formatType: formatInt.formatUint16.rawValue, offset: dataIndex)
-                    topicAlias = UInt16(comRes!.res)
-                    dataIndex = comRes!.newOffset
+                    if let comRes = integerCompute(data: publishData, formatType: formatInt.formatUint16.rawValue, offset: dataIndex) {
+                        topicAlias = UInt16(comRes.res)
+                        dataIndex = comRes.newOffset
+                    }
 
                 // 3.3.2.3.5 Response Topic
                 case CocoaMQTTPropertyName.responseTopic.rawValue:
@@ -141,7 +144,13 @@ public class MqttDecodePublish: NSObject {
                         userProperty = [:]
                     }
 
-                    userProperty![key!] = value
+                    if let key {
+                        if userProperty == nil {
+                            userProperty = [:]
+                        }
+                        
+                        userProperty?[key] = value
+                    }
 
                 // 3.3.2.3.8 Subscription Identifier
                 case CocoaMQTTPropertyName.subscriptionIdentifier.rawValue:

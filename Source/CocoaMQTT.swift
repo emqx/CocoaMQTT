@@ -336,7 +336,7 @@ public class CocoaMQTT: NSObject, CocoaMQTTClient {
         connect.cleansess = cleanSession
         
         send(connect)
-        reader!.start()
+        reader?.start()
     }
 
     fileprivate func nextMessageID() -> UInt16 {
@@ -595,12 +595,12 @@ extension CocoaMQTT: CocoaMQTTSocketDelegate {
         switch etag {
         case CocoaMQTTReadTag.header:
             data.copyBytes(to: &bytes, count: 1)
-            reader!.headerReady(bytes[0])
+            reader?.headerReady(bytes[0])
         case CocoaMQTTReadTag.length:
             data.copyBytes(to: &bytes, count: 1)
-            reader!.lengthReady(bytes[0])
+            reader?.lengthReady(bytes[0])
         case CocoaMQTTReadTag.payload:
-            reader!.payloadReady(data)
+            reader?.payloadReady(data)
         }
     }
 

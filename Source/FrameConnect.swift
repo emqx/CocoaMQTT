@@ -118,7 +118,7 @@ extension FrameConnect {
 
         if let will = willMsg5 {
             
-            payload += beVariableByteInteger(length: willMsg5!.properties.count)
+            payload += beVariableByteInteger(length: will.properties.count)
             payload += will.properties
             payload += will.topic.bytesWithLength
             payload += UInt16(will.payload.count).hlBytes

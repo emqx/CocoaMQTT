@@ -118,9 +118,10 @@ func unsignedByteToString(data:[UInt8], offset:Int) -> (resStr: String, newOffse
     }
 
     var length = 0
-    let comRes = integerCompute(data: data, formatType: formatInt.formatUint16.rawValue, offset: newOffset)
-    length = comRes!.res
-    newOffset = comRes!.newOffset
+    if let comRes = integerCompute(data: data, formatType: formatInt.formatUint16.rawValue, offset: newOffset) {
+        length = comRes.res
+        newOffset = comRes.newOffset
+    }
 
 
     var stringData = Data()
@@ -144,9 +145,10 @@ func unsignedByteToBinary(data:[UInt8], offset:Int) -> (resStr: [UInt8], newOffs
     }
 
     var length = 0
-    let comRes = integerCompute(data: data, formatType: formatInt.formatUint16.rawValue, offset: newOffset)
-    length = comRes!.res
-    newOffset = comRes!.newOffset
+    if let comRes = integerCompute(data: data, formatType: formatInt.formatUint16.rawValue, offset: newOffset) {
+        length = comRes.res
+        newOffset = comRes.newOffset
+    }
 
 
     var res = [UInt8]()

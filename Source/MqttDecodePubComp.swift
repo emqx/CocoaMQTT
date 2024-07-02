@@ -24,9 +24,12 @@ public class MqttDecodePubComp: NSObject {
         totalCount = pubAckData.count
         dataIndex = 0
         //msgid
-        let msgidResult = integerCompute(data: pubAckData, formatType: formatInt.formatUint16.rawValue, offset: dataIndex)
-        msgid = UInt16(msgidResult!.res)
-        dataIndex = msgidResult!.newOffset
+        guard let msgidResult = integerCompute(data: pubAckData, formatType: formatInt.formatUint16.rawValue, offset: dataIndex) else {
+            return
+        }
+        
+        msgid = UInt16(msgidResult.res)
+        dataIndex = msgidResult.newOffset
 
         // 3.6.2.1 PUBREL Reason Code
 
@@ -88,8 +91,13 @@ public class MqttDecodePubComp: NSObject {
                     value = valRes.resStr
                     dataIndex = valRes.newOffset
 
-                    userProperty![key!] = value
-
+                    if let key {
+                        if userProperty == nil {
+                            userProperty = [:]
+                        }
+                        
+                        userProperty?[key] = value
+                    }
 
                 default:
                     return

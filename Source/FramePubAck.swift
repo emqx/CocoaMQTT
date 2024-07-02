@@ -56,7 +56,9 @@ extension FramePubAck {
         //3.4.2 MSB+LSB
         var header = msgid.hlBytes
         //3.4.2.1 PUBACK Reason Code
-        header += [reasonCode!.rawValue]
+        if let reasonCode {
+            header += [reasonCode.rawValue]
+        }
 
         //MQTT 5.0
         header += beVariableByteInteger(length: self.properties().count)
@@ -115,7 +117,7 @@ extension FramePubAck: InitialWithBytes {
         if bytes.count > 2{
             self.reasonCode = CocoaMQTTPUBACKReasonCode(rawValue: bytes[2])
             self.pubAckProperties = MqttDecodePubAck()
-            self.pubAckProperties!.decodePubAck(fixedHeader: packetFixedHeaderType, pubAckData: bytes)
+            self.pubAckProperties?.decodePubAck(fixedHeader: packetFixedHeaderType, pubAckData: bytes)
         }
         
         msgid = UInt16(bytes[0]) << 8 + UInt16(bytes[1])

@@ -107,8 +107,7 @@ extension FrameUnsubAck: InitialWithBytes {
         msgid = UInt16(bytes[0]) << 8 + UInt16(bytes[1])
 
         self.unSubAckProperties = MqttDecodeUnsubAck()
-        self.unSubAckProperties!.decodeUnSubAck(fixedHeader: packetFixedHeaderType, pubAckData: bytes)
-        
+        self.unSubAckProperties?.decodeUnSubAck(fixedHeader: packetFixedHeaderType, pubAckData: bytes)
     }
 }
 

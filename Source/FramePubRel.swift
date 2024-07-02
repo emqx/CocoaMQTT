@@ -113,7 +113,7 @@ extension FramePubRel: InitialWithBytes {
 
 
         self.pubRelProperties = MqttDecodePubRel()
-        self.pubRelProperties!.decodePubRel(fixedHeader: packetFixedHeaderType, pubAckData: bytes)
+        self.pubRelProperties?.decodePubRel(fixedHeader: packetFixedHeaderType, pubAckData: bytes)
     }
 }
 

@@ -56,7 +56,9 @@ extension FramePubRec {
         //3.5.2 MSB+LSB
         var header = msgid.hlBytes
         //3.5.2.1 PUBACK Reason Code
-        header += [reasonCode!.rawValue]
+        if let reasonCode {
+            header += [reasonCode.rawValue]
+        }
 
         //MQTT 5.0
         header += beVariableByteInteger(length: self.properties().count)
@@ -117,7 +119,7 @@ extension FramePubRec: InitialWithBytes {
 
 
         self.pubRecProperties = MqttDecodePubRec()
-        self.pubRecProperties!.decodePubRec(fixedHeader: packetFixedHeaderType, pubAckData: bytes)
+        self.pubRecProperties?.decodePubRec(fixedHeader: packetFixedHeaderType, pubAckData: bytes)
     }
 }
 

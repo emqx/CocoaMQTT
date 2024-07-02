@@ -70,10 +70,11 @@ public class MqttDecodeConnAck: NSObject {
 
         if (protocolVersion == "5.0"){
             // properties
-            while index - occupyIndex < propertyLength! {
+            while index - occupyIndex < (propertyLength ?? 0) {
                 let resVariableByteInteger = decodeVariableByteInteger(data: connackData, offset: index)
                 index = resVariableByteInteger.newOffset
                 let propertyNameByte = resVariableByteInteger.res
+                
                 guard let propertyName = CocoaMQTTPropertyName(rawValue: UInt8(propertyNameByte)) else {
                     break
                 }
@@ -82,15 +83,17 @@ public class MqttDecodeConnAck: NSObject {
 
                 case CocoaMQTTPropertyName.sessionExpiryInterval.rawValue:
 
-                    let comRes = integerCompute(data: connackData, formatType: formatInt.formatUint32.rawValue, offset: index)
-                    sessionExpiryInterval = UInt32(comRes!.res)
-                    index = comRes!.newOffset
+                    if let comRes = integerCompute(data: connackData, formatType: formatInt.formatUint32.rawValue, offset: index) {
+                        sessionExpiryInterval = UInt32(comRes.res)
+                        index = comRes.newOffset
+                    }
 
                 case CocoaMQTTPropertyName.receiveMaximum.rawValue:
 
-                    let comRes = integerCompute(data: connackData, formatType: formatInt.formatUint16.rawValue, offset: index)
-                    receiveMaximum = UInt16(comRes!.res)
-                    index = comRes!.newOffset
+                    if let comRes = integerCompute(data: connackData, formatType: formatInt.formatUint16.rawValue, offset: index) {
+                        receiveMaximum = UInt16(comRes.res)
+                        index = comRes.newOffset
+                    }
 
                 case CocoaMQTTPropertyName.maximumQoS.rawValue:
                     if index > connackData.count {
@@ -118,9 +121,10 @@ public class MqttDecodeConnAck: NSObject {
 
                 case CocoaMQTTPropertyName.maximumPacketSize.rawValue:
 
-                    let comRes = integerCompute(data: connackData, formatType: formatInt.formatUint32.rawValue, offset: index)
-                    maximumPacketSize = UInt32(comRes!.res)
-                    index = comRes!.newOffset
+                    if let comRes = integerCompute(data: connackData, formatType: formatInt.formatUint32.rawValue, offset: index) {
+                        maximumPacketSize = UInt32(comRes.res)
+                        index = comRes.newOffset
+                    }
 
                 case CocoaMQTTPropertyName.assignedClientIdentifier.rawValue:
                     guard let result = unsignedByteToString(data: connackData, offset: index) else {
@@ -131,9 +135,10 @@ public class MqttDecodeConnAck: NSObject {
 
                 case CocoaMQTTPropertyName.topicAliasMaximum.rawValue:
 
-                    let comRes = integerCompute(data: connackData, formatType: formatInt.formatUint16.rawValue, offset: index)
-                    topicAliasMaximum = UInt16(comRes!.res)
-                    index = comRes!.newOffset
+                    if let comRes = integerCompute(data: connackData, formatType: formatInt.formatUint16.rawValue, offset: index) {
+                        topicAliasMaximum = UInt16(comRes.res)
+                        index = comRes.newOffset
+                    }
 
                 case CocoaMQTTPropertyName.reasonString.rawValue:
                     guard let result = unsignedByteToString(data: connackData, offset: index) else {
@@ -157,7 +162,13 @@ public class MqttDecodeConnAck: NSObject {
                     value = valRes.resStr
                     index = valRes.newOffset
 
-                    userProperty![key!] = value
+                    if let key {
+                        if userProperty == nil {
+                            userProperty = [:]
+                        }
+                        
+                        userProperty?[key] = value
+                    }
 
                 case CocoaMQTTPropertyName.wildcardSubscriptionAvailable.rawValue:
                     if index > connackData.count  {
@@ -194,9 +205,10 @@ public class MqttDecodeConnAck: NSObject {
 
                 case CocoaMQTTPropertyName.serverKeepAlive.rawValue:
 
-                    let comRes = integerCompute(data: connackData, formatType: formatInt.formatUint16.rawValue, offset: index)
-                    serverKeepAlive = UInt16(comRes!.res)
-                    index = comRes!.newOffset
+                    if let comRes = integerCompute(data: connackData, formatType: formatInt.formatUint16.rawValue, offset: index) {
+                        serverKeepAlive = UInt16(comRes.res)
+                        index = comRes.newOffset
+                    }
 
                 case CocoaMQTTPropertyName.responseInformation.rawValue:
                     guard let valRes = unsignedByteToString(data: connackData, offset: index) else {
