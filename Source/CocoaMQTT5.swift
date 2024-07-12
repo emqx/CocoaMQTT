@@ -284,7 +284,7 @@ public class CocoaMQTT5: NSObject, CocoaMQTT5Client {
 
 
     /// Sending messages
-    fileprivate var sendingMessages: [UInt16: CocoaMQTT5Message] = [:]
+    fileprivate var sendingMessages = ThreadSafeDictionary<UInt16, CocoaMQTT5Message>(label: "sendingMessages")
 
     /// message id counter
     private var _msgid: UInt16 = 0
