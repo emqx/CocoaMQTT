@@ -457,7 +457,7 @@ extension CocoaMQTTWebSocket.StarscreamConnection: CertificatePinning {
 }
 
 extension CocoaMQTTWebSocket.StarscreamConnection: WebSocketDelegate {
-    public func didReceive(event: Starscream.WebSocketEvent, client: any Starscream.WebSocketClient) {
+    public func didReceive(event: Starscream.WebSocketEvent, client: Starscream.WebSocket) {
         switch event {
         case .connected(_):
             delegate?.connectionOpened(self)
@@ -479,8 +479,6 @@ extension CocoaMQTTWebSocket.StarscreamConnection: WebSocketDelegate {
             delegate?.connectionClosed(self, withError: nil, withCode: nil)
         case .error(let error):
             delegate?.connectionClosed(self, withError: error, withCode: nil)
-        default:
-            break
         }
     }
 }
