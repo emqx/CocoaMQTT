@@ -6,7 +6,6 @@
 //
 
 import Foundation
-import Starscream
 #if IS_SWIFT_PACKAGE
 import CocoaMQTT
 #endif
@@ -63,17 +62,10 @@ public class CocoaMQTTWebSocket: CocoaMQTTSocketProtocol {
         
         public init() {}
         
-        
         public func buildConnection(forURL url: URL, withHeaders headers: [String: String]) throws -> CocoaMQTTWebSocketConnection {
-            if #available(OSX 10.15, iOS 13.0, watchOS 6.0, tvOS 13.0, *) {
-                let config = URLSessionConfiguration.default
-                config.httpAdditionalHeaders = headers
-                return CocoaMQTTWebSocket.FoundationConnection(url: url, config: config)
-            } else {
-                var request = URLRequest(url: url)
-                headers.forEach { request.setValue($1, forHTTPHeaderField: $0)}
-                return CocoaMQTTWebSocket.StarscreamConnection(request: request)
-            }
+            let config = URLSessionConfiguration.default
+            config.httpAdditionalHeaders = headers
+            return CocoaMQTTWebSocket.FoundationConnection(url: url, config: config)
         }
     }
     
@@ -394,93 +386,6 @@ extension CocoaMQTTWebSocket.FoundationConnection: URLSessionWebSocketDelegate {
     public func urlSession(_ session: URLSession, webSocketTask: URLSessionWebSocketTask, didCloseWith closeCode: URLSessionWebSocketTask.CloseCode, reason: Data?) {
         queue.async {
             self.delegate?.connectionClosed(self, withError: CocoaMQTTError.FoundationConnection.closed(closeCode), withCode: nil)
-        }
-    }
-}
-
-// MARK: - CocoaMQTTWebSocket.StarscreamConnection
-
-public extension CocoaMQTTWebSocket {
-    class StarscreamConnection: NSObject, CocoaMQTTWebSocketConnection {
-        public var reference: WebSocket
-        public weak var delegate: CocoaMQTTWebSocketConnectionDelegate?
-        public var queue: DispatchQueue {
-            get { reference.callbackQueue }
-            set { reference.callbackQueue = newValue }
-        }
-        
-        public init(request: URLRequest) {
-            reference = WebSocket(request: request)
-            super.init()
-            reference.delegate = self
-        }
-        
-        public func connect() {
-            reference.connect()
-        }
-        
-        public func disconnect() {
-            reference.disconnect()
-        }
-        
-        public func write(data: Data, handler: @escaping (Error?) -> Void) {
-            reference.write(data: data) {
-                handler(nil)
-            }
-        }
-    }
-}
-
-extension CocoaMQTTWebSocket.StarscreamConnection: CertificatePinning {
-    public func evaluateTrust(trust: SecTrust, domain: String?, completion: ((PinningState) -> ())) {
-        var result: SecTrustResultType = .unspecified
-        SecTrustEvaluate(trust, &result)
-        let e = CFErrorCreate(kCFAllocatorDefault, "FoundationSecurityError" as NSString?, Int(result.rawValue), nil)
-        guard let delegate = self.delegate else {
-            return completion(.failed(e))
-        }
-        
-        var shouldAccept = false
-        let semaphore = DispatchSemaphore(value: 0)
-        delegate.connection(self, didReceive: trust) { result in
-            shouldAccept = result
-            semaphore.signal()
-        }
-        semaphore.wait()
-        
-        if(shouldAccept){
-            completion(.success)
-        }else{
-            completion(.failed(e))
-        }
-    }
-}
-
-extension CocoaMQTTWebSocket.StarscreamConnection: WebSocketDelegate {
-    public func didReceive(event: Starscream.WebSocketEvent, client: any Starscream.WebSocketClient) {
-        switch event {
-        case .connected(_):
-            delegate?.connectionOpened(self)
-        case .disconnected(_, let code):
-            delegate?.connectionClosed(self, withError: nil, withCode: code)
-        case .text(let string):
-            delegate?.connection(self, receivedString: string)
-        case .binary(let data):
-            delegate?.connection(self, receivedData: data)
-        case .ping(_):
-            break
-        case .pong(_):
-            break
-        case .viabilityChanged(_):
-            break
-        case .reconnectSuggested(_):
-            break
-        case .cancelled:
-            delegate?.connectionClosed(self, withError: nil, withCode: nil)
-        case .error(let error):
-            delegate?.connectionClosed(self, withError: error, withCode: nil)
-        default:
-            break
         }
     }
 }
