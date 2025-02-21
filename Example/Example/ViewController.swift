@@ -8,6 +8,7 @@
 
 import UIKit
 import CocoaMQTT
+import CocoaMQTTWebSocket
 
 
 class ViewController: UIViewController {
