@@ -24,6 +24,23 @@ If you encounter the issue, Please update your project minimum depolyments to 11
 
 
 ## Installation
+
+### Swift Package Manager
+
+To integrate CocoaMQTT into your Xcode project using [Swift Package Manager](https://swift.org/package-manager/), follow these steps:
+
+1. Open your project in Xcode.
+2. Go to `File` > `Swift Packages` > `Add Package Dependency`.
+3. Enter the repository URL: `https://github.com/emqx/CocoaMQTT.git`.
+4. Choose the latest version or specify a version range.
+5. Add the package to your target.
+
+At last, import "CocoaMQTT" to your project:
+
+```swift
+import CocoaMQTT
+```
+
 ### CocoaPods
 
 To integrate CocoaMQTT into your Xcode project using [CocoaPods](http://cocoapods.org), you need to modify you `Podfile` like the followings:
@@ -135,6 +152,22 @@ Note: Please use openssl version 1.1 (e.g. `brew install openssl@1.1`), otherwis
 
 In the 1.3.0, The CocoaMQTT has supported to connect to MQTT Broker by Websocket.
 
+If you integrated by **Swift Package Manager**, follow these steps:
+
+1. Open your project in Xcode.
+2. Go to `File` > `Swift Packages` > `Add Package Dependency`.
+3. Enter the repository URL: `https://github.com/emqx/CocoaMQTT.git`.
+4. Choose the latest version or specify a version range.
+5. Add the package to your target.
+
+At last, import "CocoaMQTT" and "Starscream" to your project:
+
+```swift
+import CocoaMQTT
+import CocoaMQTTWebSocket
+import Starscream
+```
+
 If you integrated by **CocoaPods**, you need to modify you `Podfile` like the followings and execute `pod install` again:
 
 ```ruby
@@ -143,7 +176,6 @@ use_frameworks!
 target 'Example' do
     pod 'CocoaMQTT/WebSockets'
 end
-
 ```
 
 If you're using CocoaMQTT in a project with only a `.podspec` and no `Podfile`, e.g. in a module for React Native, add this line to your `.podspec`:
@@ -194,18 +226,112 @@ let mqtt = CocoaMQTT(clientID: clientID, host: host, port: 8083, socket: websock
 _ = mqtt.connect()
 ```
 
+If you want to connect using WebSocket Secure (wss), you can use the following example:
+
+```swift
+import CocoaMQTT
+import CocoaMQTTWebSocket
+import Starscream
+
+class WebSocketManager {
+    
+    private var mqttClient: CocoaMQTT?
+    var message: String = ""
+    var token: String = ""
+
+    func setupMQTTClient(with token: String) {
+        let socket = CocoaMQTTWebSocket(uri: "/mqtt")
+        socket.enableSSL = true
+        mqttClient = CocoaMQTT(clientID: token, host: "host", port: 443, socket: socket)
+        mqttClient?.delegate = self
+    }
+
+    func connect() {
+        guard let mqttClient = mqttClient else { return }
+        mqttClient.connect()
+    }
+    
+}
+
+extension WebSocketManager: CocoaMQTTDelegate {
+    
+    func mqtt(_ mqtt: CocoaMQTT, didReceive trust: SecTrust, completionHandler: @escaping (Bool) -> Void) {
+        // Implement your custom SSL validation logic here.
+        // For example, you might want to always trust the certificate for testing purposes:
+        completionHandler(true)
+    }
+    
+    func mqtt(_ mqtt: CocoaMQTT, didReceive challenge: URLAuthenticationChallenge, completionHandler: @escaping (URLSession.AuthChallengeDisposition, URLCredential?) -> Void) {
+        if challenge.protectionSpace.authenticationMethod == NSURLAuthenticationMethodServerTrust {
+            if let serverTrust = challenge.protectionSpace.serverTrust {
+                completionHandler(.useCredential, URLCredential(trust: serverTrust))
+                return
+            }
+        }
+        completionHandler(.performDefaultHandling, nil)
+    }
+    
+    func mqttUrlSession(_ mqtt: CocoaMQTT, didReceiveTrust trust: SecTrust, didReceiveChallenge challenge: URLAuthenticationChallenge, completionHandler: @escaping (URLSession.AuthChallengeDisposition, URLCredential?) -> Void) {
+        
+        print("\(#function), \n result:- \(challenge.debugDescription)")
+    }
+    
+    func mqtt(_ mqtt: CocoaMQTT, didPublishAck id: UInt16) {
+        print("Published message with ID: \(id)")
+    }
+    
+    func mqtt(_ mqtt: CocoaMQTT, didUnsubscribeTopics topics: [String]) {
+        print("Unsubscribed from topics: \(topics)")
+    }
+    
+    func mqttDidPing(_ mqtt: CocoaMQTT) {
+        print("MQTT did ping")
+    }
+    
+    func mqttDidReceivePong(_ mqtt: CocoaMQTT) {
+        print("MQTT did receive pong")
+    }
+    
+    func mqttDidDisconnect(_ mqtt: CocoaMQTT, withError err: (any Error)?) {
+        print("Disconnected from MQTT broker with error: \(String(describing: err))")
+    }
+    
+    func mqtt(_ mqtt: CocoaMQTT, didConnectAck ack: CocoaMQTTConnAck) {
+        print("Connected to MQTT broker with acknowledgment: \(ack)")
+    }
+    
+    func mqtt(_ mqtt: CocoaMQTT, didReceiveMessage message: CocoaMQTTMessage, id: UInt16) {
+        if let messageString = message.string {
+            DispatchQueue.main.async {
+                self.message = messageString
+            }
+            print("Received message: \(messageString) on topic: \(message.topic)")
+        }
+    }
+    
+    func mqtt(_ mqtt: CocoaMQTT, didPublishMessage message: CocoaMQTTMessage, id: UInt16) {
+        print("Published message: \(message.string ?? "") with ID: \(id)")
+    }
+
+    func mqtt(_ mqtt: CocoaMQTT, didSubscribeTopics success: NSDictionary, failed: [String]) {
+        print("Subscribed to topics: \(success), failed to subscribe to: \(failed)")
+    }
+
+    func mqtt(_ mqtt: CocoaMQTT, didDisconnectWithError err: Error?) {
+        print("Disconnected from MQTT broker with error: \(String(describing: err))")
+    }
+    
+}
+```
+
 ## Example App
 
-You can follow the Example App to learn how to use it. But we need to make the Example App works fisrt:
+You can follow the Example App to learn how to use it. But we need to make the Example App works first:
 
 ```bash
 $ cd Examples
 
-$ pod install
-```
-
-Then, open the `Example.xcworkspace/` by Xcode and start it!
-
+Then, open the `Example.xcodeproj` by Xcode and start it!
 
 ## Dependencies
 

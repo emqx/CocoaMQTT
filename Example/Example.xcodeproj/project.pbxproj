@@ -3,7 +3,7 @@
 	archiveVersion = 1;
 	classes = {
 	};
-	objectVersion = 46;
+	objectVersion = 54;
 	objects = {
 
 /* Begin PBXBuildFile section */
@@ -17,7 +17,9 @@
 		04DB76621C1E7BB900776B4C /* LaunchScreen.storyboard in Resources */ = {isa = PBXBuildFile; fileRef = 04DB76601C1E7BB900776B4C /* LaunchScreen.storyboard */; };
 		04FE64871C2C41AE001E8F43 /* ChatViewController.swift in Sources */ = {isa = PBXBuildFile; fileRef = 04FE64861C2C41AE001E8F43 /* ChatViewController.swift */; };
 		04FE64A71C2D9F75001E8F43 /* ChatLeftMessageCell.swift in Sources */ = {isa = PBXBuildFile; fileRef = 04FE64A61C2D9F75001E8F43 /* ChatLeftMessageCell.swift */; };
-		F5ED7D1B70F44D3F5E5DF37A /* Pods_Example.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = 33EB0B12055698AEA8D71AD4 /* Pods_Example.framework */; };
+		114A128F2D69097B00538CC6 /* CocoaMQTT in Frameworks */ = {isa = PBXBuildFile; productRef = 114A128E2D69097B00538CC6 /* CocoaMQTT */; };
+		114A12912D69097B00538CC6 /* CocoaMQTTWebSocket in Frameworks */ = {isa = PBXBuildFile; productRef = 114A12902D69097B00538CC6 /* CocoaMQTTWebSocket */; };
+		114A12942D690B0700538CC6 /* CocoaMQTTWebSocket in Frameworks */ = {isa = PBXBuildFile; productRef = 114A12932D690B0700538CC6 /* CocoaMQTTWebSocket */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXCopyFilesBuildPhase section */
@@ -46,9 +48,6 @@
 		04DB76631C1E7BB900776B4C /* Info.plist */ = {isa = PBXFileReference; lastKnownFileType = text.plist.xml; path = Info.plist; sourceTree = "<group>"; };
 		04FE64861C2C41AE001E8F43 /* ChatViewController.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = ChatViewController.swift; sourceTree = "<group>"; };
 		04FE64A61C2D9F75001E8F43 /* ChatLeftMessageCell.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = ChatLeftMessageCell.swift; sourceTree = "<group>"; };
-		0BC031E0076FF375408AD8D1 /* Pods-Example.release.xcconfig */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = text.xcconfig; name = "Pods-Example.release.xcconfig"; path = "Pods/Target Support Files/Pods-Example/Pods-Example.release.xcconfig"; sourceTree = "<group>"; };
-		33EB0B12055698AEA8D71AD4 /* Pods_Example.framework */ = {isa = PBXFileReference; explicitFileType = wrapper.framework; includeInIndex = 0; path = Pods_Example.framework; sourceTree = BUILT_PRODUCTS_DIR; };
-		BE425DD5C76A2598F8AC2CC7 /* Pods-Example.debug.xcconfig */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = text.xcconfig; name = "Pods-Example.debug.xcconfig"; path = "Pods/Target Support Files/Pods-Example/Pods-Example.debug.xcconfig"; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
 /* Begin PBXFrameworksBuildPhase section */
@@ -56,7 +55,9 @@
 			isa = PBXFrameworksBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
-				F5ED7D1B70F44D3F5E5DF37A /* Pods_Example.framework in Frameworks */,
+				114A12942D690B0700538CC6 /* CocoaMQTTWebSocket in Frameworks */,
+				114A12912D69097B00538CC6 /* CocoaMQTTWebSocket in Frameworks */,
+				114A128F2D69097B00538CC6 /* CocoaMQTT in Frameworks */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -67,9 +68,8 @@
 			isa = PBXGroup;
 			children = (
 				04DB76561C1E7BB900776B4C /* Example */,
+				114A12922D690B0700538CC6 /* Frameworks */,
 				04DB76551C1E7BB900776B4C /* Products */,
-				A9FC0FAE12CD2A1911A9C955 /* Pods */,
-				71CBE07387F2FCF00983FC75 /* Frameworks */,
 			);
 			sourceTree = "<group>";
 		};
@@ -107,21 +107,11 @@
 			name = "Supporting Files";
 			sourceTree = "<group>";
 		};
-		71CBE07387F2FCF00983FC75 /* Frameworks */ = {
+		114A12922D690B0700538CC6 /* Frameworks */ = {
 			isa = PBXGroup;
 			children = (
-				33EB0B12055698AEA8D71AD4 /* Pods_Example.framework */,
 			);
 			name = Frameworks;
-			sourceTree = "<group>";
-		};
-		A9FC0FAE12CD2A1911A9C955 /* Pods */ = {
-			isa = PBXGroup;
-			children = (
-				BE425DD5C76A2598F8AC2CC7 /* Pods-Example.debug.xcconfig */,
-				0BC031E0076FF375408AD8D1 /* Pods-Example.release.xcconfig */,
-			);
-			name = Pods;
 			sourceTree = "<group>";
 		};
 /* End PBXGroup section */
@@ -131,12 +121,10 @@
 			isa = PBXNativeTarget;
 			buildConfigurationList = 04DB76661C1E7BB900776B4C /* Build configuration list for PBXNativeTarget "Example" */;
 			buildPhases = (
-				3A3A6630BAAC2F8275FEC914 /* [CP] Check Pods Manifest.lock */,
 				04DB76501C1E7BB900776B4C /* Sources */,
 				04DB76511C1E7BB900776B4C /* Frameworks */,
 				04DB76521C1E7BB900776B4C /* Resources */,
 				04DB76C11C1E82F900776B4C /* Embed Frameworks */,
-				69EC26ED76119B51EEE0F3F2 /* [CP] Embed Pods Frameworks */,
 			);
 			buildRules = (
 			);
@@ -159,7 +147,7 @@
 				TargetAttributes = {
 					04DB76531C1E7BB900776B4C = {
 						CreatedOnToolsVersion = 7.1.1;
-						DevelopmentTeam = 2Z2KAMMN28;
+						DevelopmentTeam = A5CF5UAFXM;
 						LastSwiftMigration = 1020;
 					};
 				};
@@ -173,6 +161,9 @@
 				Base,
 			);
 			mainGroup = 04DB764B1C1E7BB800776B4C;
+			packageReferences = (
+				114A128D2D69097B00538CC6 /* XCRemoteSwiftPackageReference "CocoaMQTT" */,
+			);
 			productRefGroup = 04DB76551C1E7BB900776B4C /* Products */;
 			projectDirPath = "";
 			projectRoot = "";
@@ -195,49 +186,6 @@
 			runOnlyForDeploymentPostprocessing = 0;
 		};
 /* End PBXResourcesBuildPhase section */
-
-/* Begin PBXShellScriptBuildPhase section */
-		3A3A6630BAAC2F8275FEC914 /* [CP] Check Pods Manifest.lock */ = {
-			isa = PBXShellScriptBuildPhase;
-			buildActionMask = 2147483647;
-			files = (
-			);
-			inputPaths = (
-				"${PODS_PODFILE_DIR_PATH}/Podfile.lock",
-				"${PODS_ROOT}/Manifest.lock",
-			);
-			name = "[CP] Check Pods Manifest.lock";
-			outputPaths = (
-				"$(DERIVED_FILE_DIR)/Pods-Example-checkManifestLockResult.txt",
-			);
-			runOnlyForDeploymentPostprocessing = 0;
-			shellPath = /bin/sh;
-			shellScript = "diff \"${PODS_PODFILE_DIR_PATH}/Podfile.lock\" \"${PODS_ROOT}/Manifest.lock\" > /dev/null\nif [ $? != 0 ] ; then\n    # print error to STDERR\n    echo \"error: The sandbox is not in sync with the Podfile.lock. Run 'pod install' or update your CocoaPods installation.\" >&2\n    exit 1\nfi\n# This output is used by Xcode 'outputs' to avoid re-running this script phase.\necho \"SUCCESS\" > \"${SCRIPT_OUTPUT_FILE_0}\"\n";
-			showEnvVarsInLog = 0;
-		};
-		69EC26ED76119B51EEE0F3F2 /* [CP] Embed Pods Frameworks */ = {
-			isa = PBXShellScriptBuildPhase;
-			buildActionMask = 2147483647;
-			files = (
-			);
-			inputPaths = (
-				"${PODS_ROOT}/Target Support Files/Pods-Example/Pods-Example-frameworks.sh",
-				"${BUILT_PRODUCTS_DIR}/CocoaAsyncSocket/CocoaAsyncSocket.framework",
-				"${BUILT_PRODUCTS_DIR}/CocoaMQTT/CocoaMQTT.framework",
-				"${BUILT_PRODUCTS_DIR}/Starscream/Starscream.framework",
-			);
-			name = "[CP] Embed Pods Frameworks";
-			outputPaths = (
-				"${TARGET_BUILD_DIR}/${FRAMEWORKS_FOLDER_PATH}/CocoaAsyncSocket.framework",
-				"${TARGET_BUILD_DIR}/${FRAMEWORKS_FOLDER_PATH}/CocoaMQTT.framework",
-				"${TARGET_BUILD_DIR}/${FRAMEWORKS_FOLDER_PATH}/Starscream.framework",
-			);
-			runOnlyForDeploymentPostprocessing = 0;
-			shellPath = /bin/sh;
-			shellScript = "\"${PODS_ROOT}/Target Support Files/Pods-Example/Pods-Example-frameworks.sh\"\n";
-			showEnvVarsInLog = 0;
-		};
-/* End PBXShellScriptBuildPhase section */
 
 /* Begin PBXSourcesBuildPhase section */
 		04DB76501C1E7BB900776B4C /* Sources */ = {
@@ -376,22 +324,26 @@
 				IPHONEOS_DEPLOYMENT_TARGET = 12.0;
 				MTL_ENABLE_DEBUG_INFO = NO;
 				SDKROOT = iphoneos;
-				SWIFT_OPTIMIZATION_LEVEL = "-Owholemodule";
+				SWIFT_COMPILATION_MODE = wholemodule;
+				SWIFT_OPTIMIZATION_LEVEL = "-O";
 				VALIDATE_PRODUCT = YES;
 			};
 			name = Release;
 		};
 		04DB76671C1E7BB900776B4C /* Debug */ = {
 			isa = XCBuildConfiguration;
-			baseConfigurationReference = BE425DD5C76A2598F8AC2CC7 /* Pods-Example.debug.xcconfig */;
 			buildSettings = {
 				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
 				CODE_SIGN_IDENTITY = "iPhone Developer";
 				"CODE_SIGN_IDENTITY[sdk=iphoneos*]" = "iPhone Developer";
-				DEVELOPMENT_TEAM = 2Z2KAMMN28;
+				DEVELOPMENT_TEAM = A5CF5UAFXM;
 				INFOPLIST_FILE = Example/Info.plist;
-				LD_RUNPATH_SEARCH_PATHS = "$(inherited) @executable_path/Frameworks";
-				PRODUCT_BUNDLE_IDENTIFIER = io.emqtt.ChatExample;
+				IPHONEOS_DEPLOYMENT_TARGET = 15.0;
+				LD_RUNPATH_SEARCH_PATHS = (
+					"$(inherited)",
+					"@executable_path/Frameworks",
+				);
+				PRODUCT_BUNDLE_IDENTIFIER = io.emqtt.ChatExampleTest;
 				PRODUCT_NAME = "$(TARGET_NAME)";
 				PROVISIONING_PROFILE = "";
 				SWIFT_VERSION = 5.0;
@@ -400,14 +352,17 @@
 		};
 		04DB76681C1E7BB900776B4C /* Release */ = {
 			isa = XCBuildConfiguration;
-			baseConfigurationReference = 0BC031E0076FF375408AD8D1 /* Pods-Example.release.xcconfig */;
 			buildSettings = {
 				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
 				CODE_SIGN_IDENTITY = "iPhone Developer";
 				"CODE_SIGN_IDENTITY[sdk=iphoneos*]" = "iPhone Developer";
-				DEVELOPMENT_TEAM = 2Z2KAMMN28;
+				DEVELOPMENT_TEAM = A5CF5UAFXM;
 				INFOPLIST_FILE = Example/Info.plist;
-				LD_RUNPATH_SEARCH_PATHS = "$(inherited) @executable_path/Frameworks";
+				IPHONEOS_DEPLOYMENT_TARGET = 15.0;
+				LD_RUNPATH_SEARCH_PATHS = (
+					"$(inherited)",
+					"@executable_path/Frameworks",
+				);
 				PRODUCT_BUNDLE_IDENTIFIER = io.emqtt.ChatExample;
 				PRODUCT_NAME = "$(TARGET_NAME)";
 				PROVISIONING_PROFILE = "";
@@ -437,6 +392,35 @@
 			defaultConfigurationName = Release;
 		};
 /* End XCConfigurationList section */
+
+/* Begin XCRemoteSwiftPackageReference section */
+		114A128D2D69097B00538CC6 /* XCRemoteSwiftPackageReference "CocoaMQTT" */ = {
+			isa = XCRemoteSwiftPackageReference;
+			repositoryURL = "https://github.com/RaziPour1993/CocoaMQTT";
+			requirement = {
+				branch = "update-cocoamqtt-2025";
+				kind = branch;
+			};
+		};
+/* End XCRemoteSwiftPackageReference section */
+
+/* Begin XCSwiftPackageProductDependency section */
+		114A128E2D69097B00538CC6 /* CocoaMQTT */ = {
+			isa = XCSwiftPackageProductDependency;
+			package = 114A128D2D69097B00538CC6 /* XCRemoteSwiftPackageReference "CocoaMQTT" */;
+			productName = CocoaMQTT;
+		};
+		114A12902D69097B00538CC6 /* CocoaMQTTWebSocket */ = {
+			isa = XCSwiftPackageProductDependency;
+			package = 114A128D2D69097B00538CC6 /* XCRemoteSwiftPackageReference "CocoaMQTT" */;
+			productName = CocoaMQTTWebSocket;
+		};
+		114A12932D690B0700538CC6 /* CocoaMQTTWebSocket */ = {
+			isa = XCSwiftPackageProductDependency;
+			package = 114A128D2D69097B00538CC6 /* XCRemoteSwiftPackageReference "CocoaMQTT" */;
+			productName = CocoaMQTTWebSocket;
+		};
+/* End XCSwiftPackageProductDependency section */
 	};
 	rootObject = 04DB764C1C1E7BB800776B4C /* Project object */;
 }
