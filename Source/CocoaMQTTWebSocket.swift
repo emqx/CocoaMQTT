@@ -78,8 +78,8 @@ public class CocoaMQTTWebSocket: CocoaMQTTSocketProtocol {
     }
     
     public func setDelegate(_ theDelegate: CocoaMQTTSocketDelegate?, delegateQueue: DispatchQueue?) {
+        self.delegate = theDelegate
         internalQueue.async {
-            self.delegate = theDelegate
             self.delegateQueue = delegateQueue
         }
     }
@@ -148,7 +148,22 @@ public class CocoaMQTTWebSocket: CocoaMQTTSocketProtocol {
         }
     }
     
-    internal var delegate: CocoaMQTTSocketDelegate?
+    private var _delegate: CocoaMQTTSocketDelegate?
+    internal var isolationQueue = DispatchQueue(label: "IsolationQueue", attributes: .concurrent)
+    internal var delegate: CocoaMQTTSocketDelegate? {
+        set {
+            isolationQueue.async(flags: .barrier) {
+                self._delegate = newValue
+            }
+        }
+        
+        get {
+            isolationQueue.sync {
+                _delegate
+            }
+        }
+    }
+
     internal var delegateQueue: DispatchQueue?
     internal var internalQueue = DispatchQueue(label: "CocoaMQTTWebSocket")
 
