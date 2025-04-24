@@ -70,16 +70,4 @@ public class ConcurrentAtomic<T> {
             transform(&self._value)
         }
     }
-
-    /// Synchronously mutates the wrapped value using a transform closure.
-    ///
-    /// The mutation is performed with `.barrier` and blocks until completed. Useful when you need
-    /// immediate consistency after the change.
-    ///
-    /// - Parameter transform: A closure that receives `inout` access to the wrapped value.
-    public func mutateSync(_ transform: (inout T) -> Void) {
-        queue.sync(flags: .barrier) {
-            transform(&self._value)
-        }
-    }
 }
