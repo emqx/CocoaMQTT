@@ -479,8 +479,6 @@ extension CocoaMQTTWebSocket.StarscreamConnection: WebSocketDelegate {
             delegate?.connectionClosed(self, withError: nil, withCode: nil)
         case .error(let error):
             delegate?.connectionClosed(self, withError: error, withCode: nil)
-        default:
-            break
         }
     }
 }
