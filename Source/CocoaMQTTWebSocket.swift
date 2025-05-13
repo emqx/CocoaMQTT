@@ -148,6 +148,7 @@ public class CocoaMQTTWebSocket: CocoaMQTTSocketProtocol {
         }
     }
     
+    @ConcurrentAtomic(wrappedValue: nil, label: "CocoaMQTTWebSocket.delegate")
     internal var delegate: CocoaMQTTSocketDelegate?
     internal var delegateQueue: DispatchQueue?
     internal var internalQueue = DispatchQueue(label: "CocoaMQTTWebSocket")
