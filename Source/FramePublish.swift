@@ -189,8 +189,8 @@ extension FramePublish: InitialWithBytes {
             data.decodePublish(fixedHeader: packetFixedHeaderType ,publishData: bytes)
             pos = data.mqtt5DataIndex
 
-            if(data.propertyLength != 0){
-                pos += data.propertyLength!
+            if let propertyLength = data.propertyLength, propertyLength != 0{
+                pos += propertyLength!
             }
 
             // MQTT 5.0
