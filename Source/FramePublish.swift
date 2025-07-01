@@ -190,7 +190,7 @@ extension FramePublish: InitialWithBytes {
             pos = data.mqtt5DataIndex
 
             if let propertyLength = data.propertyLength, propertyLength != 0{
-                pos += propertyLength!
+                pos += propertyLength
             }
 
             // MQTT 5.0
