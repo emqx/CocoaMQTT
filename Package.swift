@@ -15,7 +15,7 @@ let package = Package(
         .library(name: "CocoaMQTTWebSocket", targets: [ "CocoaMQTTWebSocket" ])
     ],
     dependencies: [
-        .package(url: "https://github.com/daltoniam/Starscream.git", .exact("4.0.8")),
+        .package(url: "https://github.com/daltoniam/Starscream.git", branch: "master"),
         .package(url: "https://github.com/leeway1208/MqttCocoaAsyncSocket", from: "1.0.8"),
     ],
     targets: [
