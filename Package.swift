@@ -13,8 +13,8 @@ let package = Package(
         .library(name: "CocoaMQTTWebSocket", targets: ["CocoaMQTTWebSocket"])
     ],
     dependencies: [
-        // зафіксуй стабільну версію Starscream
-        .package(url: "https://github.com/daltoniam/Starscream.git", .exact("3.1.1")),
+        // Starscream останній з master-гілки (це v4 API)
+        .package(url: "https://github.com/daltoniam/Starscream.git", branch: "master"),
         .package(url: "https://github.com/leeway1208/MqttCocoaAsyncSocket", from: "1.0.8"),
     ],
     targets: [
