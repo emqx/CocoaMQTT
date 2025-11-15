@@ -1,4 +1,4 @@
-// swift-tools-version:5.0
+// swift-tools-version:5.7
 // The swift-tools-version declares the minimum version of Swift required to build this package.
 
 import PackageDescription
@@ -15,8 +15,8 @@ let package = Package(
         .library(name: "CocoaMQTTWebSocket", targets: [ "CocoaMQTTWebSocket" ])
     ],
     dependencies: [
-        // Updated to support Starscream 5.x API
-        .package(url: "https://github.com/daltoniam/Starscream.git", .upToNextMajor(from: "5.0.0")),
+        // Allow Starscream 4.x and 5.x to avoid version conflicts in client apps
+        .package(url: "https://github.com/daltoniam/Starscream.git", "4.0.8"..<"6.0.0"),
         .package(url: "https://github.com/leeway1208/MqttCocoaAsyncSocket", from: "1.0.8"),
     ],
     targets: [
