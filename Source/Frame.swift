@@ -12,16 +12,16 @@ import Foundation
 @objc public enum CocoaMQTTQoS: UInt8, CustomStringConvertible {
     /// At most once delivery
     case qos0 = 0
-    
+
     /// At least once delivery
     case qos1
-    
+
     /// Exactly once delivery
     case qos2
-    
+
     /// !!! Used SUBACK frame only
     case FAILURE = 0x80
-    
+
     public var description: String {
         switch self {
         case .qos0: return "qos0"
@@ -33,19 +33,19 @@ import Foundation
 }
 
 extension CocoaMQTTQoS: Comparable {
-    
+
     public static func < (lhs: CocoaMQTTQoS, rhs: CocoaMQTTQoS) -> Bool {
         return lhs.rawValue < rhs.rawValue
     }
-    
+
     public static func <= (lhs: CocoaMQTTQoS, rhs: CocoaMQTTQoS) -> Bool {
         return lhs.rawValue <= rhs.rawValue
     }
-    
+
     public static func > (lhs: CocoaMQTTQoS, rhs: CocoaMQTTQoS) -> Bool {
         return lhs.rawValue > rhs.rawValue
     }
-    
+
     public static func >= (lhs: CocoaMQTTQoS, rhs: CocoaMQTTQoS) -> Bool {
         return lhs.rawValue >= rhs.rawValue
     }
@@ -77,10 +77,9 @@ protocol InitialWithBytes {
     init?(packetFixedHeaderType: UInt8, bytes: [UInt8])
 }
 
-
 /// MQTT Frame protocol
 protocol Frame {
-    
+
     /// Each MQTT Control Packet contains a fixed header
     /// MQTT 3.1.1
     var packetFixedHeaderType: UInt8 {get set}
@@ -130,7 +129,7 @@ extension Frame {
             printDebug("=============================================================")
 
             return [packetFixedHeaderType] + remainingLen(len: len5) + variableHeader5 + properties + payload5
-        }else {
+        } else {
 
             let variableHeader = self.variableHeader()
             let payload = self.payload()
@@ -143,16 +142,16 @@ extension Frame {
             printDebug("variableHeader \(variableHeader)")
             printDebug("payload \(payload)")
             printDebug("=============================================================")
-            
+
             return [packetFixedHeaderType] + remainingLen(len: len) + variableHeader + payload
         }
 
     }
-    
+
     private func remainingLen(len: UInt32) -> [UInt8] {
         var bytes: [UInt8] = []
         var digit: UInt8 = 0
-        
+
         var len = len
         repeat {
             digit = UInt8(len % 128)
@@ -163,7 +162,7 @@ extension Frame {
             }
             bytes.append(digit)
         } while len > 0
-        
+
         return bytes
     }
 }
@@ -178,13 +177,12 @@ extension Frame {
     /// +---------+----------+-------+--------+
     /// |  Type   | DUP flag |  QoS  | RETAIN |
     /// +-------------------------------------+
-    
-    
+
     /// The type of the Frame
     var type: FrameType {
         return  FrameType(rawValue: packetFixedHeaderType & 0xF0)!
     }
-    
+
     /// Dup flag
     var dup: Bool {
         get {
@@ -194,7 +192,7 @@ extension Frame {
             packetFixedHeaderType = (packetFixedHeaderType & 0xF7) | (newValue.bit  << 3)
         }
     }
-    
+
     /// Qos level
     var qos: CocoaMQTTQoS {
         get {
@@ -204,7 +202,7 @@ extension Frame {
             packetFixedHeaderType = (packetFixedHeaderType & 0xF9) | (newValue.rawValue << 1)
         }
     }
-    
+
     /// Retained flag
     var retained: Bool {
         get {
@@ -215,5 +213,3 @@ extension Frame {
         }
     }
 }
-
-

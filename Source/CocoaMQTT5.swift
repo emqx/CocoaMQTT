@@ -26,7 +26,6 @@ import MqttCocoaAsyncSocket
     }
 }
 
-
 /// CocoaMQTT5 Delegate
 @objc public protocol CocoaMQTT5Delegate {
 
@@ -50,10 +49,10 @@ import MqttCocoaAsyncSocket
 
     ///
     func mqtt5(_ mqtt5: CocoaMQTT5, didUnsubscribeTopics topics: [String], unsubAckData: MqttDecodeUnsubAck?)
-    
+
     ///
     func mqtt5(_ mqtt5: CocoaMQTT5, didReceiveDisconnectReasonCode reasonCode: CocoaMQTTDISCONNECTReasonCode)
-    
+
     ///
     func mqtt5(_ mqtt5: CocoaMQTT5, didReceiveAuthReasonCode reasonCode: CocoaMQTTAUTHReasonCode)
 
@@ -65,7 +64,7 @@ import MqttCocoaAsyncSocket
 
     ///
     func mqtt5DidDisconnect(_ mqtt5: CocoaMQTT5, withError err: Error?)
-    
+
     /// Manually validate SSL/TLS server certificate.
     ///
     /// This method will be called if enable  `allowUntrustCACertificate`
@@ -74,19 +73,18 @@ import MqttCocoaAsyncSocket
     @objc optional func mqtt5UrlSession(_ mqtt: CocoaMQTT5, didReceiveTrust trust: SecTrust, didReceiveChallenge challenge: URLAuthenticationChallenge, completionHandler: @escaping (URLSession.AuthChallengeDisposition, URLCredential?) -> Void)
 
     ///
-    @objc optional func mqtt5(_ mqtt5: CocoaMQTT5, didPublishComplete id: UInt16,  pubCompData: MqttDecodePubComp?)
+    @objc optional func mqtt5(_ mqtt5: CocoaMQTT5, didPublishComplete id: UInt16, pubCompData: MqttDecodePubComp?)
 
     ///
     @objc optional func mqtt5(_ mqtt5: CocoaMQTT5, didStateChangeTo state: CocoaMQTTConnState)
 }
 
 /// set mqtt version to 5.0
-public func setMqtt5Version(){
+public func setMqtt5Version() {
     if let storage = CocoaMQTTStorage() {
         storage.setMQTTVersion("5.0")
     }
 }
-
 
 /**
  * Blueprint of the MQTT Client
@@ -105,13 +103,13 @@ protocol CocoaMQTT5Client {
     var willMessage: CocoaMQTT5Message? {get set}
     var connectProperties: MqttConnectProperties? {get set}
     var authProperties: MqttAuthProperties? {get set}
-    
+
     /* Basic Properties */
 
     /* CONNNEC/DISCONNECT */
 
     func connect() -> Bool
-    func connect(timeout:TimeInterval) -> Bool
+    func connect(timeout: TimeInterval) -> Bool
     func disconnect()
     func ping()
 
@@ -125,12 +123,11 @@ protocol CocoaMQTT5Client {
     func unsubscribe(_ topic: String)
     func unsubscribe(_ topics: [MqttSubscription])
 
-    func publish(_ topic: String, withString string: String, qos: CocoaMQTTQoS,  DUP: Bool, retained: Bool, properties: MqttPublishProperties) -> Int
+    func publish(_ topic: String, withString string: String, qos: CocoaMQTTQoS, DUP: Bool, retained: Bool, properties: MqttPublishProperties) -> Int
     func publish(_ message: CocoaMQTT5Message, DUP: Bool, retained: Bool, properties: MqttPublishProperties) -> Int
 
     /* PUBLISH/SUBSCRIBE */
 }
-
 
 /// MQTT Client
 ///
@@ -224,7 +221,6 @@ public class CocoaMQTT5: NSObject, CocoaMQTT5Client {
     /// After that, it uses this value for subsequent requests.
     public var maxAutoReconnectTimeInterval: UInt16 = 128 // 128 seconds
 
-
     /// 3.1.2.11 CONNECT Properties
     public var connectProperties: MqttConnectProperties?
 
@@ -235,7 +231,6 @@ public class CocoaMQTT5: NSObject, CocoaMQTT5Client {
 
     private var autoReconnTimer: CocoaMQTTTimer?
     private var is_internal_disconnected = false
-    
 
     /// Console log level
     public var logLevel: CocoaMQTTLoggerLevel {
@@ -272,7 +267,6 @@ public class CocoaMQTT5: NSObject, CocoaMQTT5Client {
 
     fileprivate var subscriptionsWaitingAck = ThreadSafeDictionary<UInt16, [MqttSubscription]>(label: "subscriptionsWaitingAck")
     fileprivate var unsubscriptionsWaitingAck = ThreadSafeDictionary<UInt16, [MqttSubscription]>(label: "unsubscriptionsWaitingAck")
-
 
     /// Sending messages
     fileprivate var sendingMessages: [UInt16: CocoaMQTT5Message] = [:]
@@ -318,7 +312,7 @@ public class CocoaMQTT5: NSObject, CocoaMQTT5Client {
             printWarning("Localstorage initial failed for key: \(clientID)")
         }
     }
-    
+
     deinit {
         aliveTimer?.suspend()
         autoReconnTimer?.suspend()
@@ -330,7 +324,6 @@ public class CocoaMQTT5: NSObject, CocoaMQTT5Client {
     fileprivate func send(_ frame: Frame, tag: Int = 0) {
         printDebug("SEND: \(frame)")
         let data = frame.bytes(version: version)
-
 
         socket.write(Data(bytes: data, count: data.count), withTimeout: 5, tag: tag)
     }
@@ -415,7 +408,7 @@ public class CocoaMQTT5: NSObject, CocoaMQTT5Client {
         expected_disconnect(reasonCode: .normalDisconnection)
     }
 
-    public func disconnect(reasonCode : CocoaMQTTDISCONNECTReasonCode,userProperties : [String: String] ) {
+    public func disconnect(reasonCode: CocoaMQTTDISCONNECTReasonCode, userProperties: [String: String] ) {
         expected_disconnect(reasonCode: reasonCode, userProperties: userProperties)
     }
 
@@ -426,7 +419,7 @@ public class CocoaMQTT5: NSObject, CocoaMQTT5Client {
         socket.disconnect()
     }
 
-    func internal_disconnect_withProperties(reasonCode : CocoaMQTTDISCONNECTReasonCode,userProperties : [String: String] ) {
+    func internal_disconnect_withProperties(reasonCode: CocoaMQTTDISCONNECTReasonCode, userProperties: [String: String] ) {
         expected_disconnect(reasonCode: reasonCode, userProperties: userProperties)
     }
 
@@ -493,7 +486,7 @@ public class CocoaMQTT5: NSObject, CocoaMQTT5Client {
         }
 
         printDebug("message.topic \(message.topic )   = message.payload \(message.payload)")
-        
+
         var frame = FramePublish(topic: message.topic,
                                  payload: message.payload,
                                  qos: message.qos,
@@ -546,7 +539,7 @@ public class CocoaMQTT5: NSObject, CocoaMQTT5Client {
     ///   - packetIdentifier: SUBSCRIBE Variable Header
     ///   - subscriptionIdentifier: Subscription Identifier
     ///   - userProperty: User Property
-    public func subscribe(_ topics: [MqttSubscription],  packetIdentifier: UInt16? = nil, subscriptionIdentifier: UInt32? = nil, userProperty: [String: String] = [:])  {
+    public func subscribe(_ topics: [MqttSubscription], packetIdentifier: UInt16? = nil, subscriptionIdentifier: UInt32? = nil, userProperty: [String: String] = [:]) {
         let msgid = nextMessageID()
         let frame = FrameSubscribe(msgid: msgid, subscriptionList: topics, packetIdentifier: packetIdentifier, subscriptionIdentifier: subscriptionIdentifier, userProperty: userProperty)
         send(frame, tag: Int(msgid))
@@ -573,11 +566,10 @@ public class CocoaMQTT5: NSObject, CocoaMQTT5Client {
         send(frame, tag: Int(msgid))
     }
 
-
     ///  Authentication exchange
     ///
     ///
-    public func auth(reasonCode : CocoaMQTTAUTHReasonCode,authProperties : MqttAuthProperties) {
+    public func auth(reasonCode: CocoaMQTTAUTHReasonCode, authProperties: MqttAuthProperties) {
         printDebug("auth")
         let frame = FrameAuth(reasonCode: reasonCode, authProperties: authProperties)
 
@@ -592,16 +584,16 @@ extension CocoaMQTT5: CocoaMQTTDeliverProtocol {
         if let publish = frame as? FramePublish {
             let msgid = publish.msgid
             var message: CocoaMQTT5Message? = nil
-                        
+
             if let sendingMessage = sendingMessages[msgid] {
                 message = sendingMessage
-                //printError("Want send \(frame), but not found in CocoaMQTT cache")
+                // printError("Want send \(frame), but not found in CocoaMQTT cache")
             } else {
                 message = CocoaMQTT5Message(topic: publish.topic, payload: publish.payload())
             }
-            
+
             send(publish, tag: Int(msgid))
-            
+
             if let message = message {
                 self.delegate?.mqtt5(self, didPublishMessage: message, id: msgid)
                 self.didPublishMessage(self, message, msgid)
@@ -713,12 +705,12 @@ extension CocoaMQTT5: CocoaMQTTReaderDelegate {
         delegate?.mqtt5(self, didReceiveDisconnectReasonCode: disconnect.receiveReasonCode!)
         didDisconnectReasonCode(self, disconnect.receiveReasonCode!)
     }
-    
+
     func didReceive(_ reader: CocoaMQTTReader, auth: FrameAuth) {
         delegate?.mqtt5(self, didReceiveAuthReasonCode: auth.receiveReasonCode!)
         didAuthReasonCode(self, auth.receiveReasonCode!)
     }
-    
+
     func didReceive(_ reader: CocoaMQTTReader, connack: FrameConnAck) {
         printDebug("RECV: \(connack)")
 
@@ -764,7 +756,6 @@ extension CocoaMQTT5: CocoaMQTTReaderDelegate {
             expected_disconnect(reasonCode: .normalDisconnection)
         }
 
-
         delegate?.mqtt5(self, didConnectAck: connack.reasonCode ?? CocoaMQTTCONNACKReasonCode.unspecifiedError, connAckData: connack.connackProperties ?? nil)
         didConnectAck(self, connack.reasonCode ?? CocoaMQTTCONNACKReasonCode.unspecifiedError, connack.connackProperties ?? nil)
     }
@@ -777,7 +768,7 @@ extension CocoaMQTT5: CocoaMQTTReaderDelegate {
         message.duplicated = publish.dup
 
         printInfo("Received message: \(message)")
-        delegate?.mqtt5(self, didReceiveMessage: message, id: publish.msgid,  publishData: publish.publishRecProperties ?? nil)
+        delegate?.mqtt5(self, didReceiveMessage: message, id: publish.msgid, publishData: publish.publishRecProperties ?? nil)
         didReceiveMessage(self, message, publish.msgid, publish.publishRecProperties ?? nil)
 
         if message.qos == .qos1 {
@@ -834,7 +825,7 @@ extension CocoaMQTT5: CocoaMQTTReaderDelegate {
 
         let success: NSMutableDictionary = NSMutableDictionary()
         var failed = [String]()
-        for (idx,subscriptionList) in topicsAndQos.enumerated() {
+        for (idx, subscriptionList) in topicsAndQos.enumerated() {
             if suback.grantedQos[idx] != .FAILURE {
                 subscriptions[subscriptionList.topic] = suback.grantedQos[idx]
                 success[subscriptionList.topic] = suback.grantedQos[idx].rawValue
@@ -855,7 +846,7 @@ extension CocoaMQTT5: CocoaMQTTReaderDelegate {
             return
         }
         // Remove local subscription
-        var removeTopics : [String] = []
+        var removeTopics: [String] = []
         for t in topics {
             removeTopics.append(t.topic)
             subscriptions.removeValue(forKey: t.topic)

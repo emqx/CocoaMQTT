@@ -126,10 +126,7 @@ class CocoaMQTTDeliver: NSObject {
     func ack(by frame: Frame) {
         var msgid: UInt16
 
-        if let puback = frame as? FramePubAck { msgid = puback.msgid }
-        else if let pubrec = frame as? FramePubRec { msgid = pubrec.msgid }
-        else if let pubcom = frame as? FramePubComp { msgid = pubcom.msgid }
-        else { return }
+        if let puback = frame as? FramePubAck { msgid = puback.msgid } else if let pubrec = frame as? FramePubRec { msgid = pubrec.msgid } else if let pubcom = frame as? FramePubComp { msgid = pubcom.msgid } else { return }
 
         deliverQueue.async { [weak self] in
             guard let self = self else { return }
@@ -232,7 +229,7 @@ extension CocoaMQTTDeliver {
 
             // -- ACK for PUBLISH
             if let publish = frame.frame as? FramePublish,
-                publish.msgid == msgid {
+               publish.msgid == msgid {
 
                 if publish.qos == .qos2 && type == .pubrec {  // -- Replace PUBLISH with PUBREL
                     let pubrel = FramePubRel(msgid: publish.msgid)
@@ -254,7 +251,7 @@ extension CocoaMQTTDeliver {
 
             // -- ACK for PUBREL
             if let pubrel = frame.frame as? FramePubRel,
-                pubrel.msgid == msgid && type == .pubcomp {
+               pubrel.msgid == msgid && type == .pubcomp {
 
                 ackedFrames.append(pubrel)
                 return (false, frame)
@@ -280,7 +277,6 @@ extension CocoaMQTTDeliver {
         }
     }
 }
-
 
 // For tests
 extension CocoaMQTTDeliver {

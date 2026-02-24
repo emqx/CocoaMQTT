@@ -12,28 +12,28 @@ import Foundation
 struct FramePingResp: Frame {
 
     var packetFixedHeaderType: UInt8 = FrameType.pingresp.rawValue
-    
+
     init() { /* Nothing to do */ }
 }
 
 extension FramePingResp {
-    
+
     func fixedHeader() -> [UInt8] {
-        
+
         var header = [UInt8]()
         header += [FrameType.pingresp.rawValue]
 
         return header
     }
-    
+
     func variableHeader5() -> [UInt8] { return [] }
-    
+
     func payload5() -> [UInt8] { return [] }
-    
+
     func properties() -> [UInt8] { return [] }
 
     func allData() -> [UInt8] {
-        
+
         var allData = [UInt8]()
 
         allData += fixedHeader()
@@ -43,20 +43,20 @@ extension FramePingResp {
 
         return allData
     }
-    
+
     func variableHeader() -> [UInt8] { return [] }
 
     func payload() -> [UInt8] { return [] }
 }
 
 extension FramePingResp: InitialWithBytes {
-    
+
     init?(packetFixedHeaderType: UInt8, bytes: [UInt8]) {
-        
+
         guard packetFixedHeaderType == FrameType.pingresp.rawValue else {
             return nil
         }
-        
+
         guard bytes.count == 0 else {
             return nil
         }
