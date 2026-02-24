@@ -350,4 +350,23 @@ class FrameTests: XCTestCase {
         XCTAssertEqual(disconn.packetFixedHeaderType, 0xE0)
         XCTAssertEqual(disconn.bytes(version: "3.1.1"), [0xE0, 0x00])
     }
+
+    func testMQTT5UserPropertyPackingIncludesKeyAndValue() {
+        let expectedProperty: [UInt8] = [0x26, 0x00, 0x01, 0x6B, 0x00, 0x01, 0x76] // user-property "k":"v"
+
+        var subscribe = FrameSubscribe(msgid: 1, subscriptionList: [MqttSubscription(topic: "t/1", qos: .qos1)])
+        subscribe.userProperty = ["k": "v"]
+        XCTAssertEqual(subscribe.properties(), expectedProperty)
+
+        var unsubscribe = FrameUnsubscribe(msgid: 1, topics: [MqttSubscription(topic: "t/1", qos: .qos1)])
+        unsubscribe.userProperty = ["k": "v"]
+        XCTAssertEqual(unsubscribe.properties(), expectedProperty)
+
+        var unsubAck = FrameUnsubAck(msgid: 1, payload: [])
+        unsubAck.userProperty = ["k": "v"]
+        XCTAssertEqual(unsubAck.properties(), expectedProperty)
+
+        let publishProperties = MqttPublishProperties(userProperty: ["k": "v"])
+        XCTAssertEqual(publishProperties.properties, expectedProperty)
+    }
 }
