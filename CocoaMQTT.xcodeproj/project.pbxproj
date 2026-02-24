@@ -152,6 +152,7 @@
 		A1B2C3D4E5F60718293A0003 /* utilities/ConcurrentAtomic.swift in Sources */ = {isa = PBXBuildFile; fileRef = A1B2C3D4E5F60718293A0011 /* utilities/ConcurrentAtomic.swift */; };
 		A1B2C3D4E5F60718293A0004 /* ConcurrentAtomicTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = A1B2C3D4E5F60718293A0012 /* ConcurrentAtomicTests.swift */; };
 		A1B2C3D4E5F60718293A0005 /* ThreadSafetyRegressionTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = A1B2C3D4E5F60718293A0013 /* ThreadSafetyRegressionTests.swift */; };
+		A1B2C3D4E5F60718293A0006 /* PublicLoggerAPITests.swift in Sources */ = {isa = PBXBuildFile; fileRef = A1B2C3D4E5F60718293A0014 /* PublicLoggerAPITests.swift */; };
 		929A468C27611DAE0046F6C5 /* Starscream.xcframework in Frameworks */ = {isa = PBXBuildFile; fileRef = 929A468827611DAE0046F6C5 /* Starscream.xcframework */; settings = {ATTRIBUTES = (Required, ); }; };
 		929A468D27611DAE0046F6C5 /* Starscream.xcframework in Frameworks */ = {isa = PBXBuildFile; fileRef = 929A468827611DAE0046F6C5 /* Starscream.xcframework */; settings = {ATTRIBUTES = (Required, ); }; };
 		929A468E27611DAE0046F6C5 /* Starscream.xcframework in Frameworks */ = {isa = PBXBuildFile; fileRef = 929A468827611DAE0046F6C5 /* Starscream.xcframework */; settings = {ATTRIBUTES = (Required, ); }; };
@@ -239,6 +240,7 @@
 		A1B2C3D4E5F60718293A0011 /* utilities/ConcurrentAtomic.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = utilities/ConcurrentAtomic.swift; sourceTree = "<group>"; };
 		A1B2C3D4E5F60718293A0012 /* ConcurrentAtomicTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ConcurrentAtomicTests.swift; sourceTree = "<group>"; };
 		A1B2C3D4E5F60718293A0013 /* ThreadSafetyRegressionTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ThreadSafetyRegressionTests.swift; sourceTree = "<group>"; };
+		A1B2C3D4E5F60718293A0014 /* PublicLoggerAPITests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PublicLoggerAPITests.swift; sourceTree = "<group>"; };
 		929A468827611DAE0046F6C5 /* Starscream.xcframework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.xcframework; name = Starscream.xcframework; path = Carthage/Build/Starscream.xcframework; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
@@ -307,6 +309,7 @@
 				8D7A262D23AF2FEA00CE7442 /* client-keycert.p12 */,
 				0409971E1C1B0B96006B5A6D /* CocoaMQTTTests.swift */,
 				A1B2C3D4E5F60718293A0012 /* ConcurrentAtomicTests.swift */,
+				A1B2C3D4E5F60718293A0014 /* PublicLoggerAPITests.swift */,
 				8D14C7622345CAB5002D959E /* CocoaMQTTDeliverTests.swift */,
 				8D14C7662349C2A3002D959E /* CocoaMQTTStorageTests.swift */,
 				8270C4AA21DA6F6700C5D485 /* FrameTests.swift */,
@@ -782,6 +785,7 @@
 				8D14C7672349C2A3002D959E /* CocoaMQTTStorageTests.swift in Sources */,
 				8225B556227C334700E4DB51 /* CocoaMQTTTests.swift in Sources */,
 				A1B2C3D4E5F60718293A0004 /* ConcurrentAtomicTests.swift in Sources */,
+				A1B2C3D4E5F60718293A0006 /* PublicLoggerAPITests.swift in Sources */,
 				8225B557227C334700E4DB51 /* FrameTests.swift in Sources */,
 				A1B2C3D4E5F60718293A0005 /* ThreadSafetyRegressionTests.swift in Sources */,
 			);
