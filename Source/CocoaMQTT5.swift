@@ -462,7 +462,7 @@ public class CocoaMQTT5: NSObject, CocoaMQTT5Client {
     @discardableResult
     public func publish(_ topic: String, withString string: String, qos: CocoaMQTTQoS = .qos1, DUP: Bool = false, retained: Bool = false, properties: MqttPublishProperties) -> Int {
         var fixQus = qos
-        if !DUP{
+        if DUP{
             fixQus = .qos0
         }
         let message = CocoaMQTT5Message(topic: topic, string: string, qos: fixQus, retained: retained)
