@@ -208,6 +208,36 @@ class CocoaMQTTTests: XCTestCase {
         }
         XCTAssertEqual(mqtt.connState, .disconnected)
     }
+
+    func testAutoReconnectAfterManualDisconnectOnNextSessionFailure() {
+        let caller = Caller()
+        let mqtt = CocoaMQTT(clientID: clientID + "-next-session", host: host, port: port)
+        mqtt.delegateQueue = deleQueue
+        mqtt.delegate = caller
+        mqtt.logLevel = .error
+        mqtt.autoReconnect = true
+        mqtt.autoReconnectTimeInterval = 1
+
+        _ = mqtt.connect()
+        wait_for { caller.isConnected }
+        XCTAssertEqual(mqtt.connState, .connected)
+
+        mqtt.disconnect()
+        wait_for { caller.isConnected == false }
+        XCTAssertEqual(mqtt.connState, .disconnected)
+
+        let connectingCountBeforeFail = caller.states.filter { $0 == .connecting }.count
+
+        mqtt.port = port + 1
+        _ = mqtt.connect()
+
+        wait_for(t: 6) {
+            caller.states.filter { $0 == .connecting }.count >= connectingCountBeforeFail + 2
+        }
+
+        mqtt.autoReconnect = false
+        mqtt.internal_disconnect()
+    }
     
     func testLongString() {
         let caller = Caller()
@@ -399,6 +429,8 @@ private class Caller: CocoaMQTTDelegate {
     var isConnected = false
     
     var isSSL = false
+
+    var states = [CocoaMQTTConnState]()
     
     func mqtt(_ mqtt: CocoaMQTT, didConnectAck ack: CocoaMQTTConnAck) {
         assert_in_del_queue()
@@ -455,6 +487,7 @@ private class Caller: CocoaMQTTDelegate {
     
     func mqtt(_ mqtt: CocoaMQTT, didStateChangeTo state: CocoaMQTTConnState) {
         assert_in_del_queue()
+        states.append(state)
     }
     
     func mqtt(_ mqtt: CocoaMQTT, didPublishComplete id: UInt16) {

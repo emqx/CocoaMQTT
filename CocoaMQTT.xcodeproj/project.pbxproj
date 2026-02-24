@@ -147,6 +147,11 @@
 		92445BEC2ADFBEA4009D16AB /* ThreadSafeDictionary.swift in Sources */ = {isa = PBXBuildFile; fileRef = 92445BEB2ADFBEA4009D16AB /* ThreadSafeDictionary.swift */; };
 		92445BED2ADFBEA4009D16AB /* ThreadSafeDictionary.swift in Sources */ = {isa = PBXBuildFile; fileRef = 92445BEB2ADFBEA4009D16AB /* ThreadSafeDictionary.swift */; };
 		92445BEE2ADFBEA4009D16AB /* ThreadSafeDictionary.swift in Sources */ = {isa = PBXBuildFile; fileRef = 92445BEB2ADFBEA4009D16AB /* ThreadSafeDictionary.swift */; };
+		A1B2C3D4E5F60718293A0001 /* utilities/ConcurrentAtomic.swift in Sources */ = {isa = PBXBuildFile; fileRef = A1B2C3D4E5F60718293A0011 /* utilities/ConcurrentAtomic.swift */; };
+		A1B2C3D4E5F60718293A0002 /* utilities/ConcurrentAtomic.swift in Sources */ = {isa = PBXBuildFile; fileRef = A1B2C3D4E5F60718293A0011 /* utilities/ConcurrentAtomic.swift */; };
+		A1B2C3D4E5F60718293A0003 /* utilities/ConcurrentAtomic.swift in Sources */ = {isa = PBXBuildFile; fileRef = A1B2C3D4E5F60718293A0011 /* utilities/ConcurrentAtomic.swift */; };
+		A1B2C3D4E5F60718293A0004 /* ConcurrentAtomicTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = A1B2C3D4E5F60718293A0012 /* ConcurrentAtomicTests.swift */; };
+		A1B2C3D4E5F60718293A0005 /* ThreadSafetyRegressionTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = A1B2C3D4E5F60718293A0013 /* ThreadSafetyRegressionTests.swift */; };
 		929A468C27611DAE0046F6C5 /* Starscream.xcframework in Frameworks */ = {isa = PBXBuildFile; fileRef = 929A468827611DAE0046F6C5 /* Starscream.xcframework */; settings = {ATTRIBUTES = (Required, ); }; };
 		929A468D27611DAE0046F6C5 /* Starscream.xcframework in Frameworks */ = {isa = PBXBuildFile; fileRef = 929A468827611DAE0046F6C5 /* Starscream.xcframework */; settings = {ATTRIBUTES = (Required, ); }; };
 		929A468E27611DAE0046F6C5 /* Starscream.xcframework in Frameworks */ = {isa = PBXBuildFile; fileRef = 929A468827611DAE0046F6C5 /* Starscream.xcframework */; settings = {ATTRIBUTES = (Required, ); }; };
@@ -231,6 +236,9 @@
 		9228E8CC27610AA400063DF2 /* MqttAuthProperties.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = MqttAuthProperties.swift; sourceTree = "<group>"; };
 		9228E8CD27610AA400063DF2 /* MqttConnectProperties.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = MqttConnectProperties.swift; sourceTree = "<group>"; };
 		92445BEB2ADFBEA4009D16AB /* ThreadSafeDictionary.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = ThreadSafeDictionary.swift; sourceTree = "<group>"; };
+		A1B2C3D4E5F60718293A0011 /* utilities/ConcurrentAtomic.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = utilities/ConcurrentAtomic.swift; sourceTree = "<group>"; };
+		A1B2C3D4E5F60718293A0012 /* ConcurrentAtomicTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ConcurrentAtomicTests.swift; sourceTree = "<group>"; };
+		A1B2C3D4E5F60718293A0013 /* ThreadSafetyRegressionTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ThreadSafetyRegressionTests.swift; sourceTree = "<group>"; };
 		929A468827611DAE0046F6C5 /* Starscream.xcframework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.xcframework; name = Starscream.xcframework; path = Carthage/Build/Starscream.xcframework; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
@@ -298,9 +306,11 @@
 			children = (
 				8D7A262D23AF2FEA00CE7442 /* client-keycert.p12 */,
 				0409971E1C1B0B96006B5A6D /* CocoaMQTTTests.swift */,
+				A1B2C3D4E5F60718293A0012 /* ConcurrentAtomicTests.swift */,
 				8D14C7622345CAB5002D959E /* CocoaMQTTDeliverTests.swift */,
 				8D14C7662349C2A3002D959E /* CocoaMQTTStorageTests.swift */,
 				8270C4AA21DA6F6700C5D485 /* FrameTests.swift */,
+				A1B2C3D4E5F60718293A0013 /* ThreadSafetyRegressionTests.swift */,
 				040997201C1B0B96006B5A6D /* Info.plist */,
 			);
 			path = CocoaMQTTTests;
@@ -369,6 +379,7 @@
 			isa = PBXGroup;
 			children = (
 				92445BEB2ADFBEA4009D16AB /* ThreadSafeDictionary.swift */,
+				A1B2C3D4E5F60718293A0011 /* utilities/ConcurrentAtomic.swift */,
 				9228E8C827610A9100063DF2 /* CocoaMQTTReasonCode.swift */,
 				9228E8C427610A8500063DF2 /* CocoaMQTTProperty.swift */,
 				8225B4C8227B182200E4DB51 /* CocoaMQTTTimer.swift */,
@@ -632,6 +643,7 @@
 				9228E8BF27610A7B00063DF2 /* MqttSubscription.swift in Sources */,
 				9228E8A727610A1000063DF2 /* MqttDecodeUnsubAck.swift in Sources */,
 				92445BED2ADFBEA4009D16AB /* ThreadSafeDictionary.swift in Sources */,
+				A1B2C3D4E5F60718293A0002 /* utilities/ConcurrentAtomic.swift in Sources */,
 				1111249624BB515E00E2DFBC /* CocoaMQTTStorage.swift in Sources */,
 				1111249724BB515E00E2DFBC /* FrameUnsubAck.swift in Sources */,
 				9228E89E27610A1000063DF2 /* MqttDecodePubComp.swift in Sources */,
@@ -682,6 +694,7 @@
 				9228E8C027610A7B00063DF2 /* MqttSubscription.swift in Sources */,
 				9228E8A827610A1000063DF2 /* MqttDecodeUnsubAck.swift in Sources */,
 				92445BEE2ADFBEA4009D16AB /* ThreadSafeDictionary.swift in Sources */,
+				A1B2C3D4E5F60718293A0003 /* utilities/ConcurrentAtomic.swift in Sources */,
 				111124C024BB516300E2DFBC /* CocoaMQTTStorage.swift in Sources */,
 				111124C124BB516300E2DFBC /* FrameUnsubAck.swift in Sources */,
 				9228E89F27610A1000063DF2 /* MqttDecodePubComp.swift in Sources */,
@@ -732,6 +745,7 @@
 				9228E8BE27610A7B00063DF2 /* MqttSubscription.swift in Sources */,
 				9228E8A627610A1000063DF2 /* MqttDecodeUnsubAck.swift in Sources */,
 				92445BEC2ADFBEA4009D16AB /* ThreadSafeDictionary.swift in Sources */,
+				A1B2C3D4E5F60718293A0001 /* utilities/ConcurrentAtomic.swift in Sources */,
 				8D14C7652349BAF5002D959E /* CocoaMQTTStorage.swift in Sources */,
 				8D43DE6022FAFC2700D9A06B /* FrameUnsubAck.swift in Sources */,
 				9228E89D27610A1000063DF2 /* MqttDecodePubComp.swift in Sources */,
@@ -767,7 +781,9 @@
 				8D14C7632345CAB5002D959E /* CocoaMQTTDeliverTests.swift in Sources */,
 				8D14C7672349C2A3002D959E /* CocoaMQTTStorageTests.swift in Sources */,
 				8225B556227C334700E4DB51 /* CocoaMQTTTests.swift in Sources */,
+				A1B2C3D4E5F60718293A0004 /* ConcurrentAtomicTests.swift in Sources */,
 				8225B557227C334700E4DB51 /* FrameTests.swift in Sources */,
+				A1B2C3D4E5F60718293A0005 /* ThreadSafetyRegressionTests.swift in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};

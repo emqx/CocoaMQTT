@@ -64,4 +64,16 @@ public class ThreadSafeDictionary<K: Hashable,V>: Collection {
             self?.dictionary.removeAll()
         }
     }
+
+    public func snapshot() -> [K: V] {
+        concurrentQueue.sync {
+            dictionary
+        }
+    }
+
+    public func replace(with newDictionary: [K: V]) {
+        concurrentQueue.sync(flags: .barrier) {
+            dictionary = newDictionary
+        }
+    }
 }
