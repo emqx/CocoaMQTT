@@ -25,8 +25,62 @@ jobs:
       - name: Resolve dependencies
         run: swift package resolve
 
+      - name: Setup Docker runtime
+        run: |
+          set -euo pipefail
+          if command -v docker >/dev/null 2>&1 && docker info >/dev/null 2>&1; then
+            exit 0
+          fi
+
+          brew install docker colima
+          colima start --cpu 2 --memory 4 --disk 20
+          docker info
+          echo "COLIMA_STARTED=1" >> "${GITHUB_ENV}"
+
+      - name: Start EMQX in Docker
+        run: |
+          set -euo pipefail
+          docker rm -f cocoamqtt-emqx >/dev/null 2>&1 || true
+          docker run -d --name cocoamqtt-emqx \
+            -p 1883:1883 \
+            -p 8083:8083 \
+            -p 8883:8883 \
+            emqx/emqx:5.8.8
+
+          for port in 1883 8083 8883; do
+            for _ in {1..60}; do
+              if nc -z 127.0.0.1 "${port}"; then
+                echo "EMQX listener is ready on port ${port}"
+                break
+              fi
+              sleep 1
+            done
+            nc -z 127.0.0.1 "${port}"
+          done
+
       - name: Build
         run: swift build
 
       - name: Test
-        run: swift test --parallel
+        run: swift test
+
+      - name: Print EMQX logs on failure
+        if: failure()
+        run: |
+          if docker ps -a --format '{{.Names}}' | grep -q '^cocoamqtt-emqx$'; then
+            docker logs --tail 300 cocoamqtt-emqx
+          fi
+
+      - name: Stop EMQX Docker container
+        if: always()
+        run: |
+          if docker ps -a --format '{{.Names}}' | grep -q '^cocoamqtt-emqx$'; then
+            docker rm -f cocoamqtt-emqx || true
+          fi
+
+      - name: Stop Colima runtime
+        if: always()
+        run: |
+          if [ "${COLIMA_STARTED:-0}" = "1" ]; then
+            colima stop || true
+          fi
