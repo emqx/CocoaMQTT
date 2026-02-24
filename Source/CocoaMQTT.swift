@@ -399,14 +399,19 @@ public class CocoaMQTT: NSObject, CocoaMQTTClient {
     /// Send a DISCONNECT packet to the broker then close the connection
     ///
     /// - Note: Only can be called from outside.
-    ///         If you want to disconnect from inside framework, call internal_disconnect()
-    ///         disconnect expectedly
+    ///         This closes the connection expectedly, so auto-reconnect will not run.
     public func disconnect() {
-        internal_disconnect()
+        expected_disconnect()
     }
     
-    /// Disconnect unexpectedly
+    /// Disconnect unexpectedly.
+    /// This keeps auto-reconnect behavior enabled.
     func internal_disconnect() {
+        is_internal_disconnected = false
+        socket.disconnect()
+    }
+
+    private func expected_disconnect() {
         is_internal_disconnected = true
         send(FrameDisconnect(), tag: -0xE0)
         socket.disconnect()
@@ -682,7 +687,7 @@ extension CocoaMQTT: CocoaMQTTReaderDelegate {
             
         } else {
             connState = .disconnected
-            internal_disconnect()
+            expected_disconnect()
         }
 
         delegate?.mqtt(self, didConnectAck: connack.returnCode ?? CocoaMQTTConnAck.serverUnavailable)

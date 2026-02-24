@@ -409,27 +409,30 @@ public class CocoaMQTT5: NSObject, CocoaMQTT5Client {
     /// Send a DISCONNECT packet to the broker then close the connection
     ///
     /// - Note: Only can be called from outside.
-    ///         If you want to disconnect from inside framework, call internal_disconnect()
-    ///         disconnect expectedly
+    ///         This closes the connection expectedly, so auto-reconnect will not run.
     public func disconnect() {
-        internal_disconnect()
+        expected_disconnect(reasonCode: .normalDisconnection)
     }
 
     public func disconnect(reasonCode : CocoaMQTTDISCONNECTReasonCode,userProperties : [String: String] ) {
-        internal_disconnect_withProperties(reasonCode: reasonCode,userProperties: userProperties)
+        expected_disconnect(reasonCode: reasonCode, userProperties: userProperties)
     }
 
-    /// Disconnect unexpectedly
+    /// Disconnect unexpectedly.
+    /// This keeps auto-reconnect behavior enabled.
     func internal_disconnect() {
-        is_internal_disconnected = true
-        send(FrameDisconnect(disconnectReasonCode: CocoaMQTTDISCONNECTReasonCode.normalDisconnection), tag: -0xE0)
+        is_internal_disconnected = false
         socket.disconnect()
     }
 
     func internal_disconnect_withProperties(reasonCode : CocoaMQTTDISCONNECTReasonCode,userProperties : [String: String] ) {
+        expected_disconnect(reasonCode: reasonCode, userProperties: userProperties)
+    }
+
+    private func expected_disconnect(reasonCode: CocoaMQTTDISCONNECTReasonCode, userProperties: [String: String]? = nil) {
         is_internal_disconnected = true
         var frameDisconnect = FrameDisconnect(disconnectReasonCode: reasonCode)
-        frameDisconnect.userProperties = userProperties
+        frameDisconnect.userProperties = userProperties ?? [:]
         send(frameDisconnect, tag: -0xE0)
         socket.disconnect()
     }
@@ -749,7 +752,7 @@ extension CocoaMQTT5: CocoaMQTTReaderDelegate {
 
         } else {
             connState = .disconnected
-            internal_disconnect()
+            expected_disconnect(reasonCode: .normalDisconnection)
         }
 
 
@@ -860,4 +863,3 @@ extension CocoaMQTT5: CocoaMQTTReaderDelegate {
         didReceivePong(self)
     }
 }
-
