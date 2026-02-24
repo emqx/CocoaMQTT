@@ -39,8 +39,7 @@ open class CocoaMQTTLogger: NSObject {
     public override init() { super.init() }
 
     // min level
-    @ConcurrentAtomic(wrappedValue: .warning, label: "CocoaMQTTLogger.minLevel")
-    var minLevel: CocoaMQTTLoggerLevel
+    public var minLevel: CocoaMQTTLoggerLevel = .warning
     
     // logs
     open func log(level: CocoaMQTTLoggerLevel, message: String) {
