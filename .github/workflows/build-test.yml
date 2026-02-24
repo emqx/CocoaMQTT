@@ -31,8 +31,23 @@ jobs:
             exit 0
           fi
 
-          brew install docker colima
-          colima start --cpu 2 --memory 4 --disk 20
+          # GitHub macOS runners may fail with Colima's default `vz` backend.
+          # Use qemu backend explicitly for better compatibility in CI.
+          brew install docker colima qemu
+
+          colima start \
+            --runtime docker \
+            --vm-type qemu \
+            --cpu 2 \
+            --memory 4 \
+            --disk 20
+
+          for _ in {1..30}; do
+            if docker info >/dev/null 2>&1; then
+              break
+            fi
+            sleep 2
+          done
           docker info
           echo "COLIMA_STARTED=1" >> "${GITHUB_ENV}"
 
@@ -44,7 +59,7 @@ jobs:
             -p 1883:1883 \
             -p 8083:8083 \
             -p 8883:8883 \
-            emqx/emqx:5.8.8
+            emqx/emqx:5.10.4
 
           for port in 1883 8083 8883; do
             for _ in {1..60}; do
