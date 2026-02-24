@@ -461,11 +461,12 @@ public class CocoaMQTT5: NSObject, CocoaMQTT5Client {
     ///     - -1 will be returned, if the messages queue is full
     @discardableResult
     public func publish(_ topic: String, withString string: String, qos: CocoaMQTTQoS = .qos1, DUP: Bool = false, retained: Bool = false, properties: MqttPublishProperties) -> Int {
-        var fixQus = qos
-        if DUP{
-            fixQus = .qos0
+        assert(!(DUP && qos == .qos0), "DUP=true with QoS0 is invalid for MQTT PUBLISH.")
+        guard !(DUP && qos == .qos0) else {
+            printError("Invalid PUBLISH flags: DUP=true requires QoS1 or QoS2.")
+            return -1
         }
-        let message = CocoaMQTT5Message(topic: topic, string: string, qos: fixQus, retained: retained)
+        let message = CocoaMQTT5Message(topic: topic, string: string, qos: qos, retained: retained)
         return publish(message, DUP: DUP, retained: retained, properties: properties)
     }
 
@@ -476,6 +477,12 @@ public class CocoaMQTT5: NSObject, CocoaMQTT5Client {
     ///   - properties: Publish Properties
     @discardableResult
     public func publish(_ message: CocoaMQTT5Message, DUP: Bool = false, retained: Bool = false, properties: MqttPublishProperties) -> Int {
+        assert(!(DUP && message.qos == .qos0), "DUP=true with QoS0 is invalid for MQTT PUBLISH.")
+        guard !(DUP && message.qos == .qos0) else {
+            printError("Invalid PUBLISH flags: DUP=true requires QoS1 or QoS2.")
+            return -1
+        }
+
         let msgid: UInt16
 
         if message.qos == .qos0 {
