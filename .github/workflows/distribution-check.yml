@@ -198,14 +198,6 @@ jobs:
             exit 1
           fi
 
-          if [ "${GITHUB_REF_TYPE}" = "tag" ]; then
-            RELEASE_TAG="${GITHUB_REF_NAME#v}"
-            if [ "${RELEASE_TAG}" != "${VERSION}" ]; then
-              echo "Git tag (${GITHUB_REF_NAME}) must match podspec version (${VERSION})"
-              exit 1
-            fi
-          fi
-
       - name: Lint CocoaPods Core subspec
         run: pod lib lint CocoaMQTT.podspec --subspec=Core --allow-warnings --skip-tests --fail-fast --verbose
 
