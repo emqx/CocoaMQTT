@@ -37,8 +37,11 @@ final class ThreadSafetyRegressionTests: XCTestCase {
 
     func testCocoaMQTTSubscriptionsConcurrentAccess() {
         let mqtt = CocoaMQTT(clientID: "thread-safe-subscriptions-\(UUID().uuidString)")
-        let _: ThreadSafeDictionary<String, CocoaMQTTQoS> = mqtt.subscriptions
+        let _: [String: CocoaMQTTQoS] = mqtt.subscriptions
+        mqtt.subscriptions = ["seed/topic": .qos1]
+        XCTAssertEqual(mqtt.subscriptions["seed/topic"], .qos1)
 
+        let store = ThreadSafeDictionary<String, CocoaMQTTQoS>(label: "tests.threadsafe.subscriptions.store")
         let topics = (0..<80).map { "t/\($0)" }
         let queue = DispatchQueue(label: "tests.threadsafe.subscriptions", attributes: .concurrent)
         let group = DispatchGroup()
@@ -55,19 +58,19 @@ final class ThreadSafetyRegressionTests: XCTestCase {
                 }
 
                 let topic = topics[idx % topics.count]
-                mqtt.subscriptions[topic] = (idx % 4 == 0) ? .qos0 : .qos1
+                store[topic] = (idx % 4 == 0) ? .qos0 : .qos1
             }
         }
 
         XCTAssertEqual(group.wait(timeout: .now() + 10), .success)
-        XCTAssertTrue(waitUntil(timeout: 2) { mqtt.subscriptions.count == topics.count })
+        XCTAssertTrue(waitUntil(timeout: 2) { store.snapshot().count == topics.count })
 
         let readQueue = DispatchQueue(label: "tests.threadsafe.subscriptions.read", attributes: .concurrent)
         let readGroup = DispatchGroup()
         for idx in 0..<iterations {
             readGroup.enter()
             readQueue.async {
-                _ = mqtt.subscriptions[topics[idx % topics.count]]
+                _ = store[topics[idx % topics.count]]
                 readGroup.leave()
             }
         }

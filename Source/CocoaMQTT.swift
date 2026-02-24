@@ -264,7 +264,13 @@ public class CocoaMQTT: NSObject, CocoaMQTTClient {
     }
     
     /// The subscribed topics in current communication
-    public var subscriptions = ThreadSafeDictionary<String, CocoaMQTTQoS>(label: "subscriptions")
+    ///
+    /// Keeping this dictionary-typed preserves the public API while the backing store remains thread-safe.
+    public var subscriptions: [String: CocoaMQTTQoS] {
+        get { subscriptionsStorage.snapshot() }
+        set { subscriptionsStorage.replace(with: newValue) }
+    }
+    private var subscriptionsStorage = ThreadSafeDictionary<String, CocoaMQTTQoS>(label: "subscriptions")
     
     fileprivate var subscriptionsWaitingAck = ThreadSafeDictionary<UInt16, [(String, CocoaMQTTQoS)]>(label: "subscriptionsWaitingAck")
     fileprivate var unsubscriptionsWaitingAck = ThreadSafeDictionary<UInt16, [String]>(label: "unsubscriptionsWaitingAck")
@@ -759,7 +765,7 @@ extension CocoaMQTT: CocoaMQTTReaderDelegate {
         var failed = [String]()
         for (idx,(topic, _)) in topicsAndQos.enumerated() {
             if suback.grantedQos[idx] != .FAILURE {
-                subscriptions[topic] = suback.grantedQos[idx]
+                subscriptionsStorage[topic] = suback.grantedQos[idx]
                 success[topic] = suback.grantedQos[idx].rawValue
             } else {
                 failed.append(topic)
@@ -779,7 +785,7 @@ extension CocoaMQTT: CocoaMQTTReaderDelegate {
         }
         // Remove local subscription
         for t in topics {
-            subscriptions.removeValue(forKey: t)
+            subscriptionsStorage.removeValue(forKey: t)
         }
         delegate?.mqtt(self, didUnsubscribeTopics: topics)
         didUnsubscribeTopics(self, topics)
