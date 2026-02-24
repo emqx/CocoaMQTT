@@ -457,7 +457,7 @@ extension CocoaMQTTWebSocket.StarscreamConnection: CertificatePinning {
 }
 
 extension CocoaMQTTWebSocket.StarscreamConnection: WebSocketDelegate {
-    public func didReceive(event: Starscream.WebSocketEvent, client: any Starscream.WebSocketClient) {
+    public func didReceive(event: Starscream.WebSocketEvent, client: Starscream.WebSocketClient) {
         switch event {
         case .connected(_):
             delegate?.connectionOpened(self)
@@ -482,6 +482,13 @@ extension CocoaMQTTWebSocket.StarscreamConnection: WebSocketDelegate {
         default:
             break
         }
+    }
+
+    // Backward-compatible overload for Starscream 4.x where the delegate used `client: WebSocket`.
+    // Keeping this method allows the same source to compile against both 4.x and 5.x.
+    public func didReceive(event: Starscream.WebSocketEvent, client: Starscream.WebSocket) {
+        // Forward to the WebSocketClient-based handler to avoid duplicate logic
+        self.didReceive(event: event, client: client as Starscream.WebSocketClient)
     }
 }
 
