@@ -330,6 +330,7 @@ You can follow the Example App to learn how to use it. But we need to make the E
 
 ```bash
 $ cd Examples
+```
 
 Then, open the `Example.xcodeproj` by Xcode and start it!
 
