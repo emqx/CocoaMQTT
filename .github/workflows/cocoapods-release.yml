@@ -1,0 +1,125 @@
+name: CocoaPods Manual Release
+
+on:
+  workflow_dispatch:
+    inputs:
+      tag:
+        description: "Existing git tag to publish (for example: 2.1.8 or v2.1.8)"
+        required: true
+        type: string
+      mode:
+        description: Run mode
+        required: true
+        type: choice
+        options:
+          - validate-only
+          - publish
+        default: validate-only
+
+concurrency:
+  group: cocoapods-manual-release-${{ inputs.tag }}
+  cancel-in-progress: false
+
+jobs:
+  release:
+    name: CocoaPods Manual Release
+    runs-on: macos-15
+    timeout-minutes: 45
+    permissions:
+      contents: read
+    env:
+      COCOAPODS_DISABLE_STATS: "true"
+      LANG: en_US.UTF-8
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Resolve existing tag and checkout
+        id: resolve-tag
+        run: |
+          set -euo pipefail
+
+          INPUT_TAG="${{ github.event.inputs.tag }}"
+          git fetch --force --tags origin
+
+          TAG_NAME=""
+          for candidate in "${INPUT_TAG}" "${INPUT_TAG#v}" "v${INPUT_TAG#v}"; do
+            [ -n "${candidate}" ] || continue
+            if git rev-parse -q --verify "refs/tags/${candidate}" >/dev/null; then
+              TAG_NAME="${candidate}"
+              break
+            fi
+          done
+
+          if [ -z "${TAG_NAME}" ]; then
+            echo "Tag '${INPUT_TAG}' does not exist in this repository."
+            exit 1
+          fi
+
+          git checkout --detach "refs/tags/${TAG_NAME}"
+
+          echo "tag_name=${TAG_NAME}" >> "${GITHUB_OUTPUT}"
+          echo "tag_version=${TAG_NAME#v}" >> "${GITHUB_OUTPUT}"
+
+      - name: Verify podspec and tag alignment
+        run: |
+          set -euo pipefail
+
+          VERSION="$(ruby -ne 'puts $1 if /s\.version\s*=\s*"([^"]+)"/' CocoaMQTT.podspec)"
+          SOURCE_TAG="$(ruby -ne 'puts $1 if /:tag\s*=>\s*"([^"]+)"/' CocoaMQTT.podspec)"
+          TAG_NAME="${{ steps.resolve-tag.outputs.tag_name }}"
+          TAG_VERSION="${{ steps.resolve-tag.outputs.tag_version }}"
+
+          if [ -z "${VERSION}" ] || [ -z "${SOURCE_TAG}" ]; then
+            echo "Failed to parse version/source tag from CocoaMQTT.podspec"
+            exit 1
+          fi
+
+          if [ "${VERSION}" != "${SOURCE_TAG}" ]; then
+            echo "podspec version (${VERSION}) must match source tag (${SOURCE_TAG})"
+            exit 1
+          fi
+
+          if [ "${TAG_VERSION}" != "${VERSION}" ]; then
+            echo "Tag (${TAG_NAME}) must match podspec version (${VERSION})"
+            exit 1
+          fi
+
+          echo "Release tag check passed: ${TAG_NAME}"
+
+      - name: Setup Ruby
+        uses: ruby/setup-ruby@v1
+        with:
+          ruby-version: "3.2"
+
+      - name: Install CocoaPods
+        run: gem install cocoapods --no-document
+
+      - name: Lint podspec before publish
+        run: pod spec lint CocoaMQTT.podspec --allow-warnings --skip-tests --fail-fast --verbose
+
+      - name: Validate CocoaPods trunk token
+        if: ${{ github.event.inputs.mode == 'publish' }}
+        env:
+          COCOAPODS_TRUNK_TOKEN: ${{ secrets.COCOAPODS_TRUNK_TOKEN }}
+        run: |
+          set -euo pipefail
+
+          if [ -z "${COCOAPODS_TRUNK_TOKEN:-}" ]; then
+            echo "Missing COCOAPODS_TRUNK_TOKEN secret."
+            echo "Create a token with 'pod trunk register ...' and add it as a repository secret."
+            exit 1
+          fi
+
+          pod trunk me
+
+      - name: Publish to CocoaPods trunk
+        if: ${{ github.event.inputs.mode == 'publish' }}
+        env:
+          COCOAPODS_TRUNK_TOKEN: ${{ secrets.COCOAPODS_TRUNK_TOKEN }}
+        run: |
+          set -euo pipefail
+          pod trunk push CocoaMQTT.podspec --allow-warnings --skip-tests --synchronous --verbose
