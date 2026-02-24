@@ -24,59 +24,37 @@ jobs:
       - name: Resolve dependencies
         run: swift package resolve
 
-      - name: Setup Docker runtime (OrbStack)
+      - name: Download and install EMQX
         run: |
           set -euo pipefail
-          if command -v docker >/dev/null 2>&1 && docker info >/dev/null 2>&1; then
-            exit 0
-          fi
+          EMQX_ZIP_URL="https://www.emqx.com/en/downloads/enterprise/5.10.3/emqx-enterprise-5.10.3-macos15-arm64.zip"
+          EMQX_ZIP_PATH="${RUNNER_TEMP}/emqx-enterprise-5.10.3-macos15-arm64.zip"
+          EMQX_DIR="${RUNNER_TEMP}/emqx"
 
-          brew install --cask orbstack
-          brew install docker
+          rm -rf "${EMQX_DIR}"
+          mkdir -p "${EMQX_DIR}"
 
-          if ! command -v orbctl >/dev/null 2>&1; then
-            export PATH="/Applications/OrbStack.app/Contents/MacOS/bin:${PATH}"
-          fi
+          curl -fL --retry 3 --retry-delay 2 "${EMQX_ZIP_URL}" -o "${EMQX_ZIP_PATH}"
+          unzip -q "${EMQX_ZIP_PATH}" -d "${EMQX_DIR}"
 
-          open -a OrbStack || true
-          orbctl start >/dev/null 2>&1 || true
+          EMQX_HOME="$(find "${EMQX_DIR}" -mindepth 1 -maxdepth 1 -type d | head -n 1)"
+          [ -n "${EMQX_HOME}" ]
+          echo "EMQX_HOME=${EMQX_HOME}" >> "${GITHUB_ENV}"
 
-          # OrbStack Docker uses its own socket/context; wait for socket first.
-          for _ in {1..120}; do
-            if [ -S "${HOME}/.orbstack/run/docker.sock" ]; then
-              echo "OrbStack Docker socket is ready."
-              break
-            fi
-            sleep 2
-          done
-
-          if docker context ls --format '{{.Name}}' | grep -qx 'orbstack'; then
-            docker context use orbstack
-            echo "DOCKER_CONTEXT=orbstack" >> "${GITHUB_ENV}"
-          else
-            # Fallback when context is not created yet.
-            echo "DOCKER_HOST=unix://${HOME}/.orbstack/run/docker.sock" >> "${GITHUB_ENV}"
-          fi
+      - name: Start EMQX broker
+        run: |
+          set -euo pipefail
+          "${EMQX_HOME}/bin/emqx" start
 
           for _ in {1..60}; do
-            if docker info >/dev/null 2>&1; then
-              echo "Docker daemon is ready."
+            if "${EMQX_HOME}/bin/emqx" ping >/dev/null 2>&1; then
+              echo "EMQX node is up."
               break
             fi
-            sleep 2
+            sleep 1
           done
 
-          docker info
-
-      - name: Start EMQX in Docker
-        run: |
-          set -euo pipefail
-          docker rm -f cocoamqtt-emqx >/dev/null 2>&1 || true
-          docker run -d --name cocoamqtt-emqx \
-            -p 1883:1883 \
-            -p 8083:8083 \
-            -p 8883:8883 \
-            emqx/emqx:5.10.4
+          "${EMQX_HOME}/bin/emqx" ping
 
           for port in 1883 8083 8883; do
             for _ in {1..60}; do
@@ -98,20 +76,18 @@ jobs:
       - name: Print EMQX logs on failure
         if: failure()
         run: |
-          if docker ps -a --format '{{.Names}}' | grep -q '^cocoamqtt-emqx$'; then
-            docker logs --tail 300 cocoamqtt-emqx
+          if [ -n "${EMQX_HOME:-}" ] && [ -d "${EMQX_HOME}/log" ]; then
+            ls -lah "${EMQX_HOME}/log"
+            for logfile in "${EMQX_HOME}"/log/*; do
+              [ -f "${logfile}" ] || continue
+              echo "===== ${logfile}"
+              tail -n 200 "${logfile}" || true
+            done
           fi
 
-      - name: Stop EMQX Docker container
+      - name: Stop EMQX broker
         if: always()
         run: |
-          if docker ps -a --format '{{.Names}}' | grep -q '^cocoamqtt-emqx$'; then
-            docker rm -f cocoamqtt-emqx || true
-          fi
-
-      - name: Stop OrbStack runtime
-        if: always()
-        run: |
-          if command -v orbctl >/dev/null 2>&1; then
-            orbctl stop || true
+          if [ -n "${EMQX_HOME:-}" ] && [ -x "${EMQX_HOME}/bin/emqx" ]; then
+            "${EMQX_HOME}/bin/emqx" stop || true
           fi
