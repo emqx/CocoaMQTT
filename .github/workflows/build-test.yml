@@ -1,6 +1,7 @@
 name: Build & Test
 
 on:
+  push:
   pull_request:
   workflow_dispatch:
 
@@ -11,7 +12,9 @@ concurrency:
 jobs:
   build-and-test:
     name: Swift Build & Test
-    runs-on: macos-14
+    # Docker-on-macOS for EMQX integration tests requires nested virtualization.
+    # Use Intel runner because arm64 runners (macos-14+) do not support it reliably.
+    runs-on: macos-13
     timeout-minutes: 30
 
     steps:
