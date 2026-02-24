@@ -65,26 +65,6 @@ At last, import "CocoaMQTT" to your project:
 import CocoaMQTT
 ```
 
-
-### Carthage
-Install using [Carthage](https://github.com/Carthage/Carthage) by adding the following lines to your Cartfile:
-
-```
-github "emqx/CocoaMQTT" "master"
-```
-
-Then, run the following command:
-
-```bash
-$ carthage update --platform iOS,macOS,tvOS --use-xcframeworks
-```
-
-At last:
-
-On your application targets “General” settings tab, in the "Frameworks, Libraries, and Embedded content" section, drag and drop CocoaMQTT.xcframework, CocoaAsyncSocket.xcframework and Starscream.xcframework from the Carthage/Build folder on disk. Then select "Embed & Sign". 
-
-
-
 ## Usage
 
 Create a client to connect [MQTT broker](https://www.emqx.com/en/mqtt/public-mqtt5-broker):
