@@ -1,7 +1,6 @@
 name: Build & Test
 
 on:
-  push:
   pull_request:
   workflow_dispatch:
 
@@ -12,9 +11,7 @@ concurrency:
 jobs:
   build-and-test:
     name: Swift Build & Test
-    # Docker-on-macOS for EMQX integration tests requires nested virtualization.
-    # Use Intel runner because arm64 runners (macos-14+) do not support it reliably.
-    runs-on: macos-13
+    runs-on: macos-14
     timeout-minutes: 30
 
     steps:
@@ -27,32 +24,31 @@ jobs:
       - name: Resolve dependencies
         run: swift package resolve
 
-      - name: Setup Docker runtime
+      - name: Setup Docker runtime (OrbStack)
         run: |
           set -euo pipefail
           if command -v docker >/dev/null 2>&1 && docker info >/dev/null 2>&1; then
             exit 0
           fi
 
-          # GitHub macOS runners may fail with Colima's default `vz` backend.
-          # Use qemu backend explicitly for better compatibility in CI.
-          brew install docker colima qemu
+          brew install --cask orbstack
+          brew install docker
 
-          colima start \
-            --runtime docker \
-            --vm-type qemu \
-            --cpu 2 \
-            --memory 4 \
-            --disk 20
+          if ! command -v orbctl >/dev/null 2>&1; then
+            export PATH="/Applications/OrbStack.app/Contents/MacOS/bin:${PATH}"
+          fi
 
-          for _ in {1..30}; do
+          open -a OrbStack || true
+
+          for _ in {1..90}; do
             if docker info >/dev/null 2>&1; then
+              echo "Docker daemon is ready."
               break
             fi
+            orbctl start >/dev/null 2>&1 || true
             sleep 2
           done
           docker info
-          echo "COLIMA_STARTED=1" >> "${GITHUB_ENV}"
 
       - name: Start EMQX in Docker
         run: |
@@ -95,9 +91,9 @@ jobs:
             docker rm -f cocoamqtt-emqx || true
           fi
 
-      - name: Stop Colima runtime
+      - name: Stop OrbStack runtime
         if: always()
         run: |
-          if [ "${COLIMA_STARTED:-0}" = "1" ]; then
-            colima stop || true
+          if command -v orbctl >/dev/null 2>&1; then
+            orbctl stop || true
           fi
