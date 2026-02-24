@@ -39,15 +39,33 @@ jobs:
           fi
 
           open -a OrbStack || true
+          orbctl start >/dev/null 2>&1 || true
 
-          for _ in {1..90}; do
+          # OrbStack Docker uses its own socket/context; wait for socket first.
+          for _ in {1..120}; do
+            if [ -S "${HOME}/.orbstack/run/docker.sock" ]; then
+              echo "OrbStack Docker socket is ready."
+              break
+            fi
+            sleep 2
+          done
+
+          if docker context ls --format '{{.Name}}' | grep -qx 'orbstack'; then
+            docker context use orbstack
+            echo "DOCKER_CONTEXT=orbstack" >> "${GITHUB_ENV}"
+          else
+            # Fallback when context is not created yet.
+            echo "DOCKER_HOST=unix://${HOME}/.orbstack/run/docker.sock" >> "${GITHUB_ENV}"
+          fi
+
+          for _ in {1..60}; do
             if docker info >/dev/null 2>&1; then
               echo "Docker daemon is ready."
               break
             fi
-            orbctl start >/dev/null 2>&1 || true
             sleep 2
           done
+
           docker info
 
       - name: Start EMQX in Docker
