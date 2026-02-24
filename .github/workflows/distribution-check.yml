@@ -19,6 +19,48 @@ concurrency:
   cancel-in-progress: true
 
 jobs:
+  tag-version-check:
+    name: Tag Version Guard
+    if: startsWith(github.ref, 'refs/tags/')
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Verify pushed tag matches CocoaMQTT.podspec version
+        run: |
+          set -euo pipefail
+
+          read -r VERSION SOURCE_TAG < <(
+            python3 - <<'PY'
+            import pathlib
+            import re
+
+            text = pathlib.Path("CocoaMQTT.podspec").read_text(encoding="utf-8")
+            version = re.search(r's\.version\s*=\s*"([^"]+)"', text)
+            source_tag = re.search(r':tag\s*=>\s*"([^"]+)"', text)
+            if not version or not source_tag:
+              raise SystemExit("Failed to parse version or source tag from CocoaMQTT.podspec")
+            print(version.group(1), source_tag.group(1))
+            PY
+          )
+
+          if [ "${VERSION}" != "${SOURCE_TAG}" ]; then
+            echo "podspec version (${VERSION}) must match source tag (${SOURCE_TAG})"
+            exit 1
+          fi
+
+          TAG_NAME="${GITHUB_REF#refs/tags/}"
+          TAG_VERSION="${TAG_NAME#v}"
+          if [ "${TAG_VERSION}" != "${VERSION}" ]; then
+            echo "Git tag (${TAG_NAME}) must match podspec version (${VERSION})"
+            exit 1
+          fi
+
+          echo "Tag/version guard passed: tag=${TAG_NAME}, podspec=${VERSION}"
+
   spm-smoke:
     name: SPM Release Smoke
     runs-on: macos-15
