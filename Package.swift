@@ -18,6 +18,9 @@ let package = Package(
         // Allow Starscream 4.x and 5.x to avoid version conflicts in client apps
         .package(url: "https://github.com/daltoniam/Starscream.git", "4.0.8"..<"6.0.0"),
         .package(url: "https://github.com/leeway1208/MqttCocoaAsyncSocket", from: "1.0.8"),
+        // SwiftLint command plugin used by CI/local lint commands only.
+        // We do not attach it as a build tool plugin to avoid affecting build outputs.
+        .package(url: "https://github.com/SimplyDanny/SwiftLintPlugins", from: "0.63.2"),
     ],
     targets: [
         .target(
