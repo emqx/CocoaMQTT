@@ -23,13 +23,17 @@ private struct InflightFrame {
 
     var timestamp: TimeInterval
 
+    /// Retry count starts from 1 so the first retry waits for exactly one interval.
+    var retryCount: Int
+
     init(frame: Frame) {
-        self.init(frame: frame, timestamp: Date.init(timeIntervalSinceNow: 0).timeIntervalSince1970)
+        self.init(frame: frame, timestamp: Date.init(timeIntervalSinceNow: 0).timeIntervalSince1970, retryCount: 1)
     }
 
-    init(frame: Frame, timestamp: TimeInterval) {
+    init(frame: Frame, timestamp: TimeInterval, retryCount: Int) {
         self.frame = frame
         self.timestamp = timestamp
+        self.retryCount = retryCount
     }
 }
 
@@ -199,18 +203,16 @@ extension CocoaMQTTDeliver {
     }
 
     /// Attempt to redeliver in-flight messages
-    private func redeliver() {
+    private func redeliver(nowTimestamp: TimeInterval = Date(timeIntervalSinceNow: 0).timeIntervalSince1970) {
         if isInflightEmpty {
             // Revoke the awaiting timer
             awaitingTimer = nil
             return
         }
-
-        let nowTimestamp = Date(timeIntervalSinceNow: 0).timeIntervalSince1970
-        for (idx, frame) in inflight.enumerated() where (nowTimestamp - frame.timestamp) >= (retryTimeInterval / 1000.0) {
+        for (idx, frame) in inflight.enumerated() where (nowTimestamp - frame.timestamp) >= (retryTimeInterval / 1000.0) * Double(frame.retryCount) {
             var duplicatedFrame = frame
             duplicatedFrame.frame.dup = true
-            duplicatedFrame.timestamp = nowTimestamp
+            duplicatedFrame.retryCount += 1
 
             inflight[idx] = duplicatedFrame
 
@@ -234,6 +236,7 @@ extension CocoaMQTTDeliver {
                     var nframe = frame
                     nframe.frame = pubrel
                     nframe.timestamp = Date(timeIntervalSinceNow: 0).timeIntervalSince1970
+                    nframe.retryCount = 1
 
                     _ = storage?.write(pubrel)
                     sendfun(pubrel)
@@ -288,5 +291,28 @@ extension CocoaMQTTDeliver {
 
     func t_queuedFrames() -> [Frame] {
         return mqueue
+    }
+
+    @discardableResult
+    func t_setInflightTimestamp(_ timestamp: TimeInterval, forMsgid msgid: UInt16) -> Bool {
+        return deliverQueue.sync {
+            for idx in inflight.indices {
+                if let publish = inflight[idx].frame as? FramePublish, publish.msgid == msgid {
+                    inflight[idx].timestamp = timestamp
+                    return true
+                }
+                if let pubrel = inflight[idx].frame as? FramePubRel, pubrel.msgid == msgid {
+                    inflight[idx].timestamp = timestamp
+                    return true
+                }
+            }
+            return false
+        }
+    }
+
+    func t_redeliver(at timestamp: TimeInterval) {
+        deliverQueue.sync {
+            self.redeliver(nowTimestamp: timestamp)
+        }
     }
 }
