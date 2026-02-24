@@ -38,34 +38,29 @@ public enum CocoaMQTTPropertyName: UInt8 {
 }
 
 public enum formatInt: Int {
-    case formatUint8 = 0x11;
-    case formatUint16 = 0x12;
-    case formatUint32 = 0x14;
-    case formatSint8 = 0x21;
-    case formatSint16 = 0x22;
-    case formatSint32 = 0x24;
+    case formatUint8 = 0x11
+    case formatUint16 = 0x12
+    case formatUint32 = 0x14
+    case formatSint8 = 0x21
+    case formatSint16 = 0x22
+    case formatSint32 = 0x24
 }
 
-
-
-func getMQTTPropertyData(type:UInt8, value:[UInt8]) -> [UInt8] {
+func getMQTTPropertyData(type: UInt8, value: [UInt8]) -> [UInt8] {
     var properties = [UInt8]()
     properties.append(UInt8(type))
     properties += value
     return properties
 }
 
-
-
-func getMQTTPropertyLength(type:UInt8, value:[UInt8]) -> [UInt8] {
+func getMQTTPropertyLength(type: UInt8, value: [UInt8]) -> [UInt8] {
     var properties = [UInt8]()
     properties.append(UInt8(type))
     properties += value
     return properties
 }
 
-
-func integerCompute(data:[UInt8], formatType:Int, offset:Int) -> (res: Int, newOffset: Int)?{
+func integerCompute(data: [UInt8], formatType: Int, offset: Int) -> (res: Int, newOffset: Int)? {
 
     switch formatType {
     case formatInt.formatUint8.rawValue:
@@ -87,30 +82,27 @@ func integerCompute(data:[UInt8], formatType:Int, offset:Int) -> (res: Int, newO
     return nil
 }
 
-func unsignedByteToInt(data: UInt8) -> (Int){
-    return (Int)(data & 0xFF);
+func unsignedByteToInt(data: UInt8) -> (Int) {
+    return (Int)(data & 0xFF)
 }
 
-func unsignedBytesToInt(data0: UInt8, data1: UInt8) -> (Int){
+func unsignedBytesToInt(data0: UInt8, data1: UInt8) -> (Int) {
     return (unsignedByteToInt(data: data0) << 8) + unsignedByteToInt(data: data1)
 }
 
-
-func unsignedBytesToInt(data0: UInt8, data1: UInt8, data2: UInt8, data3: UInt8) -> (Int){
+func unsignedBytesToInt(data0: UInt8, data1: UInt8, data2: UInt8, data3: UInt8) -> (Int) {
     return unsignedByteToInt(data: data3) + (unsignedByteToInt(data: data2) << 8) + (unsignedByteToInt(data: data1) << 16) + (unsignedByteToInt(data: data0) << 24)
 }
 
-
-func unsignedToSigned(unsign: NSInteger, size: NSInteger) -> (Int){
+func unsignedToSigned(unsign: NSInteger, size: NSInteger) -> (Int) {
     var res = unsign
-    if ((res & (1 << size-1)) != 0) {
-        res = -1 * ((1 << size-1) - (res & ((1 << size-1) - 1)));
+    if (res & (1 << size-1)) != 0 {
+        res = -1 * ((1 << size-1) - (res & ((1 << size-1) - 1)))
     }
-    return res;
+    return res
 }
 
-
-func unsignedByteToString(data:[UInt8], offset:Int) -> (resStr: String, newOffset: Int)?{
+func unsignedByteToString(data: [UInt8], offset: Int) -> (resStr: String, newOffset: Int)? {
     var newOffset = offset
 
     if offset + 1 > data.count {
@@ -121,7 +113,6 @@ func unsignedByteToString(data:[UInt8], offset:Int) -> (resStr: String, newOffse
     let comRes = integerCompute(data: data, formatType: formatInt.formatUint16.rawValue, offset: newOffset)
     length = comRes!.res
     newOffset = comRes!.newOffset
-
 
     var stringData = Data()
     for _ in 0 ..< length {
@@ -135,8 +126,7 @@ func unsignedByteToString(data:[UInt8], offset:Int) -> (resStr: String, newOffse
     return (res, newOffset)
 }
 
-
-func unsignedByteToBinary(data:[UInt8], offset:Int) -> (resStr: [UInt8], newOffset: Int)?{
+func unsignedByteToBinary(data: [UInt8], offset: Int) -> (resStr: [UInt8], newOffset: Int)? {
     var newOffset = offset
 
     if offset + 1 > data.count {
@@ -148,7 +138,6 @@ func unsignedByteToBinary(data:[UInt8], offset:Int) -> (resStr: [UInt8], newOffs
     length = comRes!.res
     newOffset = comRes!.newOffset
 
-
     var res = [UInt8]()
     for _ in 0 ..< length {
         res.append(data[newOffset])
@@ -158,10 +147,8 @@ func unsignedByteToBinary(data:[UInt8], offset:Int) -> (resStr: [UInt8], newOffs
     return (res, newOffset)
 }
 
-
-
-//1.5.5 Variable Byte Integer
-//The Variable Byte Integer is encoded using an encoding scheme which uses a single byte for values up to 127. Larger values are handled as follows. The least significant seven bits of each byte encode the data, and the most significant bit is used to indicate whether there are bytes following in the representation. Thus, each byte encodes 128 values and a "continuation bit". The maximum number of bytes in the Variable Byte Integer field is four. The encoded value MUST use the minimum number of bytes necessary to represent the value [MQTT-1.5.5-1]. This is shown in Table 1‑1 Size of Variable Byte Integer.
+// 1.5.5 Variable Byte Integer
+// The Variable Byte Integer is encoded using an encoding scheme which uses a single byte for values up to 127. Larger values are handled as follows. The least significant seven bits of each byte encode the data, and the most significant bit is used to indicate whether there are bytes following in the representation. Thus, each byte encodes 128 values and a "continuation bit". The maximum number of bytes in the Variable Byte Integer field is four. The encoded value MUST use the minimum number of bytes necessary to represent the value [MQTT-1.5.5-1]. This is shown in Table 1‑1 Size of Variable Byte Integer.
 func decodeVariableByteInteger(data: [UInt8], offset: Int) -> (res: Int, newOffset: Int) {
     var newOffset = offset
     var count = 0
@@ -181,11 +168,11 @@ func decodeVariableByteInteger(data: [UInt8], offset: Int) -> (res: Int, newOffs
 
 func beVariableByteInteger(length: Int) -> [UInt8] {
     var res = [UInt8]()
-    var tmpLen:Int = length
-    repeat{
-        var d:UInt8 = UInt8(tmpLen % 128)
+    var tmpLen: Int = length
+    repeat {
+        var d: UInt8 = UInt8(tmpLen % 128)
         tmpLen /= 128
-        if(tmpLen > 0) {
+        if tmpLen > 0 {
             d |= 0x80
         }
         res.append(d)
@@ -195,7 +182,7 @@ func beVariableByteInteger(length: Int) -> [UInt8] {
 }
 
 func beVariableByteInteger(_ data: UInt32) -> [UInt8]? {
-    if (data > 0x0fffffff) {
+    if data > 0x0fffffff {
         return nil
     }
     return beVariableByteInteger(length: Int(data))

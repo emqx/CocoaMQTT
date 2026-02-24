@@ -4,9 +4,8 @@
 
 import Foundation
 
-
 /// A thread-safe dictionary
-public class ThreadSafeDictionary<K: Hashable,V>: Collection {
+public class ThreadSafeDictionary<K: Hashable, V>: Collection {
     private var dictionary: [K: V]
     private let concurrentQueue: DispatchQueue
 
@@ -22,7 +21,7 @@ public class ThreadSafeDictionary<K: Hashable,V>: Collection {
         }
     }
 
-    public init(label: String, dict: [K: V] = [K:V]()) {
+    public init(label: String, dict: [K: V] = [K: V]()) {
         self.dictionary = dict
         concurrentQueue = DispatchQueue(label: label, attributes: .concurrent)
     }
@@ -51,7 +50,7 @@ public class ThreadSafeDictionary<K: Hashable,V>: Collection {
             self.dictionary[index]
         }
     }
-    
+
     @discardableResult
     public func removeValue(forKey key: K) -> V? {
         concurrentQueue.sync(flags: .barrier) {

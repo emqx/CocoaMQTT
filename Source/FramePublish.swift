@@ -11,35 +11,34 @@ import Foundation
 // MQTT PUBLISH Frame
 struct FramePublish: Frame {
 
-    //3.3.1.4 Remaining Length
+    // 3.3.1.4 Remaining Length
     public var remainingLength: UInt32?
 
-    //3.3.2.1 Topic Name
+    // 3.3.2.1 Topic Name
     public var topicName: String?
-    //3.3.2.2 Packet Identifier
+    // 3.3.2.2 Packet Identifier
     public var packetIdentifier: UInt16?
 
-    //3.3.2.3 PUBLISH Properties
+    // 3.3.2.3 PUBLISH Properties
     public var publishProperties: MqttPublishProperties?
     public var publishRecProperties: MqttDecodePublish?
 
     var packetFixedHeaderType: UInt8 = FrameType.publish.rawValue
-    
+
     // --- Attributes
-    
+
     var msgid: UInt16
-    
-    var topic: String = "";
-    
+
+    var topic: String = ""
+
     var _payload: [UInt8] = []
 
-    var mqtt5Topic: String = "";
-
+    var mqtt5Topic: String = ""
 
     // --- Attributes End
-    
-    init(topic: String, payload: [UInt8], qos: CocoaMQTTQoS = .qos0, msgid: UInt16 = 0){
-        
+
+    init(topic: String, payload: [UInt8], qos: CocoaMQTTQoS = .qos0, msgid: UInt16 = 0) {
+
         self.topic = topic
         self._payload = payload
         self.msgid = msgid
@@ -48,43 +47,42 @@ struct FramePublish: Frame {
 }
 
 extension FramePublish {
-    
+
     func fixedHeader() -> [UInt8] {
-        
+
         var header = [UInt8]()
         header += [FrameType.publish.rawValue]
 
         return header
     }
-    
+
     func variableHeader5() -> [UInt8] {
 
-        //3.3.2.1 Topic Name
+        // 3.3.2.1 Topic Name
         var header = self.topic.bytesWithLength
-        //3.3.2.2 Packet Identifier qos1 or qos2
+        // 3.3.2.2 Packet Identifier qos1 or qos2
         if qos > .qos0 {
             header += msgid.hlBytes
             //            header.append(UInt8(0))
             //            header.append(QoS.rawValue)
         }
 
-        //MQTT 5.0
+        // MQTT 5.0
         header += beVariableByteInteger(length: self.properties().count)
-
 
         return header
     }
-    
+
     func payload5() -> [UInt8] { return _payload }
 
     func properties() -> [UInt8] {
-        
+
         // Properties
         return publishProperties?.properties ?? []
     }
 
     func allData() -> [UInt8] {
-        
+
         var allData = [UInt8]()
 
         allData += fixedHeader()
@@ -110,9 +108,9 @@ extension FramePublish {
 }
 
 extension FramePublish: InitialWithBytes {
-    
+
     init?(packetFixedHeaderType: UInt8, bytes: [UInt8]) {
-        
+
         guard packetFixedHeaderType & 0xF0 == FrameType.publish.rawValue else {
             return nil
         }
@@ -160,7 +158,7 @@ extension FramePublish: InitialWithBytes {
 
         let len = UInt16(bytes[0]) << 8 + UInt16(bytes[1])
 
-        //2 is packetFixedHeaderType length
+        // 2 is packetFixedHeaderType length
         var pos = 2 + Int(len)
 
         if bytes.count < pos {
@@ -178,18 +176,17 @@ extension FramePublish: InitialWithBytes {
             pos += 2
         }
 
-
-        var protocolVersion = "";
+        var protocolVersion = ""
         if let storage = CocoaMQTTStorage() {
             protocolVersion = storage.queryMQTTVersion()
         }
 
-        if (protocolVersion == "5.0"){
+        if protocolVersion == "5.0" {
             let data = MqttDecodePublish()
-            data.decodePublish(fixedHeader: packetFixedHeaderType ,publishData: bytes)
+            data.decodePublish(fixedHeader: packetFixedHeaderType, publishData: bytes)
             pos = data.mqtt5DataIndex
 
-            if(data.propertyLength != 0){
+            if data.propertyLength != 0 {
                 pos += data.propertyLength!
             }
 
@@ -198,7 +195,7 @@ extension FramePublish: InitialWithBytes {
             self.packetIdentifier = data.packetIdentifier
             self.publishRecProperties = data
 
-        }else{
+        } else {
             // MQTT 3.1.1
             if let data = NSString(bytes: [UInt8](bytes[2...(pos-1)]), length: Int(len), encoding: String.Encoding.utf8.rawValue) {
                 topic =  data as String
@@ -206,9 +203,9 @@ extension FramePublish: InitialWithBytes {
         }
 
         // payload
-        if (pos == bytes.count) {
+        if pos == bytes.count {
             _payload = []
-        } else if (pos < bytes.count) {
+        } else if pos < bytes.count {
             _payload = [UInt8](bytes[pos..<bytes.count])
         } else {
             return nil

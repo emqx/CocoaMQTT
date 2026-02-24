@@ -9,36 +9,35 @@ import Foundation
 
 public class MqttDecodePublish: NSObject {
 
-    //3.3.2.3 PUBLISH Properties
-    //3.3.2.3.1 Property Length
+    // 3.3.2.3 PUBLISH Properties
+    // 3.3.2.3.1 Property Length
     public var propertyLength: Int?
-    //3.3.2.3.2 Payload Format Indicator
+    // 3.3.2.3.2 Payload Format Indicator
     public var payloadFormatIndicator: PayloadFormatIndicator?
-    //3.3.2.3.3 Message Expiry Interval
+    // 3.3.2.3.3 Message Expiry Interval
     public var messageExpiryInterval: UInt32?
-    //3.3.2.3.4 Topic Alias
+    // 3.3.2.3.4 Topic Alias
     public var topicAlias: UInt16?
-    //3.3.2.3.5 Response Topic
+    // 3.3.2.3.5 Response Topic
     public var responseTopic: String?
-    //3.3.2.3.6 Correlation Data
+    // 3.3.2.3.6 Correlation Data
     public var correlationData: [UInt8]?
-    //3.3.2.3.7 Property
+    // 3.3.2.3.7 Property
     public var userProperty: [String: String]?
-    //3.3.2.3.8 Subscription Identifier
+    // 3.3.2.3.8 Subscription Identifier
     public var subscriptionIdentifier: Int = 0
-    //3.3.2.3.9 Content Type
+    // 3.3.2.3.9 Content Type
     public var contentType: String?
 
-    //public var applicationMessage: [UInt8]?
+    // public var applicationMessage: [UInt8]?
 
-    //3.3.2.1 Topic Name
+    // 3.3.2.1 Topic Name
     public var topic: String = ""
-    //3.3.2.2 Packet Identifier
+    // 3.3.2.2 Packet Identifier
     public var packetIdentifier: UInt16?
     public var mqtt5DataIndex = 0
- 
 
-    public func decodePublish(fixedHeader: UInt8, publishData: [UInt8]){
+    public func decodePublish(fixedHeader: UInt8, publishData: [UInt8]) {
         // Topic Name
         // 3.3.2.1 Topic Name
         var dataIndex = 0
@@ -63,14 +62,13 @@ public class MqttDecodePublish: NSObject {
             dataIndex = IdentifierResult!.newOffset
         }
 
-
-        var protocolVersion = "";
+        var protocolVersion = ""
         if let storage = CocoaMQTTStorage() {
             protocolVersion = storage.queryMQTTVersion()
         }
 
-        if (protocolVersion == "5.0"){
-            //3.3.2.3.1 Property Length
+        if protocolVersion == "5.0" {
+            // 3.3.2.3.1 Property Length
             // propertyLength
             let propertyLengthVariableByteInteger = decodeVariableByteInteger(data: publishData, offset: dataIndex)
             propertyLength = propertyLengthVariableByteInteger.res
@@ -127,8 +125,8 @@ public class MqttDecodePublish: NSObject {
 
                 // 3.3.2.3.7 User Property
                 case CocoaMQTTPropertyName.userProperty.rawValue:
-                    var key:String?
-                    var value:String?
+                    var key: String?
+                    var value: String?
                     guard let keyRes = unsignedByteToString(data: publishData, offset: dataIndex) else {
                         break
                     }
@@ -140,7 +138,7 @@ public class MqttDecodePublish: NSObject {
                     }
                     value = valRes.resStr
                     dataIndex = valRes.newOffset
-     
+
                     if userProperty == nil {
                         userProperty = [:]
                     }
@@ -169,6 +167,5 @@ public class MqttDecodePublish: NSObject {
         }
 
     }
-
 
 }

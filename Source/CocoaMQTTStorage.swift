@@ -36,7 +36,7 @@ final class CocoaMQTTStorage: CocoaMQTTStorageProtocol {
 
     var versionDefault: UserDefaults = UserDefaults()
 
-    init?(){
+    init?() {
         versionDefault = UserDefaults()
     }
 
@@ -54,14 +54,13 @@ final class CocoaMQTTStorage: CocoaMQTTStorageProtocol {
         versionDefault.synchronize()
     }
 
-    func setMQTTVersion(_ version : String) {
+    func setMQTTVersion(_ version: String) {
         versionDefault.set(version, forKey: "cocoamqtt.emqx.version")
     }
 
     func queryMQTTVersion() -> String {
         return versionDefault.string(forKey: "cocoamqtt.emqx.version") ?? "3.1.1"
     }
-
 
     func write(_ frame: FramePublish) -> Bool {
         guard frame.qos > .qos0 else {
@@ -118,7 +117,7 @@ final class CocoaMQTTStorage: CocoaMQTTStorageProtocol {
             return nil
         }
         /// bytes 1..<5 may be 'Remaining Length'
-        for i in 1 ..< min(5, bytes.count){
+        for i in 1 ..< min(5, bytes.count) {
             if (bytes[i] & 0x80) == 0 {
                 return (bytes[0], Array(bytes.suffix(from: i+1)))
             }
