@@ -142,15 +142,16 @@ class CocoaMQTTDeliverTests: XCTestCase {
         ms_sleep(100)
 
         caller.reset()
-        XCTAssertTrue(deliver.t_setInflightTimestamp(0, forMsgid: frame.msgid))
+        let intervalNs = deliver.t_retryIntervalNanoseconds()
+        XCTAssertTrue(deliver.t_setInflightNextRetryTime(intervalNs, forMsgid: frame.msgid))
 
-        deliver.t_redeliver(at: 0.5)
+        deliver.t_redeliver(atUptimeNanoseconds: intervalNs / 2)
         ms_sleep(50)
         XCTAssertEqual(caller.frames.count, 0)
 
         // Simulate strict timer ticks: first callback runs slightly late, second runs on the next deadline.
-        deliver.t_redeliver(at: 1.001)
-        deliver.t_redeliver(at: 2.0)
+        deliver.t_redeliver(atUptimeNanoseconds: intervalNs + 1_000_000)
+        deliver.t_redeliver(atUptimeNanoseconds: intervalNs * 2)
         ms_sleep(100)
 
         XCTAssertEqual(caller.frames.count, 2)
