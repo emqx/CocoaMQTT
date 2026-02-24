@@ -131,6 +131,40 @@ class CocoaMQTTDeliverTests: XCTestCase {
         }
     }
 
+    func testRedeliverTimerDriftDoesNotSkipRetry() {
+        let caller = Caller()
+        let deliver = CocoaMQTTDeliver()
+        let frame = FramePublish(topic: "t/drift", payload: [0x01], qos: .qos1, msgid: 42)
+
+        deliver.retryTimeInterval = 1000
+        deliver.delegate = caller
+        XCTAssertTrue(deliver.add(frame))
+        ms_sleep(100)
+
+        caller.reset()
+        let intervalNs = deliver.t_retryIntervalNanoseconds()
+        XCTAssertTrue(deliver.t_setInflightNextRetryTime(intervalNs, forMsgid: frame.msgid))
+
+        deliver.t_redeliver(atUptimeNanoseconds: intervalNs / 2)
+        ms_sleep(50)
+        XCTAssertEqual(caller.frames.count, 0)
+
+        // Simulate strict timer ticks: first callback runs slightly late, second runs on the next deadline.
+        deliver.t_redeliver(atUptimeNanoseconds: intervalNs + 1_000_000)
+        deliver.t_redeliver(atUptimeNanoseconds: intervalNs * 2)
+        ms_sleep(100)
+
+        XCTAssertEqual(caller.frames.count, 2)
+        for sent in caller.frames {
+            guard let publish = sent as? FramePublish else {
+                XCTFail("Expected FramePublish")
+                continue
+            }
+            assertEqual(publish, frame)
+            XCTAssertTrue(publish.dup)
+        }
+    }
+
     func testStorage() {
 
         let clientID = "deliver-unit-testing"

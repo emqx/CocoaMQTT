@@ -21,16 +21,9 @@ private struct InflightFrame {
     /// The infligth frame maybe a `FramePublish` or `FramePubRel`
     var frame: Frame
 
-    var timestamp: TimeInterval
+    /// Monotonic time (Dispatch uptime) at which this frame should be retried next.
+    var nextRetryAtUptimeNs: UInt64
 
-    init(frame: Frame) {
-        self.init(frame: frame, timestamp: Date.init(timeIntervalSinceNow: 0).timeIntervalSince1970)
-    }
-
-    init(frame: Frame, timestamp: TimeInterval) {
-        self.frame = frame
-        self.timestamp = timestamp
-    }
 }
 
 extension Array where Element == InflightFrame {
@@ -184,7 +177,8 @@ extension CocoaMQTTDeliver {
         } else {
 
             sendfun(frame)
-            inflight.append(InflightFrame(frame: frame))
+            let nowUptimeNs = DispatchTime.now().uptimeNanoseconds
+            inflight.append(InflightFrame(frame: frame, nextRetryAtUptimeNs: nextRetryDeadline(from: nowUptimeNs)))
 
             // Start a retry timer for resending it if it not receive PUBACK or PUBREC
             if awaitingTimer == nil {
@@ -199,24 +193,50 @@ extension CocoaMQTTDeliver {
     }
 
     /// Attempt to redeliver in-flight messages
-    private func redeliver() {
+    private func redeliver(nowUptimeNs: UInt64 = DispatchTime.now().uptimeNanoseconds) {
         if isInflightEmpty {
             // Revoke the awaiting timer
             awaitingTimer = nil
             return
         }
-
-        let nowTimestamp = Date(timeIntervalSinceNow: 0).timeIntervalSince1970
-        for (idx, frame) in inflight.enumerated() where (nowTimestamp - frame.timestamp) >= (retryTimeInterval / 1000.0) {
+        for (idx, frame) in inflight.enumerated() where nowUptimeNs >= frame.nextRetryAtUptimeNs {
             var duplicatedFrame = frame
             duplicatedFrame.frame.dup = true
-            duplicatedFrame.timestamp = nowTimestamp
+            duplicatedFrame.nextRetryAtUptimeNs = nextRetryDeadline(after: frame.nextRetryAtUptimeNs, nowUptimeNs: nowUptimeNs)
 
             inflight[idx] = duplicatedFrame
 
             printInfo("Re-delivery frame \(duplicatedFrame.frame)")
             sendfun(duplicatedFrame.frame)
         }
+    }
+
+    private func retryIntervalNanoseconds() -> UInt64 {
+        let intervalNs = retryTimeInterval * 1_000_000
+        guard intervalNs.isFinite, intervalNs > 0 else {
+            return 1
+        }
+        return UInt64(intervalNs.rounded())
+    }
+
+    private func nextRetryDeadline(from nowUptimeNs: UInt64) -> UInt64 {
+        let (nextDeadline, overflow) = nowUptimeNs.addingReportingOverflow(retryIntervalNanoseconds())
+        return overflow ? UInt64.max : nextDeadline
+    }
+
+    private func nextRetryDeadline(after currentDeadline: UInt64, nowUptimeNs: UInt64) -> UInt64 {
+        let intervalNs = retryIntervalNanoseconds()
+        guard nowUptimeNs >= currentDeadline else {
+            return currentDeadline
+        }
+
+        let missedIntervals = ((nowUptimeNs - currentDeadline) / intervalNs) + 1
+        let (advance, multiplyOverflow) = intervalNs.multipliedReportingOverflow(by: missedIntervals)
+        if multiplyOverflow {
+            return UInt64.max
+        }
+        let (nextDeadline, addOverflow) = currentDeadline.addingReportingOverflow(advance)
+        return addOverflow ? UInt64.max : nextDeadline
     }
 
     @discardableResult
@@ -233,7 +253,7 @@ extension CocoaMQTTDeliver {
 
                     var nframe = frame
                     nframe.frame = pubrel
-                    nframe.timestamp = Date(timeIntervalSinceNow: 0).timeIntervalSince1970
+                    nframe.nextRetryAtUptimeNs = nextRetryDeadline(from: DispatchTime.now().uptimeNanoseconds)
 
                     _ = storage?.write(pubrel)
                     sendfun(pubrel)
@@ -288,5 +308,34 @@ extension CocoaMQTTDeliver {
 
     func t_queuedFrames() -> [Frame] {
         return mqueue
+    }
+
+    @discardableResult
+    func t_setInflightNextRetryTime(_ nextRetryAtUptimeNs: UInt64, forMsgid msgid: UInt16) -> Bool {
+        return deliverQueue.sync {
+            for idx in inflight.indices {
+                if let publish = inflight[idx].frame as? FramePublish, publish.msgid == msgid {
+                    inflight[idx].nextRetryAtUptimeNs = nextRetryAtUptimeNs
+                    return true
+                }
+                if let pubrel = inflight[idx].frame as? FramePubRel, pubrel.msgid == msgid {
+                    inflight[idx].nextRetryAtUptimeNs = nextRetryAtUptimeNs
+                    return true
+                }
+            }
+            return false
+        }
+    }
+
+    func t_retryIntervalNanoseconds() -> UInt64 {
+        return deliverQueue.sync {
+            retryIntervalNanoseconds()
+        }
+    }
+
+    func t_redeliver(atUptimeNanoseconds uptimeNs: UInt64) {
+        deliverQueue.sync {
+            self.redeliver(nowUptimeNs: uptimeNs)
+        }
     }
 }
