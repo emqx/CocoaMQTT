@@ -409,27 +409,30 @@ public class CocoaMQTT5: NSObject, CocoaMQTT5Client {
     /// Send a DISCONNECT packet to the broker then close the connection
     ///
     /// - Note: Only can be called from outside.
-    ///         If you want to disconnect from inside framework, call internal_disconnect()
-    ///         disconnect expectedly
+    ///         This closes the connection expectedly, so auto-reconnect will not run.
     public func disconnect() {
-        internal_disconnect()
+        expected_disconnect(reasonCode: .normalDisconnection)
     }
 
     public func disconnect(reasonCode : CocoaMQTTDISCONNECTReasonCode,userProperties : [String: String] ) {
-        internal_disconnect_withProperties(reasonCode: reasonCode,userProperties: userProperties)
+        expected_disconnect(reasonCode: reasonCode, userProperties: userProperties)
     }
 
-    /// Disconnect unexpectedly
+    /// Disconnect unexpectedly.
+    /// This keeps auto-reconnect behavior enabled.
     func internal_disconnect() {
-        is_internal_disconnected = true
-        send(FrameDisconnect(disconnectReasonCode: CocoaMQTTDISCONNECTReasonCode.normalDisconnection), tag: -0xE0)
+        is_internal_disconnected = false
         socket.disconnect()
     }
 
     func internal_disconnect_withProperties(reasonCode : CocoaMQTTDISCONNECTReasonCode,userProperties : [String: String] ) {
+        expected_disconnect(reasonCode: reasonCode, userProperties: userProperties)
+    }
+
+    private func expected_disconnect(reasonCode: CocoaMQTTDISCONNECTReasonCode, userProperties: [String: String]? = nil) {
         is_internal_disconnected = true
         var frameDisconnect = FrameDisconnect(disconnectReasonCode: reasonCode)
-        frameDisconnect.userProperties = userProperties
+        frameDisconnect.userProperties = userProperties ?? [:]
         send(frameDisconnect, tag: -0xE0)
         socket.disconnect()
     }
@@ -458,11 +461,12 @@ public class CocoaMQTT5: NSObject, CocoaMQTT5Client {
     ///     - -1 will be returned, if the messages queue is full
     @discardableResult
     public func publish(_ topic: String, withString string: String, qos: CocoaMQTTQoS = .qos1, DUP: Bool = false, retained: Bool = false, properties: MqttPublishProperties) -> Int {
-        var fixQus = qos
-        if !DUP{
-            fixQus = .qos0
+        assert(!(DUP && qos == .qos0), "DUP=true with QoS0 is invalid for MQTT PUBLISH.")
+        guard !(DUP && qos == .qos0) else {
+            printError("Invalid PUBLISH flags: DUP=true requires QoS1 or QoS2.")
+            return -1
         }
-        let message = CocoaMQTT5Message(topic: topic, string: string, qos: fixQus, retained: retained)
+        let message = CocoaMQTT5Message(topic: topic, string: string, qos: qos, retained: retained)
         return publish(message, DUP: DUP, retained: retained, properties: properties)
     }
 
@@ -473,6 +477,12 @@ public class CocoaMQTT5: NSObject, CocoaMQTT5Client {
     ///   - properties: Publish Properties
     @discardableResult
     public func publish(_ message: CocoaMQTT5Message, DUP: Bool = false, retained: Bool = false, properties: MqttPublishProperties) -> Int {
+        assert(!(DUP && message.qos == .qos0), "DUP=true with QoS0 is invalid for MQTT PUBLISH.")
+        guard !(DUP && message.qos == .qos0) else {
+            printError("Invalid PUBLISH flags: DUP=true requires QoS1 or QoS2.")
+            return -1
+        }
+
         let msgid: UInt16
 
         if message.qos == .qos0 {
@@ -749,7 +759,7 @@ extension CocoaMQTT5: CocoaMQTTReaderDelegate {
 
         } else {
             connState = .disconnected
-            internal_disconnect()
+            expected_disconnect(reasonCode: .normalDisconnection)
         }
 
 
@@ -860,4 +870,3 @@ extension CocoaMQTT5: CocoaMQTTReaderDelegate {
         didReceivePong(self)
     }
 }
-

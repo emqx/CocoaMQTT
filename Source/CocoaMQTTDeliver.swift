@@ -76,27 +76,26 @@ class CocoaMQTTDeliver: NSObject {
     var storage: CocoaMQTTStorage?
 
     func recoverSessionBy(_ storage: CocoaMQTTStorage) {
-
         let frames = storage.takeAll()
-        if(frames != nil){
-            guard frames!.count >= 0 else {
-                return
+        // Sync to push the frame to mqueue for avoiding overcommit
+        deliverQueue.sync {
+            self.storage = storage
+            for f in frames {
+                mqueue.append(f)
             }
+            if !frames.isEmpty {
+                printInfo("Deliver recover \(frames.count) msgs")
+                printDebug("Recover message \(frames)")
+            }
+        }
 
-            // Sync to push the frame to mqueue for avoiding overcommit
-            deliverQueue.sync {
-                for f in frames! {
-                    mqueue.append(f)
-                }
-                self.storage = storage
-                printInfo("Deliver recover \(frames!.count) msgs")
-                printDebug("Recover message \(frames!)")
-            }
+        guard !frames.isEmpty else {
+            return
+        }
 
-            deliverQueue.async { [weak self] in
-                guard let self = self else { return }
-                self.tryTransport()
-            }
+        deliverQueue.async { [weak self] in
+            guard let self = self else { return }
+            self.tryTransport()
         }
     }
 
