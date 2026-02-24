@@ -1,0 +1,175 @@
+name: Distribution Checks
+
+on:
+  pull_request:
+    paths:
+      - "Source/**/*.swift"
+      - "CocoaMQTTTests/**/*.swift"
+      - "Package.swift"
+      - "Package.resolved"
+      - "CocoaMQTT.podspec"
+      - ".github/workflows/distribution-check.yml"
+  push:
+    tags:
+      - "*"
+  workflow_dispatch:
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  spm-smoke:
+    name: SPM Release Smoke
+    runs-on: macos-15
+    timeout-minutes: 25
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Show Swift version
+        run: swift --version
+
+      - name: Validate package manifest
+        run: swift package dump-package > /dev/null
+
+      - name: Build package targets
+        run: swift build
+
+      - name: Build as local SPM dependency
+        run: |
+          set -euo pipefail
+
+          TMP_DIR="$(mktemp -d)"
+          trap 'rm -rf "${TMP_DIR}"' EXIT
+
+          cat > "${TMP_DIR}/Package.swift" <<SPM
+          // swift-tools-version:5.7
+          import PackageDescription
+
+          let package = Package(
+              name: "CocoaMQTTSmoke",
+              platforms: [.macOS(.v10_13)],
+              dependencies: [
+                  .package(path: "${GITHUB_WORKSPACE}")
+              ],
+              targets: [
+                  .executableTarget(
+                      name: "CocoaMQTTSmoke",
+                      dependencies: [
+                          .product(name: "CocoaMQTT", package: "CocoaMQTT"),
+                          .product(name: "CocoaMQTTWebSocket", package: "CocoaMQTT")
+                      ]
+                  )
+              ]
+          )
+          SPM
+
+          mkdir -p "${TMP_DIR}/Sources/CocoaMQTTSmoke"
+          cat > "${TMP_DIR}/Sources/CocoaMQTTSmoke/main.swift" <<'SPM_MAIN'
+          import CocoaMQTT
+          import CocoaMQTTWebSocket
+
+          let message = CocoaMQTTMessage(topic: "ci/spm", string: "ok")
+          let socket = CocoaMQTTWebSocket(uri: "/mqtt")
+          print("\(message.topic) \(socket.enableSSL)")
+          SPM_MAIN
+
+          swift build --package-path "${TMP_DIR}"
+
+      - name: Build as tagged SPM dependency
+        if: github.ref_type == 'tag'
+        run: |
+          set -euo pipefail
+
+          TMP_DIR="$(mktemp -d)"
+          trap 'rm -rf "${TMP_DIR}"' EXIT
+
+          cat > "${TMP_DIR}/Package.swift" <<SPM
+          // swift-tools-version:5.7
+          import PackageDescription
+
+          let package = Package(
+              name: "CocoaMQTTTaggedSmoke",
+              platforms: [.macOS(.v10_13)],
+              dependencies: [
+                  .package(url: "https://github.com/${GITHUB_REPOSITORY}.git", exact: "${GITHUB_REF_NAME}")
+              ],
+              targets: [
+                  .executableTarget(
+                      name: "CocoaMQTTTaggedSmoke",
+                      dependencies: [
+                          .product(name: "CocoaMQTT", package: "CocoaMQTT"),
+                          .product(name: "CocoaMQTTWebSocket", package: "CocoaMQTT")
+                      ]
+                  )
+              ]
+          )
+          SPM
+
+          mkdir -p "${TMP_DIR}/Sources/CocoaMQTTTaggedSmoke"
+          cat > "${TMP_DIR}/Sources/CocoaMQTTTaggedSmoke/main.swift" <<'SPM_MAIN'
+          import CocoaMQTT
+          import CocoaMQTTWebSocket
+
+          print(CocoaMQTTMessage(topic: "ci/tag", string: "ok").topic)
+          SPM_MAIN
+
+          swift build --package-path "${TMP_DIR}"
+
+  cocoapods-lint:
+    name: CocoaPods Release Lint
+    runs-on: macos-15
+    timeout-minutes: 35
+
+    env:
+      COCOAPODS_DISABLE_STATS: "true"
+      LANG: en_US.UTF-8
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Ruby
+        uses: ruby/setup-ruby@v1
+        with:
+          ruby-version: "3.2"
+
+      - name: Install CocoaPods
+        run: gem install cocoapods --no-document
+
+      - name: Verify podspec version and source tag
+        run: |
+          set -euo pipefail
+
+          VERSION="$(ruby -ne 'puts $1 if /s\.version\s*=\s*"([^"]+)"/' CocoaMQTT.podspec)"
+          SOURCE_TAG="$(ruby -ne 'puts $1 if /:tag\s*=>\s*"([^"]+)"/' CocoaMQTT.podspec)"
+
+          if [ -z "${VERSION}" ] || [ -z "${SOURCE_TAG}" ]; then
+            echo "Failed to parse CocoaMQTT.podspec version or source tag"
+            exit 1
+          fi
+
+          if [ "${VERSION}" != "${SOURCE_TAG}" ]; then
+            echo "podspec version (${VERSION}) must match source tag (${SOURCE_TAG})"
+            exit 1
+          fi
+
+          if [ "${GITHUB_REF_TYPE}" = "tag" ]; then
+            RELEASE_TAG="${GITHUB_REF_NAME#v}"
+            if [ "${RELEASE_TAG}" != "${VERSION}" ]; then
+              echo "Git tag (${GITHUB_REF_NAME}) must match podspec version (${VERSION})"
+              exit 1
+            fi
+          fi
+
+      - name: Lint CocoaPods Core subspec
+        run: pod lib lint CocoaMQTT.podspec --subspec=Core --allow-warnings --skip-tests --fail-fast --verbose
+
+      - name: Lint CocoaPods WebSockets subspec
+        run: pod lib lint CocoaMQTT.podspec --subspec=WebSockets --allow-warnings --skip-tests --fail-fast --verbose
+
+      - name: Lint tagged podspec from source
+        if: github.ref_type == 'tag'
+        run: pod spec lint CocoaMQTT.podspec --allow-warnings --skip-tests --fail-fast --verbose
