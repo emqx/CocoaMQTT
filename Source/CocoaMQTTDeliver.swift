@@ -24,10 +24,6 @@ private struct InflightFrame {
     /// Monotonic time (Dispatch uptime) at which this frame should be retried next.
     var nextRetryAtUptimeNs: UInt64
 
-    init(frame: Frame, nextRetryAtUptimeNs: UInt64) {
-        self.frame = frame
-        self.nextRetryAtUptimeNs = nextRetryAtUptimeNs
-    }
 }
 
 extension Array where Element == InflightFrame {
