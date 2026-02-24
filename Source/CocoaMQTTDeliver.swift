@@ -68,10 +68,10 @@ class CocoaMQTTDeliver: NSObject {
 
     private var awaitingTimer: CocoaMQTTTimer?
 
-    var isQueueEmpty: Bool { get { return mqueue.count == 0 }}
-    var isQueueFull: Bool { get { return mqueue.count >= mqueueSize }}
-    var isInflightFull: Bool { get { return inflight.count >= inflightWindowSize }}
-    var isInflightEmpty: Bool { get { return inflight.count == 0 }}
+    var isQueueEmpty: Bool { mqueue.isEmpty }
+    var isQueueFull: Bool { mqueue.count >= mqueueSize }
+    var isInflightFull: Bool { inflight.count >= inflightWindowSize }
+    var isInflightEmpty: Bool { inflight.isEmpty }
 
     var storage: CocoaMQTTStorage?
 
@@ -207,18 +207,15 @@ extension CocoaMQTTDeliver {
         }
 
         let nowTimestamp = Date(timeIntervalSinceNow: 0).timeIntervalSince1970
-        for (idx, frame) in inflight.enumerated() {
-            if (nowTimestamp - frame.timestamp) >= (retryTimeInterval/1000.0) {
+        for (idx, frame) in inflight.enumerated() where (nowTimestamp - frame.timestamp) >= (retryTimeInterval / 1000.0) {
+            var duplicatedFrame = frame
+            duplicatedFrame.frame.dup = true
+            duplicatedFrame.timestamp = nowTimestamp
 
-                var duplicatedFrame = frame
-                duplicatedFrame.frame.dup = true
-                duplicatedFrame.timestamp = nowTimestamp
+            inflight[idx] = duplicatedFrame
 
-                inflight[idx] = duplicatedFrame
-
-                printInfo("Re-delivery frame \(duplicatedFrame.frame)")
-                sendfun(duplicatedFrame.frame)
-            }
+            printInfo("Re-delivery frame \(duplicatedFrame.frame)")
+            sendfun(duplicatedFrame.frame)
         }
     }
 

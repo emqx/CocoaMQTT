@@ -28,9 +28,7 @@ public class CocoaMQTTMessage: NSObject {
     ///
     /// It will return nil if the payload is not a valid utf8 string
     public var string: String? {
-        get {
-            return NSString(bytes: payload, length: payload.count, encoding: String.Encoding.utf8.rawValue) as String?
-        }
+        NSString(bytes: payload, length: payload.count, encoding: String.Encoding.utf8.rawValue) as String?
     }
 
     public init(topic: String, string: String, qos: CocoaMQTTQoS = .qos1, retained: Bool = false) {

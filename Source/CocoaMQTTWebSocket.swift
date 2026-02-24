@@ -432,7 +432,7 @@ public extension CocoaMQTTWebSocket {
 }
 
 extension CocoaMQTTWebSocket.StarscreamConnection: CertificatePinning {
-    public func evaluateTrust(trust: SecTrust, domain: String?, completion: ((PinningState) -> ())) {
+    public func evaluateTrust(trust: SecTrust, domain: String?, completion: ((PinningState) -> Void)) {
         var result: SecTrustResultType = .unspecified
         SecTrustEvaluate(trust, &result)
         let e = CFErrorCreate(kCFAllocatorDefault, "FoundationSecurityError" as NSString?, Int(result.rawValue), nil)
@@ -459,7 +459,7 @@ extension CocoaMQTTWebSocket.StarscreamConnection: CertificatePinning {
 extension CocoaMQTTWebSocket.StarscreamConnection: WebSocketDelegate {
     public func didReceive(event: Starscream.WebSocketEvent, client: Starscream.WebSocketClient) {
         switch event {
-        case .connected(_):
+        case .connected:
             delegate?.connectionOpened(self)
         case .disconnected(_, let code):
             delegate?.connectionClosed(self, withError: nil, withCode: code)
@@ -467,13 +467,13 @@ extension CocoaMQTTWebSocket.StarscreamConnection: WebSocketDelegate {
             delegate?.connection(self, receivedString: string)
         case .binary(let data):
             delegate?.connection(self, receivedData: data)
-        case .ping(_):
+        case .ping:
             break
-        case .pong(_):
+        case .pong:
             break
-        case .viabilityChanged(_):
+        case .viabilityChanged:
             break
-        case .reconnectSuggested(_):
+        case .reconnectSuggested:
             break
         case .cancelled:
             delegate?.connectionClosed(self, withError: nil, withCode: nil)
@@ -498,7 +498,7 @@ extension CocoaMQTTWebSocket {
 
     func __delegate_queue(_ fun: @escaping () -> Void) {
         delegateQueue?.async { [weak self] in
-            guard let _ = self else { return }
+            guard self != nil else { return }
             fun()
         }
     }

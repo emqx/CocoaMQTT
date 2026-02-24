@@ -12,8 +12,6 @@ import Foundation
 struct FramePingResp: Frame {
 
     var packetFixedHeaderType: UInt8 = FrameType.pingresp.rawValue
-
-    init() { /* Nothing to do */ }
 }
 
 extension FramePingResp {

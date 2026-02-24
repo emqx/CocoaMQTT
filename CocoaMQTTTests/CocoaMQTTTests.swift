@@ -30,10 +30,6 @@ class CocoaMQTTTests: XCTestCase {
         super.setUp()
     }
 
-    override func tearDown() {
-        super.tearDown()
-    }
-
     func testConnect() {
         let caller = Caller()
         let mqtt = CocoaMQTT(clientID: clientID, host: host, port: port)
@@ -459,7 +455,7 @@ private class Caller: CocoaMQTTDelegate {
     func mqtt(_ mqtt: CocoaMQTT, didSubscribeTopics success: NSDictionary, failed: [String]) {
         assert_in_del_queue()
 
-        subs = subs + (success.allKeys as! [String])
+        subs += (success.allKeys as! [String])
     }
 
     func mqtt(_ mqtt: CocoaMQTT, didUnsubscribeTopics topics: [String]) {
@@ -512,7 +508,7 @@ private func randomCode(length: Int) -> String {
     let base62chars = "0123456789ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz"
     var code = ""
     for _ in 0..<length {
-        let random = Int(arc4random_uniform(62))
+        let random = Int.random(in: 0..<62)
         let index = base62chars.index(base62chars.startIndex, offsetBy: random)
         code.append(base62chars[index])
     }
