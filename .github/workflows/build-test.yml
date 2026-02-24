@@ -11,7 +11,7 @@ concurrency:
 jobs:
   build-and-test:
     name: Swift Build & Test
-    runs-on: macos-14
+    runs-on: macos-15
     timeout-minutes: 30
 
     steps:
@@ -37,8 +37,9 @@ jobs:
           curl -fL --retry 3 --retry-delay 2 "${EMQX_ZIP_URL}" -o "${EMQX_ZIP_PATH}"
           unzip -q "${EMQX_ZIP_PATH}" -d "${EMQX_DIR}"
 
-          EMQX_HOME="$(find "${EMQX_DIR}" -mindepth 1 -maxdepth 1 -type d | head -n 1)"
-          [ -n "${EMQX_HOME}" ]
+          # EMQX ZIP extracts directly into EMQX_DIR (bin/, etc/, data/, ...).
+          EMQX_HOME="${EMQX_DIR}"
+          [ -x "${EMQX_HOME}/bin/emqx" ]
           echo "EMQX_HOME=${EMQX_HOME}" >> "${GITHUB_ENV}"
 
       - name: Start EMQX broker
