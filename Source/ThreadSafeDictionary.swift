@@ -33,14 +33,14 @@ public class ThreadSafeDictionary<K: Hashable, V>: Collection {
     }
 
     public subscript(key: K) -> V? {
-        set(newValue) {
-            concurrentQueue.async(flags: .barrier) {[weak self] in
-                self?.dictionary[key] = newValue
-            }
-        }
         get {
             concurrentQueue.sync {
                 self.dictionary[key]
+            }
+        }
+        set(newValue) {
+            concurrentQueue.async(flags: .barrier) {[weak self] in
+                self?.dictionary[key] = newValue
             }
         }
     }

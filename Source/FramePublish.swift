@@ -148,8 +148,8 @@ extension FramePublish: InitialWithBytes {
         }
         self.packetFixedHeaderType = flags
 
-        /// Packet Identifier
-        /// The Packet Identifier field is only present in PUBLISH packets where the QoS level is 1 or 2.
+        // Packet Identifier
+        // The Packet Identifier field is only present in PUBLISH packets where the QoS level is 1 or 2.
 
         // parse topic
         if bytes.count < 2 {
@@ -192,7 +192,11 @@ extension FramePublish: InitialWithBytes {
 
             // MQTT 5.0
             self.mqtt5Topic = data.topic
+            self.topic = data.topic
             self.packetIdentifier = data.packetIdentifier
+            if let packetIdentifier = data.packetIdentifier {
+                self.msgid = packetIdentifier
+            }
             self.publishRecProperties = data
 
         } else {

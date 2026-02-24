@@ -107,7 +107,7 @@ final class CocoaMQTTStorage: CocoaMQTTStorageProtocol {
         return "\(msgid)"
     }
 
-    private class func name(_ clientId: String) -> String {
+    private static func name(_ clientId: String) -> String {
         return "cocomqtt-\(clientId)"
     }
 
@@ -116,17 +116,15 @@ final class CocoaMQTTStorage: CocoaMQTTStorageProtocol {
         guard bytes.count > 3 else {
             return nil
         }
-        /// bytes 1..<5 may be 'Remaining Length'
-        for i in 1 ..< min(5, bytes.count) {
-            if (bytes[i] & 0x80) == 0 {
-                return (bytes[0], Array(bytes.suffix(from: i+1)))
-            }
+        // bytes 1..<5 may be 'Remaining Length'
+        for i in 1 ..< min(5, bytes.count) where (bytes[i] & 0x80) == 0 {
+            return (bytes[0], Array(bytes.suffix(from: i + 1)))
         }
 
         return nil
     }
 
-    private func __read(needDelete: Bool)  -> [Frame] {
+    private func __read(needDelete: Bool) -> [Frame] {
         var frames = [Frame]()
         let allObjs = userDefault.dictionaryRepresentation().sorted { (k1, k2) in
             return k1.key < k2.key

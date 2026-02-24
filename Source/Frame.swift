@@ -155,10 +155,10 @@ extension Frame {
         var len = len
         repeat {
             digit = UInt8(len % 128)
-            len = len / 128
+            len /= 128
             // if there are more digits to encode, set the top bit of this digit
             if len > 0 {
-                digit = digit | 0x80
+                digit |= 0x80
             }
             bytes.append(digit)
         } while len > 0

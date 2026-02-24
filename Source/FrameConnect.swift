@@ -85,11 +85,11 @@ extension FrameConnect {
             flags.flagWillRetain = will.retained
         }
 
-        if let _ = username {
+        if username != nil {
             flags.flagUsername = true
 
             // Append password attribute if username presented
-            if let _ = password {
+            if password != nil {
                 flags.flagPassword = true
             }
         }
@@ -163,11 +163,11 @@ extension FrameConnect {
             flags.flagWillRetain = will.retained
         }
 
-        if let _ = username {
+        if username != nil {
             flags.flagUsername = true
 
             // Append password attribute if username presented
-            if let _ = password {
+            if password != nil {
                 flags.flagPassword = true
             }
         }

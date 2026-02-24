@@ -531,7 +531,7 @@ extension CocoaMQTT: CocoaMQTTDeliverProtocol {
         if let publish = frame as? FramePublish {
             let msgid = publish.msgid
 
-            var message: CocoaMQTTMessage? = nil
+            var message: CocoaMQTTMessage?
 
             if let sendingMessage = sendingMessages[msgid] {
                 message = sendingMessage
@@ -558,7 +558,7 @@ extension CocoaMQTT {
 
     func __delegate_queue(_ fun: @escaping () -> Void) {
         delegateQueue.async { [weak self] in
-            guard let _ = self else { return }
+            guard self != nil else { return }
             fun()
         }
     }

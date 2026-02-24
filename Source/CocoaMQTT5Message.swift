@@ -43,10 +43,7 @@ public class CocoaMQTT5Message: NSObject {
     ///
     /// It will return nil if the payload is not a valid utf8 string
     public var string: String? {
-
-        get {
-            return NSString(bytes: payload, length: payload.count, encoding: String.Encoding.utf8.rawValue) as String?
-        }
+        NSString(bytes: payload, length: payload.count, encoding: String.Encoding.utf8.rawValue) as String?
     }
 
     public var properties: [UInt8] {
