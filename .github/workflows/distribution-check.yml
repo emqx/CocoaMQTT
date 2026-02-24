@@ -33,19 +33,13 @@ jobs:
         run: |
           set -euo pipefail
 
-          read -r VERSION SOURCE_TAG < <(
-            python3 - <<'PY'
-            import pathlib
-            import re
+          VERSION="$(ruby -ne 'puts $1 if /s\.version\s*=\s*"([^"]+)"/' CocoaMQTT.podspec)"
+          SOURCE_TAG="$(ruby -ne 'puts $1 if /:tag\s*=>\s*"([^"]+)"/' CocoaMQTT.podspec)"
 
-            text = pathlib.Path("CocoaMQTT.podspec").read_text(encoding="utf-8")
-            version = re.search(r's\.version\s*=\s*"([^"]+)"', text)
-            source_tag = re.search(r':tag\s*=>\s*"([^"]+)"', text)
-            if not version or not source_tag:
-              raise SystemExit("Failed to parse version or source tag from CocoaMQTT.podspec")
-            print(version.group(1), source_tag.group(1))
-            PY
-          )
+          if [ -z "${VERSION}" ] || [ -z "${SOURCE_TAG}" ]; then
+            echo "Failed to parse version or source tag from CocoaMQTT.podspec"
+            exit 1
+          fi
 
           if [ "${VERSION}" != "${SOURCE_TAG}" ]; then
             echo "podspec version (${VERSION}) must match source tag (${SOURCE_TAG})"
