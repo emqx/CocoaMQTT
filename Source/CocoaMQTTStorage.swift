@@ -127,7 +127,19 @@ final class CocoaMQTTStorage: CocoaMQTTStorageProtocol {
     private func __read(needDelete: Bool) -> [Frame] {
         var frames = [Frame]()
         let allObjs = userDefault.dictionaryRepresentation().sorted { (k1, k2) in
-            return k1.key < k2.key
+            let left = UInt16(k1.key)
+            let right = UInt16(k2.key)
+
+            switch (left, right) {
+            case let (l?, r?):
+                return l < r
+            case (_?, nil):
+                return true
+            case (nil, _?):
+                return false
+            case (nil, nil):
+                return k1.key < k2.key
+            }
         }
         for (k, v) in allObjs {
             guard let bytes = v as? [UInt8] else { continue }

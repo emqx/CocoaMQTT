@@ -218,8 +218,67 @@ class CocoaMQTTDeliverTests: XCTestCase {
         XCTAssertEqual(storage.readAll().count, 0)
     }
 
+    func testRecoverSessionKeepStoredFramesUntilAck() {
+        let clientID = "deliver-recover-\(UUID().uuidString)"
+        defer {
+            clearStorage(clientID)
+        }
+
+        let frame = FramePublish(topic: "t/recover", payload: [0x01], qos: .qos1, msgid: 42)
+        guard let storage = CocoaMQTTStorage(by: clientID) else {
+            XCTFail("Initial storage failed")
+            return
+        }
+        XCTAssertTrue(storage.write(frame))
+
+        let caller1 = Caller()
+        var deliver1: CocoaMQTTDeliver? = CocoaMQTTDeliver()
+        deliver1?.delegate = caller1
+        deliver1?.recoverSessionBy(storage)
+        ms_sleep(100)
+        XCTAssertEqual(caller1.frames.count, 1)
+        if let firstRecovered = caller1.frames.first {
+            assertEqual(firstRecovered, frame)
+        }
+        XCTAssertEqual(storage.readAll().count, 1)
+
+        // Simulate an app crash/restart before receiving PUBACK.
+        deliver1 = nil
+
+        guard let storageAfterRestart = CocoaMQTTStorage(by: clientID) else {
+            XCTFail("Reload storage failed")
+            return
+        }
+        let caller2 = Caller()
+        let deliver2 = CocoaMQTTDeliver()
+        deliver2.delegate = caller2
+        deliver2.recoverSessionBy(storageAfterRestart)
+        ms_sleep(100)
+
+        XCTAssertEqual(caller2.frames.count, 1)
+        if let secondRecovered = caller2.frames.first {
+            assertEqual(secondRecovered, frame)
+        }
+        XCTAssertEqual(storageAfterRestart.readAll().count, 1)
+
+        deliver2.ack(by: FramePubAck(msgid: frame.msgid))
+        ms_sleep(100)
+        XCTAssertEqual(storageAfterRestart.readAll().count, 0)
+    }
+
     func testTODO() {
         // TODO: How to test large of messages combined qos0/qos1/qos2
+    }
+
+    private func clearStorage(_ clientId: String) {
+        let suiteName = "cocomqtt-\(clientId)"
+        guard let defaults = UserDefaults(suiteName: suiteName) else {
+            return
+        }
+        for key in defaults.dictionaryRepresentation().keys {
+            defaults.removeObject(forKey: key)
+        }
+        defaults.synchronize()
     }
 
     // Helper for assert equality for Frame

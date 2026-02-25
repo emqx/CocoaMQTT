@@ -52,6 +52,43 @@ class CocoaMQTTStorageTests: XCTestCase {
         XCTAssertEqual(storage?.readAll().count, 0)
     }
 
+    func testReadAllSortByNumericMsgid() {
+        let clientId = "storage-sort-\(UUID().uuidString)"
+        defer {
+            clearStorage(clientId)
+        }
+
+        guard let storage = CocoaMQTTStorage(by: clientId) else {
+            XCTFail("Initial storage failed")
+            return
+        }
+
+        let frames = [FramePublish(topic: "t/1", payload: [0x01], qos: .qos1, msgid: 1),
+                      FramePublish(topic: "t/2", payload: [0x02], qos: .qos1, msgid: 2),
+                      FramePublish(topic: "t/10", payload: [0x0A], qos: .qos1, msgid: 10)]
+
+        for frame in frames {
+            XCTAssertTrue(storage.write(frame))
+        }
+
+        let recovered = storage.readAll()
+        XCTAssertEqual(recovered.count, frames.count)
+
+        let recoveredMsgids = recovered.compactMap { ($0 as? FramePublish)?.msgid }
+        XCTAssertEqual(recoveredMsgids, [1, 2, 10])
+    }
+
+    private func clearStorage(_ clientId: String) {
+        let suiteName = "cocomqtt-\(clientId)"
+        guard let defaults = UserDefaults(suiteName: suiteName) else {
+            return
+        }
+        for key in defaults.dictionaryRepresentation().keys {
+            defaults.removeObject(forKey: key)
+        }
+        defaults.synchronize()
+    }
+
     private func assertEqual(_ f1: Frame?, _ f2: Frame?) {
         if let pub1 = f1 as? FramePublish,
            let pub2 = f2 as? FramePublish {
