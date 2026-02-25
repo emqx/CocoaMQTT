@@ -69,7 +69,7 @@ class CocoaMQTTDeliver: NSObject {
     var storage: CocoaMQTTStorage?
 
     func recoverSessionBy(_ storage: CocoaMQTTStorage) {
-        let frames = storage.takeAll()
+        let frames = storage.readAll()
         // Sync to push the frame to mqueue for avoiding overcommit
         deliverQueue.sync {
             self.storage = storage
