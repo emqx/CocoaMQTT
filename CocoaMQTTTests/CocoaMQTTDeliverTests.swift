@@ -165,6 +165,41 @@ class CocoaMQTTDeliverTests: XCTestCase {
         }
     }
 
+    func testRetryIntervalNanosecondsClampsNonPositiveValues() {
+        let deliver = CocoaMQTTDeliver()
+
+        deliver.retryTimeInterval = 0
+        XCTAssertEqual(deliver.t_retryIntervalNanoseconds(), 1)
+
+        deliver.retryTimeInterval = -5
+        XCTAssertEqual(deliver.t_retryIntervalNanoseconds(), 1)
+    }
+
+    func testRedeliverWithZeroRetryIntervalDoesNotCrash() {
+        let caller = Caller()
+        let deliver = CocoaMQTTDeliver()
+        let frame = FramePublish(topic: "t/zero", payload: [0x01], qos: .qos1, msgid: 100)
+
+        deliver.retryTimeInterval = 0
+        deliver.delegate = caller
+        XCTAssertTrue(deliver.add(frame))
+        ms_sleep(100)
+
+        caller.reset()
+        XCTAssertTrue(deliver.t_setInflightNextRetryTime(0, forMsgid: frame.msgid))
+
+        deliver.t_redeliver(atUptimeNanoseconds: 0)
+        ms_sleep(100)
+
+        XCTAssertEqual(caller.frames.count, 1)
+        guard let publish = caller.frames.first as? FramePublish else {
+            XCTFail("Expected FramePublish")
+            return
+        }
+        assertEqual(publish, frame)
+        XCTAssertTrue(publish.dup)
+    }
+
     func testStorage() {
 
         let clientID = "deliver-unit-testing"
