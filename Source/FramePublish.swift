@@ -156,14 +156,14 @@ extension FramePublish: InitialWithBytes {
             return nil
         }
 
-        let len = UInt16(bytes[0]) << 8 + UInt16(bytes[1])
+        let topicLength = Int(UInt16(bytes[0]) << 8 | UInt16(bytes[1]))
+        let topicStart = 2
+        let topicEnd = topicStart + topicLength
 
-        // 2 is packetFixedHeaderType length
-        var pos = 2 + Int(len)
-
-        if bytes.count < pos {
+        if bytes.count < topicEnd {
             return nil
         }
+        var pos = topicEnd
 
         // msgid
         if (packetFixedHeaderType & 0x06) >> 1 == CocoaMQTTQoS.qos0.rawValue {
@@ -189,6 +189,14 @@ extension FramePublish: InitialWithBytes {
             if data.propertyLength != 0 {
                 pos += data.propertyLength!
             }
+            if pos > bytes.count {
+                return nil
+            }
+
+            // MQTT 5.0: Topic Name may be empty only when Topic Alias is present.
+            if data.topic.isEmpty && data.topicAlias == nil {
+                return nil
+            }
 
             // MQTT 5.0
             self.mqtt5Topic = data.topic
@@ -201,9 +209,13 @@ extension FramePublish: InitialWithBytes {
 
         } else {
             // MQTT 3.1.1
-            if let data = NSString(bytes: [UInt8](bytes[2...(pos-1)]), length: Int(len), encoding: String.Encoding.utf8.rawValue) {
-                topic =  data as String
+            guard topicLength > 0 else {
+                return nil
             }
+            guard let recTopic = String(bytes: bytes[topicStart..<topicEnd], encoding: .utf8) else {
+                return nil
+            }
+            topic = recTopic
         }
 
         // payload

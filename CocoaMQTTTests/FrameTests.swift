@@ -142,6 +142,28 @@ class FrameTests: XCTestCase {
         XCTAssertEqual(f1?.payload().count, 0)
     }
 
+    func testFramePublishRejectsZeroLengthTopic() {
+        CocoaMQTTStorage()?.setMQTTVersion("3.1.1")
+        let frame = FramePublish(packetFixedHeaderType: FrameType.publish.rawValue, bytes: [0x00, 0x00, 0x41, 0x41, 0x41, 0x41])
+        XCTAssertNil(frame)
+    }
+
+    func testFramePublishRejectsZeroLengthTopicInMQTT5WithoutAlias() {
+        CocoaMQTTStorage()?.setMQTTVersion("5.0")
+        defer { CocoaMQTTStorage()?.setMQTTVersion("3.1.1") }
+
+        let frame = FramePublish(packetFixedHeaderType: FrameType.publish.rawValue, bytes: [0x00, 0x00, 0x00])
+        XCTAssertNil(frame)
+    }
+
+    func testFramePublishAllowsZeroLengthTopicInMQTT5WithAlias() {
+        CocoaMQTTStorage()?.setMQTTVersion("5.0")
+        defer { CocoaMQTTStorage()?.setMQTTVersion("3.1.1") }
+
+        let frame = FramePublish(packetFixedHeaderType: FrameType.publish.rawValue, bytes: [0x00, 0x00, 0x03, 0x23, 0x00, 0x01])
+        XCTAssertEqual(frame?.topic, "")
+    }
+
     func testFramePubAck() {
 
         var puback = FramePubAck(msgid: 0x1010)
