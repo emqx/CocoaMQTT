@@ -702,13 +702,15 @@ extension CocoaMQTT5: CocoaMQTTSocketDelegate {
 extension CocoaMQTT5: CocoaMQTTReaderDelegate {
 
     func didReceive(_ reader: CocoaMQTTReader, disconnect: FrameDisconnect) {
-        delegate?.mqtt5(self, didReceiveDisconnectReasonCode: disconnect.receiveReasonCode!)
-        didDisconnectReasonCode(self, disconnect.receiveReasonCode!)
+        let reasonCode = disconnect.receiveReasonCode ?? .normalDisconnection
+        delegate?.mqtt5(self, didReceiveDisconnectReasonCode: reasonCode)
+        didDisconnectReasonCode(self, reasonCode)
     }
 
     func didReceive(_ reader: CocoaMQTTReader, auth: FrameAuth) {
-        delegate?.mqtt5(self, didReceiveAuthReasonCode: auth.receiveReasonCode!)
-        didAuthReasonCode(self, auth.receiveReasonCode!)
+        let reasonCode = auth.receiveReasonCode ?? .success
+        delegate?.mqtt5(self, didReceiveAuthReasonCode: reasonCode)
+        didAuthReasonCode(self, reasonCode)
     }
 
     func didReceive(_ reader: CocoaMQTTReader, connack: FrameConnAck) {
