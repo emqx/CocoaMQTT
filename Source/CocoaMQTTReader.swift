@@ -35,6 +35,10 @@ protocol CocoaMQTTReaderDelegate: AnyObject {
     func didReceive(_ reader: CocoaMQTTReader, unsuback: FrameUnsubAck)
 
     func didReceive(_ reader: CocoaMQTTReader, pingresp: FramePingResp)
+
+    func didReceive(_ reader: CocoaMQTTReader, disconnect: FrameDisconnect)
+
+    func didReceive(_ reader: CocoaMQTTReader, auth: FrameAuth)
 }
 
 class CocoaMQTTReader {
@@ -170,6 +174,26 @@ class CocoaMQTTReader {
                 return
             }
             delegate?.didReceive(self, pingresp: frame)
+        case .disconnect:
+            guard isMQTT5ProtocolVersion() else {
+                protocolError("Reader received MQTT5-only frame \(frameType) in non-MQTT5 mode, data: \(data)")
+                return
+            }
+            guard let frame = FrameDisconnect(packetFixedHeaderType: header, bytes: data) else {
+                protocolError("Reader parse \(frameType) failed, data: \(data)")
+                return
+            }
+            delegate?.didReceive(self, disconnect: frame)
+        case .auth:
+            guard isMQTT5ProtocolVersion() else {
+                protocolError("Reader received MQTT5-only frame \(frameType) in non-MQTT5 mode, data: \(data)")
+                return
+            }
+            guard let frame = FrameAuth(packetFixedHeaderType: header, bytes: data) else {
+                protocolError("Reader parse \(frameType) failed, data: \(data)")
+                return
+            }
+            delegate?.didReceive(self, auth: frame)
         default:
             protocolError("Received unsupported frame type \(frameType), data: \(data)")
             return
@@ -181,6 +205,10 @@ class CocoaMQTTReader {
     private func protocolError(_ reason: String) {
         printError(reason)
         socket.disconnect()
+    }
+
+    private func isMQTT5ProtocolVersion() -> Bool {
+        return CocoaMQTTStorage()?.queryMQTTVersion() == "5.0"
     }
 
     private func reset() {

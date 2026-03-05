@@ -70,8 +70,18 @@ extension FrameAuth {
 extension FrameAuth: InitialWithBytes {
 
     init?(packetFixedHeaderType: UInt8, bytes: [UInt8]) {
-
-        receiveReasonCode = CocoaMQTTAUTHReasonCode(rawValue: bytes[0])
+        var protocolVersion = ""
+        if let storage = CocoaMQTTStorage() {
+            protocolVersion = storage.queryMQTTVersion()
+        }
+        guard protocolVersion == "5.0" else {
+            return nil
+        }
+        if bytes.isEmpty {
+            receiveReasonCode = .success
+        } else {
+            receiveReasonCode = CocoaMQTTAUTHReasonCode(rawValue: bytes[0])
+        }
     }
 
 }

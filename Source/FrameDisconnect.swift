@@ -109,9 +109,13 @@ extension FrameDisconnect: InitialWithBytes {
         }
 
         if protocolVersion == "5.0" {
-            if bytes.count > 0 {
+            if bytes.isEmpty {
+                receiveReasonCode = .normalDisconnection
+            } else {
                 receiveReasonCode = CocoaMQTTDISCONNECTReasonCode(rawValue: bytes[0])
             }
+        } else {
+            return nil
         }
     }
 

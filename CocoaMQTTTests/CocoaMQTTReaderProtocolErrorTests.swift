@@ -18,6 +18,8 @@ final class CocoaMQTTReaderProtocolErrorTests: XCTestCase {
 
     private final class ReaderDelegateSpy: CocoaMQTTReaderDelegate {
         private(set) var publishCount = 0
+        private(set) var disconnectCount = 0
+        private(set) var authCount = 0
 
         func didReceive(_ reader: CocoaMQTTReader, connack: FrameConnAck) {}
         func didReceive(_ reader: CocoaMQTTReader, publish: FramePublish) { publishCount += 1 }
@@ -28,6 +30,8 @@ final class CocoaMQTTReaderProtocolErrorTests: XCTestCase {
         func didReceive(_ reader: CocoaMQTTReader, suback: FrameSubAck) {}
         func didReceive(_ reader: CocoaMQTTReader, unsuback: FrameUnsubAck) {}
         func didReceive(_ reader: CocoaMQTTReader, pingresp: FramePingResp) {}
+        func didReceive(_ reader: CocoaMQTTReader, disconnect: FrameDisconnect) { disconnectCount += 1 }
+        func didReceive(_ reader: CocoaMQTTReader, auth: FrameAuth) { authCount += 1 }
     }
 
     func testMalformedPublishDisconnectsSocket() {
@@ -56,5 +60,46 @@ final class CocoaMQTTReaderProtocolErrorTests: XCTestCase {
         XCTAssertEqual(socket.disconnectCount, 1)
         XCTAssertEqual(delegate.publishCount, 0)
     }
-}
 
+    func testMQTT5DisconnectFrameDoesNotProtocolError() {
+        CocoaMQTTStorage()?.setMQTTVersion("5.0")
+
+        let socket = SocketSpy()
+        let delegate = ReaderDelegateSpy()
+        let reader = CocoaMQTTReader(socket: socket, delegate: delegate)
+
+        reader.headerReady(FrameType.disconnect.rawValue)
+        reader.lengthReady(0x00)
+
+        XCTAssertEqual(socket.disconnectCount, 0)
+        XCTAssertEqual(delegate.disconnectCount, 1)
+    }
+
+    func testMQTT5AuthFrameDoesNotProtocolError() {
+        CocoaMQTTStorage()?.setMQTTVersion("5.0")
+
+        let socket = SocketSpy()
+        let delegate = ReaderDelegateSpy()
+        let reader = CocoaMQTTReader(socket: socket, delegate: delegate)
+
+        reader.headerReady(FrameType.auth.rawValue)
+        reader.lengthReady(0x00)
+
+        XCTAssertEqual(socket.disconnectCount, 0)
+        XCTAssertEqual(delegate.authCount, 1)
+    }
+
+    func testMQTT311RejectsMQTT5OnlyDisconnectFrame() {
+        CocoaMQTTStorage()?.setMQTTVersion("3.1.1")
+
+        let socket = SocketSpy()
+        let delegate = ReaderDelegateSpy()
+        let reader = CocoaMQTTReader(socket: socket, delegate: delegate)
+
+        reader.headerReady(FrameType.disconnect.rawValue)
+        reader.lengthReady(0x00)
+
+        XCTAssertEqual(socket.disconnectCount, 1)
+        XCTAssertEqual(delegate.disconnectCount, 0)
+    }
+}

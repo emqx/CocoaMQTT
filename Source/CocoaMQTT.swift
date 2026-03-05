@@ -794,4 +794,14 @@ extension CocoaMQTT: CocoaMQTTReaderDelegate {
         delegate?.mqttDidReceivePong(self)
         didReceivePong(self)
     }
+
+    func didReceive(_ reader: CocoaMQTTReader, disconnect: FrameDisconnect) {
+        printWarning("Received DISCONNECT in MQTT 3.1.1 mode, closing socket")
+        internal_disconnect()
+    }
+
+    func didReceive(_ reader: CocoaMQTTReader, auth: FrameAuth) {
+        printWarning("Received AUTH in MQTT 3.1.1 mode, closing socket")
+        internal_disconnect()
+    }
 }
