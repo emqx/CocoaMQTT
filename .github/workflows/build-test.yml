@@ -9,6 +9,24 @@ concurrency:
   cancel-in-progress: true
 
 jobs:
+  swift6-compile-check:
+    name: Swift 6 Compile Check (Core)
+    runs-on: macos-15
+    timeout-minutes: 15
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Show Swift version
+        run: swift --version
+
+      - name: Resolve dependencies
+        run: swift package resolve
+
+      - name: Build core target with Swift 6 language mode
+        run: swift build --target CocoaMQTT -Xswiftc -swift-version -Xswiftc 6
+
   build-and-test:
     name: Swift Build & Test
     runs-on: macos-15
