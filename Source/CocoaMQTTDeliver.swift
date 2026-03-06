@@ -117,19 +117,30 @@ class CocoaMQTTDeliver: NSObject {
 
     /// Acknowledge a PUBLISH/PUBREL by msgid
     func ack(by frame: Frame) {
-        var msgid: UInt16
+        let msgid: UInt16
+        if let puback = frame as? FramePubAck {
+            msgid = puback.msgid
+        } else if let pubrec = frame as? FramePubRec {
+            msgid = pubrec.msgid
+        } else if let pubcom = frame as? FramePubComp {
+            msgid = pubcom.msgid
+        } else {
+            return
+        }
 
-        if let puback = frame as? FramePubAck { msgid = puback.msgid } else if let pubrec = frame as? FramePubRec { msgid = pubrec.msgid } else if let pubcom = frame as? FramePubComp { msgid = pubcom.msgid } else { return }
+        let ackType = frame.type
+        let shouldRemoveFromStorage = frame is FramePubAck || frame is FramePubComp
+        let ackFrameDescription = String(describing: frame)
 
         deliverQueue.async { [weak self] in
             guard let self = self else { return }
-            let acked = self.ackInflightFrame(withMsgid: msgid, type: frame.type)
+            let acked = self.ackInflightFrame(withMsgid: msgid, type: ackType)
             if acked.count == 0 {
-                printWarning("Acknowledge by \(frame), but not found in inflight window")
+                printWarning("Acknowledge by \(ackFrameDescription), but not found in inflight window")
             } else {
                 // TODO: ACK DONT DELETE PUBREL
                 for f in acked {
-                    if frame is FramePubAck || frame is FramePubComp {
+                    if shouldRemoveFromStorage {
                         self.storage?.remove(f)
                     }
                 }
