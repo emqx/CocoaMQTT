@@ -139,10 +139,8 @@ class CocoaMQTTDeliver: NSObject {
                 printWarning("Acknowledge by \(ackFrameDescription), but not found in inflight window")
             } else {
                 // TODO: ACK DONT DELETE PUBREL
-                for f in acked {
-                    if shouldRemoveFromStorage {
-                        self.storage?.remove(f)
-                    }
+                for f in acked where shouldRemoveFromStorage {
+                    self.storage?.remove(f)
                 }
                 printDebug("Acknowledge frame id \(msgid) success, acked: \(acked)")
                 self.tryTransport()
