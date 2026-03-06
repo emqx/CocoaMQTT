@@ -33,7 +33,13 @@ public enum CocoaMQTTLoggerLevel: Int {
 open class CocoaMQTTLogger: NSObject {
 
     // Singleton
+    // Keep mutable global logger for backward compatibility.
+    // Accesses are intentionally marked as unsafe-isolated for Swift 6 readiness.
+    #if swift(>=6)
+    public nonisolated(unsafe) static var logger = CocoaMQTTLogger()
+    #else
     public static var logger = CocoaMQTTLogger()
+    #endif
     public override init() { super.init() }
 
     // min level
