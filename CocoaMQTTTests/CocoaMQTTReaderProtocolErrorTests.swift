@@ -63,6 +63,7 @@ final class CocoaMQTTReaderProtocolErrorTests: XCTestCase {
 
     func testMQTT5DisconnectFrameDoesNotProtocolError() {
         CocoaMQTTStorage()?.setMQTTVersion("5.0")
+        defer { CocoaMQTTStorage()?.setMQTTVersion("3.1.1") }
 
         let socket = SocketSpy()
         let delegate = ReaderDelegateSpy()
@@ -77,6 +78,7 @@ final class CocoaMQTTReaderProtocolErrorTests: XCTestCase {
 
     func testMQTT5AuthFrameDoesNotProtocolError() {
         CocoaMQTTStorage()?.setMQTTVersion("5.0")
+        defer { CocoaMQTTStorage()?.setMQTTVersion("3.1.1") }
 
         let socket = SocketSpy()
         let delegate = ReaderDelegateSpy()
@@ -101,5 +103,19 @@ final class CocoaMQTTReaderProtocolErrorTests: XCTestCase {
 
         XCTAssertEqual(socket.disconnectCount, 1)
         XCTAssertEqual(delegate.disconnectCount, 0)
+    }
+
+    func testMQTT311RejectsMQTT5OnlyAuthFrame() {
+        CocoaMQTTStorage()?.setMQTTVersion("3.1.1")
+
+        let socket = SocketSpy()
+        let delegate = ReaderDelegateSpy()
+        let reader = CocoaMQTTReader(socket: socket, delegate: delegate)
+
+        reader.headerReady(FrameType.auth.rawValue)
+        reader.lengthReady(0x00)
+
+        XCTAssertEqual(socket.disconnectCount, 1)
+        XCTAssertEqual(delegate.authCount, 0)
     }
 }
