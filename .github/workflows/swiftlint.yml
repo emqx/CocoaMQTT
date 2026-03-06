@@ -13,6 +13,9 @@ on:
       - ".github/workflows/swiftlint.yml"
   workflow_dispatch:
 
+permissions:
+  contents: read
+
 jobs:
   swiftlint:
     name: SwiftLint (SPM plugin)
