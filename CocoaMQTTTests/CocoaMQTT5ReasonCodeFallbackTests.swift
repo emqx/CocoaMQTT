@@ -17,6 +17,7 @@ final class CocoaMQTT5ReasonCodeFallbackTests: XCTestCase {
 
     func testDisconnectFallsBackToNormalDisconnectionForInvalidReasonCode() {
         CocoaMQTTStorage()?.setMQTTVersion("5.0")
+        defer { CocoaMQTTStorage()?.setMQTTVersion("3.1.1") }
 
         let mqtt5 = CocoaMQTT5(clientID: "fallback-disconnect-\(UUID().uuidString)")
         let reader = CocoaMQTTReader(socket: SocketSpy(), delegate: nil)
@@ -35,6 +36,7 @@ final class CocoaMQTT5ReasonCodeFallbackTests: XCTestCase {
 
     func testAuthFallsBackToSuccessForInvalidReasonCode() {
         CocoaMQTTStorage()?.setMQTTVersion("5.0")
+        defer { CocoaMQTTStorage()?.setMQTTVersion("3.1.1") }
 
         let mqtt5 = CocoaMQTT5(clientID: "fallback-auth-\(UUID().uuidString)")
         let reader = CocoaMQTTReader(socket: SocketSpy(), delegate: nil)
