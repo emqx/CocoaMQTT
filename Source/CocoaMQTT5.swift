@@ -768,6 +768,7 @@ extension CocoaMQTT5: CocoaMQTTReaderDelegate {
         let message = CocoaMQTT5Message(topic: publish.mqtt5Topic, payload: publish.payload5(), qos: publish.qos, retained: publish.retained)
 
         message.duplicated = publish.dup
+        message.contentType = publish.publishRecProperties?.contentType
 
         printInfo("Received message: \(message)")
         delegate?.mqtt5(self, didReceiveMessage: message, id: publish.msgid, publishData: publish.publishRecProperties ?? nil)
