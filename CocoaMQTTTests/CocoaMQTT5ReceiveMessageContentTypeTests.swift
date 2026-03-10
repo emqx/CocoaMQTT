@@ -47,7 +47,7 @@ final class CocoaMQTT5ReceiveMessageContentTypeTests: XCTestCase {
         XCTAssertEqual(callbackMessageContentType, "application/json")
     }
 
-    func testDidReceiveMessageMapsOtherPublishProperties() {
+    func testDidReceiveMessageKeepsWillPropertiesUnsetForPublishProperties() {
         CocoaMQTTStorage()?.setMQTTVersion("5.0")
         defer { CocoaMQTTStorage()?.setMQTTVersion("3.1.1") }
 
@@ -62,12 +62,11 @@ final class CocoaMQTT5ReceiveMessageContentTypeTests: XCTestCase {
         }
 
         let publishProperties = MqttPublishProperties(
-            payloadFormatIndicator: .utf8,
+            payloadFormatIndicator: .unspecified,
             messageExpiryInterval: 60,
             responseTopic: "t/response",
             correlation: "corr-id",
-            userProperty: ["k": "v"],
-            contentType: "application/json"
+            userProperty: ["k": "v"]
         )
         var outboundPublish = FramePublish(topic: "t/properties", payload: [0x7B, 0x7D], qos: .qos0)
         outboundPublish.publishProperties = publishProperties
@@ -81,16 +80,16 @@ final class CocoaMQTT5ReceiveMessageContentTypeTests: XCTestCase {
 
         mqtt5.didReceive(reader, publish: publish)
 
-        XCTAssertEqual(callbackPublishData?.payloadFormatIndicator, .utf8)
+        XCTAssertEqual(callbackPublishData?.payloadFormatIndicator, .unspecified)
         XCTAssertEqual(callbackPublishData?.messageExpiryInterval, 60)
         XCTAssertEqual(callbackPublishData?.responseTopic, "t/response")
         XCTAssertEqual(callbackPublishData?.correlationData, [UInt8]("corr-id".utf8))
         XCTAssertEqual(callbackPublishData?.userProperty?["k"], "v")
 
         XCTAssertEqual(callbackMessage?.isUTF8EncodedData, true)
-        XCTAssertEqual(callbackMessage?.willExpiryInterval, 60)
-        XCTAssertEqual(callbackMessage?.willResponseTopic, "t/response")
-        XCTAssertEqual(callbackMessage?.willCorrelationData, [UInt8]("corr-id".utf8))
-        XCTAssertEqual(callbackMessage?.willUserProperty?["k"], "v")
+        XCTAssertEqual(callbackMessage?.willExpiryInterval, UInt32.max)
+        XCTAssertNil(callbackMessage?.willResponseTopic)
+        XCTAssertNil(callbackMessage?.willCorrelationData)
+        XCTAssertNil(callbackMessage?.willUserProperty)
     }
 }
