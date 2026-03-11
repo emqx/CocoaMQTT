@@ -92,4 +92,56 @@ final class CocoaMQTT5ReceiveMessageContentTypeTests: XCTestCase {
         XCTAssertNil(callbackMessage?.willCorrelationData)
         XCTAssertNil(callbackMessage?.willUserProperty)
     }
+
+    func testDidReceiveMessageWithContentTypeAndUnspecifiedPayloadFormatKeepsWillPropertiesUnset() {
+        CocoaMQTTStorage()?.setMQTTVersion("5.0")
+        defer { CocoaMQTTStorage()?.setMQTTVersion("3.1.1") }
+
+        let mqtt5 = CocoaMQTT5(clientID: "mq5-recv-content-type-unspecified-\(UUID().uuidString)")
+        let reader = CocoaMQTTReader(socket: SocketSpy(), delegate: nil)
+
+        var callbackMessage: CocoaMQTT5Message?
+        var callbackPublishData: MqttDecodePublish?
+        mqtt5.didReceiveMessage = { _, message, _, publishData in
+            callbackMessage = message
+            callbackPublishData = publishData
+        }
+
+        let publishProperties = MqttPublishProperties(
+            payloadFormatIndicator: .unspecified,
+            messageExpiryInterval: 45,
+            responseTopic: "t/response",
+            correlation: "cid",
+            userProperty: ["k2": "v2"],
+            contentType: "text/plain"
+        )
+        var outboundPublish = FramePublish(topic: "t/no-properties", payload: [0x7B, 0x7D], qos: .qos0)
+        outboundPublish.publishProperties = publishProperties
+        let packet = outboundPublish.bytes(version: "5.0")
+        let remainingLength = decodeVariableByteInteger(data: packet, offset: 1)
+        let body = [UInt8](packet[remainingLength.newOffset..<packet.count])
+        guard let publish = FramePublish(packetFixedHeaderType: packet[0], bytes: body) else {
+            XCTFail("Failed to decode MQTT5 publish frame")
+            return
+        }
+
+        mqtt5.didReceive(reader, publish: publish)
+
+        XCTAssertEqual(callbackPublishData?.payloadFormatIndicator, .unspecified)
+        XCTAssertEqual(callbackPublishData?.messageExpiryInterval, 45)
+        XCTAssertEqual(callbackPublishData?.responseTopic, "t/response")
+        XCTAssertEqual(callbackPublishData?.correlationData, [UInt8]("cid".utf8))
+        XCTAssertEqual(callbackPublishData?.userProperty?["k2"], "v2")
+        XCTAssertEqual(callbackPublishData?.contentType, "text/plain")
+
+        // isUTF8EncodedData is a will-message field (MQTT5 §3.1.3.2.3) that defaults to true;
+        // the receive path does not update it from publishRecProperties.payloadFormatIndicator.
+        XCTAssertEqual(callbackMessage?.isUTF8EncodedData, true)
+        XCTAssertEqual(callbackMessage?.contentType, "text/plain")
+        // Will-specific fields must remain at their defaults and not be polluted by received publish properties.
+        XCTAssertEqual(callbackMessage?.willExpiryInterval, UInt32.max)
+        XCTAssertNil(callbackMessage?.willResponseTopic)
+        XCTAssertNil(callbackMessage?.willCorrelationData)
+        XCTAssertNil(callbackMessage?.willUserProperty)
+    }
 }
