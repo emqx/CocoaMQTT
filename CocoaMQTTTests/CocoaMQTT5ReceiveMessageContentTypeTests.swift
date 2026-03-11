@@ -134,8 +134,11 @@ final class CocoaMQTT5ReceiveMessageContentTypeTests: XCTestCase {
         XCTAssertEqual(callbackPublishData?.userProperty?["k2"], "v2")
         XCTAssertEqual(callbackPublishData?.contentType, "text/plain")
 
+        // isUTF8EncodedData is a will-message field (MQTT5 §3.1.3.2.3) that defaults to true;
+        // the receive path does not update it from publishRecProperties.payloadFormatIndicator.
         XCTAssertEqual(callbackMessage?.isUTF8EncodedData, true)
         XCTAssertEqual(callbackMessage?.contentType, "text/plain")
+        // Will-specific fields must remain at their defaults and not be polluted by received publish properties.
         XCTAssertEqual(callbackMessage?.willExpiryInterval, UInt32.max)
         XCTAssertNil(callbackMessage?.willResponseTopic)
         XCTAssertNil(callbackMessage?.willCorrelationData)
