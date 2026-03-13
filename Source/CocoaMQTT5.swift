@@ -765,14 +765,15 @@ extension CocoaMQTT5: CocoaMQTTReaderDelegate {
     func didReceive(_ reader: CocoaMQTTReader, publish: FramePublish) {
         printDebug("RECV: \(publish)")
 
+        let publishData = (publish.publishRecProperties?.propertyLength ?? 0) > 0 ? publish.publishRecProperties : nil
         let message = CocoaMQTT5Message(topic: publish.mqtt5Topic, payload: publish.payload5(), qos: publish.qos, retained: publish.retained)
 
         message.duplicated = publish.dup
-        message.contentType = publish.publishRecProperties?.contentType
+        message.contentType = publishData?.contentType
 
         printInfo("Received message: \(message)")
-        delegate?.mqtt5(self, didReceiveMessage: message, id: publish.msgid, publishData: publish.publishRecProperties ?? nil)
-        didReceiveMessage(self, message, publish.msgid, publish.publishRecProperties ?? nil)
+        delegate?.mqtt5(self, didReceiveMessage: message, id: publish.msgid, publishData: publishData)
+        didReceiveMessage(self, message, publish.msgid, publishData)
 
         if message.qos == .qos1 {
             puback(FrameType.puback, msgid: publish.msgid)
