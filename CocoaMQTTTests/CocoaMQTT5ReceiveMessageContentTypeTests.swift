@@ -199,10 +199,7 @@ final class CocoaMQTT5ReceiveMessageContentTypeTests: XCTestCase {
         )
         var outboundPublish = FramePublish(topic: "t/no-properties", payload: [0x7B, 0x7D], qos: .qos0)
         outboundPublish.publishProperties = publishProperties
-        let packet = outboundPublish.bytes(version: "5.0")
-        let remainingLength = decodeVariableByteInteger(data: packet, offset: 1)
-        let body = [UInt8](packet[remainingLength.newOffset..<packet.count])
-        guard let publish = FramePublish(packetFixedHeaderType: packet[0], bytes: body) else {
+        guard let publish = decodePublishFromOutboundFrame(outboundPublish) else {
             XCTFail("Failed to decode MQTT5 publish frame")
             return
         }
