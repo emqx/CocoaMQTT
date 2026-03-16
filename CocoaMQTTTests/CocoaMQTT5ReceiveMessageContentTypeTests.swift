@@ -147,6 +147,26 @@ final class CocoaMQTT5ReceiveMessageContentTypeTests: XCTestCase {
         XCTAssertEqual(frameType(from: socket.writes[0]), FrameType.pubrec.rawValue)
     }
 
+    func testDidReceiveQoS0PublishDoesNotSendAck() {
+        CocoaMQTTStorage()?.setMQTTVersion("5.0")
+        defer { CocoaMQTTStorage()?.setMQTTVersion("3.1.1") }
+
+        let socket = SocketSpy()
+        let mqtt5 = CocoaMQTT5(clientID: "mq5-recv-qos0-\(UUID().uuidString)", socket: socket)
+        let reader = CocoaMQTTReader(socket: socket, delegate: nil)
+
+        var outboundPublish = FramePublish(topic: "t/qos0", payload: [0x30], qos: .qos0)
+        outboundPublish.publishProperties = MqttPublishProperties(contentType: "text/plain")
+        guard let publish = decodePublishFromOutboundFrame(outboundPublish) else {
+            XCTFail("Failed to decode MQTT5 QoS0 publish frame")
+            return
+        }
+
+        mqtt5.didReceive(reader, publish: publish)
+
+        XCTAssertTrue(socket.writes.isEmpty)
+    }
+
     func testDidReceiveMessageWithContentTypeAndUnspecifiedPayloadFormatKeepsWillPropertiesUnset() {
         CocoaMQTTStorage()?.setMQTTVersion("5.0")
         defer { CocoaMQTTStorage()?.setMQTTVersion("3.1.1") }
