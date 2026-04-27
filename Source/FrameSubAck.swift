@@ -107,19 +107,30 @@ extension FrameSubAck: InitialWithBytes {
 
             self.msgid = UInt16(bytes[0]) << 8 + UInt16(bytes[1])
             self.grantedQos = []
-            for i in 3 ..< bytes.count {
-                guard let qos = CocoaMQTTQoS(rawValue: bytes[i]) else {
-                    return nil
-                }
-                self.grantedQos.append(qos)
+            self.reasonCodes = [CocoaMQTTSUBACKReasonCode]()
+
+            let propertyLength = decodeVariableByteInteger(data: bytes, offset: 2)
+            let reasonCodesStartIndex = propertyLength.newOffset + propertyLength.res
+            guard reasonCodesStartIndex < bytes.count else {
+                return nil
             }
 
-            self.reasonCodes = [CocoaMQTTSUBACKReasonCode]()
-            for i in 3 ..< bytes.count {
-                guard let qos = CocoaMQTTSUBACKReasonCode(rawValue: bytes[i]) else {
+            for i in reasonCodesStartIndex ..< bytes.count {
+                guard let reasonCode = CocoaMQTTSUBACKReasonCode(rawValue: bytes[i]) else {
                     return nil
                 }
-                self.reasonCodes! += [qos]
+                self.reasonCodes! += [reasonCode]
+
+                switch reasonCode {
+                case .grantedQoS0:
+                    self.grantedQos.append(.qos0)
+                case .grantedQoS1:
+                    self.grantedQos.append(.qos1)
+                case .grantedQoS2:
+                    self.grantedQos.append(.qos2)
+                default:
+                    self.grantedQos.append(.FAILURE)
+                }
             }
 
             self.subAckProperties = MqttDecodeSubAck()

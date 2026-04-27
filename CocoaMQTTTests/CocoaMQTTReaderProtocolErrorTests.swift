@@ -20,6 +20,7 @@ final class CocoaMQTTReaderProtocolErrorTests: XCTestCase {
         private(set) var publishCount = 0
         private(set) var disconnectCount = 0
         private(set) var authCount = 0
+        private(set) var subackCount = 0
 
         func didReceive(_ reader: CocoaMQTTReader, connack: FrameConnAck) {}
         func didReceive(_ reader: CocoaMQTTReader, publish: FramePublish) { publishCount += 1 }
@@ -27,7 +28,7 @@ final class CocoaMQTTReaderProtocolErrorTests: XCTestCase {
         func didReceive(_ reader: CocoaMQTTReader, pubrec: FramePubRec) {}
         func didReceive(_ reader: CocoaMQTTReader, pubrel: FramePubRel) {}
         func didReceive(_ reader: CocoaMQTTReader, pubcomp: FramePubComp) {}
-        func didReceive(_ reader: CocoaMQTTReader, suback: FrameSubAck) {}
+        func didReceive(_ reader: CocoaMQTTReader, suback: FrameSubAck) { subackCount += 1 }
         func didReceive(_ reader: CocoaMQTTReader, unsuback: FrameUnsubAck) {}
         func didReceive(_ reader: CocoaMQTTReader, pingresp: FramePingResp) {}
         func didReceive(_ reader: CocoaMQTTReader, disconnect: FrameDisconnect) { disconnectCount += 1 }
@@ -89,6 +90,22 @@ final class CocoaMQTTReaderProtocolErrorTests: XCTestCase {
 
         XCTAssertEqual(socket.disconnectCount, 0)
         XCTAssertEqual(delegate.authCount, 1)
+    }
+
+    func testMQTT5RejectedSubAckDoesNotProtocolError() {
+        CocoaMQTTStorage()?.setMQTTVersion("5.0")
+        defer { CocoaMQTTStorage()?.setMQTTVersion("3.1.1") }
+
+        let socket = SocketSpy()
+        let delegate = ReaderDelegateSpy()
+        let reader = CocoaMQTTReader(socket: socket, delegate: delegate)
+
+        reader.headerReady(FrameType.suback.rawValue)
+        reader.lengthReady(0x04)
+        reader.payloadReady(Data([0x01, 0x93, 0x00, 0x87]))
+
+        XCTAssertEqual(socket.disconnectCount, 0)
+        XCTAssertEqual(delegate.subackCount, 1)
     }
 
     func testMQTT311RejectsMQTT5OnlyDisconnectFrame() {
