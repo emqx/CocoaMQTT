@@ -321,6 +321,42 @@ class FrameTests: XCTestCase {
         XCTAssertEqual(suback?.grantedQos, [.FAILURE])
     }
 
+    func testMQTT5FrameSubAckWithPropertiesAndRejectedSubscriptionReasonCode() {
+        CocoaMQTTStorage()?.setMQTTVersion("5.0")
+        defer { CocoaMQTTStorage()?.setMQTTVersion("3.1.1") }
+
+        let reasonString = Array("denied".utf8)
+        let properties = [CocoaMQTTPropertyName.reasonString.rawValue, 0x00, UInt8(reasonString.count)] + reasonString
+        let bytes = [0x01, 0x93, UInt8(properties.count)] + properties + [0x87]
+
+        let suback = FrameSubAck(packetFixedHeaderType: FrameType.suback.rawValue, bytes: bytes)
+
+        XCTAssertNotNil(suback)
+        XCTAssertEqual(suback?.msgid, 0x0193)
+        XCTAssertEqual(suback?.reasonCodes, [.notAuthorized])
+        XCTAssertEqual(suback?.subAckProperties?.reasonString, "denied")
+        XCTAssertEqual(suback?.subAckProperties?.reasonCodes, [.notAuthorized])
+        XCTAssertEqual(suback?.grantedQos, [.FAILURE])
+    }
+
+    func testMQTT5FrameSubAckWithMultiBytePropertyLength() {
+        CocoaMQTTStorage()?.setMQTTVersion("5.0")
+        defer { CocoaMQTTStorage()?.setMQTTVersion("3.1.1") }
+
+        let reasonString = Array(repeating: UInt8(ascii: "a"), count: 127)
+        let properties = [CocoaMQTTPropertyName.reasonString.rawValue, 0x00, UInt8(reasonString.count)] + reasonString
+        let bytes = [0x01, 0x93] + beVariableByteInteger(length: properties.count) + properties + [0x87]
+
+        let suback = FrameSubAck(packetFixedHeaderType: FrameType.suback.rawValue, bytes: bytes)
+
+        XCTAssertNotNil(suback)
+        XCTAssertEqual(suback?.msgid, 0x0193)
+        XCTAssertEqual(suback?.reasonCodes, [.notAuthorized])
+        XCTAssertEqual(suback?.subAckProperties?.reasonString, String(repeating: "a", count: 127))
+        XCTAssertEqual(suback?.subAckProperties?.reasonCodes, [.notAuthorized])
+        XCTAssertEqual(suback?.grantedQos, [.FAILURE])
+    }
+
     func testFrameUnsubscribe() {
 
         let unsub = FrameUnsubscribe(msgid: 0x1010, topics: ["topic", "t2"])

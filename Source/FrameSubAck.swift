@@ -108,7 +108,14 @@ extension FrameSubAck: InitialWithBytes {
             self.msgid = UInt16(bytes[0]) << 8 + UInt16(bytes[1])
             self.grantedQos = []
             self.reasonCodes = [CocoaMQTTSUBACKReasonCode]()
-            for i in 3 ..< bytes.count {
+
+            let propertyLength = decodeVariableByteInteger(data: bytes, offset: 2)
+            let reasonCodesStartIndex = propertyLength.newOffset + propertyLength.res
+            guard reasonCodesStartIndex < bytes.count else {
+                return nil
+            }
+
+            for i in reasonCodesStartIndex ..< bytes.count {
                 guard let reasonCode = CocoaMQTTSUBACKReasonCode(rawValue: bytes[i]) else {
                     return nil
                 }
