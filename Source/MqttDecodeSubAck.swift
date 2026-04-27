@@ -61,6 +61,10 @@ public class MqttDecodeSubAck: NSObject {
                 case CocoaMQTTPropertyName.userProperty.rawValue:
                     var key: String?
                     var value: String?
+                    if userProperty == nil {
+                        userProperty = [:]
+                    }
+
                     guard let keyRes = unsignedByteToString(data: pubAckData, offset: dataIndex) else {
                         break
                     }

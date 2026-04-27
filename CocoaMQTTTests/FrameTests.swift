@@ -357,6 +357,27 @@ class FrameTests: XCTestCase {
         XCTAssertEqual(suback?.grantedQos, [.FAILURE])
     }
 
+    func testMQTT5FrameSubAckWithUserPropertyAndRejectedSubscriptionReasonCode() {
+        CocoaMQTTStorage()?.setMQTTVersion("5.0")
+        defer { CocoaMQTTStorage()?.setMQTTVersion("3.1.1") }
+
+        let properties: [UInt8] = [
+            CocoaMQTTPropertyName.userProperty.rawValue,
+            0x00, 0x03, 0x6B, 0x65, 0x79,
+            0x00, 0x05, 0x76, 0x61, 0x6C, 0x75, 0x65
+        ]
+        let bytes = [0x01, 0x93, UInt8(properties.count)] + properties + [0x87]
+
+        let suback = FrameSubAck(packetFixedHeaderType: FrameType.suback.rawValue, bytes: bytes)
+
+        XCTAssertNotNil(suback)
+        XCTAssertEqual(suback?.msgid, 0x0193)
+        XCTAssertEqual(suback?.reasonCodes, [.notAuthorized])
+        XCTAssertEqual(suback?.subAckProperties?.userProperty, ["key": "value"])
+        XCTAssertEqual(suback?.subAckProperties?.reasonCodes, [.notAuthorized])
+        XCTAssertEqual(suback?.grantedQos, [.FAILURE])
+    }
+
     func testFrameUnsubscribe() {
 
         let unsub = FrameUnsubscribe(msgid: 0x1010, topics: ["topic", "t2"])
