@@ -651,9 +651,7 @@ extension CocoaMQTT: CocoaMQTTSocketDelegate {
     public func socketDidDisconnect(_ socket: CocoaMQTTSocketProtocol, withError err: Error?) {
         // Clean up
         socket.setDelegate(nil, delegateQueue: nil)
-        if !is_internal_disconnected && autoReconnect {
-            prepareAutoReconnectAttempt()
-        } else {
+        if is_internal_disconnected || !autoReconnect {
             resetAutoReconnectState()
         }
 
@@ -667,8 +665,11 @@ extension CocoaMQTT: CocoaMQTTSocketDelegate {
         }
 
         guard autoReconnect else {
+            resetAutoReconnectState()
             return
         }
+
+        prepareAutoReconnectAttempt()
 
         // Start reconnector once socket error occurred
         printInfo("Try reconnect to server after \(reconnectTimeInterval)s")
