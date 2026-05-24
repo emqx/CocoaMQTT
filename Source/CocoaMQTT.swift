@@ -229,9 +229,10 @@ public class CocoaMQTT: NSObject, CocoaMQTTClient {
     /// After that, it uses this value for subsequent requests.
     public var maxAutoReconnectTimeInterval: UInt16 = 128 // 128 seconds
 
-    /// Current auto-reconnect backoff interval in seconds.
+    /// Auto-reconnect backoff interval in seconds for the current reconnect cycle.
     ///
-    /// The value is `0` when no auto-reconnect attempt is scheduled.
+    /// This value is advanced for the next reconnect attempt while auto-reconnect is active,
+    /// and resets to `0` when auto-reconnect is inactive.
     public private(set) var reconnectTimeInterval: UInt16 = 0
 
     /// Number of reconnect attempts scheduled in the current auto-reconnect cycle.

@@ -230,9 +230,10 @@ public class CocoaMQTT5: NSObject, CocoaMQTT5Client {
     /// 3.15.2.2 AUTH Properties
     public var authProperties: MqttAuthProperties?
 
-    /// Current auto-reconnect backoff interval in seconds.
+    /// Auto-reconnect backoff interval in seconds for the current reconnect cycle.
     ///
-    /// The value is `0` when no auto-reconnect attempt is scheduled.
+    /// This value is advanced for the next reconnect attempt while auto-reconnect is active,
+    /// and resets to `0` when auto-reconnect is inactive.
     public private(set) var reconnectTimeInterval: UInt16 = 0
 
     /// Number of reconnect attempts scheduled in the current auto-reconnect cycle.
