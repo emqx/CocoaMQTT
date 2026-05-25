@@ -77,6 +77,9 @@ import MqttCocoaAsyncSocket
 
     ///
     @objc optional func mqtt5(_ mqtt5: CocoaMQTT5, didStateChangeTo state: CocoaMQTTConnState)
+
+    /// Called when auto-reconnect schedules a reconnect attempt after an unexpected disconnect.
+    @objc optional func mqtt5(_ mqtt5: CocoaMQTT5, didScheduleReconnect attemptCount: UInt, after interval: UInt16)
 }
 
 /// set mqtt version to 5.0
@@ -227,7 +230,16 @@ public class CocoaMQTT5: NSObject, CocoaMQTT5Client {
     /// 3.15.2.2 AUTH Properties
     public var authProperties: MqttAuthProperties?
 
-    private var reconnectTimeInterval: UInt16 = 0
+    /// Auto-reconnect backoff interval in seconds for the current reconnect cycle.
+    ///
+    /// This value is advanced for the next reconnect attempt while auto-reconnect is active,
+    /// and resets to `0` when auto-reconnect is inactive.
+    public private(set) var reconnectTimeInterval: UInt16 = 0
+
+    /// Number of reconnect attempts scheduled in the current auto-reconnect cycle.
+    ///
+    /// The value resets to `0` after a successful connection or expected disconnect.
+    public private(set) var reconnectAttemptCount: UInt = 0
 
     private var autoReconnTimer: CocoaMQTTTimer?
     private var is_internal_disconnected = false
@@ -292,6 +304,7 @@ public class CocoaMQTT5: NSObject, CocoaMQTT5Client {
     public var didReceiveTrust: (CocoaMQTT5, SecTrust, @escaping (Bool) -> Swift.Void) -> Void = { _, _, _ in }
     public var didCompletePublish: (CocoaMQTT5, UInt16, MqttDecodePubComp?) -> Void = { _, _, _ in }
     public var didChangeState: (CocoaMQTT5, CocoaMQTTConnState) -> Void = { _, _ in }
+    public var didScheduleReconnect: (CocoaMQTT5, UInt, UInt16) -> Void = { _, _, _ in }
 
     /// Initial client object
     ///
@@ -613,6 +626,29 @@ extension CocoaMQTT5 {
             fun()
         }
     }
+
+    private func prepareAutoReconnectAttempt() {
+        if reconnectTimeInterval == 0 {
+            reconnectTimeInterval = min(autoReconnectTimeInterval, maxAutoReconnectTimeInterval)
+        }
+        reconnectAttemptCount += 1
+    }
+
+    private func updateAutoReconnectIntervalForNextAttempt() {
+        let doubledInterval = UInt32(reconnectTimeInterval) * 2
+        reconnectTimeInterval = UInt16(min(doubledInterval, UInt32(maxAutoReconnectTimeInterval)))
+    }
+
+    private func resetAutoReconnectState() {
+        reconnectTimeInterval = 0
+        reconnectAttemptCount = 0
+        autoReconnTimer = nil
+    }
+
+    private func notifyAutoReconnectScheduled() {
+        delegate?.mqtt5?(self, didScheduleReconnect: reconnectAttemptCount, after: reconnectTimeInterval)
+        didScheduleReconnect(self, reconnectAttemptCount, reconnectTimeInterval)
+    }
 }
 
 // MARK: - CocoaMQTTSocketDelegate
@@ -666,6 +702,10 @@ extension CocoaMQTT5: CocoaMQTTSocketDelegate {
     public func socketDidDisconnect(_ socket: CocoaMQTTSocketProtocol, withError err: Error?) {
         // Clean up
         socket.setDelegate(nil, delegateQueue: nil)
+        if is_internal_disconnected || !autoReconnect {
+            resetAutoReconnectState()
+        }
+
         connState = .disconnected
 
         delegate?.mqtt5DidDisconnect(self, withError: err)
@@ -677,22 +717,18 @@ extension CocoaMQTT5: CocoaMQTTSocketDelegate {
         }
 
         guard autoReconnect else {
+            resetAutoReconnectState()
             return
         }
 
-        if reconnectTimeInterval == 0 {
-            reconnectTimeInterval = autoReconnectTimeInterval
-        }
+        prepareAutoReconnectAttempt()
 
         // Start reconnector once socket error occurred
         printInfo("Try reconnect to server after \(reconnectTimeInterval)s")
+        notifyAutoReconnectScheduled()
         autoReconnTimer = CocoaMQTTTimer.after(Double(reconnectTimeInterval), name: "autoReconnTimer", { [weak self] in
             guard let self = self else { return }
-            if self.reconnectTimeInterval < self.maxAutoReconnectTimeInterval {
-                self.reconnectTimeInterval *= 2
-            } else {
-                self.reconnectTimeInterval = self.maxAutoReconnectTimeInterval
-            }
+            self.updateAutoReconnectIntervalForNextAttempt()
             _ = self.connect()
         })
     }
@@ -720,8 +756,7 @@ extension CocoaMQTT5: CocoaMQTTReaderDelegate {
 
             // Disable auto-reconnect
 
-            reconnectTimeInterval = 0
-            autoReconnTimer = nil
+            resetAutoReconnectState()
             is_internal_disconnected = false
 
             // Start keepalive timer
