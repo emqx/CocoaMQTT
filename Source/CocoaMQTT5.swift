@@ -790,7 +790,7 @@ extension CocoaMQTT5: CocoaMQTTReaderDelegate {
 
         } else {
             connState = .disconnected
-            expected_disconnect(reasonCode: .normalDisconnection)
+            internal_disconnect()
         }
 
         delegate?.mqtt5(self, didConnectAck: connack.reasonCode ?? CocoaMQTTCONNACKReasonCode.unspecifiedError, connAckData: connack.connackProperties ?? nil)

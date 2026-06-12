@@ -726,7 +726,7 @@ extension CocoaMQTT: CocoaMQTTReaderDelegate {
 
         } else {
             connState = .disconnected
-            expected_disconnect()
+            internal_disconnect()
         }
 
         delegate?.mqtt(self, didConnectAck: connack.returnCode ?? CocoaMQTTConnAck.serverUnavailable)
