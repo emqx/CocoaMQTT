@@ -26,6 +26,21 @@ import MqttCocoaAsyncSocket
     }
 }
 
+@objc public enum CocoaMQTT5DisconnectReasonSource: UInt8 {
+    case local = 1
+    case remote = 2
+}
+
+@objcMembers public final class CocoaMQTT5DisconnectReason: NSObject {
+    public let source: CocoaMQTT5DisconnectReasonSource
+    public let reasonCode: CocoaMQTTDISCONNECTReasonCode
+
+    public init(source: CocoaMQTT5DisconnectReasonSource, reasonCode: CocoaMQTTDISCONNECTReasonCode) {
+        self.source = source
+        self.reasonCode = reasonCode
+    }
+}
+
 /// CocoaMQTT5 Delegate
 @objc public protocol CocoaMQTT5Delegate {
 
@@ -243,6 +258,19 @@ public class CocoaMQTT5: NSObject, CocoaMQTT5Client {
 
     private var autoReconnTimer: CocoaMQTTTimer?
     private var is_internal_disconnected = false
+    private let disconnectReasonLock = NSLock()
+    private var pendingLocalDisconnectReasonCode: CocoaMQTTDISCONNECTReasonCode?
+    private var _lastDisconnectReason: CocoaMQTT5DisconnectReason?
+
+    /// The last MQTT 5 DISCONNECT reason observed for the current connection lifecycle.
+    ///
+    /// This is set before `mqtt5DidDisconnect(_:withError:)` / `didDisconnect` callbacks run.
+    /// It is `nil` for transport errors or clean socket closes without an MQTT DISCONNECT reason.
+    @objc public var lastDisconnectReason: CocoaMQTT5DisconnectReason? {
+        disconnectReasonLock.lock()
+        defer { disconnectReasonLock.unlock() }
+        return _lastDisconnectReason
+    }
 
     /// Console log level
     public var logLevel: CocoaMQTTLoggerLevel {
@@ -392,6 +420,7 @@ public class CocoaMQTT5: NSObject, CocoaMQTT5Client {
     ///   - Bool: It indicates whether successfully calling socket connect function.
     ///           Not yet established correct MQTT session
     public func connect(timeout: TimeInterval) -> Bool {
+        resetDisconnectReasonState()
         socket.setDelegate(self, delegateQueue: delegateQueue)
         reader = CocoaMQTTReader(socket: socket, delegate: self)
         do {
@@ -418,10 +447,12 @@ public class CocoaMQTT5: NSObject, CocoaMQTT5Client {
     /// - Note: Only can be called from outside.
     ///         This closes the connection expectedly, so auto-reconnect will not run.
     public func disconnect() {
+        markPendingLocalDisconnect(reasonCode: .normalDisconnection)
         expected_disconnect(reasonCode: .normalDisconnection)
     }
 
     public func disconnect(reasonCode: CocoaMQTTDISCONNECTReasonCode, userProperties: [String: String] ) {
+        markPendingLocalDisconnect(reasonCode: reasonCode)
         expected_disconnect(reasonCode: reasonCode, userProperties: userProperties)
     }
 
@@ -649,6 +680,43 @@ extension CocoaMQTT5 {
         delegate?.mqtt5?(self, didScheduleReconnect: reconnectAttemptCount, after: reconnectTimeInterval)
         didScheduleReconnect(self, reconnectAttemptCount, reconnectTimeInterval)
     }
+
+    private func resetDisconnectReasonState() {
+        disconnectReasonLock.lock()
+        pendingLocalDisconnectReasonCode = nil
+        _lastDisconnectReason = nil
+        disconnectReasonLock.unlock()
+    }
+
+    private func markPendingLocalDisconnect(reasonCode: CocoaMQTTDISCONNECTReasonCode) {
+        disconnectReasonLock.lock()
+        pendingLocalDisconnectReasonCode = reasonCode
+        _lastDisconnectReason = nil
+        disconnectReasonLock.unlock()
+    }
+
+    private func recordRemoteDisconnect(reasonCode: CocoaMQTTDISCONNECTReasonCode) {
+        disconnectReasonLock.lock()
+        pendingLocalDisconnectReasonCode = nil
+        _lastDisconnectReason = CocoaMQTT5DisconnectReason(source: .remote, reasonCode: reasonCode)
+        disconnectReasonLock.unlock()
+    }
+
+    private func updateDisconnectReasonAfterSocketDisconnect(error: Error?) {
+        disconnectReasonLock.lock()
+        defer {
+            pendingLocalDisconnectReasonCode = nil
+            disconnectReasonLock.unlock()
+        }
+
+        if error != nil {
+            _lastDisconnectReason = nil
+        } else if let reasonCode = pendingLocalDisconnectReasonCode {
+            _lastDisconnectReason = CocoaMQTT5DisconnectReason(source: .local, reasonCode: reasonCode)
+        } else if _lastDisconnectReason?.source != .remote {
+            _lastDisconnectReason = nil
+        }
+    }
 }
 
 // MARK: - CocoaMQTTSocketDelegate
@@ -702,6 +770,7 @@ extension CocoaMQTT5: CocoaMQTTSocketDelegate {
     public func socketDidDisconnect(_ socket: CocoaMQTTSocketProtocol, withError err: Error?) {
         // Clean up
         socket.setDelegate(nil, delegateQueue: nil)
+        updateDisconnectReasonAfterSocketDisconnect(error: err)
         if is_internal_disconnected || !autoReconnect {
             resetAutoReconnectState()
         }
@@ -739,6 +808,7 @@ extension CocoaMQTT5: CocoaMQTTReaderDelegate {
 
     func didReceive(_ reader: CocoaMQTTReader, disconnect: FrameDisconnect) {
         let reasonCode = disconnect.receiveReasonCode ?? .normalDisconnection
+        recordRemoteDisconnect(reasonCode: reasonCode)
         delegate?.mqtt5(self, didReceiveDisconnectReasonCode: reasonCode)
         didDisconnectReasonCode(self, reasonCode)
     }
