@@ -41,9 +41,11 @@ final class AutoReconnectStateTests: XCTestCase {
     private final class MQTTDelegateSpy: NSObject, CocoaMQTTDelegate {
         private(set) var reconnectSchedules: [ReconnectSchedule] = []
         private(set) var connectAcks: [CocoaMQTTConnAck] = []
+        var onConnectAck: ((CocoaMQTT, CocoaMQTTConnAck) -> Void)?
 
         func mqtt(_ mqtt: CocoaMQTT, didConnectAck ack: CocoaMQTTConnAck) {
             connectAcks.append(ack)
+            onConnectAck?(mqtt, ack)
         }
         func mqtt(_ mqtt: CocoaMQTT, didPublishMessage message: CocoaMQTTMessage, id: UInt16) {}
         func mqtt(_ mqtt: CocoaMQTT, didPublishAck id: UInt16) {}
@@ -62,9 +64,11 @@ final class AutoReconnectStateTests: XCTestCase {
     private final class MQTT5DelegateSpy: NSObject, CocoaMQTT5Delegate {
         private(set) var reconnectSchedules: [ReconnectSchedule] = []
         private(set) var connectAcks: [CocoaMQTTCONNACKReasonCode] = []
+        var onConnectAck: ((CocoaMQTT5, CocoaMQTTCONNACKReasonCode) -> Void)?
 
         func mqtt5(_ mqtt5: CocoaMQTT5, didConnectAck ack: CocoaMQTTCONNACKReasonCode, connAckData: MqttDecodeConnAck?) {
             connectAcks.append(ack)
+            onConnectAck?(mqtt5, ack)
         }
         func mqtt5(_ mqtt5: CocoaMQTT5, didPublishMessage message: CocoaMQTT5Message, id: UInt16) {}
         func mqtt5(_ mqtt5: CocoaMQTT5, didPublishAck id: UInt16, pubAckData: MqttDecodePubAck?) {}
@@ -98,6 +102,16 @@ final class AutoReconnectStateTests: XCTestCase {
         writes.contains { data in
             data.first == FrameType.disconnect.rawValue
         }
+    }
+
+    private func connectFrameBytes(clientID: String, username: String, password: String, version: String) -> Data {
+        var frame = FrameConnect(clientID: clientID)
+        frame.keepAlive = 60
+        frame.username = username
+        frame.password = password
+        frame.cleansess = true
+
+        return Data(frame.bytes(version: version))
     }
 
     func testCocoaMQTTExposesReconnectIntervalAndAttemptCount() {
@@ -201,6 +215,47 @@ final class AutoReconnectStateTests: XCTestCase {
         XCTAssertTrue(waitUntil { socket.connectCount == 1 })
     }
 
+    func testCocoaMQTTAuthFailureCanRefreshCredentialsBeforeAutoReconnectAttempt() {
+        let socket = SocketSpy()
+        let delegate = MQTTDelegateSpy()
+        let clientID = "auth-refresh-reconnect-\(UUID().uuidString)"
+        let mqtt = CocoaMQTT(clientID: clientID, socket: socket)
+        mqtt.delegate = delegate
+        mqtt.autoReconnect = true
+        mqtt.autoReconnectTimeInterval = 1
+        mqtt.username = "expired-user"
+        mqtt.password = "expired-password"
+
+        delegate.onConnectAck = { mqtt, ack in
+            guard ack == .badUsernameOrPassword else { return }
+            mqtt.username = "fresh-user"
+            mqtt.password = "fresh-password"
+        }
+
+        mqtt.didReceive(CocoaMQTTReader(socket: socket, delegate: nil), connack: FrameConnAck(returnCode: .badUsernameOrPassword))
+
+        XCTAssertEqual(delegate.connectAcks, [.badUsernameOrPassword])
+        XCTAssertEqual(mqtt.username, "fresh-user")
+        XCTAssertEqual(mqtt.password, "fresh-password")
+        XCTAssertEqual(socket.disconnectCount, 1)
+        XCTAssertFalse(containsDisconnectFrame(socket.writes))
+
+        mqtt.socketDidDisconnect(socket, withError: nil)
+
+        XCTAssertEqual(mqtt.reconnectTimeInterval, 1)
+        XCTAssertEqual(mqtt.reconnectAttemptCount, 1)
+        XCTAssertTrue(waitUntil { socket.connectCount == 1 })
+
+        mqtt.socketConnected(socket)
+
+        XCTAssertEqual(socket.writes.last, connectFrameBytes(
+            clientID: clientID,
+            username: "fresh-user",
+            password: "fresh-password",
+            version: "3.1.1"
+        ))
+    }
+
     func testCocoaMQTT5ExposesReconnectIntervalAndAttemptCount() {
         let socket = SocketSpy()
         let delegate = MQTT5DelegateSpy()
@@ -300,5 +355,46 @@ final class AutoReconnectStateTests: XCTestCase {
         XCTAssertEqual(delegate.reconnectSchedules, [ReconnectSchedule(attemptCount: 1, interval: 1)])
         XCTAssertEqual(closureSchedules, delegate.reconnectSchedules)
         XCTAssertTrue(waitUntil { socket.connectCount == 1 })
+    }
+
+    func testCocoaMQTT5AuthFailureCanRefreshCredentialsBeforeAutoReconnectAttempt() {
+        let socket = SocketSpy()
+        let delegate = MQTT5DelegateSpy()
+        let clientID = "auth-refresh-reconnect-5-\(UUID().uuidString)"
+        let mqtt5 = CocoaMQTT5(clientID: clientID, socket: socket)
+        mqtt5.delegate = delegate
+        mqtt5.autoReconnect = true
+        mqtt5.autoReconnectTimeInterval = 1
+        mqtt5.username = "expired-user"
+        mqtt5.password = "expired-password"
+
+        delegate.onConnectAck = { mqtt5, ack in
+            guard ack == .notAuthorized else { return }
+            mqtt5.username = "fresh-user"
+            mqtt5.password = "fresh-password"
+        }
+
+        mqtt5.didReceive(CocoaMQTTReader(socket: socket, delegate: nil), connack: FrameConnAck(code: .notAuthorized))
+
+        XCTAssertEqual(delegate.connectAcks, [.notAuthorized])
+        XCTAssertEqual(mqtt5.username, "fresh-user")
+        XCTAssertEqual(mqtt5.password, "fresh-password")
+        XCTAssertEqual(socket.disconnectCount, 1)
+        XCTAssertFalse(containsDisconnectFrame(socket.writes))
+
+        mqtt5.socketDidDisconnect(socket, withError: nil)
+
+        XCTAssertEqual(mqtt5.reconnectTimeInterval, 1)
+        XCTAssertEqual(mqtt5.reconnectAttemptCount, 1)
+        XCTAssertTrue(waitUntil { socket.connectCount == 1 })
+
+        mqtt5.socketConnected(socket)
+
+        XCTAssertEqual(socket.writes.last, connectFrameBytes(
+            clientID: clientID,
+            username: "fresh-user",
+            password: "fresh-password",
+            version: "5.0"
+        ))
     }
 }
