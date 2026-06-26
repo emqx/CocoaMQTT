@@ -240,7 +240,22 @@ public class CocoaMQTT: NSObject, CocoaMQTTClient {
     /// The value resets to `0` after a successful connection or expected disconnect.
     public private(set) var reconnectAttemptCount: UInt = 0
 
+    /// Whether auto-reconnect is currently paused by the application.
+    public var isAutoReconnectPaused: Bool {
+        autoReconnectLock.lock()
+        defer { autoReconnectLock.unlock() }
+        return _isAutoReconnectPaused
+    }
+
+    private let autoReconnectLock = NSLock()
+    private var _isAutoReconnectPaused = false
     private var autoReconnTimer: CocoaMQTTTimer?
+    private var isAutoReconnectAttemptScheduled = false
+    private var hasPausedAutoReconnectAttempt = false
+    private var hasPendingAutoReconnectAttempt = false
+    // Tracks the window after requesting an unexpected socket close and before socketDidDisconnect cleans it up.
+    private var pendingSocketDisconnectReconnectAttemptCount: UInt?
+    private var shouldResumeAutoReconnectAfterPendingDisconnect = false
     private var is_internal_disconnected = false
 
     /// Console log level
@@ -423,8 +438,72 @@ public class CocoaMQTT: NSObject, CocoaMQTTClient {
     /// Disconnect unexpectedly.
     /// This keeps auto-reconnect behavior enabled.
     func internal_disconnect() {
+        autoReconnectLock.lock()
+        pendingSocketDisconnectReconnectAttemptCount = reconnectAttemptCount
+        autoReconnectLock.unlock()
+
         is_internal_disconnected = false
         socket.disconnect()
+    }
+
+    /// Pause auto-reconnect attempts without disabling `autoReconnect`.
+    ///
+    /// Use this when the application knows reconnect attempts should not run yet,
+    /// for example while waiting for network reachability to recover.
+    public func pauseAutoReconnect() {
+        autoReconnectLock.lock()
+        _isAutoReconnectPaused = true
+        if isAutoReconnectAttemptScheduled {
+            hasPausedAutoReconnectAttempt = true
+            isAutoReconnectAttemptScheduled = false
+        }
+        shouldResumeAutoReconnectAfterPendingDisconnect = false
+        autoReconnTimer = nil
+        autoReconnectLock.unlock()
+    }
+
+    /// Resume auto-reconnect attempts after `pauseAutoReconnect()`.
+    ///
+    /// If an auto-reconnect attempt is pending, this schedules the next reconnect
+    /// attempt immediately.
+    public func resumeAutoReconnect() {
+        autoReconnectLock.lock()
+        guard _isAutoReconnectPaused else {
+            autoReconnectLock.unlock()
+            return
+        }
+
+        _isAutoReconnectPaused = false
+
+        guard autoReconnect, connState == .disconnected else {
+            hasPausedAutoReconnectAttempt = false
+            hasPendingAutoReconnectAttempt = false
+            shouldResumeAutoReconnectAfterPendingDisconnect = false
+            autoReconnectLock.unlock()
+            return
+        }
+
+        if pendingSocketDisconnectReconnectAttemptCount != nil {
+            // Avoid reconnecting before socketDidDisconnect clears the old socket delegate.
+            shouldResumeAutoReconnectAfterPendingDisconnect = true
+            autoReconnectLock.unlock()
+            return
+        }
+
+        guard hasPausedAutoReconnectAttempt || hasPendingAutoReconnectAttempt else {
+            autoReconnectLock.unlock()
+            return
+        }
+
+        if !hasPausedAutoReconnectAttempt {
+            prepareAutoReconnectAttempt()
+        }
+        hasPausedAutoReconnectAttempt = false
+        hasPendingAutoReconnectAttempt = false
+        let schedule = scheduleAutoReconnectAttemptLocked(after: 0)
+        autoReconnectLock.unlock()
+
+        notifyAutoReconnectScheduled(schedule)
     }
 
     private func expected_disconnect() {
@@ -589,14 +668,51 @@ extension CocoaMQTT {
     }
 
     private func resetAutoReconnectState() {
+        autoReconnectLock.lock()
         reconnectTimeInterval = 0
         reconnectAttemptCount = 0
+        _isAutoReconnectPaused = false
         autoReconnTimer = nil
+        isAutoReconnectAttemptScheduled = false
+        hasPausedAutoReconnectAttempt = false
+        hasPendingAutoReconnectAttempt = false
+        pendingSocketDisconnectReconnectAttemptCount = nil
+        shouldResumeAutoReconnectAfterPendingDisconnect = false
+        autoReconnectLock.unlock()
     }
 
-    private func notifyAutoReconnectScheduled() {
-        delegate?.mqtt?(self, didScheduleReconnect: reconnectAttemptCount, after: reconnectTimeInterval)
-        didScheduleReconnect(self, reconnectAttemptCount, reconnectTimeInterval)
+    private func notifyAutoReconnectScheduled(_ schedule: (attemptCount: UInt, interval: UInt16)) {
+        __delegate_queue {
+            self.delegate?.mqtt?(self, didScheduleReconnect: schedule.attemptCount, after: schedule.interval)
+            self.didScheduleReconnect(self, schedule.attemptCount, schedule.interval)
+        }
+    }
+
+    private func scheduleAutoReconnectAttemptLocked(after interval: UInt16? = nil) -> (attemptCount: UInt, interval: UInt16) {
+        let delay = interval ?? reconnectTimeInterval
+
+        printInfo("Try reconnect to server after \(delay)s")
+        isAutoReconnectAttemptScheduled = true
+        autoReconnTimer = CocoaMQTTTimer.after(Double(delay), name: "autoReconnTimer", { [weak self] in
+            guard let self = self, self.prepareScheduledAutoReconnectFire() else { return }
+            _ = self.connect()
+        })
+
+        return (reconnectAttemptCount, delay)
+    }
+
+    private func prepareScheduledAutoReconnectFire() -> Bool {
+        autoReconnectLock.lock()
+        defer { autoReconnectLock.unlock() }
+
+        guard !_isAutoReconnectPaused else {
+            isAutoReconnectAttemptScheduled = false
+            return false
+        }
+
+        isAutoReconnectAttemptScheduled = false
+        updateAutoReconnectIntervalForNextAttempt()
+        return true
     }
 }
 
@@ -656,6 +772,12 @@ extension CocoaMQTT: CocoaMQTTSocketDelegate {
         }
 
         connState = .disconnected
+        autoReconnectLock.lock()
+        let reconnectAttemptCountBeforeCallbacks = pendingSocketDisconnectReconnectAttemptCount ?? reconnectAttemptCount
+        if !is_internal_disconnected && autoReconnect {
+            pendingSocketDisconnectReconnectAttemptCount = reconnectAttemptCountBeforeCallbacks
+        }
+        autoReconnectLock.unlock()
         delegate?.mqttDidDisconnect(self, withError: err)
         didDisconnect(self, err)
 
@@ -669,16 +791,32 @@ extension CocoaMQTT: CocoaMQTTSocketDelegate {
             return
         }
 
-        prepareAutoReconnectAttempt()
+        autoReconnectLock.lock()
+        pendingSocketDisconnectReconnectAttemptCount = nil
+        guard !_isAutoReconnectPaused,
+              !isAutoReconnectAttemptScheduled,
+              reconnectAttemptCount == reconnectAttemptCountBeforeCallbacks else {
+            if _isAutoReconnectPaused,
+               !isAutoReconnectAttemptScheduled,
+               reconnectAttemptCount == reconnectAttemptCountBeforeCallbacks {
+                hasPendingAutoReconnectAttempt = true
+            }
+            shouldResumeAutoReconnectAfterPendingDisconnect = false
+            autoReconnectLock.unlock()
+            return
+        }
 
-        // Start reconnector once socket error occurred
-        printInfo("Try reconnect to server after \(reconnectTimeInterval)s")
-        notifyAutoReconnectScheduled()
-        autoReconnTimer = CocoaMQTTTimer.after(Double(reconnectTimeInterval), name: "autoReconnTimer", { [weak self] in
-            guard let self = self else { return }
-            self.updateAutoReconnectIntervalForNextAttempt()
-            _ = self.connect()
-        })
+        let shouldResumeAfterPendingDisconnect = shouldResumeAutoReconnectAfterPendingDisconnect
+        shouldResumeAutoReconnectAfterPendingDisconnect = false
+        if !hasPausedAutoReconnectAttempt {
+            prepareAutoReconnectAttempt()
+        }
+        hasPausedAutoReconnectAttempt = false
+        hasPendingAutoReconnectAttempt = false
+        let schedule = scheduleAutoReconnectAttemptLocked(after: shouldResumeAfterPendingDisconnect ? 0 : nil)
+        autoReconnectLock.unlock()
+
+        notifyAutoReconnectScheduled(schedule)
     }
 }
 
