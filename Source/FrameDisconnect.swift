@@ -102,20 +102,50 @@ extension FrameDisconnect {
 extension FrameDisconnect: InitialWithBytes {
 
     init?(packetFixedHeaderType: UInt8, bytes: [UInt8]) {
-        let protocolVersion = CocoaMQTTProtocolVersion.legacyConfiguredVersion
-        self.init(packetFixedHeaderType: packetFixedHeaderType, bytes: bytes, protocolVersion: protocolVersion)
+        self.init(packetFixedHeaderType: packetFixedHeaderType, bytes: bytes, protocolVersion: .v311)
     }
 
     init?(packetFixedHeaderType: UInt8, bytes: [UInt8], protocolVersion: CocoaMQTTProtocolVersion) {
+        guard protocolVersion == .v5, packetFixedHeaderType == FrameType.disconnect.rawValue else { return nil }
+        if bytes.isEmpty {
+            receiveReasonCode = .normalDisconnection
+            return
+        }
 
-        if protocolVersion == .v5 {
-            if bytes.isEmpty {
-                receiveReasonCode = .normalDisconnection
-            } else {
-                receiveReasonCode = CocoaMQTTDISCONNECTReasonCode(rawValue: bytes[0])
+        guard var reader = MQTTByteReader(bytes),
+              let reasonByte = reader.readByte(),
+              let reasonCode = CocoaMQTTDISCONNECTReasonCode(rawValue: reasonByte) else { return nil }
+        receiveReasonCode = reasonCode
+        guard !reader.isAtEnd else { return }
+        guard let propertyLength = reader.readVariableByteInteger(),
+              var properties = reader.readSection(length: propertyLength),
+              reader.isAtEnd else { return nil }
+
+        var singleUseProperties = Set<CocoaMQTTPropertyName>()
+        while !properties.isAtEnd {
+            guard let identifier = properties.readVariableByteInteger(),
+                  let propertyName = UInt8(exactly: identifier).flatMap(CocoaMQTTPropertyName.init(rawValue:)) else {
+                return nil
             }
-        } else {
-            return nil
+            if propertyName != .userProperty {
+                guard singleUseProperties.insert(propertyName).inserted else { return nil }
+            }
+            switch propertyName {
+            case .reasonString:
+                guard let value = properties.readUTF8String() else { return nil }
+                reasonString = value
+            case .userProperty:
+                guard let key = properties.readUTF8String(),
+                      let value = properties.readUTF8String() else { return nil }
+                if userProperties == nil { userProperties = [:] }
+                userProperties?[key] = value
+            case .serverReference:
+                guard let value = properties.readUTF8String() else { return nil }
+                serverReference = value
+            default:
+                // A Server MUST NOT send Session Expiry Interval in DISCONNECT.
+                return nil
+            }
         }
     }
 

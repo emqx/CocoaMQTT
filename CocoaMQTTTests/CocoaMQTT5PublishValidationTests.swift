@@ -1,10 +1,6 @@
 //
 //  CocoaMQTT5PublishValidationTests.swift
 //  CocoaMQTTTests
-//
-//  Created by Codex on 2026/02/24.
-//
-
 import XCTest
 @testable import CocoaMQTT
 
@@ -27,5 +23,15 @@ final class CocoaMQTT5PublishValidationTests: XCTestCase {
 
         let msgId = mqtt5.publish("t/1", withString: "payload", qos: .qos1, DUP: true, retained: false, properties: properties)
         XCTAssertGreaterThan(msgId, 0)
+    }
+
+    func testPublishRejectsClientSubscriptionIdentifier() {
+        let mqtt5 = CocoaMQTT5(clientID: "mq5-subscription-identifier-\(UUID().uuidString)")
+        let properties = MqttPublishProperties(subscriptionIdentifier: 1)
+
+        XCTAssertEqual(
+            mqtt5.publish("t/1", withString: "payload", properties: properties),
+            -1
+        )
     }
 }

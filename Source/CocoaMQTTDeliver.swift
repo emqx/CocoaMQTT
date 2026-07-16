@@ -68,8 +68,10 @@ class CocoaMQTTDeliver: NSObject {
 
     var storage: CocoaMQTTStorage?
 
-    func recoverSessionBy(_ storage: CocoaMQTTStorage) {
+    func recoverSessionBy(_ storage: CocoaMQTTStorage,
+                          prepare: ([Frame]) -> Void = { _ in }) {
         let frames = storage.readAll()
+        prepare(frames)
         // Sync to push the frame to mqueue for avoiding overcommit
         deliverQueue.sync {
             self.storage = storage
@@ -119,7 +121,8 @@ class CocoaMQTTDeliver: NSObject {
     }
 
     /// Acknowledge a PUBLISH/PUBREL by msgid
-    func ack(by frame: Frame) {
+    @discardableResult
+    func ack(by frame: Frame) -> Bool {
         let msgid: UInt16
         if let puback = frame as? FramePubAck {
             msgid = puback.msgid
@@ -128,7 +131,7 @@ class CocoaMQTTDeliver: NSObject {
         } else if let pubcom = frame as? FramePubComp {
             msgid = pubcom.msgid
         } else {
-            return
+            return false
         }
 
         let ackType = frame.type
@@ -136,8 +139,7 @@ class CocoaMQTTDeliver: NSObject {
         let shouldRemoveFromStorage = frame is FramePubAck || frame is FramePubComp || failedPubRec
         let ackFrameDescription = String(describing: frame)
 
-        deliverQueue.async { [weak self] in
-            guard let self = self else { return }
+        return deliverQueue.sync {
             let acked = self.ackInflightFrame(
                 withMsgid: msgid,
                 type: ackType,
@@ -153,6 +155,7 @@ class CocoaMQTTDeliver: NSObject {
                 printDebug("Acknowledge frame id \(msgid) success, acked: \(acked)")
                 self.tryTransport()
             }
+            return !acked.isEmpty && shouldRemoveFromStorage
         }
     }
 

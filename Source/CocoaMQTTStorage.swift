@@ -91,7 +91,11 @@ final class CocoaMQTTStorage: CocoaMQTTStorageProtocol {
         guard frame.qos > .qos0 else {
             return false
         }
-        userDefault.set(frame.bytes(version: protocolVersion.rawValue), forKey: key(frame.msgid))
+        var persistedFrame = frame
+        if let persistenceTopic = frame.persistenceTopic {
+            persistedFrame.topic = persistenceTopic
+        }
+        userDefault.set(persistedFrame.bytes(version: protocolVersion.rawValue), forKey: key(frame.msgid))
         return true
     }
 
@@ -120,6 +124,20 @@ final class CocoaMQTTStorage: CocoaMQTTStorageProtocol {
         for storedKey in userDefault.dictionaryRepresentation().keys where messageIdentifier(for: storedKey) != nil {
             userDefault.removeObject(forKey: storedKey)
         }
+        userDefault.removeObject(forKey: sessionExpiryDeadlineKey)
+    }
+
+    func setSessionExpiryDeadline(_ deadline: Date?) {
+        if let deadline = deadline {
+            userDefault.set(deadline.timeIntervalSince1970, forKey: sessionExpiryDeadlineKey)
+        } else {
+            userDefault.removeObject(forKey: sessionExpiryDeadlineKey)
+        }
+    }
+
+    func sessionExpiryDeadline() -> Date? {
+        guard userDefault.object(forKey: sessionExpiryDeadlineKey) != nil else { return nil }
+        return Date(timeIntervalSince1970: userDefault.double(forKey: sessionExpiryDeadlineKey))
     }
 
     func synchronize() -> Bool {
@@ -143,6 +161,10 @@ final class CocoaMQTTStorage: CocoaMQTTStorageProtocol {
 
     private var namespacePrefix: String {
         return "mqtt-\(protocolVersion.rawValue)-"
+    }
+
+    private var sessionExpiryDeadlineKey: String {
+        return "\(namespacePrefix)session-expiry-deadline"
     }
 
     private func messageIdentifier(for storedKey: String) -> UInt16? {

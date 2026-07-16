@@ -303,8 +303,7 @@ public class CocoaMQTT: NSObject, CocoaMQTTClient {
     /// Sending messages
     fileprivate var sendingMessages = ThreadSafeDictionary<UInt64, CocoaMQTTMessage>(label: "sendingMessages")
 
-    /// message id counter
-    private var _msgid: UInt16 = 0
+    private let packetIdentifiers = MQTTPacketIdentifierAllocator()
     private var _deliveryToken = UInt64(UInt16.max)
     private let messageIdentifierLock = NSLock()
     fileprivate var socket: CocoaMQTTSocketProtocol
@@ -367,16 +366,6 @@ public class CocoaMQTT: NSObject, CocoaMQTTClient {
         reader!.start()
     }
 
-    fileprivate func nextMessageID() -> UInt16 {
-        messageIdentifierLock.lock()
-        defer { messageIdentifierLock.unlock() }
-        if _msgid == UInt16.max {
-            _msgid = 0
-        }
-        _msgid += 1
-        return _msgid
-    }
-
     fileprivate func nextDeliveryToken() -> UInt64 {
         messageIdentifierLock.lock()
         defer { messageIdentifierLock.unlock() }
@@ -390,6 +379,25 @@ public class CocoaMQTT: NSObject, CocoaMQTTClient {
 
     fileprivate func discardStoredSession() {
         CocoaMQTTStorage(by: clientID, protocolVersion: .v311)?.removeAll()
+    }
+
+    private func discardCurrentSession() {
+        discardStoredSession()
+        deliver.cleanAll(discardStored: true)
+        sendingMessages.removeAll()
+        subscriptionsWaitingAck.removeAll()
+        unsubscriptionsWaitingAck.removeAll()
+        subscriptionsStorage.removeAll()
+        packetIdentifiers.reset()
+    }
+
+    private func clearPendingSubscriptionRequests() {
+        for identifier in subscriptionsWaitingAck.removeAllValues().keys {
+            packetIdentifiers.release(identifier)
+        }
+        for identifier in unsubscriptionsWaitingAck.removeAllValues().keys {
+            packetIdentifiers.release(identifier)
+        }
     }
 
     fileprivate func puback(_ type: FrameType, msgid: UInt16) {
@@ -560,6 +568,12 @@ public class CocoaMQTT: NSObject, CocoaMQTTClient {
     ///   - message: Message
     @discardableResult
     public func publish(_ message: CocoaMQTTMessage) -> Int {
+        guard hasValidMQTTUTF8Length(message.topic),
+              !message.topic.contains("+"), !message.topic.contains("#"),
+              message.qos <= .qos2 else {
+            printError("Invalid MQTT PUBLISH topic or QoS.")
+            return -1
+        }
         let msgid: UInt16
         let deliveryToken: UInt64
 
@@ -567,7 +581,11 @@ public class CocoaMQTT: NSObject, CocoaMQTTClient {
             msgid = 0
             deliveryToken = nextDeliveryToken()
         } else {
-            msgid = nextMessageID()
+            guard let identifier = packetIdentifiers.reserve() else {
+                printError("No MQTT Packet Identifier is available for PUBLISH.")
+                return -1
+            }
+            msgid = identifier
             deliveryToken = UInt64(msgid)
         }
 
@@ -579,11 +597,12 @@ public class CocoaMQTT: NSObject, CocoaMQTTClient {
         frame.retained = message.retained
         frame.deliveryToken = deliveryToken
 
-        sendingMessages.setValue(message, forKey: deliveryToken)
+        sendingMessages[deliveryToken] = message
 
         // Push frame to deliver message queue
         guard deliver.add(frame) else {
             sendingMessages.removeValue(forKey: deliveryToken)
+            packetIdentifiers.release(msgid)
             return -1
         }
 
@@ -604,10 +623,18 @@ public class CocoaMQTT: NSObject, CocoaMQTTClient {
     /// - Parameters:
     ///   - topics: A list of tuples presented by `(<Topic Names>/<Topic Filters>, Qos)`
     public func subscribe(_ topics: [(String, CocoaMQTTQoS)]) {
-        let msgid = nextMessageID()
+        guard !topics.isEmpty,
+              topics.allSatisfy({ hasValidMQTTUTF8Length($0.0) && $0.1 <= .qos2 }) else {
+            printError("Invalid MQTT SUBSCRIBE topic filter or QoS.")
+            return
+        }
+        guard let msgid = packetIdentifiers.reserve() else {
+            printError("No MQTT Packet Identifier is available for SUBSCRIBE.")
+            return
+        }
         let frame = FrameSubscribe(msgid: msgid, topics: topics)
-        send(frame, tag: Int(msgid))
         subscriptionsWaitingAck[msgid] = topics
+        send(frame, tag: Int(msgid))
     }
 
     /// Unsubscribe a Topic
@@ -623,7 +650,15 @@ public class CocoaMQTT: NSObject, CocoaMQTTClient {
     /// - Parameters:
     ///   - topics: A list of `<Topic Names>/<Topic Filters>`
     public func unsubscribe(_ topics: [String]) {
-        let msgid = nextMessageID()
+        guard !topics.isEmpty,
+              topics.allSatisfy({ hasValidMQTTUTF8Length($0) }) else {
+            printError("Invalid MQTT UNSUBSCRIBE topic filter.")
+            return
+        }
+        guard let msgid = packetIdentifiers.reserve() else {
+            printError("No MQTT Packet Identifier is available for UNSUBSCRIBE.")
+            return
+        }
         let frame = FrameUnsubscribe(msgid: msgid, topics: topics)
         unsubscriptionsWaitingAck[msgid] = topics
         send(frame, tag: Int(msgid))
@@ -653,8 +688,7 @@ extension CocoaMQTT: CocoaMQTTDeliverProtocol {
                 )
             }
 
-            let writeTag = publish.qos == .qos0 ? Int(deliveryToken) : Int(msgid)
-            send(publish, tag: writeTag)
+            send(publish, tag: Int(msgid))
 
             if let message = message {
                 self.delegate?.mqtt(self, didPublishMessage: message, id: msgid)
@@ -769,11 +803,7 @@ extension CocoaMQTT: CocoaMQTTSocketDelegate {
         sendConnectFrame()
     }
 
-    public func socket(_ socket: CocoaMQTTSocketProtocol, didWriteDataWithTag tag: Int) {
-        if tag > Int(UInt16.max) {
-            sendingMessages.removeValue(forKey: UInt64(tag))
-        }
-    }
+    public func socket(_ socket: CocoaMQTTSocketProtocol, didWriteDataWithTag tag: Int) {}
 
     public func socket(_ socket: CocoaMQTTSocketProtocol, didRead data: Data, withTag tag: Int) {
         let etag = CocoaMQTTReadTag(rawValue: tag)!
@@ -793,11 +823,10 @@ extension CocoaMQTT: CocoaMQTTSocketDelegate {
     public func socketDidDisconnect(_ socket: CocoaMQTTSocketProtocol, withError err: Error?) {
         // Clean up
         socket.setDelegate(nil, delegateQueue: nil)
+        clearPendingSubscriptionRequests()
         sendingMessages.removeValues { key, _ in key > UInt64(UInt16.max) }
         if cleanSession {
-            discardStoredSession()
-            deliver.cleanAll(discardStored: true)
-            sendingMessages.removeAllSync()
+            discardCurrentSession()
         }
         if is_internal_disconnected || !autoReconnect {
             resetAutoReconnectState()
@@ -882,13 +911,24 @@ extension CocoaMQTT: CocoaMQTTReaderDelegate {
 
             // recover session if enable
 
-            if cleanSession {
-                discardStoredSession()
-                deliver.cleanAll(discardStored: true)
-                sendingMessages.removeAllSync()
+            if cleanSession || !connack.sessPresent {
+                discardCurrentSession()
+                if !cleanSession,
+                   let storage = CocoaMQTTStorage(by: clientID, protocolVersion: .v311) {
+                    deliver.recoverSessionBy(storage)
+                }
             } else {
                 if let storage = CocoaMQTTStorage(by: clientID, protocolVersion: .v311) {
-                    deliver.recoverSessionBy(storage)
+                    deliver.cleanAll()
+                    deliver.recoverSessionBy(storage) { [packetIdentifiers] frames in
+                        for frame in frames {
+                            if let publish = frame as? FramePublish {
+                                packetIdentifiers.markInUse(publish.msgid)
+                            } else if let pubrel = frame as? FramePubRel {
+                                packetIdentifiers.markInUse(pubrel.msgid)
+                            }
+                        }
+                    }
                 } else {
                     printWarning("Localstorage initial failed for key: \(clientID)")
                 }
@@ -926,8 +966,10 @@ extension CocoaMQTT: CocoaMQTTReaderDelegate {
     func didReceive(_ reader: CocoaMQTTReader, puback: FramePubAck) {
         printDebug("RECV: \(puback)")
 
-        deliver.ack(by: puback)
-        sendingMessages.removeValue(forKey: UInt64(puback.msgid))
+        if deliver.ack(by: puback) {
+            packetIdentifiers.release(puback.msgid)
+            sendingMessages.removeValue(forKey: UInt64(puback.msgid))
+        }
 
         delegate?.mqtt(self, didPublishAck: puback.msgid)
         didPublishAck(self, puback.msgid)
@@ -948,8 +990,10 @@ extension CocoaMQTT: CocoaMQTTReaderDelegate {
     func didReceive(_ reader: CocoaMQTTReader, pubcomp: FramePubComp) {
         printDebug("RECV: \(pubcomp)")
 
-        deliver.ack(by: pubcomp)
-        sendingMessages.removeValue(forKey: UInt64(pubcomp.msgid))
+        if deliver.ack(by: pubcomp) {
+            packetIdentifiers.release(pubcomp.msgid)
+            sendingMessages.removeValue(forKey: UInt64(pubcomp.msgid))
+        }
 
         delegate?.mqtt?(self, didPublishComplete: pubcomp.msgid)
         didCompletePublish(self, pubcomp.msgid)
@@ -961,9 +1005,11 @@ extension CocoaMQTT: CocoaMQTTReaderDelegate {
             printWarning("UNEXPECT SUBACK Received: \(suback)")
             return
         }
+        packetIdentifiers.release(suback.msgid)
 
         guard topicsAndQos.count == suback.grantedQos.count else {
-            printWarning("UNEXPECT SUBACK Recivied: \(suback)")
+            printError("SUBACK return-code count does not match the SUBSCRIBE request.")
+            internal_disconnect()
             return
         }
 
@@ -989,6 +1035,7 @@ extension CocoaMQTT: CocoaMQTTReaderDelegate {
             printWarning("UNEXPECT UNSUBACK Received: \(unsuback.msgid)")
             return
         }
+        packetIdentifiers.release(unsuback.msgid)
         // Remove local subscription
         for t in topics {
             subscriptionsStorage.removeValue(forKey: t)
@@ -1019,5 +1066,9 @@ extension CocoaMQTT: CocoaMQTTReaderDelegate {
 extension CocoaMQTT {
     func t_sendingMessagesCount() -> Int {
         sendingMessages.snapshot().count
+    }
+
+    func t_reservedPacketIdentifierCount() -> Int {
+        packetIdentifiers.reservedCount
     }
 }

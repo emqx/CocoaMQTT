@@ -81,8 +81,7 @@ extension FrameConnAck {
 extension FrameConnAck: InitialWithBytes {
 
     init?(packetFixedHeaderType: UInt8, bytes: [UInt8]) {
-        let protocolVersion = CocoaMQTTProtocolVersion.legacyConfiguredVersion
-        self.init(packetFixedHeaderType: packetFixedHeaderType, bytes: bytes, protocolVersion: protocolVersion)
+        self.init(packetFixedHeaderType: packetFixedHeaderType, bytes: bytes, protocolVersion: .v311)
     }
 
     init?(packetFixedHeaderType: UInt8, bytes: [UInt8], protocolVersion: CocoaMQTTProtocolVersion) {
@@ -90,23 +89,26 @@ extension FrameConnAck: InitialWithBytes {
             return nil
         }
 
-        guard bytes.count >= 2 else {
+        guard bytes.count >= 2, bytes[0] & 0xfe == 0 else {
             return nil
         }
 
         sessPresent = Bool(bit: bytes[0] & 0x01)
 
-        let mqtt5ack = CocoaMQTTCONNACKReasonCode(rawValue: bytes[1])
-        reasonCode = mqtt5ack
-
-        let ack = CocoaMQTTConnAck(byte: bytes[1])
-        returnCode = ack
-
         if protocolVersion == .v5 {
+            guard let ack = CocoaMQTTCONNACKReasonCode(rawValue: bytes[1]) else { return nil }
+            reasonCode = ack
             propertiesBytes = bytes
-            self.connackProperties = MqttDecodeConnAck()
-            self.connackProperties!.properties(connackData: bytes, protocolVersion: protocolVersion)
+            let decodedProperties = MqttDecodeConnAck()
+            guard decodedProperties.properties(connackData: bytes,
+                                               protocolVersion: protocolVersion) else { return nil }
+            connackProperties = decodedProperties
+        } else {
+            guard bytes.count == 2, bytes[1] < CocoaMQTTConnAck.reserved.rawValue else { return nil }
+            returnCode = CocoaMQTTConnAck(byte: bytes[1])
         }
+
+        guard bytes[1] == 0 || !sessPresent else { return nil }
     }
 }
 

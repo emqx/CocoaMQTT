@@ -153,6 +153,12 @@
 		92445BEC2ADFBEA4009D16AB /* ThreadSafeDictionary.swift in Sources */ = {isa = PBXBuildFile; fileRef = 92445BEB2ADFBEA4009D16AB /* ThreadSafeDictionary.swift */; };
 		92445BED2ADFBEA4009D16AB /* ThreadSafeDictionary.swift in Sources */ = {isa = PBXBuildFile; fileRef = 92445BEB2ADFBEA4009D16AB /* ThreadSafeDictionary.swift */; };
 		92445BEE2ADFBEA4009D16AB /* ThreadSafeDictionary.swift in Sources */ = {isa = PBXBuildFile; fileRef = 92445BEB2ADFBEA4009D16AB /* ThreadSafeDictionary.swift */; };
+		F0A100000000000000000002 /* MQTTPacketIdentifierAllocator.swift in Sources */ = {isa = PBXBuildFile; fileRef = F0A100000000000000000001 /* MQTTPacketIdentifierAllocator.swift */; };
+		F0A100000000000000000003 /* MQTTPacketIdentifierAllocator.swift in Sources */ = {isa = PBXBuildFile; fileRef = F0A100000000000000000001 /* MQTTPacketIdentifierAllocator.swift */; };
+		F0A100000000000000000004 /* MQTTPacketIdentifierAllocator.swift in Sources */ = {isa = PBXBuildFile; fileRef = F0A100000000000000000001 /* MQTTPacketIdentifierAllocator.swift */; };
+		F0A200000000000000000002 /* MQTT5SessionState.swift in Sources */ = {isa = PBXBuildFile; fileRef = F0A200000000000000000001 /* MQTT5SessionState.swift */; };
+		F0A200000000000000000003 /* MQTT5SessionState.swift in Sources */ = {isa = PBXBuildFile; fileRef = F0A200000000000000000001 /* MQTT5SessionState.swift */; };
+		F0A200000000000000000004 /* MQTT5SessionState.swift in Sources */ = {isa = PBXBuildFile; fileRef = F0A200000000000000000001 /* MQTT5SessionState.swift */; };
 		A1B2C3D4E5F60718293A0001 /* utilities/ConcurrentAtomic.swift in Sources */ = {isa = PBXBuildFile; fileRef = A1B2C3D4E5F60718293A0011 /* utilities/ConcurrentAtomic.swift */; };
 		A1B2C3D4E5F60718293A0002 /* utilities/ConcurrentAtomic.swift in Sources */ = {isa = PBXBuildFile; fileRef = A1B2C3D4E5F60718293A0011 /* utilities/ConcurrentAtomic.swift */; };
 		A1B2C3D4E5F60718293A0003 /* utilities/ConcurrentAtomic.swift in Sources */ = {isa = PBXBuildFile; fileRef = A1B2C3D4E5F60718293A0011 /* utilities/ConcurrentAtomic.swift */; };
@@ -240,6 +246,8 @@
 		9228E8CC27610AA400063DF2 /* MqttAuthProperties.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = MqttAuthProperties.swift; sourceTree = "<group>"; };
 		9228E8CD27610AA400063DF2 /* MqttConnectProperties.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = MqttConnectProperties.swift; sourceTree = "<group>"; };
 		92445BEB2ADFBEA4009D16AB /* ThreadSafeDictionary.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = ThreadSafeDictionary.swift; sourceTree = "<group>"; };
+		F0A100000000000000000001 /* MQTTPacketIdentifierAllocator.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = MQTTPacketIdentifierAllocator.swift; sourceTree = "<group>"; };
+		F0A200000000000000000001 /* MQTT5SessionState.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = MQTT5SessionState.swift; sourceTree = "<group>"; };
 		A1B2C3D4E5F60718293A0011 /* utilities/ConcurrentAtomic.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = utilities/ConcurrentAtomic.swift; sourceTree = "<group>"; };
 		A1B2C3D4E5F60718293A0012 /* ConcurrentAtomicTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ConcurrentAtomicTests.swift; sourceTree = "<group>"; };
 		A1B2C3D4E5F60718293A0013 /* ThreadSafetyRegressionTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ThreadSafetyRegressionTests.swift; sourceTree = "<group>"; };
@@ -385,6 +393,8 @@
 			isa = PBXGroup;
 			children = (
 				92445BEB2ADFBEA4009D16AB /* ThreadSafeDictionary.swift */,
+				F0A100000000000000000001 /* MQTTPacketIdentifierAllocator.swift */,
+				F0A200000000000000000001 /* MQTT5SessionState.swift */,
 				A1B2C3D4E5F60718293A0011 /* utilities/ConcurrentAtomic.swift */,
 				9228E8C827610A9100063DF2 /* CocoaMQTTReasonCode.swift */,
 				9228E8C427610A8500063DF2 /* CocoaMQTTProperty.swift */,
@@ -628,6 +638,8 @@
 			isa = PBXSourcesBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
+				F0A100000000000000000003 /* MQTTPacketIdentifierAllocator.swift in Sources */,
+				F0A200000000000000000003 /* MQTT5SessionState.swift in Sources */,
 				1111248E24BB515E00E2DFBC /* CocoaMQTT.swift in Sources */,
 				9228E8CF27610AA400063DF2 /* MqttAuthProperties.swift in Sources */,
 				1111248F24BB515E00E2DFBC /* FrameConnAck.swift in Sources */,
@@ -679,6 +691,8 @@
 			isa = PBXSourcesBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
+				F0A100000000000000000004 /* MQTTPacketIdentifierAllocator.swift in Sources */,
+				F0A200000000000000000004 /* MQTT5SessionState.swift in Sources */,
 				111124B824BB516300E2DFBC /* CocoaMQTT.swift in Sources */,
 				9228E8D027610AA400063DF2 /* MqttAuthProperties.swift in Sources */,
 				111124B924BB516300E2DFBC /* FrameConnAck.swift in Sources */,
@@ -730,6 +744,8 @@
 			isa = PBXSourcesBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
+				F0A100000000000000000002 /* MQTTPacketIdentifierAllocator.swift in Sources */,
+				F0A200000000000000000002 /* MQTT5SessionState.swift in Sources */,
 				8225B53A227C2FC600E4DB51 /* CocoaMQTT.swift in Sources */,
 				9228E8CE27610AA400063DF2 /* MqttAuthProperties.swift in Sources */,
 				8D43DE4E22FAEC6700D9A06B /* FrameConnAck.swift in Sources */,

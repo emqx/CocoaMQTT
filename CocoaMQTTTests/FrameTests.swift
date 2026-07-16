@@ -57,12 +57,19 @@ class FrameTests: XCTestCase {
         XCTAssertEqual(connack.sessPresent, connack2?.sessPresent)
 
         connack.returnCode = .notAuthorized
-        connack.sessPresent = true
+        connack.sessPresent = false
         bytes = [UInt8](connack.bytes(version: "3.1.1")[2...])
         connack2 = FrameConnAck(packetFixedHeaderType: FrameType.connack.rawValue, bytes: bytes, protocolVersion: .v311)
 
         XCTAssertEqual(connack.returnCode, connack2?.returnCode)
         XCTAssertEqual(connack.sessPresent, connack2?.sessPresent)
+    }
+
+    func testFrameConnAckRejectsSessionPresentOnFailure() {
+        let frame = FrameConnAck(packetFixedHeaderType: FrameType.connack.rawValue,
+                                 bytes: [0x01, CocoaMQTTConnAck.notAuthorized.rawValue],
+                                 protocolVersion: .v311)
+        XCTAssertNil(frame)
     }
 
     func testFramePublish() {
@@ -164,6 +171,63 @@ class FrameTests: XCTestCase {
         XCTAssertEqual(frame?.topic, "")
     }
 
+    func testFramePublishRejectsInvalidDeclaredUTF8Payload() {
+        let frame = FramePublish(
+            packetFixedHeaderType: FrameType.publish.rawValue,
+            bytes: [0x00, 0x01, 0x74,
+                    0x02, CocoaMQTTPropertyName.payloadFormatIndicator.rawValue, 0x01,
+                    0xff],
+            protocolVersion: .v5
+        )
+        XCTAssertNil(frame)
+    }
+
+    func testPublicDecodersRejectWrongFixedHeaders() {
+        XCTAssertFalse(MqttDecodePublish().decodePublish(
+            fixedHeader: FrameType.puback.rawValue,
+            publishData: [0x00, 0x01, 0x74],
+            protocolVersion: .v311
+        ))
+        XCTAssertFalse(MqttDecodePubAck().decodePubAck(
+            fixedHeader: FrameType.pubrec.rawValue,
+            pubAckData: [0x00, 0x01],
+            protocolVersion: .v311
+        ))
+        XCTAssertFalse(MqttDecodePubRec().decodePubRec(
+            fixedHeader: FrameType.puback.rawValue,
+            pubAckData: [0x00, 0x01],
+            protocolVersion: .v311
+        ))
+        XCTAssertFalse(MqttDecodePubRel().decodePubRel(
+            fixedHeader: FrameType.pubrel.rawValue,
+            pubAckData: [0x00, 0x01],
+            protocolVersion: .v311
+        ))
+        XCTAssertFalse(MqttDecodePubComp().decodePubComp(
+            fixedHeader: FrameType.puback.rawValue,
+            pubAckData: [0x00, 0x01],
+            protocolVersion: .v311
+        ))
+        XCTAssertFalse(MqttDecodeSubAck().decodeSubAck(
+            fixedHeader: FrameType.unsuback.rawValue,
+            pubAckData: [0x00, 0x01, 0x00],
+            protocolVersion: .v311
+        ))
+        XCTAssertFalse(MqttDecodeUnsubAck().decodeUnSubAck(
+            fixedHeader: FrameType.suback.rawValue,
+            pubAckData: [0x00, 0x01],
+            protocolVersion: .v311
+        ))
+    }
+
+    func testMQTT311SubAckRejectsMQTT5OnlyReasonCode() {
+        XCTAssertFalse(MqttDecodeSubAck().decodeSubAck(
+            fixedHeader: FrameType.suback.rawValue,
+            pubAckData: [0x00, 0x01, CocoaMQTTSUBACKReasonCode.notAuthorized.rawValue],
+            protocolVersion: .v311
+        ))
+    }
+
     func testFramePubAck() {
 
         var puback = FramePubAck(msgid: 0x1010)
@@ -248,6 +312,22 @@ class FrameTests: XCTestCase {
         XCTAssertEqual(pubrel2?.packetFixedHeaderType, 0x62)
         XCTAssertEqual(pubrel2?.msgid, 0x1011)
         XCTAssertEqual(pubrel2?.bytes(version: "3.1.1"), [0x62, 0x02, 0x10, 0x11])
+    }
+
+    func testMQTT5FramePubRelAndPubCompExposeReasonCodes() {
+        let pubrel = FramePubRel(
+            packetFixedHeaderType: 0x62,
+            bytes: [0x00, 0x07, CocoaMQTTPUBRELReasonCode.packetIdentifierNotFound.rawValue],
+            protocolVersion: .v5
+        )
+        let pubcomp = FramePubComp(
+            packetFixedHeaderType: FrameType.pubcomp.rawValue,
+            bytes: [0x00, 0x07, CocoaMQTTPUBCOMPReasonCode.packetIdentifierNotFound.rawValue],
+            protocolVersion: .v5
+        )
+
+        XCTAssertEqual(pubrel?.reasonCode, .packetIdentifierNotFound)
+        XCTAssertEqual(pubcomp?.reasonCode, .packetIdentifierNotFound)
     }
 
     func testFramePubComp() {
@@ -473,5 +553,19 @@ class FrameTests: XCTestCase {
 
         let publishProperties = MqttPublishProperties(userProperty: ["k": "v"])
         XCTAssertEqual(publishProperties.properties, expectedProperty)
+    }
+
+    func testMQTT5BinaryPropertiesIncludeIdentifiersAndLengths() {
+        let auth = MqttAuthProperties()
+        auth.authenticationData = [0x01, 0x02]
+        XCTAssertEqual(auth.properties, [0x16, 0x00, 0x02, 0x01, 0x02])
+
+        let connect = MqttConnectProperties()
+        connect.authenticationData = [0x03, 0x04]
+        XCTAssertEqual(connect.properties, [0x16, 0x00, 0x02, 0x03, 0x04])
+
+        let publish = MqttPublishProperties()
+        publish.correlationData = [0x05, 0x06]
+        XCTAssertEqual(publish.properties, [0x09, 0x00, 0x02, 0x05, 0x06])
     }
 }

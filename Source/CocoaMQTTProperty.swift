@@ -37,133 +37,11 @@ public enum CocoaMQTTPropertyName: UInt8 {
     case sharedSubscriptionAvailable = 0x2A
 }
 
-public enum formatInt: Int {
-    case formatUint8 = 0x11
-    case formatUint16 = 0x12
-    case formatUint32 = 0x14
-    case formatSint8 = 0x21
-    case formatSint16 = 0x22
-    case formatSint32 = 0x24
-}
-
 func getMQTTPropertyData(type: UInt8, value: [UInt8]) -> [UInt8] {
     var properties = [UInt8]()
     properties.append(UInt8(type))
     properties += value
     return properties
-}
-
-func getMQTTPropertyLength(type: UInt8, value: [UInt8]) -> [UInt8] {
-    var properties = [UInt8]()
-    properties.append(UInt8(type))
-    properties += value
-    return properties
-}
-
-func integerCompute(data: [UInt8], formatType: Int, offset: Int) -> (res: Int, newOffset: Int)? {
-
-    switch formatType {
-    case formatInt.formatUint8.rawValue:
-        return (unsignedByteToInt(data: data[offset]), offset + 1)
-    case formatInt.formatUint16.rawValue:
-        return (unsignedBytesToInt(data0: data[offset], data1: data[offset + 1]), offset + 2)
-    case formatInt.formatUint32.rawValue:
-        return (unsignedBytesToInt(data0: data[offset], data1: data[offset + 1], data2: data[offset + 2], data3: data[offset + 3]), offset + 4)
-    case formatInt.formatSint8.rawValue:
-        return (unsignedToSigned(unsign: unsignedByteToInt(data: data[offset]), size: 8), offset + 1)
-    case formatInt.formatSint16.rawValue:
-        return (unsignedToSigned(unsign: unsignedBytesToInt(data0: data[offset], data1: data[offset + 1]), size: 16), offset + 2)
-    case formatInt.formatSint32.rawValue:
-        return (unsignedToSigned(unsign: unsignedBytesToInt(data0: data[offset], data1: data[offset + 1], data2: data[offset + 2], data3: data[offset + 3]), size: 32), offset + 4)
-    default:
-        printDebug("integerCompute nothing")
-    }
-
-    return nil
-}
-
-func unsignedByteToInt(data: UInt8) -> (Int) {
-    return (Int)(data & 0xFF)
-}
-
-func unsignedBytesToInt(data0: UInt8, data1: UInt8) -> (Int) {
-    return (unsignedByteToInt(data: data0) << 8) + unsignedByteToInt(data: data1)
-}
-
-func unsignedBytesToInt(data0: UInt8, data1: UInt8, data2: UInt8, data3: UInt8) -> (Int) {
-    return unsignedByteToInt(data: data3) + (unsignedByteToInt(data: data2) << 8) + (unsignedByteToInt(data: data1) << 16) + (unsignedByteToInt(data: data0) << 24)
-}
-
-func unsignedToSigned(unsign: NSInteger, size: NSInteger) -> (Int) {
-    var res = unsign
-    if (res & (1 << size-1)) != 0 {
-        res = -1 * ((1 << size-1) - (res & ((1 << size-1) - 1)))
-    }
-    return res
-}
-
-func unsignedByteToString(data: [UInt8], offset: Int) -> (resStr: String, newOffset: Int)? {
-    var newOffset = offset
-
-    if offset + 1 > data.count {
-        return nil
-    }
-
-    var length = 0
-    let comRes = integerCompute(data: data, formatType: formatInt.formatUint16.rawValue, offset: newOffset)
-    length = comRes!.res
-    newOffset = comRes!.newOffset
-
-    var stringData = Data()
-    for _ in 0 ..< length {
-        stringData.append(data[newOffset])
-        newOffset += 1
-    }
-    guard let res = String(data: stringData, encoding: .utf8) else {
-        return nil
-    }
-
-    return (res, newOffset)
-}
-
-func unsignedByteToBinary(data: [UInt8], offset: Int) -> (resStr: [UInt8], newOffset: Int)? {
-    var newOffset = offset
-
-    if offset + 1 > data.count {
-        return nil
-    }
-
-    var length = 0
-    let comRes = integerCompute(data: data, formatType: formatInt.formatUint16.rawValue, offset: newOffset)
-    length = comRes!.res
-    newOffset = comRes!.newOffset
-
-    var res = [UInt8]()
-    for _ in 0 ..< length {
-        res.append(data[newOffset])
-        newOffset += 1
-    }
-
-    return (res, newOffset)
-}
-
-// 1.5.5 Variable Byte Integer
-// The Variable Byte Integer is encoded using an encoding scheme which uses a single byte for values up to 127. Larger values are handled as follows. The least significant seven bits of each byte encode the data, and the most significant bit is used to indicate whether there are bytes following in the representation. Thus, each byte encodes 128 values and a "continuation bit". The maximum number of bytes in the Variable Byte Integer field is four. The encoded value MUST use the minimum number of bytes necessary to represent the value [MQTT-1.5.5-1]. This is shown in Table 1‑1 Size of Variable Byte Integer.
-func decodeVariableByteInteger(data: [UInt8], offset: Int) -> (res: Int, newOffset: Int) {
-    var newOffset = offset
-    var count = 0
-    var res: Int = 0
-    while newOffset < data.count {
-        let newValue = Int(data[newOffset] & 0x7f) << count
-        res += newValue
-        if (data[newOffset] & 0x80) == 0 || count >= 21 {
-            newOffset += 1
-            break
-        }
-        newOffset += 1
-        count += 7
-    }
-    return (res, newOffset)
 }
 
 func beVariableByteInteger(length: Int) -> [UInt8] {
@@ -186,4 +64,188 @@ func beVariableByteInteger(_ data: UInt32) -> [UInt8]? {
         return nil
     }
     return beVariableByteInteger(length: Int(data))
+}
+
+/// Bounds-checked reader used for data received from the network.
+struct MQTTByteReader {
+    private let data: [UInt8]
+    private let endIndex: Int
+    private(set) var index: Int
+
+    init?(_ data: [UInt8], offset: Int = 0, length: Int? = nil) {
+        let end = length.map { offset + $0 } ?? data.count
+        guard offset >= 0, end >= offset, end <= data.count else { return nil }
+        self.data = data
+        self.index = offset
+        self.endIndex = end
+    }
+
+    var isAtEnd: Bool { index == endIndex }
+    var remainingCount: Int { endIndex - index }
+
+    mutating func readByte() -> UInt8? {
+        guard index < endIndex else { return nil }
+        defer { index += 1 }
+        return data[index]
+    }
+
+    mutating func readUInt16() -> UInt16? {
+        guard let high = readByte(), let low = readByte() else { return nil }
+        return UInt16(high) << 8 | UInt16(low)
+    }
+
+    mutating func readUInt32() -> UInt32? {
+        guard let first = readByte(), let second = readByte(),
+              let third = readByte(), let fourth = readByte() else { return nil }
+        return UInt32(first) << 24 | UInt32(second) << 16 | UInt32(third) << 8 | UInt32(fourth)
+    }
+
+    mutating func readVariableByteInteger() -> Int? {
+        var value = 0
+        var multiplier = 1
+
+        for byteCount in 1...4 {
+            guard let byte = readByte() else { return nil }
+            value += Int(byte & 0x7f) * multiplier
+
+            if byte & 0x80 == 0 {
+                // MQTT requires the shortest possible representation.
+                if byteCount > 1 && value < multiplier {
+                    return nil
+                }
+                return value
+            }
+
+            guard byteCount < 4 else { return nil }
+            multiplier *= 128
+        }
+        return nil
+    }
+
+    mutating func readBytes(count: Int) -> [UInt8]? {
+        guard count >= 0, count <= remainingCount else { return nil }
+        let end = index + count
+        defer { index = end }
+        return Array(data[index..<end])
+    }
+
+    mutating func readUTF8String() -> String? {
+        guard let length = readUInt16(), let bytes = readBytes(count: Int(length)) else { return nil }
+        return String(bytes: bytes, encoding: .utf8)
+    }
+
+    mutating func readBinaryData() -> [UInt8]? {
+        guard let length = readUInt16() else { return nil }
+        return readBytes(count: Int(length))
+    }
+
+    mutating func readSection(length: Int) -> MQTTByteReader? {
+        guard length >= 0, length <= remainingCount,
+              let section = MQTTByteReader(data, offset: index, length: length) else { return nil }
+        index += length
+        return section
+    }
+}
+
+struct MQTTAcknowledgementData {
+    let msgid: UInt16
+    let reasonCode: UInt8
+    let propertyLength: Int
+    let reasonString: String?
+    let userProperty: [String: String]?
+}
+
+private func decodeReasonStringAndUserProperties(
+    _ properties: inout MQTTByteReader
+) -> (reasonString: String?, userProperty: [String: String]?)? {
+    var reasonString: String?
+    var userProperty: [String: String]?
+    while !properties.isAtEnd {
+        guard let propertyIdentifier = properties.readVariableByteInteger(),
+              let propertyName = UInt8(exactly: propertyIdentifier).flatMap(CocoaMQTTPropertyName.init(rawValue:)) else {
+            return nil
+        }
+        switch propertyName {
+        case .reasonString:
+            guard reasonString == nil, let value = properties.readUTF8String() else { return nil }
+            reasonString = value
+        case .userProperty:
+            guard let key = properties.readUTF8String(),
+                  let value = properties.readUTF8String() else { return nil }
+            if userProperty == nil { userProperty = [:] }
+            userProperty?[key] = value
+        default:
+            return nil
+        }
+    }
+    return (reasonString, userProperty)
+}
+
+func decodeAcknowledgement(_ bytes: [UInt8],
+                           protocolVersion: CocoaMQTTProtocolVersion) -> MQTTAcknowledgementData? {
+    guard var reader = MQTTByteReader(bytes),
+          let msgid = reader.readUInt16(), msgid != 0 else { return nil }
+
+    guard protocolVersion == .v5 else {
+        guard reader.isAtEnd else { return nil }
+        return MQTTAcknowledgementData(msgid: msgid,
+                                       reasonCode: 0,
+                                       propertyLength: 0,
+                                       reasonString: nil,
+                                       userProperty: nil)
+    }
+
+    guard let reasonCode = reader.isAtEnd ? UInt8(0) : reader.readByte() else { return nil }
+    if reader.isAtEnd {
+        return MQTTAcknowledgementData(msgid: msgid,
+                                       reasonCode: reasonCode,
+                                       propertyLength: 0,
+                                       reasonString: nil,
+                                       userProperty: nil)
+    }
+
+    guard let propertyLength = reader.readVariableByteInteger(),
+          var properties = reader.readSection(length: propertyLength),
+          reader.isAtEnd else { return nil }
+
+    guard let decodedProperties = decodeReasonStringAndUserProperties(&properties) else { return nil }
+
+    return MQTTAcknowledgementData(msgid: msgid,
+                                   reasonCode: reasonCode,
+                                   propertyLength: propertyLength,
+                                   reasonString: decodedProperties.reasonString,
+                                   userProperty: decodedProperties.userProperty)
+}
+
+struct MQTTReasonCodeListData {
+    let msgid: UInt16
+    let propertyLength: Int
+    let reasonString: String?
+    let userProperty: [String: String]?
+    let reasonCodes: [UInt8]
+}
+
+func decodeReasonCodeList(_ bytes: [UInt8],
+                          protocolVersion: CocoaMQTTProtocolVersion) -> MQTTReasonCodeListData? {
+    guard var reader = MQTTByteReader(bytes),
+          let msgid = reader.readUInt16(), msgid != 0 else { return nil }
+
+    if protocolVersion == .v311 {
+        guard let reasonCodes = reader.readBytes(count: reader.remainingCount) else { return nil }
+        return MQTTReasonCodeListData(msgid: msgid,
+                                      propertyLength: 0,
+                                      reasonString: nil,
+                                      userProperty: nil,
+                                      reasonCodes: reasonCodes)
+    }
+
+    guard let propertyLength = reader.readVariableByteInteger(),
+          var properties = reader.readSection(length: propertyLength),
+          let decodedProperties = decodeReasonStringAndUserProperties(&properties),
+          let reasonCodes = reader.readBytes(count: reader.remainingCount) else { return nil }
+    return MQTTReasonCodeListData(msgid: msgid,
+                                  propertyLength: propertyLength,
+                                  reasonString: decodedProperties.reasonString,
+                                  userProperty: decodedProperties.userProperty,
+                                  reasonCodes: reasonCodes)
 }

@@ -70,19 +70,50 @@ extension FrameAuth {
 extension FrameAuth: InitialWithBytes {
 
     init?(packetFixedHeaderType: UInt8, bytes: [UInt8]) {
-        let protocolVersion = CocoaMQTTProtocolVersion.legacyConfiguredVersion
-        self.init(packetFixedHeaderType: packetFixedHeaderType, bytes: bytes, protocolVersion: protocolVersion)
+        self.init(packetFixedHeaderType: packetFixedHeaderType, bytes: bytes, protocolVersion: .v311)
     }
 
     init?(packetFixedHeaderType: UInt8, bytes: [UInt8], protocolVersion: CocoaMQTTProtocolVersion) {
-        guard protocolVersion == .v5 else {
-            return nil
+        guard protocolVersion == .v5, packetFixedHeaderType == FrameType.auth.rawValue else { return nil }
+        guard var reader = MQTTByteReader(bytes),
+              let reasonByte = reader.readByte(),
+              let reasonCode = CocoaMQTTAUTHReasonCode(rawValue: reasonByte) else { return nil }
+        receiveReasonCode = reasonCode
+        guard let propertyLength = reader.readVariableByteInteger(),
+              var properties = reader.readSection(length: propertyLength),
+              reader.isAtEnd else { return nil }
+
+        let decodedProperties = MqttAuthProperties()
+        var singleUseProperties = Set<CocoaMQTTPropertyName>()
+        while !properties.isAtEnd {
+            guard let identifier = properties.readVariableByteInteger(),
+                  let propertyName = UInt8(exactly: identifier).flatMap(CocoaMQTTPropertyName.init(rawValue:)) else {
+                return nil
+            }
+            if propertyName != .userProperty {
+                guard singleUseProperties.insert(propertyName).inserted else { return nil }
+            }
+            switch propertyName {
+            case .authenticationMethod:
+                guard let value = properties.readUTF8String() else { return nil }
+                decodedProperties.authenticationMethod = value
+            case .authenticationData:
+                guard let value = properties.readBinaryData() else { return nil }
+                decodedProperties.authenticationData = value
+            case .reasonString:
+                guard let value = properties.readUTF8String() else { return nil }
+                decodedProperties.reasonString = value
+            case .userProperty:
+                guard let key = properties.readUTF8String(),
+                      let value = properties.readUTF8String() else { return nil }
+                if decodedProperties.userProperties == nil { decodedProperties.userProperties = [:] }
+                decodedProperties.userProperties?[key] = value
+            default:
+                return nil
+            }
         }
-        if bytes.isEmpty {
-            receiveReasonCode = .success
-        } else {
-            receiveReasonCode = CocoaMQTTAUTHReasonCode(rawValue: bytes[0])
-        }
+        guard decodedProperties.authenticationMethod != nil else { return nil }
+        authProperties = decodedProperties
     }
 
 }

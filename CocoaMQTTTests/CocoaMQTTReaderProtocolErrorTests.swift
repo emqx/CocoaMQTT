@@ -52,6 +52,56 @@ final class CocoaMQTTReaderProtocolErrorTests: XCTestCase {
         XCTAssertEqual(delegate.publishCount, 0)
     }
 
+    func testTruncatedMQTT5PublishPropertyDisconnectsWithoutCrashing() {
+        let socket = SocketSpy()
+        let delegate = ReaderDelegateSpy()
+        let reader = CocoaMQTTReader(socket: socket, delegate: delegate, protocolVersion: .v5)
+        let body: [UInt8] = [0x00, 0x01, 0x41, 0x02, CocoaMQTTPropertyName.topicAlias.rawValue]
+
+        reader.headerReady(FrameType.publish.rawValue)
+        reader.lengthReady(UInt8(body.count))
+        reader.payloadReady(Data(body))
+
+        XCTAssertEqual(socket.disconnectCount, 1)
+        XCTAssertEqual(delegate.publishCount, 0)
+    }
+
+    func testTruncatedMQTT5AcknowledgementPropertyDisconnectsWithoutCrashing() {
+        let socket = SocketSpy()
+        let reader = CocoaMQTTReader(socket: socket, delegate: ReaderDelegateSpy(), protocolVersion: .v5)
+        let body: [UInt8] = [0x00, 0x01, 0x00, 0x02, CocoaMQTTPropertyName.reasonString.rawValue]
+
+        reader.headerReady(FrameType.puback.rawValue)
+        reader.lengthReady(UInt8(body.count))
+        reader.payloadReady(Data(body))
+
+        XCTAssertEqual(socket.disconnectCount, 1)
+    }
+
+    func testRemainingLengthLongerThanFourBytesDisconnects() {
+        let socket = SocketSpy()
+        let reader = CocoaMQTTReader(socket: socket, delegate: ReaderDelegateSpy())
+
+        reader.headerReady(FrameType.publish.rawValue)
+        reader.lengthReady(0x80)
+        reader.lengthReady(0x80)
+        reader.lengthReady(0x80)
+        reader.lengthReady(0x80)
+
+        XCTAssertEqual(socket.disconnectCount, 1)
+    }
+
+    func testNonMinimalRemainingLengthDisconnects() {
+        let socket = SocketSpy()
+        let reader = CocoaMQTTReader(socket: socket, delegate: ReaderDelegateSpy())
+
+        reader.headerReady(FrameType.pingresp.rawValue)
+        reader.lengthReady(0x80)
+        reader.lengthReady(0x00)
+
+        XCTAssertEqual(socket.disconnectCount, 1)
+    }
+
     func testUnknownFrameTypeDisconnectsSocket() {
         let socket = SocketSpy()
         let delegate = ReaderDelegateSpy()
@@ -80,12 +130,31 @@ final class CocoaMQTTReaderProtocolErrorTests: XCTestCase {
         let socket = SocketSpy()
         let delegate = ReaderDelegateSpy()
         let reader = CocoaMQTTReader(socket: socket, delegate: delegate, protocolVersion: .v5)
+        let body: [UInt8] = [
+            CocoaMQTTAUTHReasonCode.success.rawValue,
+            0x04,
+            CocoaMQTTPropertyName.authenticationMethod.rawValue,
+            0x00, 0x01, 0x6d
+        ]
+
+        reader.headerReady(FrameType.auth.rawValue)
+        reader.lengthReady(UInt8(body.count))
+        reader.payloadReady(Data(body))
+
+        XCTAssertEqual(socket.disconnectCount, 0)
+        XCTAssertEqual(delegate.authCount, 1)
+    }
+
+    func testMQTT5AuthWithoutAuthenticationMethodDisconnects() {
+        let socket = SocketSpy()
+        let delegate = ReaderDelegateSpy()
+        let reader = CocoaMQTTReader(socket: socket, delegate: delegate, protocolVersion: .v5)
 
         reader.headerReady(FrameType.auth.rawValue)
         reader.lengthReady(0x00)
 
-        XCTAssertEqual(socket.disconnectCount, 0)
-        XCTAssertEqual(delegate.authCount, 1)
+        XCTAssertEqual(socket.disconnectCount, 1)
+        XCTAssertEqual(delegate.authCount, 0)
     }
 
     func testMQTT5RejectedSubAckDoesNotProtocolError() {
@@ -147,7 +216,14 @@ final class CocoaMQTTReaderProtocolErrorTests: XCTestCase {
 
         setMqtt3Version()
         mqtt5Reader.headerReady(FrameType.auth.rawValue)
-        mqtt5Reader.lengthReady(0x00)
+        let authBody: [UInt8] = [
+            CocoaMQTTAUTHReasonCode.success.rawValue,
+            0x04,
+            CocoaMQTTPropertyName.authenticationMethod.rawValue,
+            0x00, 0x01, 0x6d
+        ]
+        mqtt5Reader.lengthReady(UInt8(authBody.count))
+        mqtt5Reader.payloadReady(Data(authBody))
 
         XCTAssertEqual(mqtt311Socket.disconnectCount, 1)
         XCTAssertEqual(mqtt311Delegate.authCount, 0)

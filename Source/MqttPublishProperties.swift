@@ -45,7 +45,7 @@ public class MqttPublishProperties: NSObject {
         self.messageExpiryInterval = messageExpiryInterval
         self.topicAlias = topicAlias
         self.responseTopic = responseTopic
-        self.correlationData = correlation?.bytesWithLength
+        self.correlationData = correlation.map { Array($0.utf8) }
         self.userProperty = userProperty
         self.subscriptionIdentifier = subscriptionIdentifier
         self.contentType = contentType
@@ -71,8 +71,14 @@ public class MqttPublishProperties: NSObject {
             properties += getMQTTPropertyData(type: CocoaMQTTPropertyName.responseTopic.rawValue, value: responseTopic.bytesWithLength)
         }
         // 3.3.2.3.6 Correlation Data
-        if let correlationData = self.correlationData {
-            properties += getMQTTPropertyData(type: CocoaMQTTPropertyName.correlationData.rawValue, value: correlationData)
+        if let correlationData = self.correlationData,
+           correlationData.count <= Int(UInt16.max) {
+            properties += getMQTTPropertyData(
+                type: CocoaMQTTPropertyName.correlationData.rawValue,
+                value: UInt16(correlationData.count).hlBytes + correlationData
+            )
+        } else if correlationData != nil {
+            printError("Correlation Data exceeds the MQTT binary data limit.")
         }
         // 3.3.2.3.7 Property Length User Property
         if let userProperty = self.userProperty {
@@ -89,5 +95,28 @@ public class MqttPublishProperties: NSObject {
         }
 
         return properties
+    }
+
+    func isValid(forTopic topic: String, payload: [UInt8]) -> Bool {
+        let hasTopic = hasValidMQTTUTF8Length(topic)
+        let hasAlias = topic.isEmpty && topicAlias != nil && topicAlias != 0
+        let hasValidTopic = hasTopic || hasAlias
+        guard hasValidTopic, !topic.contains("+"), !topic.contains("#"),
+              topicAlias.map({ $0 != 0 }) ?? true,
+              subscriptionIdentifier == nil,
+              (correlationData?.count ?? 0) <= Int(UInt16.max),
+              hasValidMQTTUserProperties(userProperty) else { return false }
+
+        if let responseTopic = responseTopic {
+            guard hasValidMQTTUTF8Length(responseTopic),
+                  !responseTopic.contains("+"), !responseTopic.contains("#") else { return false }
+        }
+        if let contentType = contentType {
+            guard hasValidMQTTUTF8Length(contentType, allowEmpty: true) else { return false }
+        }
+        if payloadFormatIndicator == .utf8 {
+            guard String(bytes: payload, encoding: .utf8) != nil else { return false }
+        }
+        return true
     }
 }

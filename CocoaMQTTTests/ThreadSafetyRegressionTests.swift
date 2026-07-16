@@ -63,7 +63,7 @@ final class ThreadSafetyRegressionTests: XCTestCase {
         }
 
         XCTAssertEqual(group.wait(timeout: .now() + 10), .success)
-        XCTAssertTrue(waitUntil(timeout: 2) { store.snapshot().count == topics.count })
+        XCTAssertEqual(store.snapshot().count, topics.count)
 
         let readQueue = DispatchQueue(label: "tests.threadsafe.subscriptions.read", attributes: .concurrent)
         let readGroup = DispatchGroup()
@@ -169,7 +169,7 @@ final class ThreadSafetyRegressionTests: XCTestCase {
                 let identifier = mqtt.publish(
                     CocoaMQTTMessage(topic: "t/\(index)", payload: [UInt8(index % 255)], qos: .qos1)
                 )
-                identifiers.setValue(true, forKey: identifier)
+                identifiers[identifier] = true
                 group.leave()
             }
         }
@@ -179,6 +179,24 @@ final class ThreadSafetyRegressionTests: XCTestCase {
         XCTAssertFalse(identifiers.snapshot().keys.contains(-1))
 
         mqtt.socketDidDisconnect(SocketStub(), withError: nil)
+    }
+
+    func testPacketIdentifierAllocatorExhaustionAndReuse() {
+        let allocator = MQTTPacketIdentifierAllocator()
+        var identifiers = Set<UInt16>()
+
+        for _ in 0..<Int(UInt16.max) {
+            guard let identifier = allocator.reserve() else {
+                return XCTFail("Allocator exhausted before all valid identifiers were reserved")
+            }
+            XCTAssertTrue(identifiers.insert(identifier).inserted)
+        }
+
+        XCTAssertEqual(allocator.reservedCount, Int(UInt16.max))
+        XCTAssertNil(allocator.reserve())
+        allocator.release(42)
+        XCTAssertEqual(allocator.reserve(), 42)
+        XCTAssertFalse(allocator.reserve(0))
     }
 
     private final class SocketStub: CocoaMQTTSocketProtocol {

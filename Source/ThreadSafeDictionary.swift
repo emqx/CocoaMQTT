@@ -4,32 +4,14 @@
 
 import Foundation
 
-/// A thread-safe dictionary
-public class ThreadSafeDictionary<K: Hashable, V>: Collection {
+/// A thread-safe dictionary. Iterate over `snapshot()` rather than live indices.
+public final class ThreadSafeDictionary<K: Hashable, V> {
     private var dictionary: [K: V]
     private let concurrentQueue: DispatchQueue
-
-    public var startIndex: Dictionary<K, V>.Index {
-        concurrentQueue.sync {
-            return self.dictionary.startIndex
-        }
-    }
-
-    public var endIndex: Dictionary<K, V>.Index {
-        concurrentQueue.sync {
-            return self.dictionary.endIndex
-        }
-    }
 
     public init(label: String, dict: [K: V] = [K: V]()) {
         self.dictionary = dict
         concurrentQueue = DispatchQueue(label: label, attributes: .concurrent)
-    }
-
-    public func index(after i: Dictionary<K, V>.Index) -> Dictionary<K, V>.Index {
-        concurrentQueue.sync {
-            self.dictionary.index(after: i)
-        }
     }
 
     public subscript(key: K) -> V? {
@@ -39,21 +21,9 @@ public class ThreadSafeDictionary<K: Hashable, V>: Collection {
             }
         }
         set(newValue) {
-            concurrentQueue.async(flags: .barrier) {[weak self] in
-                self?.dictionary[key] = newValue
+            concurrentQueue.sync(flags: .barrier) {
+                dictionary[key] = newValue
             }
-        }
-    }
-
-    public subscript(index: Dictionary<K, V>.Index) -> Dictionary<K, V>.Element {
-        concurrentQueue.sync {
-            self.dictionary[index]
-        }
-    }
-
-    func setValue(_ value: V?, forKey key: K) {
-        concurrentQueue.sync(flags: .barrier) {
-            dictionary[key] = value
         }
     }
 
@@ -65,14 +35,16 @@ public class ThreadSafeDictionary<K: Hashable, V>: Collection {
     }
 
     public func removeAll() {
-        concurrentQueue.async(flags: .barrier) {[weak self] in
-            self?.dictionary.removeAll()
+        concurrentQueue.sync(flags: .barrier) {
+            dictionary.removeAll()
         }
     }
 
-    func removeAllSync() {
+    func removeAllValues() -> [K: V] {
         concurrentQueue.sync(flags: .barrier) {
+            let removed = dictionary
             dictionary.removeAll()
+            return removed
         }
     }
 

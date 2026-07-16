@@ -56,6 +56,7 @@ class CocoaMQTTReader {
     private var length: UInt = 0
     private var data: [UInt8] = []
     private var multiply = 1
+    private var lengthByteCount = 0
     /*  -- Reader states -- */
 
     init(socket: CocoaMQTTSocketProtocol,
@@ -76,9 +77,18 @@ class CocoaMQTTReader {
     }
 
     func lengthReady(_ byte: UInt8) {
+        lengthByteCount += 1
+        guard lengthByteCount <= 4 else {
+            protocolError("Remaining Length exceeds four bytes")
+            return
+        }
         length += (UInt)((Int)(byte & 127) * multiply)
         // done
         if byte & 0x80 == 0 {
+            guard lengthByteCount == 1 || byte & 0x7f != 0 else {
+                protocolError("Remaining Length is not minimally encoded")
+                return
+            }
             if length == 0 {
                 frameReady()
             } else {
@@ -86,6 +96,10 @@ class CocoaMQTTReader {
             }
             // more
         } else {
+            guard lengthByteCount < 4 else {
+                protocolError("Remaining Length exceeds four bytes")
+                return
+            }
             let result = multiply.multipliedReportingOverflow(by: 128)
             if !result.overflow {
                 multiply = result.partialValue
@@ -215,6 +229,7 @@ class CocoaMQTTReader {
     private func reset() {
         length = 0
         multiply = 1
+        lengthByteCount = 0
         header = 0
         data = []
     }

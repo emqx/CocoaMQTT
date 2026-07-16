@@ -15,39 +15,13 @@ final class CocoaMQTT5ReasonCodeFallbackTests: XCTestCase {
         func write(_ data: Data, withTimeout timeout: TimeInterval, tag: Int) {}
     }
 
-    func testDisconnectFallsBackToNormalDisconnectionForInvalidReasonCode() {
-        let mqtt5 = CocoaMQTT5(clientID: "mq5-disconnect-fallback-\(UUID().uuidString)")
-        let reader = CocoaMQTTReader(socket: SocketSpy(), delegate: nil, protocolVersion: .v5)
+    func testDisconnectRejectsInvalidReasonCode() {
         let frame = FrameDisconnect(packetFixedHeaderType: FrameType.disconnect.rawValue, bytes: [0xFF], protocolVersion: .v5)
-
-        XCTAssertNotNil(frame)
-        XCTAssertNil(frame?.receiveReasonCode)
-
-        var receivedReasonCode: CocoaMQTTDISCONNECTReasonCode?
-        mqtt5.didDisconnectReasonCode = { _, reasonCode in
-            receivedReasonCode = reasonCode
-        }
-
-        mqtt5.didReceive(reader, disconnect: frame!)
-
-        XCTAssertEqual(receivedReasonCode, .normalDisconnection)
+        XCTAssertNil(frame)
     }
 
-    func testAuthFallsBackToSuccessForInvalidReasonCode() {
-        let mqtt5 = CocoaMQTT5(clientID: "mq5-auth-fallback-\(UUID().uuidString)")
-        let reader = CocoaMQTTReader(socket: SocketSpy(), delegate: nil, protocolVersion: .v5)
+    func testAuthRejectsInvalidReasonCode() {
         let frame = FrameAuth(packetFixedHeaderType: FrameType.auth.rawValue, bytes: [0xFF], protocolVersion: .v5)
-
-        XCTAssertNotNil(frame)
-        XCTAssertNil(frame?.receiveReasonCode)
-
-        var receivedReasonCode: CocoaMQTTAUTHReasonCode?
-        mqtt5.didAuthReasonCode = { _, reasonCode in
-            receivedReasonCode = reasonCode
-        }
-
-        mqtt5.didReceive(reader, auth: frame!)
-
-        XCTAssertEqual(receivedReasonCode, .success)
+        XCTAssertNil(frame)
     }
 }

@@ -28,6 +28,10 @@ extension UInt16 {
 extension String {
     /// String with two bytes length
     var bytesWithLength: [UInt8] {
+        guard utf8.count <= Int(UInt16.max) else {
+            printError("UTF-8 string exceeds the MQTT length limit.")
+            return []
+        }
         return UInt16(utf8.count).hlBytes + utf8
     }
 
@@ -163,4 +167,15 @@ extension Dictionary where Key == String, Value == String {
     var userPropertyBytes: [UInt8] {
         return reduce([UInt8](), { $0 + getMQTTPropertyData(type: CocoaMQTTPropertyName.userProperty.rawValue, value: $1.key.bytesWithLength + $1.value.bytesWithLength) })
     }
+}
+
+func hasValidMQTTUTF8Length(_ string: String, allowEmpty: Bool = false) -> Bool {
+    return (allowEmpty || !string.isEmpty) && string.utf8.count <= Int(UInt16.max)
+}
+
+func hasValidMQTTUserProperties(_ properties: [String: String]?) -> Bool {
+    return properties?.allSatisfy {
+        hasValidMQTTUTF8Length($0.key, allowEmpty: true)
+            && hasValidMQTTUTF8Length($0.value, allowEmpty: true)
+    } ?? true
 }

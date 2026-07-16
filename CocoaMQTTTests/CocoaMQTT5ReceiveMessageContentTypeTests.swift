@@ -20,8 +20,9 @@ final class CocoaMQTT5ReceiveMessageContentTypeTests: XCTestCase {
 
     private func decodePublishFromOutboundFrame(_ publish: FramePublish) -> FramePublish? {
         let packet = publish.bytes(version: "5.0")
-        let remainingLength = decodeVariableByteInteger(data: packet, offset: 1)
-        let body = [UInt8](packet[remainingLength.newOffset..<packet.count])
+        guard var reader = MQTTByteReader(packet, offset: 1),
+              reader.readVariableByteInteger() != nil else { return nil }
+        let body = [UInt8](packet[reader.index..<packet.count])
         return FramePublish(packetFixedHeaderType: packet[0], bytes: body, protocolVersion: .v5)
     }
 
@@ -157,8 +158,11 @@ final class CocoaMQTT5ReceiveMessageContentTypeTests: XCTestCase {
         var outboundPublish = FramePublish(topic: "t/no-properties", payload: [0x7B, 0x7D], qos: .qos0)
         outboundPublish.publishProperties = publishProperties
         let packet = outboundPublish.bytes(version: "5.0")
-        let remainingLength = decodeVariableByteInteger(data: packet, offset: 1)
-        let body = [UInt8](packet[remainingLength.newOffset..<packet.count])
+        guard var byteReader = MQTTByteReader(packet, offset: 1),
+              byteReader.readVariableByteInteger() != nil else {
+            return XCTFail("Failed to decode Remaining Length")
+        }
+        let body = [UInt8](packet[byteReader.index..<packet.count])
         guard let publish = FramePublish(packetFixedHeaderType: packet[0], bytes: body, protocolVersion: .v5) else {
             XCTFail("Failed to decode MQTT5 publish frame")
             return
