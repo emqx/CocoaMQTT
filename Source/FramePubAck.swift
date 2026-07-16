@@ -103,6 +103,11 @@ extension FramePubAck {
 extension FramePubAck: InitialWithBytes {
 
     init?(packetFixedHeaderType: UInt8, bytes: [UInt8]) {
+        let protocolVersion = CocoaMQTTProtocolVersion.legacyConfiguredVersion
+        self.init(packetFixedHeaderType: packetFixedHeaderType, bytes: bytes, protocolVersion: protocolVersion)
+    }
+
+    init?(packetFixedHeaderType: UInt8, bytes: [UInt8], protocolVersion: CocoaMQTTProtocolVersion) {
         guard packetFixedHeaderType == FrameType.puback.rawValue else {
             return nil
         }
@@ -112,10 +117,10 @@ extension FramePubAck: InitialWithBytes {
             return nil
         }
 
-        if bytes.count > 2 {
+        if protocolVersion == .v5 && bytes.count > 2 {
             self.reasonCode = CocoaMQTTPUBACKReasonCode(rawValue: bytes[2])
             self.pubAckProperties = MqttDecodePubAck()
-            self.pubAckProperties!.decodePubAck(fixedHeader: packetFixedHeaderType, pubAckData: bytes)
+            self.pubAckProperties!.decodePubAck(fixedHeader: packetFixedHeaderType, pubAckData: bytes, protocolVersion: protocolVersion)
         }
 
         msgid = UInt16(bytes[0]) << 8 + UInt16(bytes[1])

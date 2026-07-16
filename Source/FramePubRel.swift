@@ -98,6 +98,11 @@ extension FramePubRel {
 extension FramePubRel: InitialWithBytes {
 
     init?(packetFixedHeaderType: UInt8, bytes: [UInt8]) {
+        let protocolVersion = CocoaMQTTProtocolVersion.legacyConfiguredVersion
+        self.init(packetFixedHeaderType: packetFixedHeaderType, bytes: bytes, protocolVersion: protocolVersion)
+    }
+
+    init?(packetFixedHeaderType: UInt8, bytes: [UInt8], protocolVersion: CocoaMQTTProtocolVersion) {
         guard packetFixedHeaderType == 0x62 else {
             return nil
         }
@@ -108,8 +113,10 @@ extension FramePubRel: InitialWithBytes {
         self.packetFixedHeaderType = packetFixedHeaderType
         msgid = UInt16(bytes[0]) << 8 + UInt16(bytes[1])
 
-        self.pubRelProperties = MqttDecodePubRel()
-        self.pubRelProperties!.decodePubRel(fixedHeader: packetFixedHeaderType, pubAckData: bytes)
+        if protocolVersion == .v5 {
+            self.pubRelProperties = MqttDecodePubRel()
+            self.pubRelProperties!.decodePubRel(fixedHeader: packetFixedHeaderType, pubAckData: bytes, protocolVersion: protocolVersion)
+        }
     }
 }
 

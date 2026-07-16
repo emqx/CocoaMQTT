@@ -54,6 +54,11 @@ public class MqttDecodeConnAck: NSObject {
     public var authenticationData = [UInt8]()
 
     public func properties(connackData: [UInt8]) {
+        let protocolVersion = CocoaMQTTProtocolVersion.legacyConfiguredVersion
+        properties(connackData: connackData, protocolVersion: protocolVersion)
+    }
+
+    func properties(connackData: [UInt8], protocolVersion: CocoaMQTTProtocolVersion) {
         // 3.2.2.3 CONNACK Properties
         var index = 2  // sessPresent 0 reasonCode 1
         let propertyLengthVariableByteInteger = decodeVariableByteInteger(data: connackData, offset: index)
@@ -61,12 +66,7 @@ public class MqttDecodeConnAck: NSObject {
         index = propertyLengthVariableByteInteger.newOffset
         let occupyIndex = index
 
-        var protocolVersion = ""
-        if let storage = CocoaMQTTStorage() {
-            protocolVersion = storage.queryMQTTVersion()
-        }
-
-        if protocolVersion == "5.0" {
+        if protocolVersion == .v5 {
             // properties
             while index - occupyIndex < propertyLength! {
                 let resVariableByteInteger = decodeVariableByteInteger(data: connackData, offset: index)

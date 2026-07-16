@@ -324,7 +324,7 @@ public class CocoaMQTT5: NSObject, CocoaMQTT5Client {
     fileprivate var unsubscriptionsWaitingAck = ThreadSafeDictionary<UInt16, [MqttSubscription]>(label: "unsubscriptionsWaitingAck")
 
     /// Sending messages
-    fileprivate var sendingMessages: [UInt16: CocoaMQTT5Message] = [:]
+    fileprivate var sendingMessages = ThreadSafeDictionary<UInt16, CocoaMQTT5Message>(label: "sendingMessages5")
 
     /// message id counter
     private var _msgid: UInt16 = 0
@@ -362,11 +362,6 @@ public class CocoaMQTT5: NSObject, CocoaMQTT5Client {
         self.socket = socket
         super.init()
         deliver.delegate = self
-        if let storage = CocoaMQTTStorage() {
-            storage.setMQTTVersion("5.0")
-        } else {
-            printWarning("Localstorage initial failed for key: \(clientID)")
-        }
     }
 
     deinit {
@@ -437,7 +432,7 @@ public class CocoaMQTT5: NSObject, CocoaMQTT5Client {
     public func connect(timeout: TimeInterval) -> Bool {
         resetDisconnectReasonState()
         socket.setDelegate(self, delegateQueue: delegateQueue)
-        reader = CocoaMQTTReader(socket: socket, delegate: self)
+        reader = CocoaMQTTReader(socket: socket, delegate: self, protocolVersion: .v5)
         do {
             if timeout > 0 {
                 try socket.connect(toHost: self.host, onPort: self.port, withTimeout: timeout)
@@ -619,15 +614,11 @@ public class CocoaMQTT5: NSObject, CocoaMQTT5Client {
         frame.publishProperties = properties
         frame.retained = message.retained
 
-        delegateQueue.async {
-            self.sendingMessages[msgid] = message
-        }
+        sendingMessages.setValue(message, forKey: msgid)
 
         // Push frame to deliver message queue
         guard deliver.add(frame) else {
-            delegateQueue.async {
-                self.sendingMessages.removeValue(forKey: msgid)
-            }
+            sendingMessages.removeValue(forKey: msgid)
             return -1
         }
 
@@ -720,6 +711,9 @@ extension CocoaMQTT5: CocoaMQTTDeliverProtocol {
             if let message = message {
                 self.delegate?.mqtt5(self, didPublishMessage: message, id: msgid)
                 self.didPublishMessage(self, message, msgid)
+            }
+            if publish.qos == .qos0 {
+                sendingMessages.removeValue(forKey: msgid)
             }
         } else if let pubrel = frame as? FramePubRel {
             // -- Send PUBREL
@@ -986,8 +980,9 @@ extension CocoaMQTT5: CocoaMQTTReaderDelegate {
 
             if cleanSession {
                 deliver.cleanAll()
+                sendingMessages.removeAll()
             } else {
-                if let storage = CocoaMQTTStorage(by: clientID) {
+                if let storage = CocoaMQTTStorage(by: clientID, protocolVersion: .v5) {
                     deliver.recoverSessionBy(storage)
                 } else {
                     printWarning("Localstorage initial failed for key: \(clientID)")
@@ -1028,6 +1023,7 @@ extension CocoaMQTT5: CocoaMQTTReaderDelegate {
         printDebug("RECV: \(puback)")
 
         deliver.ack(by: puback)
+        sendingMessages.removeValue(forKey: puback.msgid)
 
         delegate?.mqtt5(self, didPublishAck: puback.msgid, pubAckData: puback.pubAckProperties ?? nil)
         didPublishAck(self, puback.msgid, puback.pubAckProperties ?? nil)
@@ -1052,6 +1048,7 @@ extension CocoaMQTT5: CocoaMQTTReaderDelegate {
         printDebug("RECV: \(pubcomp)")
 
         deliver.ack(by: pubcomp)
+        sendingMessages.removeValue(forKey: pubcomp.msgid)
 
         delegate?.mqtt5?(self, didPublishComplete: pubcomp.msgid, pubCompData: pubcomp.pubCompProperties ?? nil)
         didCompletePublish(self, pubcomp.msgid, pubcomp.pubCompProperties ?? nil)
@@ -1107,5 +1104,12 @@ extension CocoaMQTT5: CocoaMQTTReaderDelegate {
 
         delegate?.mqtt5DidReceivePong(self)
         didReceivePong(self)
+    }
+}
+
+// For tests
+extension CocoaMQTT5 {
+    func t_sendingMessagesCount() -> Int {
+        sendingMessages.snapshot().count
     }
 }

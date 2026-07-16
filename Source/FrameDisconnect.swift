@@ -102,13 +102,13 @@ extension FrameDisconnect {
 extension FrameDisconnect: InitialWithBytes {
 
     init?(packetFixedHeaderType: UInt8, bytes: [UInt8]) {
+        let protocolVersion = CocoaMQTTProtocolVersion.legacyConfiguredVersion
+        self.init(packetFixedHeaderType: packetFixedHeaderType, bytes: bytes, protocolVersion: protocolVersion)
+    }
 
-        var protocolVersion = ""
-        if let storage = CocoaMQTTStorage() {
-            protocolVersion = storage.queryMQTTVersion()
-        }
+    init?(packetFixedHeaderType: UInt8, bytes: [UInt8], protocolVersion: CocoaMQTTProtocolVersion) {
 
-        if protocolVersion == "5.0" {
+        if protocolVersion == .v5 {
             if bytes.isEmpty {
                 receiveReasonCode = .normalDisconnection
             } else {

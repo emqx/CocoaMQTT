@@ -16,12 +16,9 @@ final class CocoaMQTT5ReasonCodeFallbackTests: XCTestCase {
     }
 
     func testDisconnectFallsBackToNormalDisconnectionForInvalidReasonCode() {
-        CocoaMQTTStorage()?.setMQTTVersion("5.0")
-        defer { CocoaMQTTStorage()?.setMQTTVersion("3.1.1") }
-
         let mqtt5 = CocoaMQTT5(clientID: "mq5-disconnect-fallback-\(UUID().uuidString)")
-        let reader = CocoaMQTTReader(socket: SocketSpy(), delegate: nil)
-        let frame = FrameDisconnect(packetFixedHeaderType: FrameType.disconnect.rawValue, bytes: [0xFF])
+        let reader = CocoaMQTTReader(socket: SocketSpy(), delegate: nil, protocolVersion: .v5)
+        let frame = FrameDisconnect(packetFixedHeaderType: FrameType.disconnect.rawValue, bytes: [0xFF], protocolVersion: .v5)
 
         XCTAssertNotNil(frame)
         XCTAssertNil(frame?.receiveReasonCode)
@@ -37,12 +34,9 @@ final class CocoaMQTT5ReasonCodeFallbackTests: XCTestCase {
     }
 
     func testAuthFallsBackToSuccessForInvalidReasonCode() {
-        CocoaMQTTStorage()?.setMQTTVersion("5.0")
-        defer { CocoaMQTTStorage()?.setMQTTVersion("3.1.1") }
-
         let mqtt5 = CocoaMQTT5(clientID: "mq5-auth-fallback-\(UUID().uuidString)")
-        let reader = CocoaMQTTReader(socket: SocketSpy(), delegate: nil)
-        let frame = FrameAuth(packetFixedHeaderType: FrameType.auth.rawValue, bytes: [0xFF])
+        let reader = CocoaMQTTReader(socket: SocketSpy(), delegate: nil, protocolVersion: .v5)
+        let frame = FrameAuth(packetFixedHeaderType: FrameType.auth.rawValue, bytes: [0xFF], protocolVersion: .v5)
 
         XCTAssertNotNil(frame)
         XCTAssertNil(frame?.receiveReasonCode)

@@ -38,6 +38,11 @@ public class MqttDecodePublish: NSObject {
     public var mqtt5DataIndex = 0
 
     public func decodePublish(fixedHeader: UInt8, publishData: [UInt8]) {
+        let protocolVersion = CocoaMQTTProtocolVersion.legacyConfiguredVersion
+        decodePublish(fixedHeader: fixedHeader, publishData: publishData, protocolVersion: protocolVersion)
+    }
+
+    func decodePublish(fixedHeader: UInt8, publishData: [UInt8], protocolVersion: CocoaMQTTProtocolVersion) {
         // Topic Name
         // 3.3.2.1 Topic Name
         var dataIndex = 0
@@ -62,12 +67,7 @@ public class MqttDecodePublish: NSObject {
             dataIndex = IdentifierResult!.newOffset
         }
 
-        var protocolVersion = ""
-        if let storage = CocoaMQTTStorage() {
-            protocolVersion = storage.queryMQTTVersion()
-        }
-
-        if protocolVersion == "5.0" {
+        if protocolVersion == .v5 {
             // 3.3.2.3.1 Property Length
             // propertyLength
             let propertyLengthVariableByteInteger = decodeVariableByteInteger(data: publishData, offset: dataIndex)

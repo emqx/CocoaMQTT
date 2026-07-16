@@ -81,6 +81,11 @@ extension FrameConnAck {
 extension FrameConnAck: InitialWithBytes {
 
     init?(packetFixedHeaderType: UInt8, bytes: [UInt8]) {
+        let protocolVersion = CocoaMQTTProtocolVersion.legacyConfiguredVersion
+        self.init(packetFixedHeaderType: packetFixedHeaderType, bytes: bytes, protocolVersion: protocolVersion)
+    }
+
+    init?(packetFixedHeaderType: UInt8, bytes: [UInt8], protocolVersion: CocoaMQTTProtocolVersion) {
         guard packetFixedHeaderType == FrameType.connack.rawValue else {
             return nil
         }
@@ -97,9 +102,11 @@ extension FrameConnAck: InitialWithBytes {
         let ack = CocoaMQTTConnAck(byte: bytes[1])
         returnCode = ack
 
-        propertiesBytes = bytes
-        self.connackProperties = MqttDecodeConnAck()
-        self.connackProperties!.properties(connackData: bytes)
+        if protocolVersion == .v5 {
+            propertiesBytes = bytes
+            self.connackProperties = MqttDecodeConnAck()
+            self.connackProperties!.properties(connackData: bytes, protocolVersion: protocolVersion)
+        }
     }
 }
 

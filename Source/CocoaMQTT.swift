@@ -301,7 +301,7 @@ public class CocoaMQTT: NSObject, CocoaMQTTClient {
     fileprivate var unsubscriptionsWaitingAck = ThreadSafeDictionary<UInt16, [String]>(label: "unsubscriptionsWaitingAck")
 
     /// Sending messages
-    fileprivate var sendingMessages: [UInt16: CocoaMQTTMessage] = [:]
+    fileprivate var sendingMessages = ThreadSafeDictionary<UInt16, CocoaMQTTMessage>(label: "sendingMessages")
 
     /// message id counter
     private var _msgid: UInt16 = 0
@@ -336,11 +336,6 @@ public class CocoaMQTT: NSObject, CocoaMQTTClient {
         self.socket = socket
         super.init()
         deliver.delegate = self
-        if let storage = CocoaMQTTStorage() {
-            storage.setMQTTVersion("3.1.1")
-        } else {
-            printWarning("Localstorage initial failed for key: \(clientID)")
-        }
     }
 
     deinit {
@@ -407,7 +402,7 @@ public class CocoaMQTT: NSObject, CocoaMQTTClient {
     ///           Not yet established correct MQTT session
     public func connect(timeout: TimeInterval) -> Bool {
         socket.setDelegate(self, delegateQueue: delegateQueue)
-        reader = CocoaMQTTReader(socket: socket, delegate: self)
+        reader = CocoaMQTTReader(socket: socket, delegate: self, protocolVersion: .v311)
         do {
             if timeout > 0 {
                 try socket.connect(toHost: self.host, onPort: self.port, withTimeout: timeout)
@@ -561,15 +556,11 @@ public class CocoaMQTT: NSObject, CocoaMQTTClient {
 
         frame.retained = message.retained
 
-        delegateQueue.async {
-            self.sendingMessages[msgid] = message
-        }
+        sendingMessages.setValue(message, forKey: msgid)
 
         // Push frame to deliver message queue
         guard deliver.add(frame) else {
-            delegateQueue.async {
-                self.sendingMessages.removeValue(forKey: msgid)
-            }
+            sendingMessages.removeValue(forKey: msgid)
             return -1
         }
 
@@ -638,6 +629,9 @@ extension CocoaMQTT: CocoaMQTTDeliverProtocol {
             if let message = message {
                 self.delegate?.mqtt(self, didPublishMessage: message, id: msgid)
                 self.didPublishMessage(self, message, msgid)
+            }
+            if publish.qos == .qos0 {
+                sendingMessages.removeValue(forKey: msgid)
             }
         } else if let pubrel = frame as? FramePubRel {
             // -- Send PUBREL
@@ -852,8 +846,9 @@ extension CocoaMQTT: CocoaMQTTReaderDelegate {
 
             if cleanSession {
                 deliver.cleanAll()
+                sendingMessages.removeAll()
             } else {
-                if let storage = CocoaMQTTStorage(by: clientID) {
+                if let storage = CocoaMQTTStorage(by: clientID, protocolVersion: .v311) {
                     deliver.recoverSessionBy(storage)
                 } else {
                     printWarning("Localstorage initial failed for key: \(clientID)")
@@ -893,6 +888,7 @@ extension CocoaMQTT: CocoaMQTTReaderDelegate {
         printDebug("RECV: \(puback)")
 
         deliver.ack(by: puback)
+        sendingMessages.removeValue(forKey: puback.msgid)
 
         delegate?.mqtt(self, didPublishAck: puback.msgid)
         didPublishAck(self, puback.msgid)
@@ -914,6 +910,7 @@ extension CocoaMQTT: CocoaMQTTReaderDelegate {
         printDebug("RECV: \(pubcomp)")
 
         deliver.ack(by: pubcomp)
+        sendingMessages.removeValue(forKey: pubcomp.msgid)
 
         delegate?.mqtt?(self, didPublishComplete: pubcomp.msgid)
         didCompletePublish(self, pubcomp.msgid)
@@ -976,5 +973,12 @@ extension CocoaMQTT: CocoaMQTTReaderDelegate {
     func didReceive(_ reader: CocoaMQTTReader, auth: FrameAuth) {
         printWarning("Received AUTH in MQTT 3.1.1 mode, closing socket")
         internal_disconnect()
+    }
+}
+
+// For tests
+extension CocoaMQTT {
+    func t_sendingMessagesCount() -> Int {
+        sendingMessages.snapshot().count
     }
 }

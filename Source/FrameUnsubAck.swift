@@ -94,6 +94,11 @@ extension FrameUnsubAck {
 extension FrameUnsubAck: InitialWithBytes {
 
     init?(packetFixedHeaderType: UInt8, bytes: [UInt8]) {
+        let protocolVersion = CocoaMQTTProtocolVersion.legacyConfiguredVersion
+        self.init(packetFixedHeaderType: packetFixedHeaderType, bytes: bytes, protocolVersion: protocolVersion)
+    }
+
+    init?(packetFixedHeaderType: UInt8, bytes: [UInt8], protocolVersion: CocoaMQTTProtocolVersion) {
         guard packetFixedHeaderType == FrameType.unsuback.rawValue else {
             return nil
         }
@@ -104,8 +109,10 @@ extension FrameUnsubAck: InitialWithBytes {
 
         msgid = UInt16(bytes[0]) << 8 + UInt16(bytes[1])
 
-        self.unSubAckProperties = MqttDecodeUnsubAck()
-        self.unSubAckProperties!.decodeUnSubAck(fixedHeader: packetFixedHeaderType, pubAckData: bytes)
+        if protocolVersion == .v5 {
+            self.unSubAckProperties = MqttDecodeUnsubAck()
+            self.unSubAckProperties!.decodeUnSubAck(fixedHeader: packetFixedHeaderType, pubAckData: bytes, protocolVersion: protocolVersion)
+        }
 
     }
 }

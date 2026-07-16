@@ -20,6 +20,11 @@ public class MqttDecodeUnsubAck: NSObject {
     public var userProperty: [String: String]?
 
     public func decodeUnSubAck(fixedHeader: UInt8, pubAckData: [UInt8]) {
+        let protocolVersion = CocoaMQTTProtocolVersion.legacyConfiguredVersion
+        decodeUnSubAck(fixedHeader: fixedHeader, pubAckData: pubAckData, protocolVersion: protocolVersion)
+    }
+
+    func decodeUnSubAck(fixedHeader: UInt8, pubAckData: [UInt8], protocolVersion: CocoaMQTTProtocolVersion) {
         totalCount = pubAckData.count
         dataIndex = 0
         // msgid
@@ -27,12 +32,7 @@ public class MqttDecodeUnsubAck: NSObject {
         msgid = UInt16(msgidResult!.res)
         dataIndex = msgidResult!.newOffset
 
-        var protocolVersion = ""
-        if let storage = CocoaMQTTStorage() {
-            protocolVersion = storage.queryMQTTVersion()
-        }
-
-        if protocolVersion == "5.0" {
+        if protocolVersion == .v5 {
             // 3.11.2.1 UNSUBACK Properties
             // 3.11.2.1.1 Property Length
             let propertyLengthVariableByteInteger = decodeVariableByteInteger(data: pubAckData, offset: dataIndex)

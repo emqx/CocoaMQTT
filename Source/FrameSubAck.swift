@@ -91,15 +91,15 @@ extension FrameSubAck {
 extension FrameSubAck: InitialWithBytes {
 
     init?(packetFixedHeaderType: UInt8, bytes: [UInt8]) {
+        let protocolVersion = CocoaMQTTProtocolVersion.legacyConfiguredVersion
+        self.init(packetFixedHeaderType: packetFixedHeaderType, bytes: bytes, protocolVersion: protocolVersion)
+    }
+
+    init?(packetFixedHeaderType: UInt8, bytes: [UInt8], protocolVersion: CocoaMQTTProtocolVersion) {
 
         self.packetFixedHeaderType = packetFixedHeaderType
 
-        var protocolVersion = ""
-        if let storage = CocoaMQTTStorage() {
-            protocolVersion = storage.queryMQTTVersion()
-        }
-
-        if protocolVersion == "5.0" {
+        if protocolVersion == .v5 {
             // the bytes length must bigger than 3
             guard bytes.count >= 4 else {
                 return nil
@@ -134,7 +134,7 @@ extension FrameSubAck: InitialWithBytes {
             }
 
             self.subAckProperties = MqttDecodeSubAck()
-            self.subAckProperties!.decodeSubAck(fixedHeader: packetFixedHeaderType, pubAckData: bytes)
+            self.subAckProperties!.decodeSubAck(fixedHeader: packetFixedHeaderType, pubAckData: bytes, protocolVersion: protocolVersion)
 
         } else {
             // the bytes length must bigger than 3

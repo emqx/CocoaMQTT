@@ -114,10 +114,11 @@ final class CocoaMQTT5DisconnectReasonStateTests: XCTestCase {
         let socket = SocketSpy()
         let delegate = DelegateSpy()
         let mqtt5 = CocoaMQTT5(clientID: "remote-disconnect-reason-\(UUID().uuidString)", socket: socket)
-        let reader = CocoaMQTTReader(socket: socket, delegate: nil)
+        let reader = CocoaMQTTReader(socket: socket, delegate: nil, protocolVersion: .v5)
         let frame = FrameDisconnect(
             packetFixedHeaderType: FrameType.disconnect.rawValue,
-            bytes: [CocoaMQTTDISCONNECTReasonCode.serverBusy.rawValue]
+            bytes: [CocoaMQTTDISCONNECTReasonCode.serverBusy.rawValue],
+            protocolVersion: .v5
         )
         mqtt5.delegate = delegate
 
@@ -139,10 +140,11 @@ final class CocoaMQTT5DisconnectReasonStateTests: XCTestCase {
         let socket = SocketSpy()
         let delegate = DelegateSpy()
         let mqtt5 = CocoaMQTT5(clientID: "remote-disconnect-error-\(UUID().uuidString)", socket: socket)
-        let reader = CocoaMQTTReader(socket: socket, delegate: nil)
+        let reader = CocoaMQTTReader(socket: socket, delegate: nil, protocolVersion: .v5)
         let frame = FrameDisconnect(
             packetFixedHeaderType: FrameType.disconnect.rawValue,
-            bytes: [CocoaMQTTDISCONNECTReasonCode.serverBusy.rawValue]
+            bytes: [CocoaMQTTDISCONNECTReasonCode.serverBusy.rawValue],
+            protocolVersion: .v5
         )
         mqtt5.delegate = delegate
 

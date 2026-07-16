@@ -110,6 +110,11 @@ extension FramePublish {
 extension FramePublish: InitialWithBytes {
 
     init?(packetFixedHeaderType: UInt8, bytes: [UInt8]) {
+        let protocolVersion = CocoaMQTTProtocolVersion.legacyConfiguredVersion
+        self.init(packetFixedHeaderType: packetFixedHeaderType, bytes: bytes, protocolVersion: protocolVersion)
+    }
+
+    init?(packetFixedHeaderType: UInt8, bytes: [UInt8], protocolVersion: CocoaMQTTProtocolVersion) {
 
         guard packetFixedHeaderType & 0xF0 == FrameType.publish.rawValue else {
             return nil
@@ -176,14 +181,9 @@ extension FramePublish: InitialWithBytes {
             pos += 2
         }
 
-        var protocolVersion = ""
-        if let storage = CocoaMQTTStorage() {
-            protocolVersion = storage.queryMQTTVersion()
-        }
-
-        if protocolVersion == "5.0" {
+        if protocolVersion == .v5 {
             let data = MqttDecodePublish()
-            data.decodePublish(fixedHeader: packetFixedHeaderType, publishData: bytes)
+            data.decodePublish(fixedHeader: packetFixedHeaderType, publishData: bytes, protocolVersion: protocolVersion)
             pos = data.mqtt5DataIndex
 
             if data.propertyLength != 0 {

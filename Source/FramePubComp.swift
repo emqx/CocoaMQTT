@@ -104,6 +104,11 @@ extension FramePubComp {
 extension FramePubComp: InitialWithBytes {
 
     init?(packetFixedHeaderType: UInt8, bytes: [UInt8]) {
+        let protocolVersion = CocoaMQTTProtocolVersion.legacyConfiguredVersion
+        self.init(packetFixedHeaderType: packetFixedHeaderType, bytes: bytes, protocolVersion: protocolVersion)
+    }
+
+    init?(packetFixedHeaderType: UInt8, bytes: [UInt8], protocolVersion: CocoaMQTTProtocolVersion) {
 
         guard packetFixedHeaderType == FrameType.pubcomp.rawValue else {
             return nil
@@ -115,8 +120,10 @@ extension FramePubComp: InitialWithBytes {
 
         msgid = UInt16(bytes[0]) << 8 + UInt16(bytes[1])
 
-        self.pubCompProperties = MqttDecodePubComp()
-        self.pubCompProperties!.decodePubComp(fixedHeader: packetFixedHeaderType, pubAckData: bytes)
+        if protocolVersion == .v5 {
+            self.pubCompProperties = MqttDecodePubComp()
+            self.pubCompProperties!.decodePubComp(fixedHeader: packetFixedHeaderType, pubAckData: bytes, protocolVersion: protocolVersion)
+        }
     }
 }
 

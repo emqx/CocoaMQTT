@@ -36,11 +36,24 @@ final class CocoaMQTTStorage: CocoaMQTTStorageProtocol {
 
     var versionDefault: UserDefaults = UserDefaults()
 
+    private var protocolVersion: CocoaMQTTProtocolVersion = .v311
+
     init?() {
         versionDefault = UserDefaults()
     }
 
     init?(by clientId: String) {
+        self.protocolVersion = .v311
+        guard let userDefault = UserDefaults(suiteName: CocoaMQTTStorage.name(clientId)) else {
+            return nil
+        }
+
+        self.clientId = clientId
+        self.userDefault = userDefault
+    }
+
+    init?(by clientId: String, protocolVersion: CocoaMQTTProtocolVersion) {
+        self.protocolVersion = protocolVersion
         guard let userDefault = UserDefaults(suiteName: CocoaMQTTStorage.name(clientId)) else {
             return nil
         }
@@ -66,12 +79,12 @@ final class CocoaMQTTStorage: CocoaMQTTStorageProtocol {
         guard frame.qos > .qos0 else {
             return false
         }
-        userDefault.set(frame.bytes(version: queryMQTTVersion()), forKey: key(frame.msgid))
+        userDefault.set(frame.bytes(version: protocolVersion.rawValue), forKey: key(frame.msgid))
         return true
     }
 
     func write(_ frame: FramePubRel) -> Bool {
-        userDefault.set(frame.bytes( version: queryMQTTVersion()), forKey: key(frame.msgid))
+        userDefault.set(frame.bytes(version: protocolVersion.rawValue), forKey: key(frame.msgid))
         return true
     }
 
@@ -149,9 +162,9 @@ final class CocoaMQTTStorage: CocoaMQTTStorageProtocol {
                 userDefault.removeObject(forKey: k)
             }
 
-            if let f = FramePublish(packetFixedHeaderType: parsed.0, bytes: parsed.1) {
+            if let f = FramePublish(packetFixedHeaderType: parsed.0, bytes: parsed.1, protocolVersion: protocolVersion) {
                 frames.append(f)
-            } else if let f = FramePubRel(packetFixedHeaderType: parsed.0, bytes: parsed.1) {
+            } else if let f = FramePubRel(packetFixedHeaderType: parsed.0, bytes: parsed.1, protocolVersion: protocolVersion) {
                 frames.append(f)
             }
         }

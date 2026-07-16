@@ -8,6 +8,16 @@
 
 import Foundation
 
+enum CocoaMQTTProtocolVersion: String {
+    case v311 = "3.1.1"
+    case v5 = "5.0"
+
+    static var legacyConfiguredVersion: CocoaMQTTProtocolVersion {
+        let storedVersion = CocoaMQTTStorage()?.queryMQTTVersion() ?? v311.rawValue
+        return CocoaMQTTProtocolVersion(rawValue: storedVersion) ?? .v311
+    }
+}
+
 /// Quality of Service levels
 @objc public enum CocoaMQTTQoS: UInt8, CustomStringConvertible {
     /// At most once delivery

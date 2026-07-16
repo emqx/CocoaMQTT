@@ -36,8 +36,6 @@ final class CocoaMQTTReaderProtocolErrorTests: XCTestCase {
     }
 
     func testMalformedPublishDisconnectsSocket() {
-        CocoaMQTTStorage()?.setMQTTVersion("3.1.1")
-
         let socket = SocketSpy()
         let delegate = ReaderDelegateSpy()
         let reader = CocoaMQTTReader(socket: socket, delegate: delegate)
@@ -63,12 +61,9 @@ final class CocoaMQTTReaderProtocolErrorTests: XCTestCase {
     }
 
     func testMQTT5DisconnectFrameDoesNotProtocolError() {
-        CocoaMQTTStorage()?.setMQTTVersion("5.0")
-        defer { CocoaMQTTStorage()?.setMQTTVersion("3.1.1") }
-
         let socket = SocketSpy()
         let delegate = ReaderDelegateSpy()
-        let reader = CocoaMQTTReader(socket: socket, delegate: delegate)
+        let reader = CocoaMQTTReader(socket: socket, delegate: delegate, protocolVersion: .v5)
 
         reader.headerReady(FrameType.disconnect.rawValue)
         reader.lengthReady(0x00)
@@ -78,12 +73,9 @@ final class CocoaMQTTReaderProtocolErrorTests: XCTestCase {
     }
 
     func testMQTT5AuthFrameDoesNotProtocolError() {
-        CocoaMQTTStorage()?.setMQTTVersion("5.0")
-        defer { CocoaMQTTStorage()?.setMQTTVersion("3.1.1") }
-
         let socket = SocketSpy()
         let delegate = ReaderDelegateSpy()
-        let reader = CocoaMQTTReader(socket: socket, delegate: delegate)
+        let reader = CocoaMQTTReader(socket: socket, delegate: delegate, protocolVersion: .v5)
 
         reader.headerReady(FrameType.auth.rawValue)
         reader.lengthReady(0x00)
@@ -93,12 +85,9 @@ final class CocoaMQTTReaderProtocolErrorTests: XCTestCase {
     }
 
     func testMQTT5RejectedSubAckDoesNotProtocolError() {
-        CocoaMQTTStorage()?.setMQTTVersion("5.0")
-        defer { CocoaMQTTStorage()?.setMQTTVersion("3.1.1") }
-
         let socket = SocketSpy()
         let delegate = ReaderDelegateSpy()
-        let reader = CocoaMQTTReader(socket: socket, delegate: delegate)
+        let reader = CocoaMQTTReader(socket: socket, delegate: delegate, protocolVersion: .v5)
 
         reader.headerReady(FrameType.suback.rawValue)
         reader.lengthReady(0x04)
@@ -109,8 +98,6 @@ final class CocoaMQTTReaderProtocolErrorTests: XCTestCase {
     }
 
     func testMQTT311RejectsMQTT5OnlyDisconnectFrame() {
-        CocoaMQTTStorage()?.setMQTTVersion("3.1.1")
-
         let socket = SocketSpy()
         let delegate = ReaderDelegateSpy()
         let reader = CocoaMQTTReader(socket: socket, delegate: delegate)
@@ -123,8 +110,6 @@ final class CocoaMQTTReaderProtocolErrorTests: XCTestCase {
     }
 
     func testMQTT311RejectsMQTT5OnlyAuthFrame() {
-        CocoaMQTTStorage()?.setMQTTVersion("3.1.1")
-
         let socket = SocketSpy()
         let delegate = ReaderDelegateSpy()
         let reader = CocoaMQTTReader(socket: socket, delegate: delegate)
@@ -134,5 +119,45 @@ final class CocoaMQTTReaderProtocolErrorTests: XCTestCase {
 
         XCTAssertEqual(socket.disconnectCount, 1)
         XCTAssertEqual(delegate.authCount, 0)
+    }
+
+    func testReadersKeepProtocolVersionsIndependent() {
+        let mqtt311Socket = SocketSpy()
+        let mqtt311Delegate = ReaderDelegateSpy()
+        let mqtt311Reader = CocoaMQTTReader(
+            socket: mqtt311Socket,
+            delegate: mqtt311Delegate,
+            protocolVersion: .v311
+        )
+        let mqtt5Socket = SocketSpy()
+        let mqtt5Delegate = ReaderDelegateSpy()
+        let mqtt5Reader = CocoaMQTTReader(
+            socket: mqtt5Socket,
+            delegate: mqtt5Delegate,
+            protocolVersion: .v5
+        )
+
+        setMqtt5Version()
+        mqtt311Reader.headerReady(FrameType.auth.rawValue)
+        mqtt311Reader.lengthReady(0x00)
+
+        setMqtt3Version()
+        mqtt5Reader.headerReady(FrameType.auth.rawValue)
+        mqtt5Reader.lengthReady(0x00)
+
+        XCTAssertEqual(mqtt311Socket.disconnectCount, 1)
+        XCTAssertEqual(mqtt311Delegate.authCount, 0)
+        XCTAssertEqual(mqtt5Socket.disconnectCount, 0)
+        XCTAssertEqual(mqtt5Delegate.authCount, 1)
+    }
+
+    func testClientInitializationDoesNotChangeGlobalCompatibilityVersion() {
+        setMqtt3Version()
+        _ = CocoaMQTT5(clientID: "mqtt5-version-isolation")
+        XCTAssertEqual(CocoaMQTTStorage()?.queryMQTTVersion(), "3.1.1")
+
+        setMqtt5Version()
+        _ = CocoaMQTT(clientID: "mqtt311-version-isolation")
+        XCTAssertEqual(CocoaMQTTStorage()?.queryMQTTVersion(), "5.0")
     }
 }

@@ -51,7 +51,7 @@ class FrameTests: XCTestCase {
     func testFrameConAck() {
         var connack = FrameConnAck(returnCode: .accept)
         var bytes = [UInt8](connack.bytes(version: "3.1.1")[2...])
-        var connack2 = FrameConnAck(packetFixedHeaderType: FrameType.connack.rawValue, bytes: bytes)
+        var connack2 = FrameConnAck(packetFixedHeaderType: FrameType.connack.rawValue, bytes: bytes, protocolVersion: .v311)
 
         XCTAssertEqual(connack.returnCode, connack2?.returnCode)
         XCTAssertEqual(connack.sessPresent, connack2?.sessPresent)
@@ -59,7 +59,7 @@ class FrameTests: XCTestCase {
         connack.returnCode = .notAuthorized
         connack.sessPresent = true
         bytes = [UInt8](connack.bytes(version: "3.1.1")[2...])
-        connack2 = FrameConnAck(packetFixedHeaderType: FrameType.connack.rawValue, bytes: bytes)
+        connack2 = FrameConnAck(packetFixedHeaderType: FrameType.connack.rawValue, bytes: bytes, protocolVersion: .v311)
 
         XCTAssertEqual(connack.returnCode, connack2?.returnCode)
         XCTAssertEqual(connack.sessPresent, connack2?.sessPresent)
@@ -69,7 +69,7 @@ class FrameTests: XCTestCase {
 
         var publish = FramePublish(topic: "t/a", payload: "aaa".utf8 + [], qos: .qos0, msgid: 0x0010)
         var bytes = [UInt8](publish.bytes(version: "3.1.1")[2...])
-        var publish2 = FramePublish(packetFixedHeaderType: FrameType.publish.rawValue, bytes: bytes)
+        var publish2 = FramePublish(packetFixedHeaderType: FrameType.publish.rawValue, bytes: bytes, protocolVersion: .v311)
 
         XCTAssertEqual(publish.dup, publish2?.dup)
         XCTAssertEqual(publish.qos, publish2?.qos)
@@ -86,7 +86,7 @@ class FrameTests: XCTestCase {
         publish._payload = "bbb".utf8 + []
 
         bytes = [UInt8](publish.bytes(version: "3.1.1")[2...])
-        publish2 = FramePublish(packetFixedHeaderType: 0x35, bytes: bytes)
+        publish2 = FramePublish(packetFixedHeaderType: 0x35, bytes: bytes, protocolVersion: .v311)
 
         XCTAssertEqual(publish.dup, publish2?.dup)
         XCTAssertEqual(publish.qos, publish2?.qos)
@@ -100,7 +100,8 @@ class FrameTests: XCTestCase {
         guard var f0 = FramePublish(packetFixedHeaderType: 0x3D,
                                     bytes: [0x00, 0x03, 0x74, 0x2f, 0x61, // topic = t/a
                                             0x00, 0x10,                   // msgid = 16
-                                            0x61, 0x61, 0x61]) else {     // payload = aaa
+                                            0x61, 0x61, 0x61],            // payload = aaa
+                                    protocolVersion: .v311) else {
             XCTAssertTrue(false)
             return
         }
@@ -138,29 +139,28 @@ class FrameTests: XCTestCase {
         f0.retained = false
         XCTAssertEqual(f0.retained, false)
 
-        let f1 = FramePublish(packetFixedHeaderType: 0x30, bytes: [0, 60, 47, 114, 101, 109, 111, 116, 101, 97, 112, 112, 47, 109, 111, 98, 105, 108, 101, 47, 98, 114, 111, 97, 100, 99, 97, 115, 116, 47, 112, 108, 97, 116, 102, 111, 114, 109, 95, 115, 101, 114, 118, 105, 99, 101, 47, 97, 99, 116, 105, 111, 110, 115, 47, 116, 118, 115, 108, 101, 101, 112])
+        let f1 = FramePublish(packetFixedHeaderType: 0x30, bytes: [0, 60, 47, 114, 101, 109, 111, 116, 101, 97, 112, 112, 47, 109, 111, 98, 105, 108, 101, 47, 98, 114, 111, 97, 100, 99, 97, 115, 116, 47, 112, 108, 97, 116, 102, 111, 114, 109, 95, 115, 101, 114, 118, 105, 99, 101, 47, 97, 99, 116, 105, 111, 110, 115, 47, 116, 118, 115, 108, 101, 101, 112], protocolVersion: .v311)
         XCTAssertEqual(f1?.payload().count, 0)
     }
 
     func testFramePublishRejectsZeroLengthTopic() {
-        CocoaMQTTStorage()?.setMQTTVersion("3.1.1")
-        let frame = FramePublish(packetFixedHeaderType: FrameType.publish.rawValue, bytes: [0x00, 0x00, 0x41, 0x41, 0x41, 0x41])
+        let frame = FramePublish(packetFixedHeaderType: FrameType.publish.rawValue,
+                                 bytes: [0x00, 0x00, 0x41, 0x41, 0x41, 0x41],
+                                 protocolVersion: .v311)
         XCTAssertNil(frame)
     }
 
     func testFramePublishRejectsZeroLengthTopicInMQTT5WithoutAlias() {
-        CocoaMQTTStorage()?.setMQTTVersion("5.0")
-        defer { CocoaMQTTStorage()?.setMQTTVersion("3.1.1") }
-
-        let frame = FramePublish(packetFixedHeaderType: FrameType.publish.rawValue, bytes: [0x00, 0x00, 0x00])
+        let frame = FramePublish(packetFixedHeaderType: FrameType.publish.rawValue,
+                                 bytes: [0x00, 0x00, 0x00],
+                                 protocolVersion: .v5)
         XCTAssertNil(frame)
     }
 
     func testFramePublishAllowsZeroLengthTopicInMQTT5WithAlias() {
-        CocoaMQTTStorage()?.setMQTTVersion("5.0")
-        defer { CocoaMQTTStorage()?.setMQTTVersion("3.1.1") }
-
-        let frame = FramePublish(packetFixedHeaderType: FrameType.publish.rawValue, bytes: [0x00, 0x00, 0x03, 0x23, 0x00, 0x01])
+        let frame = FramePublish(packetFixedHeaderType: FrameType.publish.rawValue,
+                                 bytes: [0x00, 0x00, 0x03, 0x23, 0x00, 0x01],
+                                 protocolVersion: .v5)
         XCTAssertEqual(frame?.topic, "")
     }
 
@@ -168,7 +168,7 @@ class FrameTests: XCTestCase {
 
         var puback = FramePubAck(msgid: 0x1010)
         var bytes = [UInt8](puback.bytes(version: "3.1.1")[2...])
-        var puback2 = FramePubAck(packetFixedHeaderType: FrameType.puback.rawValue, bytes: bytes)
+        var puback2 = FramePubAck(packetFixedHeaderType: FrameType.puback.rawValue, bytes: bytes, protocolVersion: .v311)
 
         XCTAssertEqual(puback.packetFixedHeaderType, puback2?.packetFixedHeaderType)
         XCTAssertEqual(puback.msgid, puback2?.msgid)
@@ -179,7 +179,7 @@ class FrameTests: XCTestCase {
 
         puback.msgid = 0x1011
         bytes = [UInt8](puback.bytes(version: "3.1.1")[2...])
-        puback2 = FramePubAck(packetFixedHeaderType: FrameType.puback.rawValue, bytes: bytes)
+        puback2 = FramePubAck(packetFixedHeaderType: FrameType.puback.rawValue, bytes: bytes, protocolVersion: .v311)
 
         XCTAssertEqual(puback.packetFixedHeaderType, puback2?.packetFixedHeaderType)
         XCTAssertEqual(puback.msgid, puback2?.msgid)
@@ -192,7 +192,7 @@ class FrameTests: XCTestCase {
     func testFramePubRec() {
         var pubrec = FramePubRec(msgid: 0x1010)
         var bytes = [UInt8](pubrec.bytes(version: "3.1.1")[2...])
-        var pubrec2 = FramePubRec(packetFixedHeaderType: FrameType.pubrec.rawValue, bytes: bytes)
+        var pubrec2 = FramePubRec(packetFixedHeaderType: FrameType.pubrec.rawValue, bytes: bytes, protocolVersion: .v311)
 
         XCTAssertEqual(pubrec.packetFixedHeaderType, pubrec2?.packetFixedHeaderType)
         XCTAssertEqual(pubrec.msgid, pubrec2?.msgid)
@@ -203,7 +203,7 @@ class FrameTests: XCTestCase {
 
         pubrec.msgid = 0x1011
         bytes = [UInt8](pubrec.bytes(version: "3.1.1")[2...])
-        pubrec2 = FramePubRec(packetFixedHeaderType: FrameType.pubrec.rawValue, bytes: bytes)
+        pubrec2 = FramePubRec(packetFixedHeaderType: FrameType.pubrec.rawValue, bytes: bytes, protocolVersion: .v311)
 
         XCTAssertEqual(pubrec.packetFixedHeaderType, pubrec2?.packetFixedHeaderType)
         XCTAssertEqual(pubrec.msgid, pubrec2?.msgid)
@@ -217,7 +217,7 @@ class FrameTests: XCTestCase {
 
         var pubrel = FramePubRel(msgid: 0x1010)
         var bytes = [UInt8](pubrel.bytes(version: "3.1.1")[2...])
-        var pubrel2 = FramePubRel(packetFixedHeaderType: 0x62, bytes: bytes)
+        var pubrel2 = FramePubRel(packetFixedHeaderType: 0x62, bytes: bytes, protocolVersion: .v311)
 
         XCTAssertEqual(pubrel.packetFixedHeaderType, pubrel2?.packetFixedHeaderType)
         XCTAssertEqual(pubrel.msgid, pubrel2?.msgid)
@@ -228,7 +228,7 @@ class FrameTests: XCTestCase {
 
         pubrel.msgid = 0x1011
         bytes = [UInt8](pubrel.bytes(version: "3.1.1")[2...])
-        pubrel2 = FramePubRel(packetFixedHeaderType: 0x62, bytes: bytes)
+        pubrel2 = FramePubRel(packetFixedHeaderType: 0x62, bytes: bytes, protocolVersion: .v311)
 
         XCTAssertEqual(pubrel.packetFixedHeaderType, pubrel2?.packetFixedHeaderType)
         XCTAssertEqual(pubrel.msgid, pubrel2?.msgid)
@@ -241,7 +241,7 @@ class FrameTests: XCTestCase {
     func testFramePubComp() {
         var pubcomp = FramePubComp(msgid: 0x1010)
         var bytes = [UInt8](pubcomp.bytes(version: "3.1.1")[2...])
-        var pubcomp2 = FramePubComp(packetFixedHeaderType: FrameType.pubcomp.rawValue, bytes: bytes)
+        var pubcomp2 = FramePubComp(packetFixedHeaderType: FrameType.pubcomp.rawValue, bytes: bytes, protocolVersion: .v311)
 
         XCTAssertEqual(pubcomp.packetFixedHeaderType, pubcomp2?.packetFixedHeaderType)
         XCTAssertEqual(pubcomp.msgid, pubcomp2?.msgid)
@@ -252,7 +252,7 @@ class FrameTests: XCTestCase {
 
         pubcomp.msgid = 0x1011
         bytes = [UInt8](pubcomp.bytes(version: "3.1.1")[2...])
-        pubcomp2 = FramePubComp(packetFixedHeaderType: FrameType.pubcomp.rawValue, bytes: bytes)
+        pubcomp2 = FramePubComp(packetFixedHeaderType: FrameType.pubcomp.rawValue, bytes: bytes, protocolVersion: .v311)
 
         XCTAssertEqual(pubcomp.packetFixedHeaderType, pubcomp2?.packetFixedHeaderType)
         XCTAssertEqual(pubcomp.msgid, pubcomp2?.msgid)
@@ -284,7 +284,7 @@ class FrameTests: XCTestCase {
 
         var suback = FrameSubAck(msgid: 0x1010, grantedQos: [.qos0, .FAILURE, .qos2])
         var bytes = [UInt8](suback.bytes(version: "3.1.1")[2...])
-        var suback2 = FrameSubAck(packetFixedHeaderType: FrameType.suback.rawValue, bytes: bytes)
+        var suback2 = FrameSubAck(packetFixedHeaderType: FrameType.suback.rawValue, bytes: bytes, protocolVersion: .v311)
 
         XCTAssertEqual(suback.packetFixedHeaderType, suback2?.packetFixedHeaderType)
         XCTAssertEqual(suback.msgid, suback2?.msgid)
@@ -300,7 +300,7 @@ class FrameTests: XCTestCase {
         suback.msgid = 0x1011
         suback.grantedQos = [.qos0]
         bytes = [UInt8](suback.bytes(version: "3.1.1")[2...])
-        suback2 = FrameSubAck(packetFixedHeaderType: FrameType.suback.rawValue, bytes: bytes)
+        suback2 = FrameSubAck(packetFixedHeaderType: FrameType.suback.rawValue, bytes: bytes, protocolVersion: .v311)
 
         XCTAssertEqual(suback.packetFixedHeaderType, suback2?.packetFixedHeaderType)
         XCTAssertEqual(suback.msgid, suback2?.msgid)
@@ -308,11 +308,9 @@ class FrameTests: XCTestCase {
     }
 
     func testMQTT5FrameSubAckWithRejectedSubscriptionReasonCode() {
-        CocoaMQTTStorage()?.setMQTTVersion("5.0")
-        defer { CocoaMQTTStorage()?.setMQTTVersion("3.1.1") }
-
         let suback = FrameSubAck(packetFixedHeaderType: FrameType.suback.rawValue,
-                                 bytes: [0x01, 0x93, 0x00, 0x87])
+                                 bytes: [0x01, 0x93, 0x00, 0x87],
+                                 protocolVersion: .v5)
 
         XCTAssertNotNil(suback)
         XCTAssertEqual(suback?.msgid, 0x0193)
@@ -322,14 +320,11 @@ class FrameTests: XCTestCase {
     }
 
     func testMQTT5FrameSubAckWithPropertiesAndRejectedSubscriptionReasonCode() {
-        CocoaMQTTStorage()?.setMQTTVersion("5.0")
-        defer { CocoaMQTTStorage()?.setMQTTVersion("3.1.1") }
-
         let reasonString = Array("denied".utf8)
         let properties = [CocoaMQTTPropertyName.reasonString.rawValue, 0x00, UInt8(reasonString.count)] + reasonString
         let bytes = [0x01, 0x93, UInt8(properties.count)] + properties + [0x87]
 
-        let suback = FrameSubAck(packetFixedHeaderType: FrameType.suback.rawValue, bytes: bytes)
+        let suback = FrameSubAck(packetFixedHeaderType: FrameType.suback.rawValue, bytes: bytes, protocolVersion: .v5)
 
         XCTAssertNotNil(suback)
         XCTAssertEqual(suback?.msgid, 0x0193)
@@ -340,14 +335,11 @@ class FrameTests: XCTestCase {
     }
 
     func testMQTT5FrameSubAckWithMultiBytePropertyLength() {
-        CocoaMQTTStorage()?.setMQTTVersion("5.0")
-        defer { CocoaMQTTStorage()?.setMQTTVersion("3.1.1") }
-
         let reasonString = Array(repeating: UInt8(ascii: "a"), count: 127)
         let properties = [CocoaMQTTPropertyName.reasonString.rawValue, 0x00, UInt8(reasonString.count)] + reasonString
         let bytes = [0x01, 0x93] + beVariableByteInteger(length: properties.count) + properties + [0x87]
 
-        let suback = FrameSubAck(packetFixedHeaderType: FrameType.suback.rawValue, bytes: bytes)
+        let suback = FrameSubAck(packetFixedHeaderType: FrameType.suback.rawValue, bytes: bytes, protocolVersion: .v5)
 
         XCTAssertNotNil(suback)
         XCTAssertEqual(suback?.msgid, 0x0193)
@@ -358,9 +350,6 @@ class FrameTests: XCTestCase {
     }
 
     func testMQTT5FrameSubAckWithUserPropertyAndRejectedSubscriptionReasonCode() {
-        CocoaMQTTStorage()?.setMQTTVersion("5.0")
-        defer { CocoaMQTTStorage()?.setMQTTVersion("3.1.1") }
-
         let properties: [UInt8] = [
             CocoaMQTTPropertyName.userProperty.rawValue,
             0x00, 0x03, 0x6B, 0x65, 0x79,
@@ -368,7 +357,7 @@ class FrameTests: XCTestCase {
         ]
         let bytes = [0x01, 0x93, UInt8(properties.count)] + properties + [0x87]
 
-        let suback = FrameSubAck(packetFixedHeaderType: FrameType.suback.rawValue, bytes: bytes)
+        let suback = FrameSubAck(packetFixedHeaderType: FrameType.suback.rawValue, bytes: bytes, protocolVersion: .v5)
 
         XCTAssertNotNil(suback)
         XCTAssertEqual(suback?.msgid, 0x0193)
@@ -395,7 +384,7 @@ class FrameTests: XCTestCase {
 
         var unsuback = FrameUnsubAck(msgid: 0x1010, payload: [])
         var bytes = [UInt8](unsuback.bytes(version: "3.1.1")[2...])
-        var unsuback2 = FrameUnsubAck(packetFixedHeaderType: FrameType.unsuback.rawValue, bytes: bytes)
+        var unsuback2 = FrameUnsubAck(packetFixedHeaderType: FrameType.unsuback.rawValue, bytes: bytes, protocolVersion: .v311)
 
         XCTAssertEqual(unsuback.packetFixedHeaderType, unsuback2?.packetFixedHeaderType)
         XCTAssertEqual(unsuback.msgid, unsuback2?.msgid)
@@ -406,7 +395,7 @@ class FrameTests: XCTestCase {
 
         unsuback.msgid = 0x1011
         bytes = [UInt8](unsuback.bytes(version: "3.1.1")[2...])
-        unsuback2 = FrameUnsubAck(packetFixedHeaderType: FrameType.unsuback.rawValue, bytes: bytes)
+        unsuback2 = FrameUnsubAck(packetFixedHeaderType: FrameType.unsuback.rawValue, bytes: bytes, protocolVersion: .v311)
 
         XCTAssertEqual(unsuback.packetFixedHeaderType, unsuback2?.packetFixedHeaderType)
         XCTAssertEqual(unsuback.msgid, unsuback2?.msgid)

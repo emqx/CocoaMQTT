@@ -22,7 +22,7 @@ final class CocoaMQTT5ReceiveMessageContentTypeTests: XCTestCase {
         let packet = publish.bytes(version: "5.0")
         let remainingLength = decodeVariableByteInteger(data: packet, offset: 1)
         let body = [UInt8](packet[remainingLength.newOffset..<packet.count])
-        return FramePublish(packetFixedHeaderType: packet[0], bytes: body)
+        return FramePublish(packetFixedHeaderType: packet[0], bytes: body, protocolVersion: .v5)
     }
 
     private func frameType(from data: Data) -> UInt8? {
@@ -33,9 +33,6 @@ final class CocoaMQTT5ReceiveMessageContentTypeTests: XCTestCase {
     }
 
     func testDidReceiveMessageMapsContentType() {
-        CocoaMQTTStorage()?.setMQTTVersion("5.0")
-        defer { CocoaMQTTStorage()?.setMQTTVersion("3.1.1") }
-
         let mqtt5 = CocoaMQTT5(clientID: "mq5-recv-content-type-\(UUID().uuidString)")
         let reader = CocoaMQTTReader(socket: SocketSpy(), delegate: nil)
 
@@ -62,9 +59,6 @@ final class CocoaMQTT5ReceiveMessageContentTypeTests: XCTestCase {
     }
 
     func testDidReceiveMessageKeepsWillPropertiesUnsetForPublishProperties() {
-        CocoaMQTTStorage()?.setMQTTVersion("5.0")
-        defer { CocoaMQTTStorage()?.setMQTTVersion("3.1.1") }
-
         let mqtt5 = CocoaMQTT5(clientID: "mq5-recv-properties-\(UUID().uuidString)")
         let reader = CocoaMQTTReader(socket: SocketSpy(), delegate: nil)
 
@@ -106,9 +100,6 @@ final class CocoaMQTT5ReceiveMessageContentTypeTests: XCTestCase {
     }
 
     func testDidReceiveQoS1PublishSendsPuback() {
-        CocoaMQTTStorage()?.setMQTTVersion("5.0")
-        defer { CocoaMQTTStorage()?.setMQTTVersion("3.1.1") }
-
         let socket = SocketSpy()
         let mqtt5 = CocoaMQTT5(clientID: "mq5-recv-qos1-\(UUID().uuidString)", socket: socket)
         let reader = CocoaMQTTReader(socket: socket, delegate: nil)
@@ -127,9 +118,6 @@ final class CocoaMQTT5ReceiveMessageContentTypeTests: XCTestCase {
     }
 
     func testDidReceiveQoS2PublishSendsPubrec() {
-        CocoaMQTTStorage()?.setMQTTVersion("5.0")
-        defer { CocoaMQTTStorage()?.setMQTTVersion("3.1.1") }
-
         let socket = SocketSpy()
         let mqtt5 = CocoaMQTT5(clientID: "mq5-recv-qos2-\(UUID().uuidString)", socket: socket)
         let reader = CocoaMQTTReader(socket: socket, delegate: nil)
@@ -148,9 +136,6 @@ final class CocoaMQTT5ReceiveMessageContentTypeTests: XCTestCase {
     }
 
     func testDidReceiveMessageWithContentTypeAndUnspecifiedPayloadFormatKeepsWillPropertiesUnset() {
-        CocoaMQTTStorage()?.setMQTTVersion("5.0")
-        defer { CocoaMQTTStorage()?.setMQTTVersion("3.1.1") }
-
         let mqtt5 = CocoaMQTT5(clientID: "mq5-recv-content-type-unspecified-\(UUID().uuidString)")
         let reader = CocoaMQTTReader(socket: SocketSpy(), delegate: nil)
 
@@ -174,7 +159,7 @@ final class CocoaMQTT5ReceiveMessageContentTypeTests: XCTestCase {
         let packet = outboundPublish.bytes(version: "5.0")
         let remainingLength = decodeVariableByteInteger(data: packet, offset: 1)
         let body = [UInt8](packet[remainingLength.newOffset..<packet.count])
-        guard let publish = FramePublish(packetFixedHeaderType: packet[0], bytes: body) else {
+        guard let publish = FramePublish(packetFixedHeaderType: packet[0], bytes: body, protocolVersion: .v5) else {
             XCTFail("Failed to decode MQTT5 publish frame")
             return
         }

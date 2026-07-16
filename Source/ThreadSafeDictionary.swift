@@ -51,6 +51,12 @@ public class ThreadSafeDictionary<K: Hashable, V>: Collection {
         }
     }
 
+    func setValue(_ value: V?, forKey key: K) {
+        concurrentQueue.sync(flags: .barrier) {
+            dictionary[key] = value
+        }
+    }
+
     @discardableResult
     public func removeValue(forKey key: K) -> V? {
         concurrentQueue.sync(flags: .barrier) {
