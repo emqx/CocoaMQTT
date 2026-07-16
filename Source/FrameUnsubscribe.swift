@@ -123,7 +123,7 @@ extension FrameUnsubscribe: CustomStringConvertible {
             var desc = ""
             if let unwrappedList = topicFilters, !unwrappedList.isEmpty {
                 for subscription in unwrappedList {
-                    desc += "UNSUBSCRIBE(id: \(String(describing: subscription.topic)), topics: \(subscription.topic))  "
+                    desc += "UNSUBSCRIBE(id: \(String(describing: msgid)), topics: \(subscription.topic))  "
                 }
             }
             return desc

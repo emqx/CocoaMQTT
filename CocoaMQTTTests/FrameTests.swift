@@ -390,6 +390,19 @@ class FrameTests: XCTestCase {
                         0x10, 0x10,
                         0x00, 0x05, 0x74, 0x6F, 0x70, 0x69, 0x63,
                         0x00, 0x02, 0x74, 0x32])
+
+        let unsub5 = FrameUnsubscribe(
+            msgid: 0x1010,
+            topics: [
+                MqttSubscription(topic: "topic", qos: .qos1),
+                MqttSubscription(topic: "t2", qos: .qos1)
+            ]
+        )
+        XCTAssertEqual(
+            unsub5.description,
+            "UNSUBSCRIBE(id: Optional(4112), topics: topic)  "
+                + "UNSUBSCRIBE(id: Optional(4112), topics: t2)  "
+        )
     }
 
     func testFrameUnsubAck() {

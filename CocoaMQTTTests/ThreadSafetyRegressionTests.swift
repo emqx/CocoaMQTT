@@ -169,7 +169,7 @@ final class ThreadSafetyRegressionTests: XCTestCase {
                 let identifier = mqtt.publish(
                     CocoaMQTTMessage(topic: "t/\(index)", payload: [UInt8(index % 255)], qos: .qos1)
                 )
-                identifiers[identifier] = true
+                identifiers.setValue(true, forKey: identifier)
                 group.leave()
             }
         }
