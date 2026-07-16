@@ -324,10 +324,12 @@ public class CocoaMQTT5: NSObject, CocoaMQTT5Client {
     fileprivate var unsubscriptionsWaitingAck = ThreadSafeDictionary<UInt16, [MqttSubscription]>(label: "unsubscriptionsWaitingAck")
 
     /// Sending messages
-    fileprivate var sendingMessages = ThreadSafeDictionary<UInt16, CocoaMQTT5Message>(label: "sendingMessages5")
+    fileprivate var sendingMessages = ThreadSafeDictionary<UInt64, CocoaMQTT5Message>(label: "sendingMessages5")
 
     /// message id counter
     private var _msgid: UInt16 = 0
+    private var _deliveryToken = UInt64(UInt16.max)
+    private let messageIdentifierLock = NSLock()
     fileprivate var socket: CocoaMQTTSocketProtocol
     fileprivate var reader: CocoaMQTTReader?
 
@@ -395,11 +397,28 @@ public class CocoaMQTT5: NSObject, CocoaMQTT5Client {
     }
 
     fileprivate func nextMessageID() -> UInt16 {
+        messageIdentifierLock.lock()
+        defer { messageIdentifierLock.unlock() }
         if _msgid == UInt16.max {
             _msgid = 0
         }
         _msgid += 1
         return _msgid
+    }
+
+    fileprivate func nextDeliveryToken() -> UInt64 {
+        messageIdentifierLock.lock()
+        defer { messageIdentifierLock.unlock() }
+        if _deliveryToken >= UInt64(Int.max) {
+            _deliveryToken = UInt64(UInt16.max) + 1
+        } else {
+            _deliveryToken += 1
+        }
+        return _deliveryToken
+    }
+
+    fileprivate func discardStoredSession() {
+        CocoaMQTTStorage(by: clientID, protocolVersion: .v5)?.removeAll()
     }
 
     fileprivate func puback(_ type: FrameType, msgid: UInt16) {
@@ -596,11 +615,14 @@ public class CocoaMQTT5: NSObject, CocoaMQTT5Client {
         }
 
         let msgid: UInt16
+        let deliveryToken: UInt64
 
         if message.qos == .qos0 {
             msgid = 0
+            deliveryToken = nextDeliveryToken()
         } else {
             msgid = nextMessageID()
+            deliveryToken = UInt64(msgid)
         }
 
         printDebug("message.topic \(message.topic )   = message.payload \(message.payload)")
@@ -613,12 +635,13 @@ public class CocoaMQTT5: NSObject, CocoaMQTT5Client {
         frame.dup = DUP
         frame.publishProperties = properties
         frame.retained = message.retained
+        frame.deliveryToken = deliveryToken
 
-        sendingMessages.setValue(message, forKey: msgid)
+        sendingMessages.setValue(message, forKey: deliveryToken)
 
         // Push frame to deliver message queue
         guard deliver.add(frame) else {
-            sendingMessages.removeValue(forKey: msgid)
+            sendingMessages.removeValue(forKey: deliveryToken)
             return -1
         }
 
@@ -697,23 +720,27 @@ extension CocoaMQTT5: CocoaMQTTDeliverProtocol {
     func deliver(_ deliver: CocoaMQTTDeliver, wantToSend frame: Frame) {
         if let publish = frame as? FramePublish {
             let msgid = publish.msgid
+            let deliveryToken = publish.deliveryToken ?? UInt64(msgid)
             var message: CocoaMQTT5Message?
 
-            if let sendingMessage = sendingMessages[msgid] {
+            if let sendingMessage = sendingMessages[deliveryToken] {
                 message = sendingMessage
                 // printError("Want send \(frame), but not found in CocoaMQTT cache")
             } else {
-                message = CocoaMQTT5Message(topic: publish.topic, payload: publish.payload())
+                message = CocoaMQTT5Message(
+                    topic: publish.topic,
+                    payload: publish.payload(),
+                    qos: publish.qos,
+                    retained: publish.retained
+                )
             }
 
-            send(publish, tag: Int(msgid))
+            let writeTag = publish.qos == .qos0 ? Int(deliveryToken) : Int(msgid)
+            send(publish, tag: writeTag)
 
             if let message = message {
                 self.delegate?.mqtt5(self, didPublishMessage: message, id: msgid)
                 self.didPublishMessage(self, message, msgid)
-            }
-            if publish.qos == .qos0 {
-                sendingMessages.removeValue(forKey: msgid)
             }
         } else if let pubrel = frame as? FramePubRel {
             // -- Send PUBREL
@@ -859,7 +886,9 @@ extension CocoaMQTT5: CocoaMQTTSocketDelegate {
     }
 
     public func socket(_ socket: CocoaMQTTSocketProtocol, didWriteDataWithTag tag: Int) {
-        // XXX: How to print writed bytes??
+        if tag > Int(UInt16.max) {
+            sendingMessages.removeValue(forKey: UInt64(tag))
+        }
     }
 
     public func socket(_ socket: CocoaMQTTSocketProtocol, didRead data: Data, withTag tag: Int) {
@@ -880,6 +909,12 @@ extension CocoaMQTT5: CocoaMQTTSocketDelegate {
     public func socketDidDisconnect(_ socket: CocoaMQTTSocketProtocol, withError err: Error?) {
         // Clean up
         socket.setDelegate(nil, delegateQueue: nil)
+        sendingMessages.removeValues { key, _ in key > UInt64(UInt16.max) }
+        if cleanSession {
+            discardStoredSession()
+            deliver.cleanAll(discardStored: true)
+            sendingMessages.removeAllSync()
+        }
         updateDisconnectReasonAfterSocketDisconnect(error: err)
         if is_internal_disconnected || !autoReconnect {
             resetAutoReconnectState()
@@ -979,8 +1014,9 @@ extension CocoaMQTT5: CocoaMQTTReaderDelegate {
             // recover session if enable
 
             if cleanSession {
-                deliver.cleanAll()
-                sendingMessages.removeAll()
+                discardStoredSession()
+                deliver.cleanAll(discardStored: true)
+                sendingMessages.removeAllSync()
             } else {
                 if let storage = CocoaMQTTStorage(by: clientID, protocolVersion: .v5) {
                     deliver.recoverSessionBy(storage)
@@ -1023,7 +1059,7 @@ extension CocoaMQTT5: CocoaMQTTReaderDelegate {
         printDebug("RECV: \(puback)")
 
         deliver.ack(by: puback)
-        sendingMessages.removeValue(forKey: puback.msgid)
+        sendingMessages.removeValue(forKey: UInt64(puback.msgid))
 
         delegate?.mqtt5(self, didPublishAck: puback.msgid, pubAckData: puback.pubAckProperties ?? nil)
         didPublishAck(self, puback.msgid, puback.pubAckProperties ?? nil)
@@ -1033,6 +1069,9 @@ extension CocoaMQTT5: CocoaMQTTReaderDelegate {
         printDebug("RECV: \(pubrec)")
 
         deliver.ack(by: pubrec)
+        if let reasonCode = pubrec.reasonCode, reasonCode.rawValue >= 0x80 {
+            sendingMessages.removeValue(forKey: UInt64(pubrec.msgid))
+        }
 
         delegate?.mqtt5(self, didPublishRec: pubrec.msgid, pubRecData: pubrec.pubRecProperties ?? nil)
         didPublishRec(self, pubrec.msgid, pubrec.pubRecProperties ?? nil)
@@ -1048,7 +1087,7 @@ extension CocoaMQTT5: CocoaMQTTReaderDelegate {
         printDebug("RECV: \(pubcomp)")
 
         deliver.ack(by: pubcomp)
-        sendingMessages.removeValue(forKey: pubcomp.msgid)
+        sendingMessages.removeValue(forKey: UInt64(pubcomp.msgid))
 
         delegate?.mqtt5?(self, didPublishComplete: pubcomp.msgid, pubCompData: pubcomp.pubCompProperties ?? nil)
         didCompletePublish(self, pubcomp.msgid, pubcomp.pubCompProperties ?? nil)

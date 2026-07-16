@@ -14,6 +14,8 @@ public class MqttDecodePubRec: NSObject {
     var propertyLength: Int = 0
 
     public var reasonCode: CocoaMQTTPUBACKReasonCode?
+    /// PUBREC-specific reason code. `reasonCode` is retained for source compatibility.
+    public var pubRecReasonCode: CocoaMQTTPUBRECReasonCode?
     public var msgid: UInt16 = 0
     public var reasonString: String?
     public var userProperty: [String: String]?
@@ -35,6 +37,8 @@ public class MqttDecodePubRec: NSObject {
 
         // The Reason Code and Property Length can be omitted if the Reason Code is 0x00 (Success) and there are no Properties. In this case the PUBACK has a Remaining Length of 2.
         if dataIndex + 1 > pubAckData.count {
+            reasonCode = .success
+            pubRecReasonCode = .success
             return
         }
 
@@ -42,6 +46,7 @@ public class MqttDecodePubRec: NSObject {
             return
         }
         reasonCode = ack
+        pubRecReasonCode = CocoaMQTTPUBRECReasonCode(rawValue: pubAckData[dataIndex])
         dataIndex += 1
 
         if protocolVersion == .v5 {

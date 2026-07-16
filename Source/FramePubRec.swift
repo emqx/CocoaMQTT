@@ -119,6 +119,11 @@ extension FramePubRec: InitialWithBytes {
         msgid = UInt16(bytes[0]) << 8 + UInt16(bytes[1])
 
         if protocolVersion == .v5 {
+            if bytes.count == 2 {
+                reasonCode = .success
+            } else {
+                reasonCode = CocoaMQTTPUBRECReasonCode(rawValue: bytes[2])
+            }
             self.pubRecProperties = MqttDecodePubRec()
             self.pubRecProperties!.decodePubRec(fixedHeader: packetFixedHeaderType, pubAckData: bytes, protocolVersion: protocolVersion)
         }

@@ -155,4 +155,40 @@ final class ThreadSafetyRegressionTests: XCTestCase {
         XCTAssertEqual(readGroup.wait(timeout: .now() + 10), .success)
         XCTAssertTrue([.connecting, .connected, .disconnected].contains(mqtt5.connState))
     }
+
+    func testConcurrentPublishesAllocateUniquePacketIdentifiers() {
+        let mqtt = CocoaMQTT(clientID: "thread-safe-publish-\(UUID().uuidString)", socket: SocketStub())
+        mqtt.delegateQueue = DispatchQueue(label: "tests.threadsafe.publish.delegate")
+        let queue = DispatchQueue(label: "tests.threadsafe.publish", attributes: .concurrent)
+        let group = DispatchGroup()
+        let identifiers = ThreadSafeDictionary<Int, Bool>(label: "tests.threadsafe.publish.identifiers")
+
+        for index in 0..<400 {
+            group.enter()
+            queue.async {
+                let identifier = mqtt.publish(
+                    CocoaMQTTMessage(topic: "t/\(index)", payload: [UInt8(index % 255)], qos: .qos1)
+                )
+                identifiers[identifier] = true
+                group.leave()
+            }
+        }
+
+        XCTAssertEqual(group.wait(timeout: .now() + 10), .success)
+        XCTAssertEqual(identifiers.snapshot().count, 400)
+        XCTAssertFalse(identifiers.snapshot().keys.contains(-1))
+
+        mqtt.socketDidDisconnect(SocketStub(), withError: nil)
+    }
+
+    private final class SocketStub: CocoaMQTTSocketProtocol {
+        var enableSSL = false
+
+        func setDelegate(_ theDelegate: CocoaMQTTSocketDelegate?, delegateQueue: DispatchQueue?) {}
+        func connect(toHost host: String, onPort port: UInt16) throws {}
+        func connect(toHost host: String, onPort port: UInt16, withTimeout timeout: TimeInterval) throws {}
+        func disconnect() {}
+        func readData(toLength length: UInt, withTimeout timeout: TimeInterval, tag: Int) {}
+        func write(_ data: Data, withTimeout timeout: TimeInterval, tag: Int) {}
+    }
 }

@@ -22,6 +22,8 @@ protocol CocoaMQTTStorageProtocol {
 
     func remove(_ frame: FramePubRel)
 
+    func removeAll()
+
     func synchronize() -> Bool
 
     /// Read all stored messages by saving order
@@ -30,6 +32,12 @@ protocol CocoaMQTTStorageProtocol {
 
 final class CocoaMQTTStorage: CocoaMQTTStorageProtocol {
 
+    private struct StoredFrameValue {
+        let key: String
+        let msgid: UInt16
+        let value: Any
+    }
+
     var clientId: String = ""
 
     var userDefault: UserDefaults = UserDefaults()
@@ -37,6 +45,8 @@ final class CocoaMQTTStorage: CocoaMQTTStorageProtocol {
     var versionDefault: UserDefaults = UserDefaults()
 
     private var protocolVersion: CocoaMQTTProtocolVersion = .v311
+
+    private var usesVersionedKeys = false
 
     init?() {
         versionDefault = UserDefaults()
@@ -54,12 +64,14 @@ final class CocoaMQTTStorage: CocoaMQTTStorageProtocol {
 
     init?(by clientId: String, protocolVersion: CocoaMQTTProtocolVersion) {
         self.protocolVersion = protocolVersion
+        self.usesVersionedKeys = true
         guard let userDefault = UserDefaults(suiteName: CocoaMQTTStorage.name(clientId)) else {
             return nil
         }
 
         self.clientId = clientId
         self.userDefault = userDefault
+        migrateLegacyFramesIfNeeded()
     }
 
     deinit {
@@ -104,6 +116,12 @@ final class CocoaMQTTStorage: CocoaMQTTStorageProtocol {
         }
     }
 
+    func removeAll() {
+        for storedKey in userDefault.dictionaryRepresentation().keys where messageIdentifier(for: storedKey) != nil {
+            userDefault.removeObject(forKey: storedKey)
+        }
+    }
+
     func synchronize() -> Bool {
         return userDefault.synchronize()
     }
@@ -117,11 +135,52 @@ final class CocoaMQTTStorage: CocoaMQTTStorageProtocol {
     }
 
     private func key(_ msgid: UInt16) -> String {
-        return "\(msgid)"
+        guard usesVersionedKeys else {
+            return "\(msgid)"
+        }
+        return "\(namespacePrefix)\(msgid)"
+    }
+
+    private var namespacePrefix: String {
+        return "mqtt-\(protocolVersion.rawValue)-"
+    }
+
+    private func messageIdentifier(for storedKey: String) -> UInt16? {
+        guard usesVersionedKeys else {
+            return UInt16(storedKey)
+        }
+        guard storedKey.hasPrefix(namespacePrefix) else {
+            return nil
+        }
+        return UInt16(storedKey.dropFirst(namespacePrefix.count))
     }
 
     private static func name(_ clientId: String) -> String {
         return "cocomqtt-\(clientId)"
+    }
+
+    private func migrateLegacyFramesIfNeeded() {
+        guard queryMQTTVersion() == protocolVersion.rawValue else {
+            return
+        }
+
+        let legacyFrames = userDefault.dictionaryRepresentation().compactMap { storedKey, value -> StoredFrameValue? in
+            guard let msgid = UInt16(storedKey) else {
+                return nil
+            }
+            return StoredFrameValue(key: storedKey, msgid: msgid, value: value)
+        }
+
+        for legacyFrame in legacyFrames {
+            let versionedKey = key(legacyFrame.msgid)
+            if userDefault.object(forKey: versionedKey) == nil {
+                userDefault.set(legacyFrame.value, forKey: versionedKey)
+            }
+            userDefault.removeObject(forKey: legacyFrame.key)
+        }
+        if !legacyFrames.isEmpty {
+            userDefault.synchronize()
+        }
     }
 
     private func parse(_ bytes: [UInt8]) -> (UInt8, [UInt8])? {
@@ -139,27 +198,19 @@ final class CocoaMQTTStorage: CocoaMQTTStorageProtocol {
 
     private func __read(needDelete: Bool) -> [Frame] {
         var frames = [Frame]()
-        let allObjs = userDefault.dictionaryRepresentation().sorted { (k1, k2) in
-            let left = UInt16(k1.key)
-            let right = UInt16(k2.key)
-
-            switch (left, right) {
-            case let (l?, r?):
-                return l < r
-            case (_?, nil):
-                return true
-            case (nil, _?):
-                return false
-            case (nil, nil):
-                return k1.key < k2.key
+        let allObjs = userDefault.dictionaryRepresentation().compactMap { storedKey, value -> StoredFrameValue? in
+            guard let msgid = messageIdentifier(for: storedKey) else {
+                return nil
             }
-        }
-        for (k, v) in allObjs {
+            return StoredFrameValue(key: storedKey, msgid: msgid, value: value)
+        }.sorted { $0.msgid < $1.msgid }
+        for storedFrame in allObjs {
+            let v = storedFrame.value
             guard let bytes = v as? [UInt8] else { continue }
             guard let parsed = parse(bytes) else { continue }
 
             if needDelete {
-                userDefault.removeObject(forKey: k)
+                userDefault.removeObject(forKey: storedFrame.key)
             }
 
             if let f = FramePublish(packetFixedHeaderType: parsed.0, bytes: parsed.1, protocolVersion: protocolVersion) {

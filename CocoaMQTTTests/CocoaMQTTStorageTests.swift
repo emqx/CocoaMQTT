@@ -78,6 +78,51 @@ class CocoaMQTTStorageTests: XCTestCase {
         XCTAssertEqual(recoveredMsgids, [1, 2, 10])
     }
 
+    func testVersionedStorageKeepsMQTT311AndMQTT5FramesIndependent() throws {
+        let clientId = "storage-version-isolation-\(UUID().uuidString)"
+        defer { clearStorage(clientId) }
+
+        let mqtt311 = try XCTUnwrap(CocoaMQTTStorage(by: clientId, protocolVersion: .v311))
+        let mqtt5 = try XCTUnwrap(CocoaMQTTStorage(by: clientId, protocolVersion: .v5))
+        let mqtt311Frame = FramePublish(topic: "v3/topic", payload: [3], qos: .qos1, msgid: 1)
+        var mqtt5Frame = FramePublish(topic: "v5/topic", payload: [5], qos: .qos1, msgid: 1)
+        mqtt5Frame.publishProperties = MqttPublishProperties()
+
+        XCTAssertTrue(mqtt311.write(mqtt311Frame))
+        XCTAssertTrue(mqtt5.write(mqtt5Frame))
+
+        let recovered311 = try XCTUnwrap(mqtt311.readAll().first as? FramePublish)
+        let recovered5 = try XCTUnwrap(mqtt5.readAll().first as? FramePublish)
+        XCTAssertEqual(recovered311.topic, "v3/topic")
+        XCTAssertEqual(recovered311.payload(), [3])
+        XCTAssertEqual(recovered5.topic, "v5/topic")
+        XCTAssertEqual(recovered5.payload5(), [5])
+
+        mqtt311.removeAll()
+        XCTAssertTrue(mqtt311.readAll().isEmpty)
+        XCTAssertEqual((mqtt5.readAll().first as? FramePublish)?.topic, "v5/topic")
+    }
+
+    func testVersionedStorageMigratesMatchingLegacyFrames() throws {
+        let clientId = "storage-version-migration-\(UUID().uuidString)"
+        let previousVersion = CocoaMQTTStorage()?.queryMQTTVersion()
+        defer {
+            clearStorage(clientId)
+            if let previousVersion = previousVersion {
+                CocoaMQTTStorage()?.setMQTTVersion(previousVersion)
+            }
+        }
+        setMqtt3Version()
+
+        let legacy = try XCTUnwrap(CocoaMQTTStorage(by: clientId))
+        let frame = FramePublish(topic: "legacy/topic", payload: [1], qos: .qos1, msgid: 9)
+        XCTAssertTrue(legacy.write(frame))
+
+        let versioned = try XCTUnwrap(CocoaMQTTStorage(by: clientId, protocolVersion: .v311))
+        XCTAssertEqual((versioned.readAll().first as? FramePublish)?.topic, "legacy/topic")
+        XCTAssertTrue(legacy.readAll().isEmpty)
+    }
+
     private func clearStorage(_ clientId: String) {
         let suiteName = "cocomqtt-\(clientId)"
         guard let defaults = UserDefaults(suiteName: suiteName) else {

@@ -213,6 +213,18 @@ class FrameTests: XCTestCase {
         XCTAssertEqual(pubrec2?.bytes(version: "3.1.1"), [0x50, 0x02, 0x10, 0x11])
     }
 
+    func testMQTT5FramePubRecDecodesFailureReasonCode() {
+        let frame = FramePubRec(
+            packetFixedHeaderType: FrameType.pubrec.rawValue,
+            bytes: [0x00, 0x07, CocoaMQTTPUBRECReasonCode.notAuthorized.rawValue],
+            protocolVersion: .v5
+        )
+
+        XCTAssertEqual(frame?.msgid, 7)
+        XCTAssertEqual(frame?.reasonCode, .notAuthorized)
+        XCTAssertEqual(frame?.pubRecProperties?.pubRecReasonCode, .notAuthorized)
+    }
+
     func testFramePubRel() {
 
         var pubrel = FramePubRel(msgid: 0x1010)

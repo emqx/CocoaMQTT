@@ -266,6 +266,24 @@ class CocoaMQTTDeliverTests: XCTestCase {
         XCTAssertEqual(storage.readAll().count, 0)
     }
 
+    func testFailedMQTT5PubRecCompletesQoS2WithoutSendingPubRel() {
+        let caller = Caller()
+        let deliver = CocoaMQTTDeliver()
+        deliver.delegate = caller
+        let publish = FramePublish(topic: "t/failure", payload: [1], qos: .qos2, msgid: 7)
+
+        XCTAssertTrue(deliver.add(publish))
+        ms_sleep(100)
+        caller.reset()
+
+        deliver.ack(by: FramePubRec(msgid: publish.msgid, reasonCode: .notAuthorized))
+        deliver.t_waitUntilIdle()
+        caller.delegateQueue.sync {}
+
+        XCTAssertTrue(caller.frames.isEmpty)
+        XCTAssertTrue(deliver.t_inflightFrames().isEmpty)
+    }
+
     func testRecoverSessionKeepStoredFramesUntilAck() {
         let clientID = "deliver-recover-\(UUID().uuidString)"
         defer {
@@ -357,7 +375,11 @@ private class Caller: CocoaMQTTDeliverProtocol {
 
     var delegateQueue: DispatchQueue
 
-    var frames = [Frame]()
+    private var recordedFrames = [Frame]()
+
+    var frames: [Frame] {
+        return delegateQueue.sync { recordedFrames }
+    }
 
     init() {
         delegateQueue = DispatchQueue(label: "caller.deliver.test")
@@ -365,13 +387,15 @@ private class Caller: CocoaMQTTDeliverProtocol {
     }
 
     func reset() {
-        frames = []
+        delegateQueue.sync {
+            recordedFrames.removeAll()
+        }
     }
 
     func deliver(_ deliver: CocoaMQTTDeliver, wantToSend frame: Frame) {
         assert_in_del_queue()
 
-        frames.append(frame)
+        recordedFrames.append(frame)
     }
 
     private func assert_in_del_queue() {

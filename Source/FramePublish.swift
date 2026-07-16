@@ -35,6 +35,10 @@ struct FramePublish: Frame {
 
     var mqtt5Topic: String = ""
 
+    /// Local-only identifier used to associate a queued publish with its original message.
+    /// QoS 0 packets have no MQTT Packet Identifier, so this value must not be encoded.
+    var deliveryToken: UInt64?
+
     // --- Attributes End
 
     init(topic: String, payload: [UInt8], qos: CocoaMQTTQoS = .qos0, msgid: UInt16 = 0) {

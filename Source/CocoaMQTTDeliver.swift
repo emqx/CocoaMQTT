@@ -96,15 +96,18 @@ class CocoaMQTTDeliver: NSObject {
     ///
     /// return false means the frame is rejected because of the buffer is full
     func add(_ frame: FramePublish) -> Bool {
-        guard !isQueueFull else {
-            printError("Sending buffer is full, frame \(frame) has been rejected to add.")
-            return false
-        }
-
-        // Sync to push the frame to mqueue for avoiding overcommit
-        deliverQueue.sync {
+        let accepted = deliverQueue.sync {
+            guard mqueue.count < mqueueSize else {
+                return false
+            }
             mqueue.append(frame)
             _ = storage?.write(frame)
+            return true
+        }
+
+        guard accepted else {
+            printError("Sending buffer is full, frame \(frame) has been rejected to add.")
+            return false
         }
 
         deliverQueue.async { [weak self] in
@@ -129,12 +132,17 @@ class CocoaMQTTDeliver: NSObject {
         }
 
         let ackType = frame.type
-        let shouldRemoveFromStorage = frame is FramePubAck || frame is FramePubComp
+        let failedPubRec = (frame as? FramePubRec).map { ($0.reasonCode?.rawValue ?? 0) >= 0x80 } ?? false
+        let shouldRemoveFromStorage = frame is FramePubAck || frame is FramePubComp || failedPubRec
         let ackFrameDescription = String(describing: frame)
 
         deliverQueue.async { [weak self] in
             guard let self = self else { return }
-            let acked = self.ackInflightFrame(withMsgid: msgid, type: ackType)
+            let acked = self.ackInflightFrame(
+                withMsgid: msgid,
+                type: ackType,
+                failedPubRec: failedPubRec
+            )
             if acked.count == 0 {
                 printWarning("Acknowledge by \(ackFrameDescription), but not found in inflight window")
             } else {
@@ -151,11 +159,16 @@ class CocoaMQTTDeliver: NSObject {
     /// Clean Inflight content to prevent message blocked, when next connection established
     ///
     /// !!Warning: it's a temporary method for hotfix #221
-    func cleanAll() {
+    func cleanAll(discardStored: Bool = false) {
         deliverQueue.sync { [weak self] in
             guard let self = self else { return }
             self.mqueue.removeAll()
             self.inflight.removeAll()
+            self.awaitingTimer = nil
+            if discardStored {
+                self.storage?.removeAll()
+                self.storage = nil
+            }
         }
     }
 }
@@ -252,7 +265,11 @@ extension CocoaMQTTDeliver {
     }
 
     @discardableResult
-    private func ackInflightFrame(withMsgid msgid: UInt16, type: FrameType) -> [Frame] {
+    private func ackInflightFrame(
+        withMsgid msgid: UInt16,
+        type: FrameType,
+        failedPubRec: Bool = false
+    ) -> [Frame] {
         var ackedFrames = [Frame]()
         inflight = inflight.filterMap { frame in
 
@@ -260,7 +277,10 @@ extension CocoaMQTTDeliver {
             if let publish = frame.frame as? FramePublish,
                publish.msgid == msgid {
 
-                if publish.qos == .qos2 && type == .pubrec {  // -- Replace PUBLISH with PUBREL
+                if publish.qos == .qos2 && type == .pubrec && failedPubRec {
+                    ackedFrames.append(publish)
+                    return (false, frame)
+                } else if publish.qos == .qos2 && type == .pubrec {  // -- Replace PUBLISH with PUBREL
                     let pubrel = FramePubRel(msgid: publish.msgid)
 
                     var nframe = frame
@@ -311,15 +331,21 @@ extension CocoaMQTTDeliver {
 extension CocoaMQTTDeliver {
 
     func t_inflightFrames() -> [Frame] {
-        var frames = [Frame]()
-        for f in inflight {
-            frames.append(f.frame)
+        return deliverQueue.sync {
+            var frames = [Frame]()
+            for f in inflight {
+                frames.append(f.frame)
+            }
+            return frames
         }
-        return frames
     }
 
     func t_queuedFrames() -> [Frame] {
-        return mqueue
+        return deliverQueue.sync { mqueue }
+    }
+
+    func t_waitUntilIdle() {
+        deliverQueue.sync {}
     }
 
     @discardableResult

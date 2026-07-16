@@ -70,6 +70,23 @@ public class ThreadSafeDictionary<K: Hashable, V>: Collection {
         }
     }
 
+    func removeAllSync() {
+        concurrentQueue.sync(flags: .barrier) {
+            dictionary.removeAll()
+        }
+    }
+
+    func removeValues(where shouldRemove: (K, V) -> Bool) {
+        concurrentQueue.sync(flags: .barrier) {
+            let keys = dictionary.compactMap { key, value in
+                shouldRemove(key, value) ? key : nil
+            }
+            for key in keys {
+                dictionary.removeValue(forKey: key)
+            }
+        }
+    }
+
     public func snapshot() -> [K: V] {
         concurrentQueue.sync {
             dictionary

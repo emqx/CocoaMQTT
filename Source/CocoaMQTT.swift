@@ -301,10 +301,12 @@ public class CocoaMQTT: NSObject, CocoaMQTTClient {
     fileprivate var unsubscriptionsWaitingAck = ThreadSafeDictionary<UInt16, [String]>(label: "unsubscriptionsWaitingAck")
 
     /// Sending messages
-    fileprivate var sendingMessages = ThreadSafeDictionary<UInt16, CocoaMQTTMessage>(label: "sendingMessages")
+    fileprivate var sendingMessages = ThreadSafeDictionary<UInt64, CocoaMQTTMessage>(label: "sendingMessages")
 
     /// message id counter
     private var _msgid: UInt16 = 0
+    private var _deliveryToken = UInt64(UInt16.max)
+    private let messageIdentifierLock = NSLock()
     fileprivate var socket: CocoaMQTTSocketProtocol
     fileprivate var reader: CocoaMQTTReader?
 
@@ -366,11 +368,28 @@ public class CocoaMQTT: NSObject, CocoaMQTTClient {
     }
 
     fileprivate func nextMessageID() -> UInt16 {
+        messageIdentifierLock.lock()
+        defer { messageIdentifierLock.unlock() }
         if _msgid == UInt16.max {
             _msgid = 0
         }
         _msgid += 1
         return _msgid
+    }
+
+    fileprivate func nextDeliveryToken() -> UInt64 {
+        messageIdentifierLock.lock()
+        defer { messageIdentifierLock.unlock() }
+        if _deliveryToken >= UInt64(Int.max) {
+            _deliveryToken = UInt64(UInt16.max) + 1
+        } else {
+            _deliveryToken += 1
+        }
+        return _deliveryToken
+    }
+
+    fileprivate func discardStoredSession() {
+        CocoaMQTTStorage(by: clientID, protocolVersion: .v311)?.removeAll()
     }
 
     fileprivate func puback(_ type: FrameType, msgid: UInt16) {
@@ -542,11 +561,14 @@ public class CocoaMQTT: NSObject, CocoaMQTTClient {
     @discardableResult
     public func publish(_ message: CocoaMQTTMessage) -> Int {
         let msgid: UInt16
+        let deliveryToken: UInt64
 
         if message.qos == .qos0 {
             msgid = 0
+            deliveryToken = nextDeliveryToken()
         } else {
             msgid = nextMessageID()
+            deliveryToken = UInt64(msgid)
         }
 
         var frame = FramePublish(topic: message.topic,
@@ -555,12 +577,13 @@ public class CocoaMQTT: NSObject, CocoaMQTTClient {
                                  msgid: msgid)
 
         frame.retained = message.retained
+        frame.deliveryToken = deliveryToken
 
-        sendingMessages.setValue(message, forKey: msgid)
+        sendingMessages.setValue(message, forKey: deliveryToken)
 
         // Push frame to deliver message queue
         guard deliver.add(frame) else {
-            sendingMessages.removeValue(forKey: msgid)
+            sendingMessages.removeValue(forKey: deliveryToken)
             return -1
         }
 
@@ -613,25 +636,29 @@ extension CocoaMQTT: CocoaMQTTDeliverProtocol {
     func deliver(_ deliver: CocoaMQTTDeliver, wantToSend frame: Frame) {
         if let publish = frame as? FramePublish {
             let msgid = publish.msgid
+            let deliveryToken = publish.deliveryToken ?? UInt64(msgid)
 
             var message: CocoaMQTTMessage?
 
-            if let sendingMessage = sendingMessages[msgid] {
+            if let sendingMessage = sendingMessages[deliveryToken] {
                 message = sendingMessage
                 // printError("Want send \(frame), but not found in CocoaMQTT cache")
 
             } else {
-                message = CocoaMQTTMessage(topic: publish.topic, payload: publish.payload())
+                message = CocoaMQTTMessage(
+                    topic: publish.topic,
+                    payload: publish.payload(),
+                    qos: publish.qos,
+                    retained: publish.retained
+                )
             }
 
-            send(publish, tag: Int(msgid))
+            let writeTag = publish.qos == .qos0 ? Int(deliveryToken) : Int(msgid)
+            send(publish, tag: writeTag)
 
             if let message = message {
                 self.delegate?.mqtt(self, didPublishMessage: message, id: msgid)
                 self.didPublishMessage(self, message, msgid)
-            }
-            if publish.qos == .qos0 {
-                sendingMessages.removeValue(forKey: msgid)
             }
         } else if let pubrel = frame as? FramePubRel {
             // -- Send PUBREL
@@ -740,7 +767,9 @@ extension CocoaMQTT: CocoaMQTTSocketDelegate {
     }
 
     public func socket(_ socket: CocoaMQTTSocketProtocol, didWriteDataWithTag tag: Int) {
-        // XXX: How to print writed bytes??
+        if tag > Int(UInt16.max) {
+            sendingMessages.removeValue(forKey: UInt64(tag))
+        }
     }
 
     public func socket(_ socket: CocoaMQTTSocketProtocol, didRead data: Data, withTag tag: Int) {
@@ -761,6 +790,12 @@ extension CocoaMQTT: CocoaMQTTSocketDelegate {
     public func socketDidDisconnect(_ socket: CocoaMQTTSocketProtocol, withError err: Error?) {
         // Clean up
         socket.setDelegate(nil, delegateQueue: nil)
+        sendingMessages.removeValues { key, _ in key > UInt64(UInt16.max) }
+        if cleanSession {
+            discardStoredSession()
+            deliver.cleanAll(discardStored: true)
+            sendingMessages.removeAllSync()
+        }
         if is_internal_disconnected || !autoReconnect {
             resetAutoReconnectState()
         }
@@ -845,8 +880,9 @@ extension CocoaMQTT: CocoaMQTTReaderDelegate {
             // recover session if enable
 
             if cleanSession {
-                deliver.cleanAll()
-                sendingMessages.removeAll()
+                discardStoredSession()
+                deliver.cleanAll(discardStored: true)
+                sendingMessages.removeAllSync()
             } else {
                 if let storage = CocoaMQTTStorage(by: clientID, protocolVersion: .v311) {
                     deliver.recoverSessionBy(storage)
@@ -888,7 +924,7 @@ extension CocoaMQTT: CocoaMQTTReaderDelegate {
         printDebug("RECV: \(puback)")
 
         deliver.ack(by: puback)
-        sendingMessages.removeValue(forKey: puback.msgid)
+        sendingMessages.removeValue(forKey: UInt64(puback.msgid))
 
         delegate?.mqtt(self, didPublishAck: puback.msgid)
         didPublishAck(self, puback.msgid)
@@ -910,7 +946,7 @@ extension CocoaMQTT: CocoaMQTTReaderDelegate {
         printDebug("RECV: \(pubcomp)")
 
         deliver.ack(by: pubcomp)
-        sendingMessages.removeValue(forKey: pubcomp.msgid)
+        sendingMessages.removeValue(forKey: UInt64(pubcomp.msgid))
 
         delegate?.mqtt?(self, didPublishComplete: pubcomp.msgid)
         didCompletePublish(self, pubcomp.msgid)

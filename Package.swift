@@ -35,6 +35,7 @@ let package = Package(
             name: "CocoaMQTTWebSocket",
             dependencies: ["CocoaMQTT", "Starscream"],
             path: "Source",
+            exclude: ["PrivacyInfo.xcprivacy"],
             sources: ["CocoaMQTTWebSocket.swift"],
             swiftSettings: [.define("IS_SWIFT_PACKAGE")]
         ),
