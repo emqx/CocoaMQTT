@@ -26,10 +26,6 @@ final class SendingMessageLifecycleTests: XCTestCase {
         let queue = DispatchQueue(label: "tests.sending-messages.qos0", attributes: .concurrent)
         let socket = SocketSpy()
         let mqtt = CocoaMQTT(clientID: "sending-qos0", socket: socket)
-        socket.onWrite = { [weak mqtt, weak socket] tag in
-            guard let mqtt, let socket else { return }
-            mqtt.socket(socket, didWriteDataWithTag: tag)
-        }
         mqtt.delegateQueue = queue
         let published = expectation(description: "QoS 0 message sent")
         mqtt.didPublishMessage = { _, _, _ in published.fulfill() }
@@ -76,7 +72,7 @@ final class SendingMessageLifecycleTests: XCTestCase {
         XCTAssertEqual(mqtt.t_sendingMessagesCount(), 0)
     }
 
-    func testMQTT5ReleasesQoS0MessageOnlyAfterSocketWriteCompletes() throws {
+    func testMQTT5ReleasesQoS0MessageWithoutSocketWriteCompletion() throws {
         let queue = DispatchQueue(label: "tests.sending-messages.qos0-write-completion")
         let socket = SocketSpy()
         let mqtt = CocoaMQTT5(clientID: "sending-qos0-write-completion", socket: socket)
@@ -94,7 +90,7 @@ final class SendingMessageLifecycleTests: XCTestCase {
         wait(for: [published], timeout: 1)
         queue.sync {}
 
-        XCTAssertEqual(mqtt.t_sendingMessagesCount(), 1)
+        XCTAssertEqual(mqtt.t_sendingMessagesCount(), 0)
         let writeTag = try XCTUnwrap(socket.writeTags.first)
         mqtt.socket(socket, didWriteDataWithTag: writeTag)
         XCTAssertEqual(mqtt.t_sendingMessagesCount(), 0)

@@ -18,12 +18,16 @@ final class CocoaMQTTReaderProtocolErrorTests: XCTestCase {
 
     private final class ReaderDelegateSpy: CocoaMQTTReaderDelegate {
         private(set) var publishCount = 0
+        private(set) var publishes = [FramePublish]()
         private(set) var disconnectCount = 0
         private(set) var authCount = 0
         private(set) var subackCount = 0
 
         func didReceive(_ reader: CocoaMQTTReader, connack: FrameConnAck) {}
-        func didReceive(_ reader: CocoaMQTTReader, publish: FramePublish) { publishCount += 1 }
+        func didReceive(_ reader: CocoaMQTTReader, publish: FramePublish) {
+            publishCount += 1
+            publishes.append(publish)
+        }
         func didReceive(_ reader: CocoaMQTTReader, puback: FramePubAck) {}
         func didReceive(_ reader: CocoaMQTTReader, pubrec: FramePubRec) {}
         func didReceive(_ reader: CocoaMQTTReader, pubrel: FramePubRel) {}
@@ -149,6 +153,56 @@ final class CocoaMQTTReaderProtocolErrorTests: XCTestCase {
         XCTAssertEqual(mqtt311Delegate.authCount, 0)
         XCTAssertEqual(mqtt5Socket.disconnectCount, 0)
         XCTAssertEqual(mqtt5Delegate.authCount, 1)
+    }
+
+    func testReadersDecodeMQTT311AndMQTT5PublishesIndependently() throws {
+        let previousVersion = CocoaMQTTStorage()?.queryMQTTVersion()
+        defer {
+            if let previousVersion {
+                CocoaMQTTStorage()?.setMQTTVersion(previousVersion)
+            }
+        }
+
+        let mqtt311Socket = SocketSpy()
+        let mqtt311Delegate = ReaderDelegateSpy()
+        let mqtt311Reader = CocoaMQTTReader(
+            socket: mqtt311Socket,
+            delegate: mqtt311Delegate,
+            protocolVersion: .v311
+        )
+        let mqtt5Socket = SocketSpy()
+        let mqtt5Delegate = ReaderDelegateSpy()
+        let mqtt5Reader = CocoaMQTTReader(
+            socket: mqtt5Socket,
+            delegate: mqtt5Delegate,
+            protocolVersion: .v5
+        )
+
+        let mqtt311Topic = Array("v3/topic".utf8)
+        let mqtt311Payload: [UInt8] = [0x31, 0x32]
+        let mqtt311Body = UInt16(mqtt311Topic.count).hlBytes + mqtt311Topic + mqtt311Payload
+        setMqtt5Version()
+        mqtt311Reader.headerReady(FrameType.publish.rawValue)
+        mqtt311Reader.lengthReady(UInt8(mqtt311Body.count))
+        mqtt311Reader.payloadReady(Data(mqtt311Body))
+
+        let mqtt5Topic = Array("v5/topic".utf8)
+        let mqtt5Payload: [UInt8] = [0x35, 0x30]
+        let mqtt5Body = UInt16(mqtt5Topic.count).hlBytes + mqtt5Topic + [0x00] + mqtt5Payload
+        setMqtt3Version()
+        mqtt5Reader.headerReady(FrameType.publish.rawValue)
+        mqtt5Reader.lengthReady(UInt8(mqtt5Body.count))
+        mqtt5Reader.payloadReady(Data(mqtt5Body))
+
+        let mqtt311Publish = try XCTUnwrap(mqtt311Delegate.publishes.first)
+        XCTAssertEqual(mqtt311Publish.topic, "v3/topic")
+        XCTAssertEqual(mqtt311Publish.payload(), mqtt311Payload)
+        XCTAssertEqual(mqtt311Socket.disconnectCount, 0)
+
+        let mqtt5Publish = try XCTUnwrap(mqtt5Delegate.publishes.first)
+        XCTAssertEqual(mqtt5Publish.mqtt5Topic, "v5/topic")
+        XCTAssertEqual(mqtt5Publish.payload5(), mqtt5Payload)
+        XCTAssertEqual(mqtt5Socket.disconnectCount, 0)
     }
 
     func testClientInitializationDoesNotChangeGlobalCompatibilityVersion() {

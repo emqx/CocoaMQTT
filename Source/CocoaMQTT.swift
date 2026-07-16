@@ -660,6 +660,9 @@ extension CocoaMQTT: CocoaMQTTDeliverProtocol {
                 self.delegate?.mqtt(self, didPublishMessage: message, id: msgid)
                 self.didPublishMessage(self, message, msgid)
             }
+            if publish.qos == .qos0 {
+                sendingMessages.removeValue(forKey: deliveryToken)
+            }
         } else if let pubrel = frame as? FramePubRel {
             // -- Send PUBREL
             send(pubrel, tag: Int(pubrel.msgid))
