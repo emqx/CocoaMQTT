@@ -102,6 +102,21 @@ final class CocoaMQTTReaderProtocolErrorTests: XCTestCase {
         XCTAssertEqual(socket.disconnectCount, 1)
     }
 
+    func testPacketLargerThanClientMaximumDisconnectsBeforePayloadRead() {
+        let socket = SocketSpy()
+        let reader = CocoaMQTTReader(
+            socket: socket,
+            delegate: ReaderDelegateSpy(),
+            protocolVersion: .v5,
+            maximumPacketSize: 4
+        )
+
+        reader.headerReady(FrameType.publish.rawValue)
+        reader.lengthReady(0x03)
+
+        XCTAssertEqual(socket.disconnectCount, 1)
+    }
+
     func testUnknownFrameTypeDisconnectsSocket() {
         let socket = SocketSpy()
         let delegate = ReaderDelegateSpy()

@@ -36,6 +36,7 @@ public class MqttDecodeConnAck: NSObject {
     public var reasonString: String?
     // 3.2.2.3.10 User Property
     public var userProperty: [String: String]?
+    public var userProperties = [CocoaMQTTUserProperty]()
     // 3.2.2.3.11 Wildcard Subscription Available
     public var wildcardSubscriptionAvailable: Bool?
     // 3.2.2.3.12 Subscription Identifiers Available
@@ -66,6 +67,7 @@ public class MqttDecodeConnAck: NSObject {
         topicAliasMaximum = nil
         reasonString = nil
         userProperty = nil
+        userProperties = []
         wildcardSubscriptionAvailable = nil
         subscriptionIdentifiersAvailable = nil
         sharedSubscriptionAvailable = nil
@@ -126,6 +128,7 @@ public class MqttDecodeConnAck: NSObject {
                       let value = properties.readUTF8String() else { return false }
                 if userProperty == nil { userProperty = [:] }
                 userProperty?[key] = value
+                userProperties.append(CocoaMQTTUserProperty(key: key, value: value))
             case .wildcardSubscriptionAvailable:
                 guard let value = properties.readByte(), value <= 1 else { return false }
                 wildcardSubscriptionAvailable = value == 1

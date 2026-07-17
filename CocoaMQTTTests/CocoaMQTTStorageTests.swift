@@ -78,6 +78,46 @@ class CocoaMQTTStorageTests: XCTestCase {
         XCTAssertEqual(recoveredMsgids, [1, 2, 10])
     }
 
+    func testReadAllPreservesWriteOrderAcrossPacketIdentifierWrap() throws {
+        let clientId = "storage-wrap-order-\(UUID().uuidString)"
+        defer { clearStorage(clientId) }
+        let storage = try XCTUnwrap(CocoaMQTTStorage(by: clientId, protocolVersion: .v5))
+
+        for identifier in [UInt16.max, 1, 2] {
+            var frame = FramePublish(
+                topic: "t/\(identifier)",
+                payload: [UInt8(truncatingIfNeeded: identifier)],
+                qos: .qos1,
+                msgid: identifier
+            )
+            frame.publishProperties = MqttPublishProperties()
+            XCTAssertTrue(storage.write(frame))
+        }
+
+        XCTAssertEqual(
+            storage.readAll().compactMap { ($0 as? FramePublish)?.msgid },
+            [UInt16.max, 1, 2]
+        )
+    }
+
+    func testReceivedQoS2IdentifiersPersistUntilPubrel() throws {
+        let clientId = "storage-received-qos2-\(UUID().uuidString)"
+        defer { clearStorage(clientId) }
+        var storage: CocoaMQTTStorage? = try XCTUnwrap(
+            CocoaMQTTStorage(by: clientId, protocolVersion: .v5)
+        )
+
+        XCTAssertTrue(storage?.markReceivedQoS2(42) == true)
+        XCTAssertFalse(storage?.markReceivedQoS2(42) == true)
+        storage = nil
+
+        storage = try XCTUnwrap(CocoaMQTTStorage(by: clientId, protocolVersion: .v5))
+        XCTAssertEqual(storage?.receivedQoS2Identifiers(), [42])
+        XCTAssertTrue(storage?.completeReceivedQoS2(42) == true)
+        XCTAssertFalse(storage?.completeReceivedQoS2(42) == true)
+        XCTAssertTrue(storage?.receivedQoS2Identifiers().isEmpty == true)
+    }
+
     func testVersionedStorageKeepsMQTT311AndMQTT5FramesIndependent() throws {
         let clientId = "storage-version-isolation-\(UUID().uuidString)"
         defer { clearStorage(clientId) }

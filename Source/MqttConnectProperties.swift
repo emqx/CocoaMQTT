@@ -25,6 +25,8 @@ public class MqttConnectProperties: NSObject {
     public var requestProblemInfomation: UInt8?
     // 3.1.2.11.8 User Property
     public var userProperties: [String: String]?
+    /// Ordered User Properties. When non-empty, these are encoded instead of `userProperties`.
+    public var userPropertyList = [CocoaMQTTUserProperty]()
     // 3.1.2.11.9 Authentication Method
     public var authenticationMethod: String?
     // 3.1.2.11.10 Authentication Data
@@ -62,7 +64,9 @@ public class MqttConnectProperties: NSObject {
             properties += getMQTTPropertyData(type: CocoaMQTTPropertyName.requestProblemInformation.rawValue, value: [requestProblemInfomation])
         }
         // 3.1.2.11.8 User Property
-        if let userProperty = self.userProperties {
+        if !userPropertyList.isEmpty {
+            properties += userPropertyList.userPropertyBytes
+        } else if let userProperty = self.userProperties {
             properties += userProperty.userPropertyBytes
         }
         // 3.1.2.11.9 Authentication Method
@@ -89,6 +93,7 @@ public class MqttConnectProperties: NSObject {
               requestResponseInformation.map({ $0 <= 1 }) ?? true,
               requestProblemInfomation.map({ $0 <= 1 }) ?? true,
               hasValidMQTTUserProperties(userProperties),
+              hasValidMQTTUserProperties(userPropertyList),
               (authenticationData?.count ?? 0) <= Int(UInt16.max) else { return false }
         if let authenticationMethod = authenticationMethod {
             guard hasValidMQTTUTF8Length(authenticationMethod, allowEmpty: true) else { return false }

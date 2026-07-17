@@ -108,6 +108,7 @@ extension FrameAuth: InitialWithBytes {
                       let value = properties.readUTF8String() else { return nil }
                 if decodedProperties.userProperties == nil { decodedProperties.userProperties = [:] }
                 decodedProperties.userProperties?[key] = value
+                decodedProperties.userPropertyList.append(CocoaMQTTUserProperty(key: key, value: value))
             default:
                 return nil
             }

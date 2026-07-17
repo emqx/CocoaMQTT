@@ -24,6 +24,8 @@ public class MqttPublishProperties: NSObject {
     public var correlationData: [UInt8]?
     // 3.3.2.3.7 Property
     public var userProperty: [String: String]?
+    /// Ordered User Properties. When non-empty, these are encoded instead of `userProperty`.
+    public var userProperties = [CocoaMQTTUserProperty]()
     // 3.3.2.3.8 Subscription Identifier
     public var subscriptionIdentifier: UInt32?
     // 3.3.2.3.9 Content Type
@@ -81,7 +83,9 @@ public class MqttPublishProperties: NSObject {
             printError("Correlation Data exceeds the MQTT binary data limit.")
         }
         // 3.3.2.3.7 Property Length User Property
-        if let userProperty = self.userProperty {
+        if !userProperties.isEmpty {
+            properties += userProperties.userPropertyBytes
+        } else if let userProperty = self.userProperty {
             properties += userProperty.userPropertyBytes
         }
         // 3.3.2.3.8 Subscription Identifier
@@ -105,7 +109,8 @@ public class MqttPublishProperties: NSObject {
               topicAlias.map({ $0 != 0 }) ?? true,
               subscriptionIdentifier == nil,
               (correlationData?.count ?? 0) <= Int(UInt16.max),
-              hasValidMQTTUserProperties(userProperty) else { return false }
+              hasValidMQTTUserProperties(userProperty),
+              hasValidMQTTUserProperties(userProperties) else { return false }
 
         if let responseTopic = responseTopic {
             guard hasValidMQTTUTF8Length(responseTopic),

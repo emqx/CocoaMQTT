@@ -36,6 +36,7 @@ final class CocoaMQTTStorage: CocoaMQTTStorageProtocol {
         let key: String
         let msgid: UInt16
         let value: Any
+        let order: UInt64
     }
 
     var clientId: String = ""
@@ -95,28 +96,34 @@ final class CocoaMQTTStorage: CocoaMQTTStorageProtocol {
         if let persistenceTopic = frame.persistenceTopic {
             persistedFrame.topic = persistenceTopic
         }
+        ensureOrder(for: frame.msgid)
         userDefault.set(persistedFrame.bytes(version: protocolVersion.rawValue), forKey: key(frame.msgid))
         return true
     }
 
     func write(_ frame: FramePubRel) -> Bool {
+        ensureOrder(for: frame.msgid)
         userDefault.set(frame.bytes(version: protocolVersion.rawValue), forKey: key(frame.msgid))
         return true
     }
 
     func remove(_ frame: FramePublish) {
         userDefault.removeObject(forKey: key(frame.msgid))
+        userDefault.removeObject(forKey: orderKey(frame.msgid))
     }
 
     func remove(_ frame: FramePubRel) {
         userDefault.removeObject(forKey: key(frame.msgid))
+        userDefault.removeObject(forKey: orderKey(frame.msgid))
     }
 
     func remove(_ frame: Frame) {
         if let pub = frame as? FramePublish {
             userDefault.removeObject(forKey: key(pub.msgid))
+            userDefault.removeObject(forKey: orderKey(pub.msgid))
         } else if let rel = frame as? FramePubRel {
             userDefault.removeObject(forKey: key(rel.msgid))
+            userDefault.removeObject(forKey: orderKey(rel.msgid))
         }
     }
 
@@ -124,7 +131,36 @@ final class CocoaMQTTStorage: CocoaMQTTStorageProtocol {
         for storedKey in userDefault.dictionaryRepresentation().keys where messageIdentifier(for: storedKey) != nil {
             userDefault.removeObject(forKey: storedKey)
         }
+        for storedKey in userDefault.dictionaryRepresentation().keys where storedKey.hasPrefix(orderKeyPrefix) {
+            userDefault.removeObject(forKey: storedKey)
+        }
+        userDefault.removeObject(forKey: orderCounterKey)
+        userDefault.removeObject(forKey: receivedQoS2Key)
         userDefault.removeObject(forKey: sessionExpiryDeadlineKey)
+    }
+
+    func receivedQoS2Identifiers() -> Set<UInt16> {
+        let values = userDefault.array(forKey: receivedQoS2Key) as? [NSNumber] ?? []
+        return Set(values.compactMap { UInt16(exactly: $0.intValue) }.filter { $0 != 0 })
+    }
+
+    @discardableResult
+    func markReceivedQoS2(_ identifier: UInt16) -> Bool {
+        guard identifier != 0 else { return false }
+        var identifiers = receivedQoS2Identifiers()
+        let inserted = identifiers.insert(identifier).inserted
+        if inserted {
+            persistReceivedQoS2Identifiers(identifiers)
+        }
+        return inserted
+    }
+
+    @discardableResult
+    func completeReceivedQoS2(_ identifier: UInt16) -> Bool {
+        var identifiers = receivedQoS2Identifiers()
+        guard identifiers.remove(identifier) != nil else { return false }
+        persistReceivedQoS2Identifiers(identifiers)
+        return true
     }
 
     func setSessionExpiryDeadline(_ deadline: Date?) {
@@ -167,6 +203,38 @@ final class CocoaMQTTStorage: CocoaMQTTStorageProtocol {
         return "\(namespacePrefix)session-expiry-deadline"
     }
 
+    private var orderKeyPrefix: String {
+        return "\(namespacePrefix)message-order-"
+    }
+
+    private var orderCounterKey: String {
+        return "\(namespacePrefix)message-order-counter"
+    }
+
+    private var receivedQoS2Key: String {
+        return "\(namespacePrefix)received-qos2"
+    }
+
+    private func orderKey(_ msgid: UInt16) -> String {
+        return "\(orderKeyPrefix)\(msgid)"
+    }
+
+    private func ensureOrder(for msgid: UInt16) {
+        guard userDefault.object(forKey: orderKey(msgid)) == nil else { return }
+        let current = (userDefault.object(forKey: orderCounterKey) as? NSNumber)?.uint64Value ?? 0
+        let next = current == UInt64.max ? UInt64.max : current + 1
+        userDefault.set(NSNumber(value: next), forKey: orderCounterKey)
+        userDefault.set(NSNumber(value: next), forKey: orderKey(msgid))
+    }
+
+    private func persistReceivedQoS2Identifiers(_ identifiers: Set<UInt16>) {
+        if identifiers.isEmpty {
+            userDefault.removeObject(forKey: receivedQoS2Key)
+        } else {
+            userDefault.set(identifiers.sorted().map { NSNumber(value: $0) }, forKey: receivedQoS2Key)
+        }
+    }
+
     private func messageIdentifier(for storedKey: String) -> UInt16? {
         guard usesVersionedKeys else {
             return UInt16(storedKey)
@@ -190,7 +258,7 @@ final class CocoaMQTTStorage: CocoaMQTTStorageProtocol {
             guard let msgid = UInt16(storedKey) else {
                 return nil
             }
-            return StoredFrameValue(key: storedKey, msgid: msgid, value: value)
+            return StoredFrameValue(key: storedKey, msgid: msgid, value: value, order: UInt64(msgid))
         }
 
         for legacyFrame in legacyFrames {
@@ -199,6 +267,9 @@ final class CocoaMQTTStorage: CocoaMQTTStorageProtocol {
                 userDefault.set(legacyFrame.value, forKey: versionedKey)
             }
             userDefault.removeObject(forKey: legacyFrame.key)
+        }
+        for legacyFrame in legacyFrames.sorted(by: { $0.msgid < $1.msgid }) {
+            ensureOrder(for: legacyFrame.msgid)
         }
         if !legacyFrames.isEmpty {
             userDefault.synchronize()
@@ -220,12 +291,31 @@ final class CocoaMQTTStorage: CocoaMQTTStorageProtocol {
 
     private func __read(needDelete: Bool) -> [Frame] {
         var frames = [Frame]()
-        let allObjs = userDefault.dictionaryRepresentation().compactMap { storedKey, value -> StoredFrameValue? in
+        let storedObjects = userDefault.dictionaryRepresentation().compactMap { storedKey, value -> StoredFrameValue? in
             guard let msgid = messageIdentifier(for: storedKey) else {
                 return nil
             }
-            return StoredFrameValue(key: storedKey, msgid: msgid, value: value)
-        }.sorted { $0.msgid < $1.msgid }
+            let order = (userDefault.object(forKey: orderKey(msgid)) as? NSNumber)?.uint64Value
+                ?? UInt64(msgid)
+            return StoredFrameValue(key: storedKey, msgid: msgid, value: value, order: order)
+        }
+        for storedFrame in storedObjects.sorted(by: { $0.msgid < $1.msgid })
+        where userDefault.object(forKey: orderKey(storedFrame.msgid)) == nil {
+            ensureOrder(for: storedFrame.msgid)
+        }
+        let orderedObjects = storedObjects.map { storedFrame -> StoredFrameValue in
+            let order = (userDefault.object(forKey: orderKey(storedFrame.msgid)) as? NSNumber)?.uint64Value
+                ?? storedFrame.order
+            return StoredFrameValue(
+                key: storedFrame.key,
+                msgid: storedFrame.msgid,
+                value: storedFrame.value,
+                order: order
+            )
+        }
+        let allObjs = orderedObjects.sorted {
+            $0.order == $1.order ? $0.msgid < $1.msgid : $0.order < $1.order
+        }
         for storedFrame in allObjs {
             let v = storedFrame.value
             guard let bytes = v as? [UInt8] else { continue }
@@ -233,6 +323,7 @@ final class CocoaMQTTStorage: CocoaMQTTStorageProtocol {
 
             if needDelete {
                 userDefault.removeObject(forKey: storedFrame.key)
+                userDefault.removeObject(forKey: orderKey(storedFrame.msgid))
             }
 
             if let f = FramePublish(packetFixedHeaderType: parsed.0, bytes: parsed.1, protocolVersion: protocolVersion) {

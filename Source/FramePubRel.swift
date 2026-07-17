@@ -18,6 +18,9 @@ struct FramePubRel: Frame {
 
     var msgid: UInt16
 
+    /// Local-only marker for a packet restored from persistent session state.
+    var isSessionRecovery = false
+
     // --- Attributes End
 
     // 3.6.2.1 PUBREL Reason Code

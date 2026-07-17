@@ -77,6 +77,23 @@ final class ThreadSafetyRegressionTests: XCTestCase {
         XCTAssertEqual(readGroup.wait(timeout: .now() + 10), .success)
     }
 
+    func testThreadSafeDictionaryRetainsCollectionCompatibilityWithSnapshotIteration() {
+        let store = ThreadSafeDictionary<String, Int>(
+            label: "tests.threadsafe.collection",
+            dict: ["a": 1, "b": 2]
+        )
+        let collection: any Collection = store
+
+        XCTAssertEqual(store.count, 2)
+        XCTAssertFalse(store.isEmpty)
+        XCTAssertNotNil(store.first)
+        XCTAssertEqual(
+            Dictionary(uniqueKeysWithValues: store.map { ($0.key, $0.value) }),
+            ["a": 1, "b": 2]
+        )
+        XCTAssertEqual(collection.count, 2)
+    }
+
     func testWebSocketDelegateAndLoggerConcurrentAccess() {
         let websocket = CocoaMQTTWebSocket(uri: "/mqtt")
         let delegateA = SocketDelegateStub()

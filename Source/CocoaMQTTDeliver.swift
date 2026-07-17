@@ -14,6 +14,12 @@ protocol CocoaMQTTDeliverProtocol: AnyObject {
     var delegateQueue: DispatchQueue { get set }
 
     func deliver(_ deliver: CocoaMQTTDeliver, wantToSend frame: Frame)
+
+    func deliver(_ deliver: CocoaMQTTDeliver, didReject frame: Frame)
+}
+
+extension CocoaMQTTDeliverProtocol {
+    func deliver(_ deliver: CocoaMQTTDeliver, didReject frame: Frame) {}
 }
 
 private struct InflightFrame {
@@ -23,6 +29,11 @@ private struct InflightFrame {
 
     /// Monotonic time (Dispatch uptime) at which this frame should be retried next.
     var nextRetryAtUptimeNs: UInt64
+
+    /// Whether this exchange still consumes the MQTT 5 send quota. A QoS 2
+    /// exchange continues to consume quota after PUBLISH is replaced by PUBREL,
+    /// until PUBCOMP (or a failed PUBREC) is received.
+    var consumesSendQuota: Bool
 
 }
 
@@ -56,21 +67,105 @@ class CocoaMQTTDeliver: NSObject {
 
     var inflightWindowSize: UInt = 10
 
+    /// MQTT 5 Receive Maximum advertised by the server.
+    var receiveMaximum: UInt = UInt(UInt16.max)
+
+    /// MQTT 5 Maximum Packet Size advertised by the server.
+    var maximumPacketSize: UInt32 = UInt32.max
+
+    /// MQTT 5 publishing capabilities advertised by the server.
+    var maximumQoS = CocoaMQTTQoS.qos2
+    var retainAvailable = true
+
+    var protocolVersion: CocoaMQTTProtocolVersion = .v311
+
     /// Retry time interval millisecond
     var retryTimeInterval: Double = 5000
 
     private var awaitingTimer: CocoaMQTTTimer?
 
-    var isQueueEmpty: Bool { mqueue.isEmpty }
-    var isQueueFull: Bool { mqueue.count >= mqueueSize }
-    var isInflightFull: Bool { inflight.count >= inflightWindowSize }
+    private var transportEnabled = true
+
+    /// Frames published after a connection attempt starts are kept separate from
+    /// the previous session until CONNACK decides whether that session resumes.
+    private var connectionQueue: [Frame]?
+
+    var isQueueEmpty: Bool { mqueue.isEmpty && (connectionQueue?.isEmpty ?? true) }
+    var isQueueFull: Bool { mqueue.count + (connectionQueue?.count ?? 0) >= mqueueSize }
+    var isInflightFull: Bool {
+        if inflight.count >= inflightWindowSize { return true }
+        let quotaCount = inflight.reduce(into: 0) { count, frame in
+            if frame.consumesSendQuota { count += 1 }
+        }
+        return UInt(quotaCount) >= receiveMaximum
+    }
     var isInflightEmpty: Bool { inflight.isEmpty }
 
     var storage: CocoaMQTTStorage?
 
+    func configureServerLimits(receiveMaximum: UInt16,
+                               maximumPacketSize: UInt32,
+                               maximumQoS: CocoaMQTTQoS = .qos2,
+                               retainAvailable: Bool = true) {
+        deliverQueue.sync {
+            self.receiveMaximum = UInt(receiveMaximum)
+            self.maximumPacketSize = maximumPacketSize
+            self.maximumQoS = maximumQoS
+            self.retainAvailable = retainAvailable
+        }
+    }
+
+    func setTransportEnabled(_ enabled: Bool) {
+        deliverQueue.sync {
+            transportEnabled = enabled
+            if enabled {
+                tryTransport()
+            }
+        }
+    }
+
+    func beginConnection() {
+        deliverQueue.sync {
+            transportEnabled = false
+            if connectionQueue == nil {
+                connectionQueue = []
+            }
+        }
+    }
+
+    func completeConnection() {
+        deliverQueue.sync {
+            let pendingFrames = connectionQueue ?? []
+            connectionQueue = nil
+            for frame in pendingFrames {
+                mqueue.append(frame)
+                if let publish = frame as? FramePublish {
+                    _ = storage?.write(publish)
+                }
+            }
+            transportEnabled = true
+            tryTransport()
+        }
+    }
+
+    func connectionPendingFrames() -> [Frame] {
+        return deliverQueue.sync { connectionQueue ?? [] }
+    }
+
     func recoverSessionBy(_ storage: CocoaMQTTStorage,
                           prepare: ([Frame]) -> Void = { _ in }) {
-        let frames = storage.readAll()
+        let frames = storage.readAll().map { frame -> Frame in
+            if var publish = frame as? FramePublish {
+                publish.dup = true
+                publish.isSessionRecovery = true
+                return publish
+            }
+            if var pubrel = frame as? FramePubRel {
+                pubrel.isSessionRecovery = true
+                return pubrel
+            }
+            return frame
+        }
         prepare(frames)
         // Sync to push the frame to mqueue for avoiding overcommit
         deliverQueue.sync {
@@ -99,11 +194,15 @@ class CocoaMQTTDeliver: NSObject {
     /// return false means the frame is rejected because of the buffer is full
     func add(_ frame: FramePublish) -> Bool {
         let accepted = deliverQueue.sync {
-            guard mqueue.count < mqueueSize else {
+            guard mqueue.count + (connectionQueue?.count ?? 0) < mqueueSize else {
                 return false
             }
-            mqueue.append(frame)
-            _ = storage?.write(frame)
+            if connectionQueue != nil {
+                connectionQueue?.append(frame)
+            } else {
+                mqueue.append(frame)
+                _ = storage?.write(frame)
+            }
             return true
         }
 
@@ -162,14 +261,21 @@ class CocoaMQTTDeliver: NSObject {
     /// Clean Inflight content to prevent message blocked, when next connection established
     ///
     /// !!Warning: it's a temporary method for hotfix #221
-    func cleanAll(discardStored: Bool = false) {
+    func cleanAll(discardStored: Bool = false,
+                  detachStorage: Bool = false,
+                  preserveConnectionQueue: Bool = false) {
         deliverQueue.sync { [weak self] in
             guard let self = self else { return }
             self.mqueue.removeAll()
             self.inflight.removeAll()
             self.awaitingTimer = nil
+            if !preserveConnectionQueue {
+                self.connectionQueue = nil
+            }
             if discardStored {
                 self.storage?.removeAll()
+            }
+            if discardStored || detachStorage {
                 self.storage = nil
             }
         }
@@ -181,16 +287,46 @@ extension CocoaMQTTDeliver {
 
     // try transport a frame from mqueue to inflight
     private func tryTransport() {
-        if isQueueEmpty || isInflightFull { return }
+        if !transportEnabled || isQueueEmpty || isInflightFull { return }
 
         // take out the earliest frame
         if mqueue.isEmpty { return }
         let frame = mqueue.remove(at: 0)
 
+        if let publish = frame as? FramePublish,
+           publish.qos > maximumQoS || (publish.retained && !retainAvailable) {
+            rejectOrKeepPending(frame, reason: "server publishing capabilities")
+            return
+        }
+
+        guard UInt64(frame.bytes(version: protocolVersion.rawValue).count) <= UInt64(maximumPacketSize) else {
+            rejectOrKeepPending(frame, reason: "server Maximum Packet Size")
+            return
+        }
+
         deliver(frame)
 
         // keep trying after a transport
         self.tryTransport()
+    }
+
+    private func rejectOrKeepPending(_ frame: Frame, reason: String) {
+        let isSessionRecovery = (frame as? FramePublish)?.isSessionRecovery
+            ?? (frame as? FramePubRel)?.isSessionRecovery
+            ?? false
+        if isSessionRecovery {
+            mqueue.insert(frame, at: 0)
+            printError("Recovered packet violates \(reason) and remains pending: \(frame)")
+            return
+        }
+        storage?.remove(frame)
+        if let delegate = delegate {
+            delegate.delegateQueue.async {
+                delegate.deliver(self, didReject: frame)
+            }
+        }
+        printError("Packet violates \(reason) and was discarded: \(frame)")
+        tryTransport()
     }
 
     /// Try to deliver a frame
@@ -203,7 +339,11 @@ extension CocoaMQTTDeliver {
 
             sendfun(frame)
             let nowUptimeNs = DispatchTime.now().uptimeNanoseconds
-            inflight.append(InflightFrame(frame: frame, nextRetryAtUptimeNs: nextRetryDeadline(from: nowUptimeNs)))
+            inflight.append(InflightFrame(
+                frame: frame,
+                nextRetryAtUptimeNs: nextRetryDeadline(from: nowUptimeNs),
+                consumesSendQuota: frame is FramePublish
+            ))
 
             // Start a retry timer for resending it if it not receive PUBACK or PUBREC
             if awaitingTimer == nil {
@@ -219,6 +359,7 @@ extension CocoaMQTTDeliver {
 
     /// Attempt to redeliver in-flight messages
     private func redeliver(nowUptimeNs: UInt64 = DispatchTime.now().uptimeNanoseconds) {
+        guard transportEnabled else { return }
         if isInflightEmpty {
             // Revoke the awaiting timer
             awaitingTimer = nil

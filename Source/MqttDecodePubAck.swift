@@ -17,6 +17,7 @@ public class MqttDecodePubAck: NSObject {
     public var msgid: UInt16 = 0
     public var reasonString: String?
     public var userProperty: [String: String]?
+    public var userProperties = [CocoaMQTTUserProperty]()
 
     @discardableResult
     public func decodePubAck(fixedHeader: UInt8,
@@ -32,6 +33,7 @@ public class MqttDecodePubAck: NSObject {
         reasonCode = decodedReasonCode
         reasonString = decoded.reasonString
         userProperty = decoded.userProperty
+        userProperties = decoded.userProperties
         return true
     }
 }

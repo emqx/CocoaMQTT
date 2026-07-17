@@ -182,6 +182,53 @@ class FrameTests: XCTestCase {
         XCTAssertNil(frame)
     }
 
+    func testFramePublishRejectsNullCharacterInTopic() {
+        XCTAssertNil(FramePublish(
+            packetFixedHeaderType: FrameType.publish.rawValue,
+            bytes: [0x00, 0x03, 0x61, 0x00, 0x62],
+            protocolVersion: .v311
+        ))
+    }
+
+    func testMQTTTopicFilterValidation() {
+        XCTAssertTrue(hasValidMQTTTopicFilter("sensors/+/temperature"))
+        XCTAssertTrue(hasValidMQTTTopicFilter("sensors/#"))
+        XCTAssertTrue(hasValidMQTTSharedSubscription("$share/workers/sensors/+"))
+
+        XCTAssertFalse(hasValidMQTTTopicFilter("sensors/temp#"))
+        XCTAssertFalse(hasValidMQTTTopicFilter("sensors/+temp"))
+        XCTAssertFalse(hasValidMQTTTopicFilter("sensors/#/extra"))
+        XCTAssertFalse(hasValidMQTTSharedSubscription("$share//sensors/+"))
+        XCTAssertFalse(hasValidMQTTSharedSubscription("$share/workers"))
+    }
+
+    func testMQTT5PublishPreservesRepeatedUserPropertiesAndSubscriptionIdentifiers() throws {
+        let properties: [UInt8] = [
+            CocoaMQTTPropertyName.userProperty.rawValue,
+            0x00, 0x01, 0x6b,
+            0x00, 0x01, 0x31,
+            CocoaMQTTPropertyName.subscriptionIdentifier.rawValue, 0x01,
+            CocoaMQTTPropertyName.userProperty.rawValue,
+            0x00, 0x01, 0x6b,
+            0x00, 0x01, 0x32,
+            CocoaMQTTPropertyName.subscriptionIdentifier.rawValue, 0x02
+        ]
+        let frame = try XCTUnwrap(FramePublish(
+            packetFixedHeaderType: FrameType.publish.rawValue,
+            bytes: [0x00, 0x01, 0x74] + beVariableByteInteger(length: properties.count) + properties,
+            protocolVersion: .v5
+        ))
+        let decoded = try XCTUnwrap(frame.publishRecProperties)
+
+        XCTAssertEqual(decoded.userProperty, ["k": "2"])
+        XCTAssertEqual(decoded.userProperties, [
+            CocoaMQTTUserProperty(key: "k", value: "1"),
+            CocoaMQTTUserProperty(key: "k", value: "2")
+        ])
+        XCTAssertEqual(decoded.subscriptionIdentifier, 2)
+        XCTAssertEqual(decoded.subscriptionIdentifiers, [1, 2])
+    }
+
     func testPublicDecodersRejectWrongFixedHeaders() {
         XCTAssertFalse(MqttDecodePublish().decodePublish(
             fixedHeader: FrameType.puback.rawValue,

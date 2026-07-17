@@ -24,8 +24,10 @@ public class MqttDecodePublish: NSObject {
     public var correlationData: [UInt8]?
     // 3.3.2.3.7 Property
     public var userProperty: [String: String]?
+    public var userProperties = [CocoaMQTTUserProperty]()
     // 3.3.2.3.8 Subscription Identifier
     public var subscriptionIdentifier: Int = 0
+    public var subscriptionIdentifiers = [Int]()
     // 3.3.2.3.9 Content Type
     public var contentType: String?
 
@@ -48,7 +50,9 @@ public class MqttDecodePublish: NSObject {
         responseTopic = nil
         correlationData = nil
         userProperty = nil
+        userProperties = []
         subscriptionIdentifier = 0
+        subscriptionIdentifiers = []
         contentType = nil
         packetIdentifier = nil
 
@@ -110,9 +114,11 @@ public class MqttDecodePublish: NSObject {
                       let value = properties.readUTF8String() else { return false }
                 if userProperty == nil { userProperty = [:] }
                 userProperty?[key] = value
+                userProperties.append(CocoaMQTTUserProperty(key: key, value: value))
             case .subscriptionIdentifier:
                 guard let value = properties.readVariableByteInteger(), value > 0 else { return false }
                 subscriptionIdentifier = value
+                subscriptionIdentifiers.append(value)
             case .contentType:
                 guard let value = properties.readUTF8String() else { return false }
                 contentType = value

@@ -84,8 +84,8 @@ class CocoaMQTTTests: XCTestCase {
 
     // This is a basic test of the websocket authentication used by AWS IoT Custom Authorizers
     // https://docs.aws.amazon.com/iot/latest/developerguide/custom-authorizer.html
-    func testWebsocketAuthConnect() {
-        return // Fix to have the test pass in case the AWS IoT endpoint has not been setup
+    // Requires project-specific AWS IoT credentials and is intentionally excluded from XCTest discovery.
+    func disabledWebsocketAuthConnect() {
         let caller = Caller()
         let websocket = CocoaMQTTWebSocket(uri: "/mqtt")
         websocket.headers = [
@@ -371,7 +371,11 @@ extension CocoaMQTTTests {
     }
 
     func getClientCertFromP12File(certName: String, certPassword: String) -> CFArray? {
+        #if IS_SWIFT_PACKAGE
+        let testBundle = Bundle.module
+        #else
         let testBundle = Bundle(for: type(of: self))
+        #endif
 
         // get p12 file path
         let resourcePath = testBundle.path(forResource: certName, ofType: "p12")

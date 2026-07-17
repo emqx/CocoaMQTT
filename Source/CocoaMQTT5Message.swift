@@ -38,6 +38,8 @@ public class CocoaMQTT5Message: NSObject {
     public var willCorrelationData: [UInt8]?
     /// 3.1.3.2.8 User Property
     public var willUserProperty: [String: String]?
+    /// Ordered Will User Properties. When non-empty, these are encoded instead of `willUserProperty`.
+    public var willUserProperties = [CocoaMQTTUserProperty]()
 
     /// Return the payload as a utf8 string if possible
     ///
@@ -91,7 +93,9 @@ public class CocoaMQTT5Message: NSObject {
         }
 
         /// 3.1.3.2.8 User Property
-        if let willUserProperty = self.willUserProperty {
+        if !willUserProperties.isEmpty {
+            properties += willUserProperties.userPropertyBytes
+        } else if let willUserProperty = self.willUserProperty {
             willUserProperty.forEach { element in
                 properties.append(UInt8(CocoaMQTTPropertyName.userProperty.rawValue))
                 if isUTF8EncodedData {
@@ -136,6 +140,18 @@ public class CocoaMQTT5Message: NSObject {
 }
 
 extension CocoaMQTT5Message {
+
+    func isValidWill() -> Bool {
+        guard hasValidMQTTTopicName(topic),
+              qos <= .qos2,
+              hasValidMQTTBinaryLength(payload),
+              willCorrelationData.map(hasValidMQTTBinaryLength) ?? true,
+              hasValidMQTTUserProperties(willUserProperty),
+              hasValidMQTTUserProperties(willUserProperties),
+              contentType.map({ hasValidMQTTUTF8Length($0, allowEmpty: true) }) ?? true,
+              willResponseTopic.map({ hasValidMQTTTopicName($0) }) ?? true else { return false }
+        return !isUTF8EncodedData || String(bytes: payload, encoding: .utf8) != nil
+    }
 
     public override var description: String {
         return "CocoaMQTT5Message(topic: \(topic), qos: \(qos), payload: \(payload.summary))"

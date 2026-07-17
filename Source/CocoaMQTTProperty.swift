@@ -7,6 +7,17 @@
 
 import Foundation
 
+/// One MQTT 5 User Property entry. MQTT permits duplicate keys and preserves order.
+public struct CocoaMQTTUserProperty: Equatable {
+    public let key: String
+    public let value: String
+
+    public init(key: String, value: String) {
+        self.key = key
+        self.value = value
+    }
+}
+
 public enum CocoaMQTTPropertyName: UInt8 {
     case payloadFormatIndicator = 0x01
     case willExpiryInterval = 0x02
@@ -131,7 +142,9 @@ struct MQTTByteReader {
 
     mutating func readUTF8String() -> String? {
         guard let length = readUInt16(), let bytes = readBytes(count: Int(length)) else { return nil }
-        return String(bytes: bytes, encoding: .utf8)
+        guard let value = String(bytes: bytes, encoding: .utf8),
+              hasValidMQTTUTF8Length(value, allowEmpty: true) else { return nil }
+        return value
     }
 
     mutating func readBinaryData() -> [UInt8]? {
@@ -153,13 +166,21 @@ struct MQTTAcknowledgementData {
     let propertyLength: Int
     let reasonString: String?
     let userProperty: [String: String]?
+    let userProperties: [CocoaMQTTUserProperty]
+}
+
+private struct MQTTReasonStringAndUserProperties {
+    let reasonString: String?
+    let userProperty: [String: String]?
+    let userProperties: [CocoaMQTTUserProperty]
 }
 
 private func decodeReasonStringAndUserProperties(
     _ properties: inout MQTTByteReader
-) -> (reasonString: String?, userProperty: [String: String]?)? {
+) -> MQTTReasonStringAndUserProperties? {
     var reasonString: String?
     var userProperty: [String: String]?
+    var userProperties = [CocoaMQTTUserProperty]()
     while !properties.isAtEnd {
         guard let propertyIdentifier = properties.readVariableByteInteger(),
               let propertyName = UInt8(exactly: propertyIdentifier).flatMap(CocoaMQTTPropertyName.init(rawValue:)) else {
@@ -174,11 +195,16 @@ private func decodeReasonStringAndUserProperties(
                   let value = properties.readUTF8String() else { return nil }
             if userProperty == nil { userProperty = [:] }
             userProperty?[key] = value
+            userProperties.append(CocoaMQTTUserProperty(key: key, value: value))
         default:
             return nil
         }
     }
-    return (reasonString, userProperty)
+    return MQTTReasonStringAndUserProperties(
+        reasonString: reasonString,
+        userProperty: userProperty,
+        userProperties: userProperties
+    )
 }
 
 func decodeAcknowledgement(_ bytes: [UInt8],
@@ -192,7 +218,8 @@ func decodeAcknowledgement(_ bytes: [UInt8],
                                        reasonCode: 0,
                                        propertyLength: 0,
                                        reasonString: nil,
-                                       userProperty: nil)
+                                       userProperty: nil,
+                                       userProperties: [])
     }
 
     guard let reasonCode = reader.isAtEnd ? UInt8(0) : reader.readByte() else { return nil }
@@ -201,7 +228,8 @@ func decodeAcknowledgement(_ bytes: [UInt8],
                                        reasonCode: reasonCode,
                                        propertyLength: 0,
                                        reasonString: nil,
-                                       userProperty: nil)
+                                       userProperty: nil,
+                                       userProperties: [])
     }
 
     guard let propertyLength = reader.readVariableByteInteger(),
@@ -214,7 +242,8 @@ func decodeAcknowledgement(_ bytes: [UInt8],
                                    reasonCode: reasonCode,
                                    propertyLength: propertyLength,
                                    reasonString: decodedProperties.reasonString,
-                                   userProperty: decodedProperties.userProperty)
+                                   userProperty: decodedProperties.userProperty,
+                                   userProperties: decodedProperties.userProperties)
 }
 
 struct MQTTReasonCodeListData {
@@ -222,6 +251,7 @@ struct MQTTReasonCodeListData {
     let propertyLength: Int
     let reasonString: String?
     let userProperty: [String: String]?
+    let userProperties: [CocoaMQTTUserProperty]
     let reasonCodes: [UInt8]
 }
 
@@ -236,6 +266,7 @@ func decodeReasonCodeList(_ bytes: [UInt8],
                                       propertyLength: 0,
                                       reasonString: nil,
                                       userProperty: nil,
+                                      userProperties: [],
                                       reasonCodes: reasonCodes)
     }
 
@@ -247,5 +278,6 @@ func decodeReasonCodeList(_ bytes: [UInt8],
                                   propertyLength: propertyLength,
                                   reasonString: decodedProperties.reasonString,
                                   userProperty: decodedProperties.userProperty,
+                                  userProperties: decodedProperties.userProperties,
                                   reasonCodes: reasonCodes)
 }

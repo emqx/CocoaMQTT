@@ -6,7 +6,7 @@ final class PrivacyManifestTests: XCTestCase {
 
     #if IS_SWIFT_PACKAGE
     func testSwiftPackageIncludesPrivacyManifest() {
-        XCTAssertNotNil(Bundle.module.url(forResource: "PrivacyInfo", withExtension: "xcprivacy"))
+        XCTAssertNotNil(CocoaMQTTResources.bundle.url(forResource: "PrivacyInfo", withExtension: "xcprivacy"))
     }
     #endif
 }

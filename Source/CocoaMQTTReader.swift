@@ -49,6 +49,8 @@ class CocoaMQTTReader {
 
     private let protocolVersion: CocoaMQTTProtocolVersion
 
+    private let maximumPacketSize: UInt32?
+
     private let timeout: TimeInterval = 30_000
 
     /*  -- Reader states -- */
@@ -61,10 +63,12 @@ class CocoaMQTTReader {
 
     init(socket: CocoaMQTTSocketProtocol,
          delegate: CocoaMQTTReaderDelegate?,
-         protocolVersion: CocoaMQTTProtocolVersion = .v311) {
+         protocolVersion: CocoaMQTTProtocolVersion = .v311,
+         maximumPacketSize: UInt32? = nil) {
         self.socket = socket
         self.delegate = delegate
         self.protocolVersion = protocolVersion
+        self.maximumPacketSize = maximumPacketSize
     }
 
     func start() {
@@ -88,6 +92,13 @@ class CocoaMQTTReader {
             guard lengthByteCount == 1 || byte & 0x7f != 0 else {
                 protocolError("Remaining Length is not minimally encoded")
                 return
+            }
+            if let maximumPacketSize = maximumPacketSize {
+                let packetSize = UInt64(1 + lengthByteCount) + UInt64(length)
+                guard packetSize <= UInt64(maximumPacketSize) else {
+                    protocolError("Packet exceeds the client Maximum Packet Size")
+                    return
+                }
             }
             if length == 0 {
                 frameReady()

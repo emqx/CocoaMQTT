@@ -43,6 +43,9 @@ struct FramePublish: Frame {
     /// mappings do not survive a network reconnect, so stored packets must be standalone.
     var persistenceTopic: String?
 
+    /// Local-only marker for a packet restored from persistent session state.
+    var isSessionRecovery = false
+
     // --- Attributes End
 
     init(topic: String, payload: [UInt8], qos: CocoaMQTTQoS = .qos0, msgid: UInt16 = 0) {

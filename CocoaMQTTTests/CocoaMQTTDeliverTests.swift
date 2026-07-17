@@ -213,6 +213,51 @@ class CocoaMQTTDeliverTests: XCTestCase {
         XCTAssertTrue(publish.dup)
     }
 
+    func testPausedTransportDoesNotRedeliverInflightMessages() {
+        let caller = Caller()
+        let deliver = CocoaMQTTDeliver()
+        let frame = FramePublish(topic: "t/paused", payload: [0x01], qos: .qos1, msgid: 101)
+
+        deliver.delegate = caller
+        XCTAssertTrue(deliver.add(frame))
+        deliver.t_waitUntilIdle()
+        caller.delegateQueue.sync {}
+        caller.reset()
+
+        deliver.setTransportEnabled(false)
+        XCTAssertTrue(deliver.t_setInflightNextRetryTime(0, forMsgid: frame.msgid))
+        deliver.t_redeliver(atUptimeNanoseconds: 1)
+        caller.delegateQueue.sync {}
+
+        XCTAssertTrue(caller.frames.isEmpty)
+    }
+
+    func testReceiveMaximumKeepsQoS2QuotaUntilPubComp() {
+        let caller = Caller()
+        let deliver = CocoaMQTTDeliver()
+        let qos2 = FramePublish(topic: "t/qos2", payload: [1], qos: .qos2, msgid: 1)
+        let qos1 = FramePublish(topic: "t/qos1", payload: [2], qos: .qos1, msgid: 2)
+
+        deliver.delegate = caller
+        deliver.configureServerLimits(receiveMaximum: 1, maximumPacketSize: UInt32.max)
+        XCTAssertTrue(deliver.add(qos2))
+        XCTAssertTrue(deliver.add(qos1))
+        deliver.t_waitUntilIdle()
+        caller.delegateQueue.sync {}
+        XCTAssertEqual(caller.frames.compactMap { $0 as? FramePublish }.count, 1)
+
+        deliver.ack(by: FramePubRec(msgid: qos2.msgid, reasonCode: .success))
+        deliver.t_waitUntilIdle()
+        caller.delegateQueue.sync {}
+        XCTAssertEqual(caller.frames.compactMap { $0 as? FramePublish }.count, 1)
+        XCTAssertEqual(caller.frames.compactMap { $0 as? FramePubRel }.count, 1)
+
+        deliver.ack(by: FramePubComp(msgid: qos2.msgid))
+        deliver.t_waitUntilIdle()
+        caller.delegateQueue.sync {}
+        XCTAssertEqual(caller.frames.compactMap { $0 as? FramePublish }.count, 2)
+    }
+
     func testStorage() {
 
         let clientID = "deliver-unit-testing"
@@ -305,6 +350,7 @@ class CocoaMQTTDeliverTests: XCTestCase {
         XCTAssertEqual(caller1.frames.count, 1)
         if let firstRecovered = caller1.frames.first {
             assertEqual(firstRecovered, frame)
+            XCTAssertTrue(firstRecovered.dup)
         }
         XCTAssertEqual(storage.readAll().count, 1)
 
@@ -324,6 +370,7 @@ class CocoaMQTTDeliverTests: XCTestCase {
         XCTAssertEqual(caller2.frames.count, 1)
         if let secondRecovered = caller2.frames.first {
             assertEqual(secondRecovered, frame)
+            XCTAssertTrue(secondRecovered.dup)
         }
         XCTAssertEqual(storageAfterRestart.readAll().count, 1)
 

@@ -17,6 +17,8 @@ public class MqttAuthProperties: NSObject {
     public var reasonString: String?
     // 3.15.2.2.5 User Property
     public var userProperties: [String: String]?
+    /// Ordered User Properties. When non-empty, these are encoded instead of `userProperties`.
+    public var userPropertyList = [CocoaMQTTUserProperty]()
 
     public var properties: [UInt8] {
         var properties = [UInt8]()
@@ -40,7 +42,9 @@ public class MqttAuthProperties: NSObject {
             properties += getMQTTPropertyData(type: CocoaMQTTPropertyName.reasonString.rawValue, value: reasonString.bytesWithLength)
         }
         // 3.15.2.2.5 User Property
-        if let userProperty = self.userProperties {
+        if !userPropertyList.isEmpty {
+            properties += userPropertyList.userPropertyBytes
+        } else if let userProperty = self.userProperties {
             properties += userProperty.userPropertyBytes
         }
 
@@ -51,7 +55,8 @@ public class MqttAuthProperties: NSObject {
         guard authenticationMethod == expectedAuthenticationMethod,
               hasValidMQTTUTF8Length(expectedAuthenticationMethod, allowEmpty: true),
               (authenticationData?.count ?? 0) <= Int(UInt16.max),
-              hasValidMQTTUserProperties(userProperties) else { return false }
+              hasValidMQTTUserProperties(userProperties),
+              hasValidMQTTUserProperties(userPropertyList) else { return false }
         return reasonString.map { hasValidMQTTUTF8Length($0, allowEmpty: true) } ?? true
     }
 
