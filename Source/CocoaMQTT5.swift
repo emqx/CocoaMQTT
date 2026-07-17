@@ -523,9 +523,8 @@ public class CocoaMQTT5: NSObject, CocoaMQTT5Client {
         sessionExpiryController = controller
     }
 
-    private func clearPendingSubscriptionRequests() {
-        clientStateLock.lock()
-        defer { clientStateLock.unlock() }
+    /// Callers must hold `clientStateLock`.
+    private func clearPendingSubscriptionRequestsLocked() {
         for identifier in subscriptionsWaitingAck.removeAllValues().keys {
             packetIdentifiers.release(identifier)
         }
@@ -601,6 +600,7 @@ public class CocoaMQTT5: NSObject, CocoaMQTT5Client {
         }
         activeClientID = clientID
         resetServerCapabilities()
+        topicAliases.clear()
         configureSessionExpiryController(for: activeClientID)
         markStoredPacketIdentifiersInUse()
         deliver.beginConnection()
@@ -1204,11 +1204,13 @@ extension CocoaMQTT5: CocoaMQTTSocketDelegate {
     public func socketDidDisconnect(_ socket: CocoaMQTTSocketProtocol, withError err: Error?) {
         // Clean up
         socket.setDelegate(nil, delegateQueue: nil)
+        clientStateLock.lock()
+        // Publish uses the same lock, so no frame can enter the new connection
+        // queue while it still observes aliases or limits from the old one.
         deliver.beginConnection()
         topicAliases.clear()
-        clearPendingSubscriptionRequests()
-        clientStateLock.lock()
         resetServerCapabilities()
+        clearPendingSubscriptionRequestsLocked()
         connectionReceivedQoS2Identifiers.removeAll(keepingCapacity: true)
         let pendingDeliveryTokens = Set(deliver.connectionPendingFrames().compactMap {
             ($0 as? FramePublish)?.deliveryToken

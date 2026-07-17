@@ -326,6 +326,41 @@ final class SendingMessageLifecycleTests: XCTestCase {
         XCTAssertEqual(receivedTopics, ["inbound/topic", "inbound/topic"])
     }
 
+    func testMQTT5ClearsTopicAliasesBeforeStartingAnotherConnection() {
+        let clientID = "topic-alias-connection-boundary-\(UUID().uuidString)"
+        defer { clearStorage(clientID) }
+        let queue = DispatchQueue(label: "tests.topic-alias-connection-boundary")
+        let socket = SocketSpy()
+        let mqtt = CocoaMQTT5(clientID: clientID, socket: socket)
+        mqtt.delegateQueue = queue
+        establishSession(
+            mqtt,
+            socket: socket,
+            cleanStart: true,
+            requestedExpiry: 0,
+            serverTopicAliasMaximum: 1
+        )
+
+        XCTAssertEqual(
+            mqtt.publish(
+                CocoaMQTT5Message(topic: "aliased/topic", payload: [1], qos: .qos0),
+                properties: MqttPublishProperties(topicAlias: 1)
+            ),
+            0
+        )
+        mqtt.t_waitUntilDeliverIdle()
+        queue.sync {}
+
+        XCTAssertTrue(mqtt.connect())
+        XCTAssertEqual(
+            mqtt.publish(
+                CocoaMQTT5Message(topic: "", payload: [2], qos: .qos0),
+                properties: MqttPublishProperties(topicAlias: 1)
+            ),
+            -1
+        )
+    }
+
     func testMQTT5PersistsFullTopicForAliasOnlyPublish() throws {
         let clientID = "topic-alias-persistence-\(UUID().uuidString)"
         defer { clearStorage(clientID) }
