@@ -357,6 +357,82 @@ final class SendingMessageLifecycleTests: XCTestCase {
         XCTAssertEqual(stored.publishRecProperties?.topicAlias, 1)
     }
 
+    func testMQTT5RestoresPersistedPublishPropertiesWithoutConnectionScopedAlias() throws {
+        let clientID = "publish-property-recovery-\(UUID().uuidString)"
+        defer { clearStorage(clientID) }
+        let queue = DispatchQueue(label: "tests.publish-property-recovery")
+        let socket = SocketSpy()
+        let mqtt = CocoaMQTT5(clientID: clientID, socket: socket)
+        mqtt.delegateQueue = queue
+        establishSession(
+            mqtt,
+            socket: socket,
+            cleanStart: false,
+            requestedExpiry: UInt32.max,
+            serverTopicAliasMaximum: 1
+        )
+
+        XCTAssertEqual(
+            mqtt.publish(
+                CocoaMQTT5Message(topic: "persisted/topic", payload: [1], qos: .qos0),
+                properties: MqttPublishProperties(topicAlias: 1)
+            ),
+            0
+        )
+
+        let properties = MqttPublishProperties(
+            payloadFormatIndicator: .utf8,
+            messageExpiryInterval: 123,
+            topicAlias: 1,
+            responseTopic: "response/topic",
+            contentType: "text/plain"
+        )
+        properties.correlationData = [0x00, 0xff]
+        properties.userProperties = [
+            CocoaMQTTUserProperty(key: "duplicate", value: "first"),
+            CocoaMQTTUserProperty(key: "duplicate", value: "second")
+        ]
+        XCTAssertGreaterThan(
+            mqtt.publish(
+                CocoaMQTT5Message(
+                    topic: "",
+                    payload: Array("payload".utf8),
+                    qos: .qos1
+                ),
+                properties: properties
+            ),
+            0
+        )
+        mqtt.t_waitUntilDeliverIdle()
+        queue.sync {}
+
+        mqtt.socketDidDisconnect(socket, withError: nil)
+        socket.writes.removeAll()
+        establishSession(
+            mqtt,
+            socket: socket,
+            cleanStart: false,
+            requestedExpiry: UInt32.max,
+            sessionPresent: true
+        )
+        queue.sync {}
+
+        let publishData = try XCTUnwrap(
+            socket.writes.first { $0.first.map { $0 & 0xf0 } == FrameType.publish.rawValue }
+        )
+        let recovered = try XCTUnwrap(mqtt5Publish(from: publishData))
+        let recoveredProperties = try XCTUnwrap(recovered.publishRecProperties)
+        XCTAssertTrue(recovered.dup)
+        XCTAssertEqual(recovered.topic, "persisted/topic")
+        XCTAssertEqual(recoveredProperties.payloadFormatIndicator, .utf8)
+        XCTAssertEqual(recoveredProperties.messageExpiryInterval, 123)
+        XCTAssertNil(recoveredProperties.topicAlias)
+        XCTAssertEqual(recoveredProperties.responseTopic, "response/topic")
+        XCTAssertEqual(recoveredProperties.correlationData, [0x00, 0xff])
+        XCTAssertEqual(recoveredProperties.userProperties, properties.userProperties)
+        XCTAssertEqual(recoveredProperties.contentType, "text/plain")
+    }
+
     func testDisconnectReleasesPendingSubscriptionPacketIdentifiers() {
         let mqtt311 = CocoaMQTT(clientID: "pending-requests-311", socket: SocketSpy())
         mqtt311.cleanSession = false
@@ -643,6 +719,65 @@ final class SendingMessageLifecycleTests: XCTestCase {
         XCTAssertEqual(
             socket.writes.filter { $0.first.map { $0 & 0xf0 } == FrameType.subscribe.rawValue }.count,
             1
+        )
+    }
+
+    func testMQTT5ClearsServerPublishingCapabilitiesAfterDisconnect() {
+        let queue = DispatchQueue(label: "tests.disconnected-server-capabilities")
+        let socket = SocketSpy()
+        let mqtt = CocoaMQTT5(
+            clientID: "disconnected-server-capabilities-\(UUID().uuidString)",
+            socket: socket
+        )
+        mqtt.delegateQueue = queue
+        establishSession(
+            mqtt,
+            socket: socket,
+            cleanStart: true,
+            requestedExpiry: 0,
+            serverMaximumQoS: .qos0,
+            serverRetainAvailable: false,
+            serverMaximumPacketSize: 16
+        )
+
+        mqtt.socketDidDisconnect(socket, withError: nil)
+        socket.writes.removeAll()
+        XCTAssertGreaterThan(
+            mqtt.publish(
+                CocoaMQTT5Message(topic: "t/qos", payload: [1], qos: .qos1),
+                properties: MqttPublishProperties()
+            ),
+            0
+        )
+        XCTAssertEqual(
+            mqtt.publish(
+                CocoaMQTT5Message(topic: "t/retained", payload: [1], qos: .qos0, retained: true),
+                properties: MqttPublishProperties()
+            ),
+            0
+        )
+        XCTAssertEqual(
+            mqtt.publish(
+                CocoaMQTT5Message(
+                    topic: "t/large",
+                    payload: Array(repeating: 1, count: 32),
+                    qos: .qos0
+                ),
+                properties: MqttPublishProperties()
+            ),
+            0
+        )
+        mqtt.t_waitUntilDeliverIdle()
+        queue.sync {}
+        XCTAssertTrue(
+            socket.writes.filter { $0.first.map { $0 & 0xf0 } == FrameType.publish.rawValue }.isEmpty
+        )
+
+        establishSession(mqtt, socket: socket, cleanStart: true, requestedExpiry: 0)
+        queue.sync {}
+        XCTAssertEqual(
+            socket.writes.filter { $0.first.map { $0 & 0xf0 } == FrameType.publish.rawValue }.count,
+            3
         )
     }
 
@@ -971,5 +1106,22 @@ final class SendingMessageLifecycleTests: XCTestCase {
             bytes: [0x00, 0x01, 0x74] + identifier.hlBytes + [0x00, 0x01],
             protocolVersion: .v5
         ))
+    }
+
+    private func mqtt5Publish(from data: Data) -> FramePublish? {
+        let packet = [UInt8](data)
+        guard let fixedHeader = packet.first,
+              fixedHeader & 0xf0 == FrameType.publish.rawValue,
+              var reader = MQTTByteReader(Array(packet.dropFirst())),
+              let remainingLength = reader.readVariableByteInteger(),
+              remainingLength == reader.remainingCount,
+              let body = reader.readBytes(count: remainingLength) else {
+            return nil
+        }
+        return FramePublish(
+            packetFixedHeaderType: fixedHeader,
+            bytes: body,
+            protocolVersion: .v5
+        )
     }
 }

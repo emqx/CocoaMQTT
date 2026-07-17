@@ -53,6 +53,21 @@ public class MqttPublishProperties: NSObject {
         self.contentType = contentType
     }
 
+    /// Rebuild the properties of an outbound PUBLISH restored from session storage.
+    convenience init(recovering decoded: MqttDecodePublish) {
+        self.init()
+        payloadFormatIndicator = decoded.payloadFormatIndicator
+        messageExpiryInterval = decoded.messageExpiryInterval
+        responseTopic = decoded.responseTopic
+        correlationData = decoded.correlationData
+        userProperty = decoded.userProperty
+        userProperties = decoded.userProperties
+        contentType = decoded.contentType
+
+        // A Topic Alias mapping ends with its network connection. Subscription
+        // Identifiers are server-originated and invalid on an outbound PUBLISH.
+    }
+
     public var properties: [UInt8] {
         var properties = [UInt8]()
 

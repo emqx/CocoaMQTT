@@ -534,6 +534,23 @@ public class CocoaMQTT5: NSObject, CocoaMQTT5Client {
         }
     }
 
+    /// Restore values that apply before a server has negotiated limits for a
+    /// network connection. Callers must hold `clientStateLock`.
+    private func resetServerCapabilities() {
+        serverMaximumQoS = .qos2
+        serverRetainAvailable = true
+        serverMaximumPacketSize = UInt32.max
+        serverWildcardSubscriptionAvailable = true
+        serverSubscriptionIdentifiersAvailable = true
+        serverSharedSubscriptionAvailable = true
+        deliver.configureServerLimits(
+            receiveMaximum: UInt16.max,
+            maximumPacketSize: UInt32.max,
+            maximumQoS: .qos2,
+            retainAvailable: true
+        )
+    }
+
     fileprivate func puback(_ type: FrameType,
                             msgid: UInt16,
                             pubCompReasonCode: CocoaMQTTPUBCOMPReasonCode = .success) {
@@ -583,18 +600,7 @@ public class CocoaMQTT5: NSObject, CocoaMQTT5Client {
             discardInMemorySession()
         }
         activeClientID = clientID
-        serverMaximumQoS = .qos2
-        serverRetainAvailable = true
-        serverMaximumPacketSize = UInt32.max
-        serverWildcardSubscriptionAvailable = true
-        serverSubscriptionIdentifiersAvailable = true
-        serverSharedSubscriptionAvailable = true
-        deliver.configureServerLimits(
-            receiveMaximum: UInt16.max,
-            maximumPacketSize: UInt32.max,
-            maximumQoS: .qos2,
-            retainAvailable: true
-        )
+        resetServerCapabilities()
         configureSessionExpiryController(for: activeClientID)
         markStoredPacketIdentifiersInUse()
         deliver.beginConnection()
@@ -1202,6 +1208,7 @@ extension CocoaMQTT5: CocoaMQTTSocketDelegate {
         topicAliases.clear()
         clearPendingSubscriptionRequests()
         clientStateLock.lock()
+        resetServerCapabilities()
         connectionReceivedQoS2Identifiers.removeAll(keepingCapacity: true)
         let pendingDeliveryTokens = Set(deliver.connectionPendingFrames().compactMap {
             ($0 as? FramePublish)?.deliveryToken
@@ -1604,5 +1611,9 @@ extension CocoaMQTT5 {
         clientStateLock.lock()
         defer { clientStateLock.unlock() }
         return sessionExpiryControllers.count
+    }
+
+    func t_waitUntilDeliverIdle() {
+        deliver.t_waitUntilIdle()
     }
 }
