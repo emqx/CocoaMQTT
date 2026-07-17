@@ -163,6 +163,75 @@ class CocoaMQTTStorageTests: XCTestCase {
         XCTAssertTrue(legacy.readAll().isEmpty)
     }
 
+    func testVersionedStorageMigratesLegacyFramesWhenGlobalVersionBelongsToAnotherInstance() throws {
+        let clientId = "storage-version-mixed-instance-migration-\(UUID().uuidString)"
+        let previousVersion = CocoaMQTTStorage()?.queryMQTTVersion()
+        defer {
+            clearStorage(clientId)
+            if let previousVersion = previousVersion {
+                CocoaMQTTStorage()?.setMQTTVersion(previousVersion)
+            }
+        }
+
+        setMqtt5Version()
+        let legacy = try XCTUnwrap(CocoaMQTTStorage(by: clientId))
+        let frame = FramePublish(topic: "legacy/v3", payload: [3], qos: .qos1, msgid: 9)
+        XCTAssertTrue(legacy.write(frame))
+
+        let versioned = try XCTUnwrap(CocoaMQTTStorage(by: clientId, protocolVersion: .v311))
+        let recovered = try XCTUnwrap(versioned.readAll().first as? FramePublish)
+        XCTAssertEqual(recovered.topic, "legacy/v3")
+        XCTAssertEqual(recovered.payload(), [3])
+        XCTAssertTrue(legacy.readAll().isEmpty)
+    }
+
+    func testMQTT5StorageMigratesLegacyFramesWhenGlobalVersionBelongsToMQTT311() throws {
+        let clientId = "storage-version-mixed-instance-v5-migration-\(UUID().uuidString)"
+        let previousVersion = CocoaMQTTStorage()?.queryMQTTVersion()
+        defer {
+            clearStorage(clientId)
+            if let previousVersion = previousVersion {
+                CocoaMQTTStorage()?.setMQTTVersion(previousVersion)
+            }
+        }
+
+        setMqtt3Version()
+        var frame = FramePublish(topic: "legacy/v5", payload: [5], qos: .qos1, msgid: 10)
+        frame.publishProperties = MqttPublishProperties()
+        let defaults = try XCTUnwrap(UserDefaults(suiteName: "cocomqtt-\(clientId)"))
+        defaults.set(frame.bytes(version: CocoaMQTTProtocolVersion.v5.rawValue), forKey: "10")
+
+        let versioned = try XCTUnwrap(CocoaMQTTStorage(by: clientId, protocolVersion: .v5))
+        let recovered = try XCTUnwrap(versioned.readAll().first as? FramePublish)
+        XCTAssertEqual(recovered.topic, "legacy/v5")
+        XCTAssertEqual(recovered.payload5(), [5])
+        XCTAssertNil(defaults.object(forKey: "10"))
+    }
+
+    func testLegacyMigrationClaimsEachClientSuiteOnlyOnce() throws {
+        let clientId = "storage-version-migration-claim-\(UUID().uuidString)"
+        defer { clearStorage(clientId) }
+        let legacy = try XCTUnwrap(CocoaMQTTStorage(by: clientId))
+        let frame = FramePublish(topic: "legacy/claimed", payload: [1], qos: .qos1, msgid: 7)
+        XCTAssertTrue(legacy.write(frame))
+
+        let group = DispatchGroup()
+        let queue = DispatchQueue(label: "storage-version-migration-claim", attributes: .concurrent)
+        for version in [CocoaMQTTProtocolVersion.v311, .v5] {
+            group.enter()
+            queue.async {
+                _ = CocoaMQTTStorage(by: clientId, protocolVersion: version)
+                group.leave()
+            }
+        }
+        group.wait()
+
+        let mqtt311 = try XCTUnwrap(CocoaMQTTStorage(by: clientId, protocolVersion: .v311))
+        let mqtt5 = try XCTUnwrap(CocoaMQTTStorage(by: clientId, protocolVersion: .v5))
+        XCTAssertEqual(mqtt311.readAll().count + mqtt5.readAll().count, 1)
+        XCTAssertTrue(legacy.readAll().isEmpty)
+    }
+
     private func clearStorage(_ clientId: String) {
         let suiteName = "cocomqtt-\(clientId)"
         guard let defaults = UserDefaults(suiteName: suiteName) else {

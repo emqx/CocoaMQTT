@@ -454,6 +454,91 @@ final class SendingMessageLifecycleTests: XCTestCase {
         XCTAssertEqual(socket.writes.last?[4], CocoaMQTTPUBCOMPReasonCode.packetIdentifierNotFound.rawValue)
     }
 
+    func testMQTT5ReceiveMaximumDoesNotCountQoS2StateFromPreviousConnection() throws {
+        let clientID = "incoming-qos2-connection-quota-\(UUID().uuidString)"
+        defer { clearStorage(clientID) }
+        let storage = try XCTUnwrap(CocoaMQTTStorage(by: clientID, protocolVersion: .v5))
+        XCTAssertTrue(storage.markReceivedQoS2(41))
+        XCTAssertTrue(storage.markReceivedQoS2(42))
+
+        let socket = SocketSpy()
+        let mqtt = CocoaMQTT5(clientID: clientID, socket: socket)
+        establishSession(
+            mqtt,
+            socket: socket,
+            cleanStart: false,
+            requestedExpiry: UInt32.max,
+            sessionPresent: true,
+            clientReceiveMaximum: 1
+        )
+        socket.writes.removeAll()
+        var deliveredIdentifiers = [UInt16]()
+        mqtt.didReceiveMessage = { _, _, identifier, _ in
+            deliveredIdentifiers.append(identifier)
+        }
+
+        mqtt.didReceive(
+            CocoaMQTTReader(socket: socket, delegate: nil, protocolVersion: .v5),
+            publish: try mqtt5QoS2Publish(identifier: 43)
+        )
+
+        XCTAssertEqual(deliveredIdentifiers, [43])
+        XCTAssertEqual(socket.writes.filter { $0.first == FrameType.pubrec.rawValue }.count, 1)
+        XCTAssertFalse(socket.writes.contains { $0.first == FrameType.disconnect.rawValue })
+    }
+
+    func testMQTT5ReceiveMaximumCountsRecoveredQoS2PublishesOnCurrentConnection() throws {
+        let clientID = "incoming-qos2-recovered-quota-\(UUID().uuidString)"
+        defer { clearStorage(clientID) }
+        let storage = try XCTUnwrap(CocoaMQTTStorage(by: clientID, protocolVersion: .v5))
+        XCTAssertTrue(storage.markReceivedQoS2(41))
+        XCTAssertTrue(storage.markReceivedQoS2(42))
+
+        let socket = SocketSpy()
+        let mqtt = CocoaMQTT5(clientID: clientID, socket: socket)
+        establishSession(
+            mqtt,
+            socket: socket,
+            cleanStart: false,
+            requestedExpiry: UInt32.max,
+            sessionPresent: true,
+            clientReceiveMaximum: 1
+        )
+        socket.writes.removeAll()
+        let reader = CocoaMQTTReader(socket: socket, delegate: nil, protocolVersion: .v5)
+
+        mqtt.didReceive(reader, publish: try mqtt5QoS2Publish(identifier: 41))
+        mqtt.didReceive(reader, publish: try mqtt5QoS2Publish(identifier: 42))
+
+        XCTAssertEqual(socket.writes.filter { $0.first == FrameType.pubrec.rawValue }.count, 1)
+        XCTAssertEqual(socket.writes.last?.first, FrameType.disconnect.rawValue)
+        XCTAssertEqual(socket.writes.last?[2], CocoaMQTTDISCONNECTReasonCode.receiveMaximumExceeded.rawValue)
+    }
+
+    func testMQTT5PubrelReplenishesCurrentConnectionReceiveMaximum() throws {
+        let clientID = "incoming-qos2-replenish-quota-\(UUID().uuidString)"
+        defer { clearStorage(clientID) }
+        let socket = SocketSpy()
+        let mqtt = CocoaMQTT5(clientID: clientID, socket: socket)
+        establishSession(
+            mqtt,
+            socket: socket,
+            cleanStart: true,
+            requestedExpiry: UInt32.max,
+            clientReceiveMaximum: 1
+        )
+        socket.writes.removeAll()
+        let reader = CocoaMQTTReader(socket: socket, delegate: nil, protocolVersion: .v5)
+
+        mqtt.didReceive(reader, publish: try mqtt5QoS2Publish(identifier: 41))
+        mqtt.didReceive(reader, pubrel: FramePubRel(msgid: 41))
+        mqtt.didReceive(reader, publish: try mqtt5QoS2Publish(identifier: 42))
+
+        XCTAssertEqual(socket.writes.filter { $0.first == FrameType.pubrec.rawValue }.count, 2)
+        XCTAssertEqual(socket.writes.filter { $0.first == FrameType.pubcomp.rawValue }.count, 1)
+        XCTAssertFalse(socket.writes.contains { $0.first == FrameType.disconnect.rawValue })
+    }
+
     func testMQTT311IncomingQoS2DuplicateIsDeliveredOnce() throws {
         let clientID = "incoming-qos2-311-\(UUID().uuidString)"
         defer { clearStorage(clientID) }
@@ -799,6 +884,7 @@ final class SendingMessageLifecycleTests: XCTestCase {
                                   requestedExpiry: UInt32,
                                   serverExpiry: UInt32? = nil,
                                   sessionPresent: Bool = false,
+                                  clientReceiveMaximum: UInt16? = nil,
                                   clientTopicAliasMaximum: UInt16? = nil,
                                   serverTopicAliasMaximum: UInt16? = nil,
                                   serverReceiveMaximum: UInt16? = nil,
@@ -812,6 +898,7 @@ final class SendingMessageLifecycleTests: XCTestCase {
                                   preConnackAction: (() -> Void)? = nil) {
         let connectProperties = MqttConnectProperties()
         connectProperties.sessionExpiryInterval = requestedExpiry
+        connectProperties.receiveMaximum = clientReceiveMaximum
         connectProperties.topicAliasMaximum = clientTopicAliasMaximum
         mqtt.cleanSession = cleanStart
         mqtt.connectProperties = connectProperties
@@ -876,5 +963,13 @@ final class SendingMessageLifecycleTests: XCTestCase {
             mqtt.didReceive(CocoaMQTTReader(socket: socket, delegate: nil, protocolVersion: .v5),
                             connack: connack)
         }
+    }
+
+    private func mqtt5QoS2Publish(identifier: UInt16) throws -> FramePublish {
+        return try XCTUnwrap(FramePublish(
+            packetFixedHeaderType: FrameType.publish.rawValue | 0x04,
+            bytes: [0x00, 0x01, 0x74] + identifier.hlBytes + [0x00, 0x01],
+            protocolVersion: .v5
+        ))
     }
 }

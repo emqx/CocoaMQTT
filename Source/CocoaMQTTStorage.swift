@@ -32,6 +32,8 @@ protocol CocoaMQTTStorageProtocol {
 
 final class CocoaMQTTStorage: CocoaMQTTStorageProtocol {
 
+    private static let legacyMigrationLock = NSLock()
+
     private struct StoredFrameValue {
         let key: String
         let msgid: UInt16
@@ -48,6 +50,8 @@ final class CocoaMQTTStorage: CocoaMQTTStorageProtocol {
     private var protocolVersion: CocoaMQTTProtocolVersion = .v311
 
     private var usesVersionedKeys = false
+
+    private let legacyMigrationProtocolKey = "cocoamqtt.legacy-protocol-version"
 
     init?() {
         versionDefault = UserDefaults()
@@ -250,9 +254,8 @@ final class CocoaMQTTStorage: CocoaMQTTStorageProtocol {
     }
 
     private func migrateLegacyFramesIfNeeded() {
-        guard queryMQTTVersion() == protocolVersion.rawValue else {
-            return
-        }
+        CocoaMQTTStorage.legacyMigrationLock.lock()
+        defer { CocoaMQTTStorage.legacyMigrationLock.unlock() }
 
         let legacyFrames = userDefault.dictionaryRepresentation().compactMap { storedKey, value -> StoredFrameValue? in
             guard let msgid = UInt16(storedKey) else {
@@ -261,19 +264,36 @@ final class CocoaMQTTStorage: CocoaMQTTStorageProtocol {
             return StoredFrameValue(key: storedKey, msgid: msgid, value: value, order: UInt64(msgid))
         }
 
-        for legacyFrame in legacyFrames {
+        guard !legacyFrames.isEmpty else { return }
+
+        // Legacy storage did not record a protocol per Client Identifier. The
+        // first client instance that can decode the suite claims its migration;
+        // the process-global compatibility version is not reliable when MQTT
+        // 3.1.1 and MQTT 5 clients coexist.
+        if let claimedProtocol = userDefault.string(forKey: legacyMigrationProtocolKey) {
+            guard claimedProtocol == protocolVersion.rawValue else { return }
+        }
+
+        let decodableFrames = legacyFrames.filter { legacyFrame in
+            guard let bytes = legacyFrame.value as? [UInt8],
+                  let parsed = parse(bytes) else { return false }
+            return decodeFrame(header: parsed.0, bytes: parsed.1) != nil
+        }
+
+        guard !decodableFrames.isEmpty else { return }
+        userDefault.set(protocolVersion.rawValue, forKey: legacyMigrationProtocolKey)
+
+        for legacyFrame in decodableFrames {
             let versionedKey = key(legacyFrame.msgid)
             if userDefault.object(forKey: versionedKey) == nil {
                 userDefault.set(legacyFrame.value, forKey: versionedKey)
             }
             userDefault.removeObject(forKey: legacyFrame.key)
         }
-        for legacyFrame in legacyFrames.sorted(by: { $0.msgid < $1.msgid }) {
+        for legacyFrame in decodableFrames.sorted(by: { $0.msgid < $1.msgid }) {
             ensureOrder(for: legacyFrame.msgid)
         }
-        if !legacyFrames.isEmpty {
-            userDefault.synchronize()
-        }
+        userDefault.synchronize()
     }
 
     private func parse(_ bytes: [UInt8]) -> (UInt8, [UInt8])? {
@@ -287,6 +307,21 @@ final class CocoaMQTTStorage: CocoaMQTTStorageProtocol {
         }
 
         return nil
+    }
+
+    private func decodeFrame(header: UInt8, bytes: [UInt8]) -> Frame? {
+        if let publish = FramePublish(
+            packetFixedHeaderType: header,
+            bytes: bytes,
+            protocolVersion: protocolVersion
+        ) {
+            return publish
+        }
+        return FramePubRel(
+            packetFixedHeaderType: header,
+            bytes: bytes,
+            protocolVersion: protocolVersion
+        )
     }
 
     private func __read(needDelete: Bool) -> [Frame] {
@@ -326,10 +361,8 @@ final class CocoaMQTTStorage: CocoaMQTTStorageProtocol {
                 userDefault.removeObject(forKey: orderKey(storedFrame.msgid))
             }
 
-            if let f = FramePublish(packetFixedHeaderType: parsed.0, bytes: parsed.1, protocolVersion: protocolVersion) {
-                frames.append(f)
-            } else if let f = FramePubRel(packetFixedHeaderType: parsed.0, bytes: parsed.1, protocolVersion: protocolVersion) {
-                frames.append(f)
+            if let frame = decodeFrame(header: parsed.0, bytes: parsed.1) {
+                frames.append(frame)
             }
         }
         return frames

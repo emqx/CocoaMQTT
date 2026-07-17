@@ -280,6 +280,10 @@ public class CocoaMQTT5: NSObject, CocoaMQTT5Client {
     private var connectTopicAliasMaximum: UInt16 = 0
     private var connectReceiveMaximum: UInt16 = UInt16.max
     private var connectAuthenticationMethod: String?
+    /// QoS 2 PUBLISH exchanges received on the current Network Connection and
+    /// still awaiting PUBCOMP. This is intentionally separate from the persisted
+    /// QoS 2 identifiers used to de-duplicate messages across Session resumes.
+    private var connectionReceivedQoS2Identifiers = Set<UInt16>()
     private let topicAliases = MQTT5TopicAliasStore()
     private var sessionExpiryController: MQTT5SessionExpiryController?
     private var sessionExpiryControllerClientID: String?
@@ -428,6 +432,9 @@ public class CocoaMQTT5: NSObject, CocoaMQTT5Client {
         connectTopicAliasMaximum = connectProperties?.topicAliasMaximum ?? 0
         connectReceiveMaximum = connectProperties?.receiveMaximum ?? UInt16.max
         connectAuthenticationMethod = connectProperties?.authenticationMethod
+        clientStateLock.lock()
+        connectionReceivedQoS2Identifiers.removeAll(keepingCapacity: true)
+        clientStateLock.unlock()
 
         send(connect)
         reader!.start()
@@ -1195,6 +1202,7 @@ extension CocoaMQTT5: CocoaMQTTSocketDelegate {
         topicAliases.clear()
         clearPendingSubscriptionRequests()
         clientStateLock.lock()
+        connectionReceivedQoS2Identifiers.removeAll(keepingCapacity: true)
         let pendingDeliveryTokens = Set(deliver.connectionPendingFrames().compactMap {
             ($0 as? FramePublish)?.deliveryToken
         })
@@ -1425,15 +1433,15 @@ extension CocoaMQTT5: CocoaMQTTReaderDelegate {
         if message.qos == .qos2 {
             clientStateLock.lock()
             let storage = CocoaMQTTStorage(by: activeClientID, protocolVersion: .v5)
-            let identifiers = storage?.receivedQoS2Identifiers() ?? []
-            let identifierWasKnown = identifiers.contains(publish.msgid)
             let receiveMaximum = Int(connectReceiveMaximum)
-            if !identifierWasKnown && identifiers.count >= receiveMaximum {
+            if !connectionReceivedQoS2Identifiers.contains(publish.msgid),
+               connectionReceivedQoS2Identifiers.count >= receiveMaximum {
                 clientStateLock.unlock()
                 printError("Received QoS 2 PUBLISH beyond the client Receive Maximum.")
                 internal_disconnect_withProperties(reasonCode: .receiveMaximumExceeded, userProperties: [:])
                 return
             }
+            connectionReceivedQoS2Identifiers.insert(publish.msgid)
             shouldDeliver = storage?.markReceivedQoS2(publish.msgid) ?? true
             clientStateLock.unlock()
         }
@@ -1485,6 +1493,7 @@ extension CocoaMQTT5: CocoaMQTTReaderDelegate {
         clientStateLock.lock()
         let wasKnown = CocoaMQTTStorage(by: activeClientID, protocolVersion: .v5)?
             .completeReceivedQoS2(pubrel.msgid) ?? false
+        connectionReceivedQoS2Identifiers.remove(pubrel.msgid)
         clientStateLock.unlock()
         puback(
             FrameType.pubcomp,
