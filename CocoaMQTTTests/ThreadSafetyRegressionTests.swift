@@ -63,7 +63,7 @@ final class ThreadSafetyRegressionTests: XCTestCase {
         }
 
         XCTAssertEqual(group.wait(timeout: .now() + 10), .success)
-        XCTAssertTrue(waitUntil(timeout: 2) { store.snapshot().count == topics.count })
+        XCTAssertEqual(store.snapshot().count, topics.count)
 
         let readQueue = DispatchQueue(label: "tests.threadsafe.subscriptions.read", attributes: .concurrent)
         let readGroup = DispatchGroup()
@@ -75,6 +75,23 @@ final class ThreadSafetyRegressionTests: XCTestCase {
             }
         }
         XCTAssertEqual(readGroup.wait(timeout: .now() + 10), .success)
+    }
+
+    func testThreadSafeDictionaryRetainsCollectionCompatibilityWithSnapshotIteration() {
+        let store = ThreadSafeDictionary<String, Int>(
+            label: "tests.threadsafe.collection",
+            dict: ["a": 1, "b": 2]
+        )
+        let collection: any Collection = store
+
+        XCTAssertEqual(store.count, 2)
+        XCTAssertFalse(store.isEmpty)
+        XCTAssertNotNil(store.first)
+        XCTAssertEqual(
+            Dictionary(uniqueKeysWithValues: store.map { ($0.key, $0.value) }),
+            ["a": 1, "b": 2]
+        )
+        XCTAssertEqual(collection.count, 2)
     }
 
     func testWebSocketDelegateAndLoggerConcurrentAccess() {
@@ -154,5 +171,59 @@ final class ThreadSafetyRegressionTests: XCTestCase {
 
         XCTAssertEqual(readGroup.wait(timeout: .now() + 10), .success)
         XCTAssertTrue([.connecting, .connected, .disconnected].contains(mqtt5.connState))
+    }
+
+    func testConcurrentPublishesAllocateUniquePacketIdentifiers() {
+        let mqtt = CocoaMQTT(clientID: "thread-safe-publish-\(UUID().uuidString)", socket: SocketStub())
+        mqtt.delegateQueue = DispatchQueue(label: "tests.threadsafe.publish.delegate")
+        let queue = DispatchQueue(label: "tests.threadsafe.publish", attributes: .concurrent)
+        let group = DispatchGroup()
+        let identifiers = ThreadSafeDictionary<Int, Bool>(label: "tests.threadsafe.publish.identifiers")
+
+        for index in 0..<400 {
+            group.enter()
+            queue.async {
+                let identifier = mqtt.publish(
+                    CocoaMQTTMessage(topic: "t/\(index)", payload: [UInt8(index % 255)], qos: .qos1)
+                )
+                identifiers[identifier] = true
+                group.leave()
+            }
+        }
+
+        XCTAssertEqual(group.wait(timeout: .now() + 10), .success)
+        XCTAssertEqual(identifiers.snapshot().count, 400)
+        XCTAssertFalse(identifiers.snapshot().keys.contains(-1))
+
+        mqtt.socketDidDisconnect(SocketStub(), withError: nil)
+    }
+
+    func testPacketIdentifierAllocatorExhaustionAndReuse() {
+        let allocator = MQTTPacketIdentifierAllocator()
+        var identifiers = Set<UInt16>()
+
+        for _ in 0..<Int(UInt16.max) {
+            guard let identifier = allocator.reserve() else {
+                return XCTFail("Allocator exhausted before all valid identifiers were reserved")
+            }
+            XCTAssertTrue(identifiers.insert(identifier).inserted)
+        }
+
+        XCTAssertEqual(allocator.reservedCount, Int(UInt16.max))
+        XCTAssertNil(allocator.reserve())
+        allocator.release(42)
+        XCTAssertEqual(allocator.reserve(), 42)
+        XCTAssertFalse(allocator.reserve(0))
+    }
+
+    private final class SocketStub: CocoaMQTTSocketProtocol {
+        var enableSSL = false
+
+        func setDelegate(_ theDelegate: CocoaMQTTSocketDelegate?, delegateQueue: DispatchQueue?) {}
+        func connect(toHost host: String, onPort port: UInt16) throws {}
+        func connect(toHost host: String, onPort port: UInt16, withTimeout timeout: TimeInterval) throws {}
+        func disconnect() {}
+        func readData(toLength length: UInt, withTimeout timeout: TimeInterval, tag: Int) {}
+        func write(_ data: Data, withTimeout timeout: TimeInterval, tag: Int) {}
     }
 }

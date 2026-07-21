@@ -18,6 +18,9 @@ struct FramePubRel: Frame {
 
     var msgid: UInt16
 
+    /// Local-only marker for a packet restored from persistent session state.
+    var isSessionRecovery = false
+
     // --- Attributes End
 
     // 3.6.2.1 PUBREL Reason Code
@@ -98,6 +101,10 @@ extension FramePubRel {
 extension FramePubRel: InitialWithBytes {
 
     init?(packetFixedHeaderType: UInt8, bytes: [UInt8]) {
+        self.init(packetFixedHeaderType: packetFixedHeaderType, bytes: bytes, protocolVersion: .v311)
+    }
+
+    init?(packetFixedHeaderType: UInt8, bytes: [UInt8], protocolVersion: CocoaMQTTProtocolVersion) {
         guard packetFixedHeaderType == 0x62 else {
             return nil
         }
@@ -107,9 +114,18 @@ extension FramePubRel: InitialWithBytes {
 
         self.packetFixedHeaderType = packetFixedHeaderType
         msgid = UInt16(bytes[0]) << 8 + UInt16(bytes[1])
+        guard msgid != 0 else { return nil }
 
-        self.pubRelProperties = MqttDecodePubRel()
-        self.pubRelProperties!.decodePubRel(fixedHeader: packetFixedHeaderType, pubAckData: bytes)
+        if protocolVersion == .v5 {
+            let decodedProperties = MqttDecodePubRel()
+            guard decodedProperties.decodePubRel(fixedHeader: packetFixedHeaderType,
+                                                 pubAckData: bytes,
+                                                 protocolVersion: protocolVersion) else { return nil }
+            pubRelProperties = decodedProperties
+            reasonCode = decodedProperties.reasonCode ?? .success
+        } else {
+            guard bytes.count == 2 else { return nil }
+        }
     }
 }
 

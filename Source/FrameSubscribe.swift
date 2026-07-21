@@ -154,12 +154,7 @@ extension FrameSubscribe {
 extension FrameSubscribe: CustomStringConvertible {
 
     var description: String {
-        var protocolVersion = ""
-        if let storage = CocoaMQTTStorage() {
-            protocolVersion = storage.queryMQTTVersion()
-        }
-
-        if protocolVersion == "5.0" {
+        if topicFilters != nil {
             var desc = ""
             if let unwrappedList = topicFilters, !unwrappedList.isEmpty {
                 for subscription in unwrappedList {

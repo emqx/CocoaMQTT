@@ -8,6 +8,11 @@
 
 import Foundation
 
+public enum CocoaMQTTProtocolVersion: String {
+    case v311 = "3.1.1"
+    case v5 = "5.0"
+}
+
 /// Quality of Service levels
 @objc public enum CocoaMQTTQoS: UInt8, CustomStringConvertible {
     /// At most once delivery

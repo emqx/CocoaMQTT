@@ -91,66 +91,30 @@ extension FrameSubAck {
 extension FrameSubAck: InitialWithBytes {
 
     init?(packetFixedHeaderType: UInt8, bytes: [UInt8]) {
+        self.init(packetFixedHeaderType: packetFixedHeaderType, bytes: bytes, protocolVersion: .v311)
+    }
 
+    init?(packetFixedHeaderType: UInt8, bytes: [UInt8], protocolVersion: CocoaMQTTProtocolVersion) {
+        guard packetFixedHeaderType == FrameType.suback.rawValue else { return nil }
         self.packetFixedHeaderType = packetFixedHeaderType
 
-        var protocolVersion = ""
-        if let storage = CocoaMQTTStorage() {
-            protocolVersion = storage.queryMQTTVersion()
+        let decoded = MqttDecodeSubAck()
+        guard decoded.decodeSubAck(fixedHeader: packetFixedHeaderType,
+                                   pubAckData: bytes,
+                                   protocolVersion: protocolVersion) else { return nil }
+
+        msgid = decoded.msgid
+        reasonCodes = decoded.reasonCodes
+        grantedQos = decoded.reasonCodes.map { reasonCode in
+            switch reasonCode {
+            case .grantedQoS0: return .qos0
+            case .grantedQoS1: return .qos1
+            case .grantedQoS2: return .qos2
+            default: return .FAILURE
+            }
         }
-
-        if protocolVersion == "5.0" {
-            // the bytes length must bigger than 3
-            guard bytes.count >= 4 else {
-                return nil
-            }
-
-            self.msgid = UInt16(bytes[0]) << 8 + UInt16(bytes[1])
-            self.grantedQos = []
-            self.reasonCodes = [CocoaMQTTSUBACKReasonCode]()
-
-            let propertyLength = decodeVariableByteInteger(data: bytes, offset: 2)
-            let reasonCodesStartIndex = propertyLength.newOffset + propertyLength.res
-            guard reasonCodesStartIndex < bytes.count else {
-                return nil
-            }
-
-            for i in reasonCodesStartIndex ..< bytes.count {
-                guard let reasonCode = CocoaMQTTSUBACKReasonCode(rawValue: bytes[i]) else {
-                    return nil
-                }
-                self.reasonCodes! += [reasonCode]
-
-                switch reasonCode {
-                case .grantedQoS0:
-                    self.grantedQos.append(.qos0)
-                case .grantedQoS1:
-                    self.grantedQos.append(.qos1)
-                case .grantedQoS2:
-                    self.grantedQos.append(.qos2)
-                default:
-                    self.grantedQos.append(.FAILURE)
-                }
-            }
-
-            self.subAckProperties = MqttDecodeSubAck()
-            self.subAckProperties!.decodeSubAck(fixedHeader: packetFixedHeaderType, pubAckData: bytes)
-
-        } else {
-            // the bytes length must bigger than 3
-            guard bytes.count >= 3 else {
-                return nil
-            }
-
-            self.msgid = UInt16(bytes[0]) << 8 + UInt16(bytes[1])
-            self.grantedQos = []
-            for i in 2 ..< bytes.count {
-                guard let qos = CocoaMQTTQoS(rawValue: bytes[i]) else {
-                    return nil
-                }
-                self.grantedQos.append(qos)
-            }
-
+        if protocolVersion == .v5 {
+            subAckProperties = decoded
         }
 
     }

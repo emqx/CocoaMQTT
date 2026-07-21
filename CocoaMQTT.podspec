@@ -18,7 +18,10 @@ Pod::Spec.new do |s|
   s.subspec 'Core' do |ss|
     ss.dependency "MqttCocoaAsyncSocket", "~> 1.0.8"
     ss.source_files = "Source/**/*.swift"
-    ss.exclude_files = "Source/CocoaMQTTWebSocket.swift"
+    ss.exclude_files = "Source/WebSocket/CocoaMQTTWebSocket.swift"
+    ss.resource_bundles = {
+      "CocoaMQTT_Privacy" => ["Source/PrivacyInfo.xcprivacy"]
+    }
   end
   
   s.subspec 'WebSockets' do |ss|
@@ -29,6 +32,6 @@ Pod::Spec.new do |s|
     ss.osx.deployment_target = "10.13"
     ss.tvos.deployment_target = "12.0"
     ss.dependency "Starscream", ">= 4.0.8", "< 6.0"
-    ss.source_files = "Source/CocoaMQTTWebSocket.swift"
+    ss.source_files = "Source/WebSocket/CocoaMQTTWebSocket.swift"
   end
 end

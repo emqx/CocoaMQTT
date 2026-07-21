@@ -4,7 +4,6 @@ included:
 
 excluded:
   - .build
-  - Carthage
   - Pods
   - Example
   - CocoaMQTT.xcodeproj

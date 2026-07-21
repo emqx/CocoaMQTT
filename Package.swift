@@ -27,20 +27,22 @@ let package = Package(
             name: "CocoaMQTT",
             dependencies: ["MqttCocoaAsyncSocket"],
             path: "Source",
-            exclude: ["CocoaMQTTWebSocket.swift"],
+            exclude: ["Info.plist", "WebSocket"],
+            resources: [.copy("PrivacyInfo.xcprivacy")],
             swiftSettings: [.define("IS_SWIFT_PACKAGE")]
         ),
         .target(
             name: "CocoaMQTTWebSocket",
             dependencies: ["CocoaMQTT", "Starscream"],
-            path: "Source",
-            sources: ["CocoaMQTTWebSocket.swift"],
+            path: "Source/WebSocket",
             swiftSettings: [.define("IS_SWIFT_PACKAGE")]
         ),
         .testTarget(
             name: "CocoaMQTTTests",
             dependencies: ["CocoaMQTT", "CocoaMQTTWebSocket"],
             path: "CocoaMQTTTests",
+            exclude: ["Info.plist"],
+            resources: [.copy("client-keycert.p12")],
             swiftSettings: [.define("IS_SWIFT_PACKAGE")]
         )
     ]

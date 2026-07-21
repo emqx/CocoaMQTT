@@ -4,21 +4,35 @@
 
 import Foundation
 
-/// A thread-safe dictionary
-public class ThreadSafeDictionary<K: Hashable, V>: Collection {
+/// A thread-safe dictionary.
+///
+/// Iteration uses a stable snapshot. Explicit indices, like indices of any mutable
+/// Swift collection, are valid only until the dictionary is mutated.
+public final class ThreadSafeDictionary<K: Hashable, V>: Collection {
+    public typealias Index = Dictionary<K, V>.Index
+    public typealias Element = Dictionary<K, V>.Element
+
     private var dictionary: [K: V]
     private let concurrentQueue: DispatchQueue
 
-    public var startIndex: Dictionary<K, V>.Index {
-        concurrentQueue.sync {
-            return self.dictionary.startIndex
-        }
+    public var startIndex: Index {
+        concurrentQueue.sync { dictionary.startIndex }
     }
 
-    public var endIndex: Dictionary<K, V>.Index {
-        concurrentQueue.sync {
-            return self.dictionary.endIndex
-        }
+    public var endIndex: Index {
+        concurrentQueue.sync { dictionary.endIndex }
+    }
+
+    public var count: Int {
+        concurrentQueue.sync { dictionary.count }
+    }
+
+    public var isEmpty: Bool {
+        concurrentQueue.sync { dictionary.isEmpty }
+    }
+
+    public var first: Element? {
+        snapshot().first
     }
 
     public init(label: String, dict: [K: V] = [K: V]()) {
@@ -26,10 +40,17 @@ public class ThreadSafeDictionary<K: Hashable, V>: Collection {
         concurrentQueue = DispatchQueue(label: label, attributes: .concurrent)
     }
 
-    public func index(after i: Dictionary<K, V>.Index) -> Dictionary<K, V>.Index {
-        concurrentQueue.sync {
-            self.dictionary.index(after: i)
-        }
+    public func index(after i: Index) -> Index {
+        concurrentQueue.sync { dictionary.index(after: i) }
+    }
+
+    public subscript(index: Index) -> Element {
+        concurrentQueue.sync { dictionary[index] }
+    }
+
+    /// `for-in`, `map`, and other sequence operations iterate over one snapshot.
+    public func makeIterator() -> Dictionary<K, V>.Iterator {
+        snapshot().makeIterator()
     }
 
     public subscript(key: K) -> V? {
@@ -39,15 +60,9 @@ public class ThreadSafeDictionary<K: Hashable, V>: Collection {
             }
         }
         set(newValue) {
-            concurrentQueue.async(flags: .barrier) {[weak self] in
-                self?.dictionary[key] = newValue
+            concurrentQueue.sync(flags: .barrier) {
+                dictionary[key] = newValue
             }
-        }
-    }
-
-    public subscript(index: Dictionary<K, V>.Index) -> Dictionary<K, V>.Element {
-        concurrentQueue.sync {
-            self.dictionary[index]
         }
     }
 
@@ -59,8 +74,27 @@ public class ThreadSafeDictionary<K: Hashable, V>: Collection {
     }
 
     public func removeAll() {
-        concurrentQueue.async(flags: .barrier) {[weak self] in
-            self?.dictionary.removeAll()
+        concurrentQueue.sync(flags: .barrier) {
+            dictionary.removeAll()
+        }
+    }
+
+    func removeAllValues() -> [K: V] {
+        concurrentQueue.sync(flags: .barrier) {
+            let removed = dictionary
+            dictionary.removeAll()
+            return removed
+        }
+    }
+
+    func removeValues(where shouldRemove: (K, V) -> Bool) {
+        concurrentQueue.sync(flags: .barrier) {
+            let keys = dictionary.compactMap { key, value in
+                shouldRemove(key, value) ? key : nil
+            }
+            for key in keys {
+                dictionary.removeValue(forKey: key)
+            }
         }
     }
 

@@ -4,13 +4,13 @@
 - `Source/` contains the library code. Core MQTT clients live in `CocoaMQTT.swift` (v3.1.1) and `CocoaMQTT5.swift` (v5), with transport and parsing split into files like `CocoaMQTTSocket.swift`, `CocoaMQTTWebSocket.swift`, and `Frame*.swift`.
 - `CocoaMQTTTests/` contains XCTest targets for frame encoding/decoding, delivery queue behavior, storage, and broker integration.
 - `Example/Example/` is the sample iOS app for manual validation.
-- Package/dependency manifests are at the repo root: `Package.swift`, `CocoaMQTT.podspec`, and `Cartfile`.
+- Package/dependency manifests are at the repo root: `Package.swift` and `CocoaMQTT.podspec`.
 
 ## Build, Test, and Development Commands
 - `swift build` — build Swift Package Manager targets.
 - `swift test` — run all XCTest cases via SwiftPM.
-- `xcodebuild -project CocoaMQTT.xcodeproj -scheme CocoaMQTT -derivedDataPath . build test` — CI-aligned build + test flow.
-- `carthage update --platform iOS,macOS,tvOS --use-xcframeworks` — refresh Carthage artifacts when validating integration changes.
+- `xcodebuild -project CocoaMQTT.xcodeproj -scheme "Mac Framework" -derivedDataPath . build` — validate the Xcode framework project.
+- `pod lib lint CocoaMQTT.podspec --allow-warnings --skip-tests` — validate CocoaPods source and resource packaging.
 
 ## Coding Style & Naming Conventions
 - Use Swift 5 conventions with 4-space indentation and braces on the same line.

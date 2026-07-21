@@ -4,7 +4,6 @@
 # you should judge for yourself, the pros and cons are mentioned at:
 # http://guides.cocoapods.org/using/using-cocoapods.html#should-i-ignore-the-pods-directory-in-source-control?
 #
-# !!! Don't igonre these files, if you need support to Carthage
 # Pods/
 # Podfile.lock
 
@@ -29,8 +28,6 @@ DerivedData
 *.xcuserstate
 Example/Pods
 Example/Podfile.lock
-Carthage/
-Cartfile.resolved
 xcenv.sh
 *.swp
 

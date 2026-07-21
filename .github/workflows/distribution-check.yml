@@ -4,10 +4,13 @@ on:
   pull_request:
     paths:
       - "Source/**/*.swift"
+      - "Source/PrivacyInfo.xcprivacy"
       - "CocoaMQTTTests/**/*.swift"
       - "Package.swift"
       - "Package.resolved"
       - "CocoaMQTT.podspec"
+      - "CocoaMQTT.xcodeproj/project.pbxproj"
+      - "CocoaMQTT.xcodeproj/project.xcworkspace/xcshareddata/swiftpm/Package.resolved"
       - ".github/workflows/distribution-check.yml"
   push:
     tags:
@@ -75,6 +78,35 @@ jobs:
 
       - name: Build package targets
         run: swift build
+
+      - name: Verify SPM privacy manifest resource
+        run: test -n "$(find .build -path '*CocoaMQTT*.bundle/PrivacyInfo.xcprivacy' -print -quit)"
+
+      - name: Build Xcode framework project
+        run: |
+          set -euo pipefail
+
+          DERIVED_DATA="${RUNNER_TEMP}/CocoaMQTT-Xcode"
+          xcodebuild \
+            -project CocoaMQTT.xcodeproj \
+            -scheme "Mac Framework" \
+            -configuration Release \
+            -derivedDataPath "${DERIVED_DATA}" \
+            CODE_SIGNING_ALLOWED=NO \
+            build
+
+          test -f "${DERIVED_DATA}/Build/Products/Release/CocoaMQTT.framework/Versions/A/Resources/PrivacyInfo.xcprivacy"
+
+          xcodebuild \
+            -project CocoaMQTT.xcodeproj \
+            -scheme "iOS Framework" \
+            -configuration Release \
+            -destination "generic/platform=iOS" \
+            -derivedDataPath "${DERIVED_DATA}" \
+            CODE_SIGNING_ALLOWED=NO \
+            build
+
+          test -f "${DERIVED_DATA}/Build/Products/Release-iphoneos/CocoaMQTT.framework/PrivacyInfo.xcprivacy"
 
       - name: Build as local SPM dependency
         run: |
@@ -194,6 +226,19 @@ jobs:
             echo "podspec version (${VERSION}) must match source tag (${SOURCE_TAG})"
             exit 1
           fi
+
+      - name: Verify CocoaPods privacy manifest resource
+        run: |
+          SPEC_JSON="$(mktemp)"
+          pod ipc spec CocoaMQTT.podspec > "${SPEC_JSON}"
+          ruby -rjson - "${SPEC_JSON}" <<'RUBY'
+          spec = JSON.parse(File.read(ARGV.fetch(0)))
+          core = spec.fetch("subspecs").find { |subspec| subspec["name"] == "Core" }
+          bundles = core&.fetch("resource_bundles", {}) || {}
+          manifests = bundles.values.flatten
+
+          abort "Core subspec does not package PrivacyInfo.xcprivacy" unless manifests.include?("Source/PrivacyInfo.xcprivacy")
+          RUBY
 
       - name: Lint CocoaPods Core subspec
         run: pod lib lint CocoaMQTT.podspec --subspec=Core --allow-warnings --skip-tests --fail-fast --verbose

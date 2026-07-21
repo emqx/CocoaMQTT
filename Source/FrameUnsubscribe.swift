@@ -119,16 +119,11 @@ extension FrameUnsubscribe {
 extension FrameUnsubscribe: CustomStringConvertible {
 
     var description: String {
-        var protocolVersion = ""
-        if let storage = CocoaMQTTStorage() {
-            protocolVersion = storage.queryMQTTVersion()
-        }
-
-        if protocolVersion == "5.0" {
+        if topicFilters != nil {
             var desc = ""
             if let unwrappedList = topicFilters, !unwrappedList.isEmpty {
                 for subscription in unwrappedList {
-                    desc += "UNSUBSCRIBE(id: \(String(describing: subscription.topic)), topics: \(subscription.topic))  "
+                    desc += "UNSUBSCRIBE(id: \(String(describing: msgid)), topics: \(subscription.topic))  "
                 }
             }
             return desc

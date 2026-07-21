@@ -8,6 +8,16 @@
 
 import Foundation
 
+enum CocoaMQTTResources {
+    static var bundle: Bundle {
+        #if IS_SWIFT_PACKAGE
+        return .module
+        #else
+        return Bundle(for: CocoaMQTT.self)
+        #endif
+    }
+}
+
 /// Encode and Decode big-endian UInt16
 extension UInt16 {
     /// Most Significant Byte (MSB)
@@ -28,6 +38,10 @@ extension UInt16 {
 extension String {
     /// String with two bytes length
     var bytesWithLength: [UInt8] {
+        guard utf8.count <= Int(UInt16.max) else {
+            printError("UTF-8 string exceeds the MQTT length limit.")
+            return []
+        }
         return UInt16(utf8.count).hlBytes + utf8
     }
 
@@ -163,4 +177,90 @@ extension Dictionary where Key == String, Value == String {
     var userPropertyBytes: [UInt8] {
         return reduce([UInt8](), { $0 + getMQTTPropertyData(type: CocoaMQTTPropertyName.userProperty.rawValue, value: $1.key.bytesWithLength + $1.value.bytesWithLength) })
     }
+}
+
+extension Array where Element == CocoaMQTTUserProperty {
+    var userPropertyBytes: [UInt8] {
+        return reduce(into: [UInt8]()) { bytes, property in
+            bytes += getMQTTPropertyData(
+                type: CocoaMQTTPropertyName.userProperty.rawValue,
+                value: property.key.bytesWithLength + property.value.bytesWithLength
+            )
+        }
+    }
+}
+
+func hasValidMQTTUTF8Length(_ string: String, allowEmpty: Bool = false) -> Bool {
+    return (allowEmpty || !string.isEmpty)
+        && string.utf8.count <= Int(UInt16.max)
+        && !string.unicodeScalars.contains(where: { $0.value == 0 })
+}
+
+func hasValidMQTTTopicName(_ topic: String, allowEmpty: Bool = false) -> Bool {
+    return hasValidMQTTUTF8Length(topic, allowEmpty: allowEmpty)
+        && !topic.contains("+")
+        && !topic.contains("#")
+}
+
+func hasValidMQTTTopicFilter(_ filter: String) -> Bool {
+    guard hasValidMQTTUTF8Length(filter) else { return false }
+
+    let characters = Array(filter)
+    for index in characters.indices {
+        switch characters[index] {
+        case "#":
+            guard index == characters.index(before: characters.endIndex),
+                  index == characters.startIndex || characters[characters.index(before: index)] == "/" else {
+                return false
+            }
+        case "+":
+            let startsLevel = index == characters.startIndex || characters[characters.index(before: index)] == "/"
+            let next = characters.index(after: index)
+            let endsLevel = next == characters.endIndex || characters[next] == "/"
+            guard startsLevel && endsLevel else { return false }
+        default:
+            break
+        }
+    }
+    return true
+}
+
+func isMQTTSharedSubscription(_ filter: String) -> Bool {
+    return filter.hasPrefix("$share/")
+}
+
+func hasValidMQTTSharedSubscription(_ filter: String) -> Bool {
+    guard isMQTTSharedSubscription(filter) else { return true }
+    let remainder = filter.dropFirst("$share/".count)
+    guard let separator = remainder.firstIndex(of: "/") else { return false }
+    let shareName = remainder[..<separator]
+    let topicFilter = remainder[remainder.index(after: separator)...]
+    return !shareName.isEmpty
+        && !shareName.contains("+")
+        && !shareName.contains("#")
+        && !topicFilter.isEmpty
+        && !topicFilter.hasPrefix("$share/")
+        && hasValidMQTTTopicFilter(String(topicFilter))
+}
+
+func hasValidMQTTUserProperties(_ properties: [String: String]?) -> Bool {
+    return properties?.allSatisfy {
+        hasValidMQTTUTF8Length($0.key, allowEmpty: true)
+            && hasValidMQTTUTF8Length($0.value, allowEmpty: true)
+    } ?? true
+}
+
+func hasValidMQTTUserProperties(_ properties: [CocoaMQTTUserProperty]) -> Bool {
+    return properties.allSatisfy {
+        hasValidMQTTUTF8Length($0.key, allowEmpty: true)
+            && hasValidMQTTUTF8Length($0.value, allowEmpty: true)
+    }
+}
+
+func hasValidMQTTBinaryLength(_ bytes: [UInt8]) -> Bool {
+    return bytes.count <= Int(UInt16.max)
+}
+
+func hasValidMQTTPasswordLength(_ password: String?) -> Bool {
+    return (password?.utf8.count ?? 0) <= Int(UInt16.max)
 }

@@ -35,6 +35,17 @@ struct FramePublish: Frame {
 
     var mqtt5Topic: String = ""
 
+    /// Local-only identifier used to associate a queued publish with its original message.
+    /// QoS 0 packets have no MQTT Packet Identifier, so this value must not be encoded.
+    var deliveryToken: UInt64?
+
+    /// Full topic used only when persisting an alias-only MQTT 5 PUBLISH. Topic Alias
+    /// mappings do not survive a network reconnect, so stored packets must be standalone.
+    var persistenceTopic: String?
+
+    /// Local-only marker for a packet restored from persistent session state.
+    var isSessionRecovery = false
+
     // --- Attributes End
 
     init(topic: String, payload: [UInt8], qos: CocoaMQTTQoS = .qos0, msgid: UInt16 = 0) {
@@ -110,88 +121,31 @@ extension FramePublish {
 extension FramePublish: InitialWithBytes {
 
     init?(packetFixedHeaderType: UInt8, bytes: [UInt8]) {
+        self.init(packetFixedHeaderType: packetFixedHeaderType, bytes: bytes, protocolVersion: .v311)
+    }
+
+    init?(packetFixedHeaderType: UInt8, bytes: [UInt8], protocolVersion: CocoaMQTTProtocolVersion) {
 
         guard packetFixedHeaderType & 0xF0 == FrameType.publish.rawValue else {
             return nil
         }
-        let recDup = ((packetFixedHeaderType & 0b0000_1000) >> 3) > 0
-
         guard let recQos = CocoaMQTTQoS(rawValue: (packetFixedHeaderType & 0b0000_0110) >> 1) else {
             return nil
         }
-
-        let recRetain = (packetFixedHeaderType & 0b0000_0001) > 0
-        // Reserved
-        var flags: UInt8 = 0
-
-        if recRetain {
-            flags = flags | 0b0000_0001
-        } else {
-            flags = flags | 0b0000_0000
-        }
-
-        if recDup {
-            flags = flags | 0b0011_1000
-        } else {
-            flags = flags | 0b0011_0000
-        }
-
-        switch recQos {
-        case .qos0:
-            flags = flags | 0b0011_0000
-        case .qos1:
-            flags = flags | 0b0011_0010
-        case .qos2:
-            flags = flags | 0b0011_0100
-        case .FAILURE:
-            printDebug("FAILTURE")
-        }
-        self.packetFixedHeaderType = flags
+        guard recQos != .FAILURE else { return nil }
+        guard recQos != .qos0 || packetFixedHeaderType & 0x08 == 0 else { return nil }
+        self.packetFixedHeaderType = packetFixedHeaderType
 
         // Packet Identifier
         // The Packet Identifier field is only present in PUBLISH packets where the QoS level is 1 or 2.
 
-        // parse topic
-        if bytes.count < 2 {
-            return nil
-        }
-
-        let topicLength = Int(UInt16(bytes[0]) << 8 | UInt16(bytes[1]))
-        let topicStart = 2
-        let topicEnd = topicStart + topicLength
-
-        if bytes.count < topicEnd {
-            return nil
-        }
-        var pos = topicEnd
-
-        // msgid
-        if (packetFixedHeaderType & 0x06) >> 1 == CocoaMQTTQoS.qos0.rawValue {
-            msgid = 0
-        } else {
-            if bytes.count < pos + 2 {
-                return nil
-            }
-            msgid = UInt16(bytes[pos]) << 8 + UInt16(bytes[pos+1])
-            pos += 2
-        }
-
-        var protocolVersion = ""
-        if let storage = CocoaMQTTStorage() {
-            protocolVersion = storage.queryMQTTVersion()
-        }
-
-        if protocolVersion == "5.0" {
+        let pos: Int
+        if protocolVersion == .v5 {
             let data = MqttDecodePublish()
-            data.decodePublish(fixedHeader: packetFixedHeaderType, publishData: bytes)
-            pos = data.mqtt5DataIndex
-
-            if data.propertyLength != 0 {
-                pos += data.propertyLength!
-            }
-            if pos > bytes.count {
-                return nil
-            }
+            guard data.decodePublish(fixedHeader: packetFixedHeaderType,
+                                     publishData: bytes,
+                                     protocolVersion: protocolVersion) else { return nil }
+            pos = data.mqtt5DataIndex + (data.propertyLength ?? 0)
 
             // MQTT 5.0: Topic Name may be empty only when Topic Alias is present.
             if data.topic.isEmpty && data.topicAlias == nil {
@@ -202,20 +156,22 @@ extension FramePublish: InitialWithBytes {
             self.mqtt5Topic = data.topic
             self.topic = data.topic
             self.packetIdentifier = data.packetIdentifier
-            if let packetIdentifier = data.packetIdentifier {
-                self.msgid = packetIdentifier
-            }
+            self.msgid = data.packetIdentifier ?? 0
             self.publishRecProperties = data
 
         } else {
             // MQTT 3.1.1
-            guard topicLength > 0 else {
-                return nil
-            }
-            guard let recTopic = String(bytes: bytes[topicStart..<topicEnd], encoding: .utf8) else {
-                return nil
-            }
+            guard var reader = MQTTByteReader(bytes),
+                  let recTopic = reader.readUTF8String(), !recTopic.isEmpty,
+                  !recTopic.contains("+"), !recTopic.contains("#") else { return nil }
             topic = recTopic
+            if recQos == .qos0 {
+                msgid = 0
+            } else {
+                guard let identifier = reader.readUInt16(), identifier != 0 else { return nil }
+                msgid = identifier
+            }
+            pos = reader.index
         }
 
         // payload
@@ -224,6 +180,12 @@ extension FramePublish: InitialWithBytes {
         } else if pos < bytes.count {
             _payload = [UInt8](bytes[pos..<bytes.count])
         } else {
+            return nil
+        }
+
+        if protocolVersion == .v5,
+           publishRecProperties?.payloadFormatIndicator == .utf8,
+           String(bytes: _payload, encoding: .utf8) == nil {
             return nil
         }
 
