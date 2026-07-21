@@ -18,6 +18,12 @@ enum CocoaMQTTResources {
     }
 }
 
+struct CocoaMQTTAutoReconnectSchedule {
+    let attemptCount: UInt
+    let interval: UInt16
+    let generation: UInt64
+}
+
 /// Encode and Decode big-endian UInt16
 extension UInt16 {
     /// Most Significant Byte (MSB)

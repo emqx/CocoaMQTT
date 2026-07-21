@@ -13,12 +13,17 @@ protocol CocoaMQTTDeliverProtocol: AnyObject {
 
     var delegateQueue: DispatchQueue { get set }
 
+    /// Serial queue that owns client-side protocol and transport work.
+    var eventLoopQueue: DispatchQueue { get }
+
     func deliver(_ deliver: CocoaMQTTDeliver, wantToSend frame: Frame)
 
     func deliver(_ deliver: CocoaMQTTDeliver, didReject frame: Frame)
 }
 
 extension CocoaMQTTDeliverProtocol {
+    var eventLoopQueue: DispatchQueue { delegateQueue }
+
     func deliver(_ deliver: CocoaMQTTDeliver, didReject frame: Frame) {}
 }
 
@@ -324,7 +329,7 @@ extension CocoaMQTTDeliver {
         }
         storage?.remove(frame)
         if let delegate = delegate {
-            delegate.delegateQueue.async {
+            delegate.eventLoopQueue.async {
                 delegate.deliver(self, didReject: frame)
             }
         }
@@ -468,7 +473,7 @@ extension CocoaMQTTDeliver {
             if let p = frame as? FramePublish { storage?.remove(p) }
         }
 
-        delegate.delegateQueue.async {
+        delegate.eventLoopQueue.async {
             delegate.deliver(self, wantToSend: frame)
         }
     }

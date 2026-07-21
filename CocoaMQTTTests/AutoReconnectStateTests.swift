@@ -215,6 +215,7 @@ final class AutoReconnectStateTests: XCTestCase {
         }
 
         mqtt.socketDidDisconnect(socket, withError: nil)
+        delegateQueue.sync {}
 
         XCTAssertEqual(mqtt.reconnectTimeInterval, 0)
         XCTAssertEqual(mqtt.reconnectAttemptCount, 0)
@@ -224,6 +225,26 @@ final class AutoReconnectStateTests: XCTestCase {
             closureSchedules: { closureSchedules }
         )
         XCTAssertEqual(socket.connectCount, 0)
+    }
+
+    func testCocoaMQTTDisablingReconnectInvalidatesQueuedImmediateAttempt() {
+        let socket = SocketSpy()
+        let mqtt = CocoaMQTT(clientID: "reconnect-disable-immediate-\(UUID().uuidString)", socket: socket)
+        let delegateQueue = makeDelegateQueue()
+        let releaseEventLoop = DispatchSemaphore(value: 0)
+        mqtt.delegateQueue = delegateQueue
+        mqtt.autoReconnect = true
+        mqtt.autoReconnectTimeInterval = 0
+        mqtt.didDisconnect = { mqtt, _ in mqtt.autoReconnect = false }
+        mqtt.eventLoopQueue.async { releaseEventLoop.wait() }
+
+        mqtt.socketDidDisconnect(socket, withError: nil)
+        delegateQueue.sync {}
+        releaseEventLoop.signal()
+        mqtt.eventLoopQueue.sync {}
+
+        XCTAssertEqual(socket.connectCount, 0)
+        XCTAssertEqual(mqtt.reconnectAttemptCount, 0)
     }
 
     func testCocoaMQTTResumeAfterExpectedDisconnectDoesNotReconnect() {
@@ -433,8 +454,12 @@ final class AutoReconnectStateTests: XCTestCase {
         let expectedSchedules = [ReconnectSchedule(attemptCount: 1, interval: 0)]
         XCTAssertFalse(mqtt.isAutoReconnectPaused)
         XCTAssertEqual(mqtt.reconnectAttemptCount, 1)
-        XCTAssertEqual(delegate.reconnectSchedules, expectedSchedules)
-        XCTAssertEqual(closureSchedules, expectedSchedules)
+        XCTAssertTrue(waitForReconnectSchedules(
+            on: delegateQueue,
+            expected: expectedSchedules,
+            delegateSchedules: { delegate.reconnectSchedules },
+            closureSchedules: { closureSchedules }
+        ))
         XCTAssertTrue(waitUntil { socket.connectCount == 1 })
         XCTAssertFalse(waitUntil(timeout: 1.2) { socket.connectCount > 1 })
     }
@@ -460,6 +485,7 @@ final class AutoReconnectStateTests: XCTestCase {
 
         mqtt.pauseAutoReconnect()
         mqtt.didReceive(CocoaMQTTReader(socket: socket, delegate: nil), connack: FrameConnAck(returnCode: .serverUnavailable))
+        delegateQueue.sync {}
 
         XCTAssertEqual(delegate.connectAcks, [.serverUnavailable])
         XCTAssertEqual(socket.disconnectCount, 1)
@@ -502,6 +528,7 @@ final class AutoReconnectStateTests: XCTestCase {
         }
 
         mqtt.didReceive(CocoaMQTTReader(socket: socket, delegate: nil), connack: FrameConnAck(returnCode: .serverUnavailable))
+        delegateQueue.sync {}
 
         XCTAssertEqual(delegate.connectAcks, [.serverUnavailable])
         XCTAssertEqual(closureAcks, [.serverUnavailable])
@@ -526,6 +553,8 @@ final class AutoReconnectStateTests: XCTestCase {
         let delegate = MQTTDelegateSpy()
         let clientID = "auth-refresh-reconnect-\(UUID().uuidString)"
         let mqtt = CocoaMQTT(clientID: clientID, socket: socket)
+        let delegateQueue = makeDelegateQueue()
+        mqtt.delegateQueue = delegateQueue
         mqtt.delegate = delegate
         mqtt.autoReconnect = true
         mqtt.autoReconnectTimeInterval = 1
@@ -539,6 +568,7 @@ final class AutoReconnectStateTests: XCTestCase {
         }
 
         mqtt.didReceive(CocoaMQTTReader(socket: socket, delegate: nil), connack: FrameConnAck(returnCode: .badUsernameOrPassword))
+        delegateQueue.sync {}
 
         XCTAssertEqual(delegate.connectAcks, [.badUsernameOrPassword])
         XCTAssertEqual(mqtt.username, "fresh-user")
@@ -634,6 +664,7 @@ final class AutoReconnectStateTests: XCTestCase {
         }
 
         mqtt5.socketDidDisconnect(socket, withError: nil)
+        delegateQueue.sync {}
 
         XCTAssertEqual(mqtt5.reconnectTimeInterval, 0)
         XCTAssertEqual(mqtt5.reconnectAttemptCount, 0)
@@ -643,6 +674,26 @@ final class AutoReconnectStateTests: XCTestCase {
             closureSchedules: { closureSchedules }
         )
         XCTAssertEqual(socket.connectCount, 0)
+    }
+
+    func testCocoaMQTT5DisablingReconnectInvalidatesQueuedImmediateAttempt() {
+        let socket = SocketSpy()
+        let mqtt5 = CocoaMQTT5(clientID: "reconnect-disable-immediate-5-\(UUID().uuidString)", socket: socket)
+        let delegateQueue = makeDelegateQueue()
+        let releaseEventLoop = DispatchSemaphore(value: 0)
+        mqtt5.delegateQueue = delegateQueue
+        mqtt5.autoReconnect = true
+        mqtt5.autoReconnectTimeInterval = 0
+        mqtt5.didDisconnect = { mqtt5, _ in mqtt5.autoReconnect = false }
+        mqtt5.eventLoopQueue.async { releaseEventLoop.wait() }
+
+        mqtt5.socketDidDisconnect(socket, withError: nil)
+        delegateQueue.sync {}
+        releaseEventLoop.signal()
+        mqtt5.eventLoopQueue.sync {}
+
+        XCTAssertEqual(socket.connectCount, 0)
+        XCTAssertEqual(mqtt5.reconnectAttemptCount, 0)
     }
 
     func testCocoaMQTT5ResumeAfterExpectedDisconnectDoesNotReconnect() {
@@ -852,8 +903,12 @@ final class AutoReconnectStateTests: XCTestCase {
         let expectedSchedules = [ReconnectSchedule(attemptCount: 1, interval: 0)]
         XCTAssertFalse(mqtt5.isAutoReconnectPaused)
         XCTAssertEqual(mqtt5.reconnectAttemptCount, 1)
-        XCTAssertEqual(delegate.reconnectSchedules, expectedSchedules)
-        XCTAssertEqual(closureSchedules, expectedSchedules)
+        XCTAssertTrue(waitForReconnectSchedules(
+            on: delegateQueue,
+            expected: expectedSchedules,
+            delegateSchedules: { delegate.reconnectSchedules },
+            closureSchedules: { closureSchedules }
+        ))
         XCTAssertTrue(waitUntil { socket.connectCount == 1 })
         XCTAssertFalse(waitUntil(timeout: 1.2) { socket.connectCount > 1 })
     }
@@ -879,6 +934,7 @@ final class AutoReconnectStateTests: XCTestCase {
 
         mqtt5.pauseAutoReconnect()
         mqtt5.didReceive(CocoaMQTTReader(socket: socket, delegate: nil), connack: FrameConnAck(code: .serverBusy))
+        delegateQueue.sync {}
 
         XCTAssertEqual(delegate.connectAcks, [.serverBusy])
         XCTAssertEqual(socket.disconnectCount, 1)
@@ -921,6 +977,7 @@ final class AutoReconnectStateTests: XCTestCase {
         }
 
         mqtt5.didReceive(CocoaMQTTReader(socket: socket, delegate: nil), connack: FrameConnAck(code: .serverBusy))
+        delegateQueue.sync {}
 
         XCTAssertEqual(delegate.connectAcks, [.serverBusy])
         XCTAssertEqual(closureAcks, [.serverBusy])
@@ -945,6 +1002,8 @@ final class AutoReconnectStateTests: XCTestCase {
         let delegate = MQTT5DelegateSpy()
         let clientID = "auth-refresh-reconnect-5-\(UUID().uuidString)"
         let mqtt5 = CocoaMQTT5(clientID: clientID, socket: socket)
+        let delegateQueue = makeDelegateQueue()
+        mqtt5.delegateQueue = delegateQueue
         mqtt5.delegate = delegate
         mqtt5.autoReconnect = true
         mqtt5.autoReconnectTimeInterval = 1
@@ -958,6 +1017,7 @@ final class AutoReconnectStateTests: XCTestCase {
         }
 
         mqtt5.didReceive(CocoaMQTTReader(socket: socket, delegate: nil), connack: FrameConnAck(code: .notAuthorized))
+        delegateQueue.sync {}
 
         XCTAssertEqual(delegate.connectAcks, [.notAuthorized])
         XCTAssertEqual(mqtt5.username, "fresh-user")

@@ -4,6 +4,12 @@ import XCTest
 
 final class CocoaMQTT5ReceiveMessageContentTypeTests: XCTestCase {
 
+    private func installCallbackQueue(on mqtt5: CocoaMQTT5) -> DispatchQueue {
+        let queue = DispatchQueue(label: "tests.receive-message.\(UUID().uuidString)")
+        mqtt5.delegateQueue = queue
+        return queue
+    }
+
     private final class SocketSpy: CocoaMQTTSocketProtocol {
         var enableSSL: Bool = false
         var writes: [Data] = []
@@ -35,6 +41,7 @@ final class CocoaMQTT5ReceiveMessageContentTypeTests: XCTestCase {
 
     func testDidReceiveMessageMapsContentType() {
         let mqtt5 = CocoaMQTT5(clientID: "mq5-recv-content-type-\(UUID().uuidString)")
+        let callbackQueue = installCallbackQueue(on: mqtt5)
         let reader = CocoaMQTTReader(socket: SocketSpy(), delegate: nil)
 
         var callbackMessageContentType: String?
@@ -54,6 +61,7 @@ final class CocoaMQTT5ReceiveMessageContentTypeTests: XCTestCase {
         }
 
         mqtt5.didReceive(reader, publish: publish)
+        callbackQueue.sync {}
 
         XCTAssertEqual(callbackPublishDataContentType, "application/json")
         XCTAssertEqual(callbackMessageContentType, "application/json")
@@ -61,6 +69,7 @@ final class CocoaMQTT5ReceiveMessageContentTypeTests: XCTestCase {
 
     func testDidReceiveMessageKeepsWillPropertiesUnsetForPublishProperties() {
         let mqtt5 = CocoaMQTT5(clientID: "mq5-recv-properties-\(UUID().uuidString)")
+        let callbackQueue = installCallbackQueue(on: mqtt5)
         let reader = CocoaMQTTReader(socket: SocketSpy(), delegate: nil)
 
         var callbackMessage: CocoaMQTT5Message?
@@ -85,6 +94,7 @@ final class CocoaMQTT5ReceiveMessageContentTypeTests: XCTestCase {
         }
 
         mqtt5.didReceive(reader, publish: publish)
+        callbackQueue.sync {}
 
         XCTAssertEqual(callbackPublishData?.payloadFormatIndicator, .unspecified)
         XCTAssertEqual(callbackPublishData?.messageExpiryInterval, 60)
@@ -138,6 +148,7 @@ final class CocoaMQTT5ReceiveMessageContentTypeTests: XCTestCase {
 
     func testDidReceiveMessageWithContentTypeAndUnspecifiedPayloadFormatKeepsWillPropertiesUnset() {
         let mqtt5 = CocoaMQTT5(clientID: "mq5-recv-content-type-unspecified-\(UUID().uuidString)")
+        let callbackQueue = installCallbackQueue(on: mqtt5)
         let reader = CocoaMQTTReader(socket: SocketSpy(), delegate: nil)
 
         var callbackMessage: CocoaMQTT5Message?
@@ -169,6 +180,7 @@ final class CocoaMQTT5ReceiveMessageContentTypeTests: XCTestCase {
         }
 
         mqtt5.didReceive(reader, publish: publish)
+        callbackQueue.sync {}
 
         XCTAssertEqual(callbackPublishData?.payloadFormatIndicator, .unspecified)
         XCTAssertEqual(callbackPublishData?.messageExpiryInterval, 45)

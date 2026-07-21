@@ -4,6 +4,18 @@ import XCTest
 
 final class SendingMessageLifecycleTests: XCTestCase {
 
+    private func installCallbackQueue(on mqtt: CocoaMQTT) -> DispatchQueue {
+        let queue = DispatchQueue(label: "tests.sending-callback.\(UUID().uuidString)")
+        mqtt.delegateQueue = queue
+        return queue
+    }
+
+    private func installCallbackQueue(on mqtt5: CocoaMQTT5) -> DispatchQueue {
+        let queue = DispatchQueue(label: "tests.sending-callback-5.\(UUID().uuidString)")
+        mqtt5.delegateQueue = queue
+        return queue
+    }
+
     private final class SocketSpy: CocoaMQTTSocketProtocol {
         var enableSSL = false
         var writes = [Data]()
@@ -283,6 +295,7 @@ final class SendingMessageLifecycleTests: XCTestCase {
         defer { clearStorage(clientID) }
         let socket = SocketSpy()
         let mqtt = CocoaMQTT5(clientID: clientID, socket: socket)
+        let callbackQueue = installCallbackQueue(on: mqtt)
         establishSession(mqtt,
                          socket: socket,
                          cleanStart: true,
@@ -322,6 +335,7 @@ final class SendingMessageLifecycleTests: XCTestCase {
         let reader = CocoaMQTTReader(socket: socket, delegate: nil, protocolVersion: .v5)
         mqtt.didReceive(reader, publish: first)
         mqtt.didReceive(reader, publish: second)
+        callbackQueue.sync {}
 
         XCTAssertEqual(receivedTopics, ["inbound/topic", "inbound/topic"])
     }
@@ -536,6 +550,7 @@ final class SendingMessageLifecycleTests: XCTestCase {
         defer { clearStorage(clientID) }
         let socket = SocketSpy()
         let mqtt = CocoaMQTT5(clientID: clientID, socket: socket)
+        let callbackQueue = installCallbackQueue(on: mqtt)
         var delivered = [CocoaMQTT5Message]()
         mqtt.didReceiveMessage = { _, message, _, _ in delivered.append(message) }
         let reader = CocoaMQTTReader(socket: socket, delegate: nil, protocolVersion: .v5)
@@ -547,6 +562,7 @@ final class SendingMessageLifecycleTests: XCTestCase {
 
         mqtt.didReceive(reader, publish: publish)
         mqtt.didReceive(reader, publish: publish)
+        callbackQueue.sync {}
 
         XCTAssertEqual(delivered.count, 1)
         XCTAssertEqual(
@@ -574,6 +590,7 @@ final class SendingMessageLifecycleTests: XCTestCase {
 
         let socket = SocketSpy()
         let mqtt = CocoaMQTT5(clientID: clientID, socket: socket)
+        let callbackQueue = installCallbackQueue(on: mqtt)
         establishSession(
             mqtt,
             socket: socket,
@@ -592,6 +609,7 @@ final class SendingMessageLifecycleTests: XCTestCase {
             CocoaMQTTReader(socket: socket, delegate: nil, protocolVersion: .v5),
             publish: try mqtt5QoS2Publish(identifier: 43)
         )
+        callbackQueue.sync {}
 
         XCTAssertEqual(deliveredIdentifiers, [43])
         XCTAssertEqual(socket.writes.filter { $0.first == FrameType.pubrec.rawValue }.count, 1)
@@ -655,6 +673,7 @@ final class SendingMessageLifecycleTests: XCTestCase {
         defer { clearStorage(clientID) }
         let socket = SocketSpy()
         let mqtt = CocoaMQTT(clientID: clientID, socket: socket)
+        let callbackQueue = installCallbackQueue(on: mqtt)
         var deliveryCount = 0
         mqtt.didReceiveMessage = { _, _, _ in deliveryCount += 1 }
         let publish = try XCTUnwrap(FramePublish(
@@ -666,6 +685,7 @@ final class SendingMessageLifecycleTests: XCTestCase {
 
         mqtt.didReceive(reader, publish: publish)
         mqtt.didReceive(reader, publish: publish)
+        callbackQueue.sync {}
 
         XCTAssertEqual(deliveryCount, 1)
         XCTAssertEqual(socket.writes.filter { $0.first == FrameType.pubrec.rawValue }.count, 2)
@@ -838,6 +858,7 @@ final class SendingMessageLifecycleTests: XCTestCase {
             CocoaMQTT5Message(topic: "t/2", payload: [2], qos: .qos1),
             properties: MqttPublishProperties()
         )
+        mqtt.t_waitUntilDeliverIdle()
         queue.sync {}
         XCTAssertEqual(socket.writes.filter { $0.first.map { $0 & 0xf0 } == FrameType.publish.rawValue }.count, 1)
 
@@ -845,6 +866,7 @@ final class SendingMessageLifecycleTests: XCTestCase {
             CocoaMQTTReader(socket: socket, delegate: nil, protocolVersion: .v5),
             puback: FramePubAck(msgid: UInt16(first), reasonCode: .success)
         )
+        mqtt.t_waitUntilDeliverIdle()
         queue.sync {}
         XCTAssertEqual(socket.writes.filter { $0.first.map { $0 & 0xf0 } == FrameType.publish.rawValue }.count, 2)
     }
@@ -1020,6 +1042,7 @@ final class SendingMessageLifecycleTests: XCTestCase {
         socket.writeTags.removeAll()
 
         let packetIdentifier = mqtt.publish(CocoaMQTTMessage(topic: "t/new", payload: [1], qos: .qos1))
+        mqtt.t_waitUntilDeliverIdle()
         queue.sync {}
         XCTAssertTrue(socket.writes.isEmpty)
 
@@ -1032,6 +1055,7 @@ final class SendingMessageLifecycleTests: XCTestCase {
         if let connack = connack {
             mqtt.didReceive(CocoaMQTTReader(socket: socket, delegate: nil), connack: connack)
         }
+        mqtt.t_waitUntilDeliverIdle()
         queue.sync {}
 
         XCTAssertGreaterThan(packetIdentifier, 0)
@@ -1052,6 +1076,7 @@ final class SendingMessageLifecycleTests: XCTestCase {
         let packetIdentifier = mqtt.publish(
             CocoaMQTTMessage(topic: "t/after-disconnect", payload: [1], qos: .qos1)
         )
+        mqtt.t_waitUntilDeliverIdle()
         queue.sync {}
         XCTAssertGreaterThan(packetIdentifier, 0)
         XCTAssertTrue(socket.writes.isEmpty)
@@ -1071,6 +1096,7 @@ final class SendingMessageLifecycleTests: XCTestCase {
         if let connack = connack {
             mqtt.didReceive(CocoaMQTTReader(socket: socket, delegate: nil), connack: connack)
         }
+        mqtt.t_waitUntilDeliverIdle()
         queue.sync {}
 
         XCTAssertTrue(socket.writeTags.contains(packetIdentifier))
@@ -1173,6 +1199,7 @@ final class SendingMessageLifecycleTests: XCTestCase {
             mqtt.didReceive(CocoaMQTTReader(socket: socket, delegate: nil, protocolVersion: .v5),
                             connack: connack)
         }
+        mqtt.t_waitUntilDeliverIdle()
     }
 
     private func mqtt5QoS2Publish(identifier: UInt16) throws -> FramePublish {

@@ -175,14 +175,34 @@ public class CocoaMQTT: NSObject, CocoaMQTTClient {
 
     /// Delegate Executed queue. Default is `DispatchQueue.main`
     ///
-    /// The delegate/closure callback function will be committed asynchronously to it
-    public var delegateQueue = DispatchQueue.main
+    /// The delegate/closure callback function will be committed asynchronously to it.
+    /// Changing the queue affects callbacks emitted after the assignment; callbacks
+    /// already submitted remain on the queue captured when their event occurred.
+    public var delegateQueue: DispatchQueue {
+        get {
+            delegateQueueLock.lock()
+            defer { delegateQueueLock.unlock() }
+            return _delegateQueue
+        }
+        set {
+            delegateQueueLock.lock()
+            _delegateQueue = newValue
+            delegateQueueLock.unlock()
+        }
+    }
+    private let delegateQueueLock = NSLock()
+    private var _delegateQueue = DispatchQueue.main
+
+    /// Owns ordered socket, reader, timer, and delivery events. Application code
+    /// cannot replace this queue through `delegateQueue`.
+    let eventLoopQueue: DispatchQueue
 
     public var connState = CocoaMQTTConnState.disconnected {
         didSet {
+            let state = connState
             __delegate_queue {
-                self.delegate?.mqtt?(self, didStateChangeTo: self.connState)
-                self.didChangeState(self, self.connState)
+                self.delegate?.mqtt?(self, didStateChangeTo: state)
+                self.didChangeState(self, state)
             }
         }
     }
@@ -221,7 +241,20 @@ public class CocoaMQTT: NSObject, CocoaMQTTClient {
     public var packetReadTimeout: TimeInterval = CocoaMQTTReader.defaultPacketReadTimeout
 
     /// Enable auto-reconnect mechanism
-    public var autoReconnect = false
+    public var autoReconnect: Bool {
+        get {
+            autoReconnectLock.lock()
+            defer { autoReconnectLock.unlock() }
+            return _autoReconnect
+        }
+        set {
+            autoReconnectLock.lock()
+            _autoReconnect = newValue
+            autoReconnectLock.unlock()
+            if !newValue { resetAutoReconnectState() }
+        }
+    }
+    private var _autoReconnect = false
 
     /// Reconnect time interval
     ///
@@ -259,6 +292,7 @@ public class CocoaMQTT: NSObject, CocoaMQTTClient {
     private var isAutoReconnectAttemptScheduled = false
     private var hasPausedAutoReconnectAttempt = false
     private var hasPendingAutoReconnectAttempt = false
+    private var autoReconnectGeneration: UInt64 = 0
     // Tracks the window after requesting an unexpected socket close and before socketDidDisconnect cleans it up.
     private var pendingSocketDisconnectReconnectAttemptCount: UInt?
     private var shouldResumeAutoReconnectAfterPendingDisconnect = false
@@ -345,6 +379,7 @@ public class CocoaMQTT: NSObject, CocoaMQTTClient {
         self.host = host
         self.port = port
         self.socket = socket
+        self.eventLoopQueue = DispatchQueue(label: "io.emqx.CocoaMQTT.event-loop.\(UUID().uuidString)")
         super.init()
         deliver.delegate = self
     }
@@ -500,7 +535,7 @@ public class CocoaMQTT: NSObject, CocoaMQTTClient {
         markStoredPacketIdentifiersInUse()
         deliver.beginConnection()
         clientStateLock.unlock()
-        socket.setDelegate(self, delegateQueue: delegateQueue)
+        socket.setDelegate(self, delegateQueue: eventLoopQueue)
         reader = CocoaMQTTReader(
             socket: socket,
             delegate: self,
@@ -514,7 +549,7 @@ public class CocoaMQTT: NSObject, CocoaMQTTClient {
                 try socket.connect(toHost: self.host, onPort: self.port)
             }
 
-            delegateQueue.async { [weak self] in
+            eventLoopQueue.async { [weak self] in
                 guard let self = self else { return }
                 self.connState = .connecting
             }
@@ -558,6 +593,7 @@ public class CocoaMQTT: NSObject, CocoaMQTTClient {
         }
         shouldResumeAutoReconnectAfterPendingDisconnect = false
         autoReconnTimer = nil
+        autoReconnectGeneration &+= 1
         autoReconnectLock.unlock()
     }
 
@@ -574,7 +610,7 @@ public class CocoaMQTT: NSObject, CocoaMQTTClient {
 
         _isAutoReconnectPaused = false
 
-        guard autoReconnect, connState == .disconnected else {
+        guard _autoReconnect, connState == .disconnected else {
             hasPausedAutoReconnectAttempt = false
             hasPendingAutoReconnectAttempt = false
             shouldResumeAutoReconnectAfterPendingDisconnect = false
@@ -788,8 +824,10 @@ extension CocoaMQTT: CocoaMQTTDeliverProtocol {
             send(publish, tag: Int(msgid))
 
             if let message = message {
-                self.delegate?.mqtt(self, didPublishMessage: message, id: msgid)
-                self.didPublishMessage(self, message, msgid)
+                __delegate_queue {
+                    self.delegate?.mqtt(self, didPublishMessage: message, id: msgid)
+                    self.didPublishMessage(self, message, msgid)
+                }
             }
             if publish.qos == .qos0 {
                 sendingMessages.removeValue(forKey: deliveryToken)
@@ -804,7 +842,8 @@ extension CocoaMQTT: CocoaMQTTDeliverProtocol {
 extension CocoaMQTT {
 
     func __delegate_queue(_ fun: @escaping () -> Void) {
-        delegateQueue.async { [weak self] in
+        let callbackQueue = delegateQueue
+        callbackQueue.async { [weak self] in
             guard self != nil else { return }
             fun()
         }
@@ -833,34 +872,49 @@ extension CocoaMQTT {
         hasPendingAutoReconnectAttempt = false
         pendingSocketDisconnectReconnectAttemptCount = nil
         shouldResumeAutoReconnectAfterPendingDisconnect = false
+        autoReconnectGeneration &+= 1
         autoReconnectLock.unlock()
     }
 
-    private func notifyAutoReconnectScheduled(_ schedule: (attemptCount: UInt, interval: UInt16)) {
+    private func notifyAutoReconnectScheduled(_ schedule: CocoaMQTTAutoReconnectSchedule) {
         __delegate_queue {
+            self.autoReconnectLock.lock()
+            let isCurrent = self._autoReconnect && self.autoReconnectGeneration == schedule.generation
+            self.autoReconnectLock.unlock()
+            guard isCurrent else { return }
             self.delegate?.mqtt?(self, didScheduleReconnect: schedule.attemptCount, after: schedule.interval)
             self.didScheduleReconnect(self, schedule.attemptCount, schedule.interval)
         }
     }
 
-    private func scheduleAutoReconnectAttemptLocked(after interval: UInt16? = nil) -> (attemptCount: UInt, interval: UInt16) {
+    private func scheduleAutoReconnectAttemptLocked(after interval: UInt16? = nil) -> CocoaMQTTAutoReconnectSchedule {
         let delay = interval ?? reconnectTimeInterval
 
         printInfo("Try reconnect to server after \(delay)s")
         isAutoReconnectAttemptScheduled = true
+        autoReconnectGeneration &+= 1
+        let generation = autoReconnectGeneration
         autoReconnTimer = CocoaMQTTTimer.after(Double(delay), name: "autoReconnTimer", { [weak self] in
-            guard let self = self, self.prepareScheduledAutoReconnectFire() else { return }
-            _ = self.connect()
+            self?.eventLoopQueue.async { [weak self] in
+                guard let self = self,
+                      self.prepareScheduledAutoReconnectFire(generation: generation) else { return }
+                _ = self.connect()
+            }
         })
 
-        return (reconnectAttemptCount, delay)
+        return CocoaMQTTAutoReconnectSchedule(
+            attemptCount: reconnectAttemptCount,
+            interval: delay,
+            generation: generation
+        )
     }
 
-    private func prepareScheduledAutoReconnectFire() -> Bool {
+    private func prepareScheduledAutoReconnectFire(generation: UInt64) -> Bool {
         autoReconnectLock.lock()
         defer { autoReconnectLock.unlock() }
 
-        guard !_isAutoReconnectPaused else {
+        guard autoReconnectGeneration == generation else { return false }
+        guard _autoReconnect, !_isAutoReconnectPaused else {
             isAutoReconnectAttemptScheduled = false
             return false
         }
@@ -887,14 +941,18 @@ extension CocoaMQTT: CocoaMQTTSocketDelegate {
 
         printDebug("Call the SSL/TLS manually validating function")
 
-        delegate?.mqtt?(self, didReceive: trust, completionHandler: completionHandler)
-        didReceiveTrust(self, trust, completionHandler)
+        __delegate_queue {
+            self.delegate?.mqtt?(self, didReceive: trust, completionHandler: completionHandler)
+            self.didReceiveTrust(self, trust, completionHandler)
+        }
     }
 
     public func socketUrlSession(_ socket: CocoaMQTTSocketProtocol, didReceiveTrust trust: SecTrust, didReceiveChallenge challenge: URLAuthenticationChallenge, completionHandler: @escaping (URLSession.AuthChallengeDisposition, URLCredential?) -> Void) {
         printDebug("Call the SSL/TLS manually validating function - socketUrlSession")
 
-        delegate?.mqttUrlSession?(self, didReceiveTrust: trust, didReceiveChallenge: challenge, completionHandler: completionHandler)
+        __delegate_queue {
+            self.delegate?.mqttUrlSession?(self, didReceiveTrust: trust, didReceiveChallenge: challenge, completionHandler: completionHandler)
+        }
     }
 
     // ?
@@ -947,12 +1005,14 @@ extension CocoaMQTT: CocoaMQTTSocketDelegate {
         connState = .disconnected
         autoReconnectLock.lock()
         let reconnectAttemptCountBeforeCallbacks = pendingSocketDisconnectReconnectAttemptCount ?? reconnectAttemptCount
-        if !is_internal_disconnected && autoReconnect {
+        if !is_internal_disconnected && _autoReconnect {
             pendingSocketDisconnectReconnectAttemptCount = reconnectAttemptCountBeforeCallbacks
         }
         autoReconnectLock.unlock()
-        delegate?.mqttDidDisconnect(self, withError: err)
-        didDisconnect(self, err)
+        __delegate_queue {
+            self.delegate?.mqttDidDisconnect(self, withError: err)
+            self.didDisconnect(self, err)
+        }
 
         guard !is_internal_disconnected else {
             is_internal_disconnected = false
@@ -1012,7 +1072,7 @@ extension CocoaMQTT: CocoaMQTTReaderDelegate {
 
             aliveTimer = CocoaMQTTTimer.every(interval, name: "aliveTimer") { [weak self] in
                 guard let self = self else { return }
-                self.delegateQueue.async {
+                self.eventLoopQueue.async {
                     guard self.connState == .connected else {
                         self.aliveTimer = nil
                         return
@@ -1057,8 +1117,11 @@ extension CocoaMQTT: CocoaMQTTReaderDelegate {
             internal_disconnect()
         }
 
-        delegate?.mqtt(self, didConnectAck: connack.returnCode ?? CocoaMQTTConnAck.serverUnavailable)
-        didConnectAck(self, connack.returnCode ?? CocoaMQTTConnAck.serverUnavailable)
+        let returnCode = connack.returnCode ?? CocoaMQTTConnAck.serverUnavailable
+        __delegate_queue {
+            self.delegate?.mqtt(self, didConnectAck: returnCode)
+            self.didConnectAck(self, returnCode)
+        }
     }
 
     func didReceive(_ reader: CocoaMQTTReader, publish: FramePublish) {
@@ -1078,8 +1141,11 @@ extension CocoaMQTT: CocoaMQTTReaderDelegate {
 
         if shouldDeliver {
             printInfo("Received message: \(message)")
-            delegate?.mqtt(self, didReceiveMessage: message, id: publish.msgid)
-            didReceiveMessage(self, message, publish.msgid)
+            let messageID = publish.msgid
+            __delegate_queue {
+                self.delegate?.mqtt(self, didReceiveMessage: message, id: messageID)
+                self.didReceiveMessage(self, message, messageID)
+            }
         }
 
         if message.qos == .qos1 {
@@ -1099,8 +1165,11 @@ extension CocoaMQTT: CocoaMQTTReaderDelegate {
         }
         clientStateLock.unlock()
 
-        delegate?.mqtt(self, didPublishAck: puback.msgid)
-        didPublishAck(self, puback.msgid)
+        let messageID = puback.msgid
+        __delegate_queue {
+            self.delegate?.mqtt(self, didPublishAck: messageID)
+            self.didPublishAck(self, messageID)
+        }
     }
 
     func didReceive(_ reader: CocoaMQTTReader, pubrec: FramePubRec) {
@@ -1131,8 +1200,11 @@ extension CocoaMQTT: CocoaMQTTReaderDelegate {
         }
         clientStateLock.unlock()
 
-        delegate?.mqtt?(self, didPublishComplete: pubcomp.msgid)
-        didCompletePublish(self, pubcomp.msgid)
+        let messageID = pubcomp.msgid
+        __delegate_queue {
+            self.delegate?.mqtt?(self, didPublishComplete: messageID)
+            self.didCompletePublish(self, messageID)
+        }
     }
 
     func didReceive(_ reader: CocoaMQTTReader, suback: FrameSubAck) {
@@ -1163,8 +1235,10 @@ extension CocoaMQTT: CocoaMQTTReaderDelegate {
             }
         }
 
-        delegate?.mqtt(self, didSubscribeTopics: success, failed: failed)
-        didSubscribeTopics(self, success, failed)
+        __delegate_queue {
+            self.delegate?.mqtt(self, didSubscribeTopics: success, failed: failed)
+            self.didSubscribeTopics(self, success, failed)
+        }
     }
 
     func didReceive(_ reader: CocoaMQTTReader, unsuback: FrameUnsubAck) {
@@ -1182,15 +1256,19 @@ extension CocoaMQTT: CocoaMQTTReaderDelegate {
         for t in topics {
             subscriptionsStorage.removeValue(forKey: t)
         }
-        delegate?.mqtt(self, didUnsubscribeTopics: topics)
-        didUnsubscribeTopics(self, topics)
+        __delegate_queue {
+            self.delegate?.mqtt(self, didUnsubscribeTopics: topics)
+            self.didUnsubscribeTopics(self, topics)
+        }
     }
 
     func didReceive(_ reader: CocoaMQTTReader, pingresp: FramePingResp) {
         printDebug("RECV: \(pingresp)")
 
-        delegate?.mqttDidReceivePong(self)
-        didReceivePong(self)
+        __delegate_queue {
+            self.delegate?.mqttDidReceivePong(self)
+            self.didReceivePong(self)
+        }
     }
 
     func didReceive(_ reader: CocoaMQTTReader, disconnect: FrameDisconnect) {
@@ -1212,5 +1290,10 @@ extension CocoaMQTT {
 
     func t_reservedPacketIdentifierCount() -> Int {
         packetIdentifiers.reservedCount
+    }
+
+    func t_waitUntilDeliverIdle() {
+        deliver.t_waitUntilIdle()
+        eventLoopQueue.sync {}
     }
 }
