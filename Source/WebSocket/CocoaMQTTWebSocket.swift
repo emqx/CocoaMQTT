@@ -49,7 +49,7 @@ public protocol CocoaMQTTWebSocketConnectionBuilder {
 
 // MARK: - CocoaMQTTWebSocket
 
-public class CocoaMQTTWebSocket: CocoaMQTTSocketProtocol {
+public class CocoaMQTTWebSocket: CocoaMQTTDisconnectAfterWritingSocket {
 
     public var enableSSL = false
 
@@ -105,8 +105,8 @@ public class CocoaMQTTWebSocket: CocoaMQTTSocketProtocol {
 
         guard let url = URL(string: urlStr) else { throw CocoaMQTTError.invalidURL }
         try internalQueue.sync {
-            connection?.disconnect()
-            connection?.delegate = nil
+            reset()
+            disconnectAfterWrites = false
             let newConnection = try builder.buildConnection(forURL: url, withHeaders: self.headers)
             connection = newConnection
             newConnection.delegate = self
@@ -118,6 +118,7 @@ public class CocoaMQTTWebSocket: CocoaMQTTSocketProtocol {
     public func disconnect() {
         internalQueue.async {
             // self.reset()
+            self.disconnectAfterWrites = true
             self.closeConnection(withError: nil)
         }
     }
@@ -132,18 +133,16 @@ public class CocoaMQTTWebSocket: CocoaMQTTSocketProtocol {
 
     public func write(_ data: Data, withTimeout timeout: TimeInterval, tag: Int) {
         internalQueue.async {
-            let newWrite = WriteItem(tag: tag, timeout: (timeout > 0.0) ? .now() + timeout : .distantFuture)
-            self.scheduledWrites.insert(newWrite)
-            self.checkScheduledWrites()
-            self.connection?.write(data: data) { possibleError in
-                if let error = possibleError {
-                    self.closeConnection(withError: error)
-                } else {
-                    guard self.scheduledWrites.remove(newWrite) != nil else { return }
-                    guard let delegate = self.delegate else { return }
-                    delegate.socket(self, didWriteDataWithTag: tag)
-                }
-            }
+            guard !self.disconnectAfterWrites else { return }
+            self.enqueueWrite(data, withTimeout: timeout, tag: tag)
+        }
+    }
+
+    public func writeAndDisconnect(_ data: Data, withTimeout timeout: TimeInterval, tag: Int) {
+        internalQueue.async {
+            guard !self.disconnectAfterWrites else { return }
+            self.disconnectAfterWrites = true
+            self.enqueueWrite(data, withTimeout: timeout, tag: tag)
         }
     }
 
@@ -168,6 +167,7 @@ public class CocoaMQTTWebSocket: CocoaMQTTSocketProtocol {
     }
 
     private func closeConnection(withError error: Error?) {
+        disconnectAfterWrites = true
         reset()
         __delegate_queue {
             self.delegate?.socketDidDisconnect(self, withError: error)
@@ -243,7 +243,29 @@ public class CocoaMQTTWebSocket: CocoaMQTTSocketProtocol {
         }
     }
     private var scheduledWrites = Set<WriteItem>()
+    private var disconnectAfterWrites = false
     private lazy var writeTimeoutTimer = ReusableTimer(queue: internalQueue)
+
+    private func enqueueWrite(_ data: Data, withTimeout timeout: TimeInterval, tag: Int) {
+        let newWrite = WriteItem(tag: tag, timeout: (timeout > 0.0) ? .now() + timeout : .distantFuture)
+        scheduledWrites.insert(newWrite)
+        checkScheduledWrites()
+        connection?.write(data: data) { possibleError in
+            guard self.scheduledWrites.remove(newWrite) != nil else { return }
+            if let error = possibleError {
+                self.closeConnection(withError: error)
+                return
+            }
+
+            self.delegate?.socket(self, didWriteDataWithTag: tag)
+            if self.disconnectAfterWrites && self.scheduledWrites.isEmpty {
+                self.closeConnection(withError: nil)
+            } else {
+                self.checkScheduledWrites()
+            }
+        }
+    }
+
     private func checkScheduledWrites() {
         writeTimeoutTimer.reset()
         guard let closestTimeout = scheduledWrites.sorted(by: { a, b in a.timeout < b.timeout }).first?.timeout else { return }

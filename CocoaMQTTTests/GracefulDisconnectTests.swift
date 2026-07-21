@@ -1,0 +1,331 @@
+import Foundation
+import XCTest
+@testable import CocoaMQTT
+#if os(macOS)
+import Network
+#endif
+#if IS_SWIFT_PACKAGE
+@testable import CocoaMQTTWebSocket
+#endif
+
+final class GracefulDisconnectTests: XCTestCase {
+    private final class DeferredDisconnectSocket: CocoaMQTTDisconnectAfterWritingSocket {
+        var enableSSL = false
+        private(set) var disconnectCount = 0
+        private(set) var writeAndDisconnectCount = 0
+        private(set) var finalWrites = [Data]()
+
+        func setDelegate(_ theDelegate: CocoaMQTTSocketDelegate?, delegateQueue: DispatchQueue?) {}
+        func connect(toHost host: String, onPort port: UInt16) throws {}
+        func connect(toHost host: String, onPort port: UInt16, withTimeout timeout: TimeInterval) throws {}
+        func disconnect() {
+            disconnectCount += 1
+        }
+        func readData(toLength length: UInt, withTimeout timeout: TimeInterval, tag: Int) {}
+        func write(_ data: Data, withTimeout timeout: TimeInterval, tag: Int) {}
+        func writeAndDisconnect(_ data: Data, withTimeout timeout: TimeInterval, tag: Int) {
+            writeAndDisconnectCount += 1
+            finalWrites.append(data)
+        }
+
+        func completeFinalWrite() {
+            disconnect()
+        }
+    }
+
+    func testMQTT311WaitsForDisconnectWriteAndCoalescesRepeatedRequests() {
+        let socket = DeferredDisconnectSocket()
+        let mqtt = CocoaMQTT(clientID: "graceful-disconnect-311", socket: socket)
+
+        mqtt.disconnect()
+        mqtt.disconnect()
+
+        XCTAssertEqual(socket.writeAndDisconnectCount, 1)
+        XCTAssertEqual(socket.finalWrites, [Data([FrameType.disconnect.rawValue, 0])])
+        XCTAssertEqual(socket.disconnectCount, 0)
+
+        socket.completeFinalWrite()
+        XCTAssertEqual(socket.disconnectCount, 1)
+    }
+
+    func testMQTT5WaitsForDisconnectWriteAndPreservesReasonProperties() throws {
+        let socket = DeferredDisconnectSocket()
+        let mqtt = CocoaMQTT5(clientID: "graceful-disconnect-5", socket: socket)
+
+        mqtt.disconnect(
+            reasonCode: .disconnectWithWillMessage,
+            userProperties: ["reason": "manual"]
+        )
+        mqtt.disconnect()
+
+        XCTAssertEqual(socket.writeAndDisconnectCount, 1)
+        XCTAssertEqual(socket.disconnectCount, 0)
+
+        let bytes = try XCTUnwrap(socket.finalWrites.first).map { $0 }
+        XCTAssertEqual(bytes.first, FrameType.disconnect.rawValue)
+        XCTAssertEqual(Int(bytes[1]), bytes.count - 2)
+        let frame = try XCTUnwrap(FrameDisconnect(
+            packetFixedHeaderType: bytes[0],
+            bytes: Array(bytes.dropFirst(2)),
+            protocolVersion: .v5
+        ))
+        XCTAssertEqual(frame.receiveReasonCode, .disconnectWithWillMessage)
+        XCTAssertEqual(frame.userProperties, ["reason": "manual"])
+
+        socket.completeFinalWrite()
+        XCTAssertEqual(socket.disconnectCount, 1)
+    }
+
+    #if IS_SWIFT_PACKAGE
+    private final class WebSocketConnection: NSObject, CocoaMQTTWebSocketConnection {
+        weak var delegate: CocoaMQTTWebSocketConnectionDelegate?
+        var queue = DispatchQueue(label: "tests.graceful-disconnect.websocket")
+        var onWrite: (() -> Void)?
+        var onDisconnect: (() -> Void)?
+        private var completions = [(Error?) -> Void]()
+        private var events = [String]()
+
+        func connect() {}
+
+        func disconnect() {
+            events.append("disconnect")
+            onDisconnect?()
+        }
+
+        func write(data: Data, handler: @escaping (Error?) -> Void) {
+            events.append("write:\(data.first ?? 0)")
+            completions.append(handler)
+            onWrite?()
+        }
+
+        func completeWrite(at index: Int, with error: Error? = nil) {
+            queue.async {
+                let completion = self.completions.remove(at: index)
+                self.events.append("complete")
+                completion(error)
+            }
+        }
+
+        func snapshot() -> [String] {
+            queue.sync { events }
+        }
+    }
+
+    private final class WebSocketBuilder: CocoaMQTTWebSocketConnectionBuilder {
+        let connection: WebSocketConnection
+
+        init(connection: WebSocketConnection) {
+            self.connection = connection
+        }
+
+        func buildConnection(forURL url: URL, withHeaders headers: [String: String]) throws -> CocoaMQTTWebSocketConnection {
+            connection
+        }
+    }
+
+    private final class SocketDelegate: CocoaMQTTSocketDelegate {
+        var onConnect: (() -> Void)?
+        var onWrite: ((Int) -> Void)?
+        var onDisconnect: ((Error?) -> Void)?
+
+        func socketConnected(_ socket: CocoaMQTTSocketProtocol) {
+            onConnect?()
+        }
+        func socket(_ socket: CocoaMQTTSocketProtocol,
+                    didReceive trust: SecTrust,
+                    completionHandler: @escaping (Bool) -> Void) {
+            completionHandler(true)
+        }
+        func socketUrlSession(_ socket: CocoaMQTTSocketProtocol,
+                              didReceiveTrust trust: SecTrust,
+                              didReceiveChallenge challenge: URLAuthenticationChallenge,
+                              completionHandler: @escaping (URLSession.AuthChallengeDisposition, URLCredential?) -> Void) {
+            completionHandler(.performDefaultHandling, nil)
+        }
+        func socket(_ socket: CocoaMQTTSocketProtocol, didWriteDataWithTag tag: Int) {
+            onWrite?(tag)
+        }
+        func socket(_ socket: CocoaMQTTSocketProtocol, didRead data: Data, withTag tag: Int) {}
+        func socketDidDisconnect(_ socket: CocoaMQTTSocketProtocol, withError err: Error?) {
+            onDisconnect?(err)
+        }
+    }
+
+    func testWebSocketClosesOnlyAfterAllPendingWritesComplete() throws {
+        let connection = WebSocketConnection()
+        let websocket = CocoaMQTTWebSocket(
+            uri: "/mqtt",
+            builder: WebSocketBuilder(connection: connection)
+        )
+        let delegate = SocketDelegate()
+        let callbackQueue = DispatchQueue(label: "tests.graceful-disconnect.callbacks")
+        let writesQueued = expectation(description: "writes queued")
+        writesQueued.expectedFulfillmentCount = 2
+        let disconnected = expectation(description: "disconnected")
+        connection.onWrite = { writesQueued.fulfill() }
+        delegate.onDisconnect = { error in
+            XCTAssertNil(error)
+            disconnected.fulfill()
+        }
+        websocket.setDelegate(delegate, delegateQueue: callbackQueue)
+        try websocket.connect(toHost: "localhost", onPort: 8083)
+
+        websocket.write(Data([1]), withTimeout: 1, tag: 1)
+        websocket.writeAndDisconnect(Data([2]), withTimeout: 1, tag: 2)
+        wait(for: [writesQueued], timeout: 1)
+
+        connection.completeWrite(at: 1)
+        connection.queue.sync {}
+        XCTAssertFalse(connection.snapshot().contains("disconnect"))
+
+        connection.completeWrite(at: 0)
+        wait(for: [disconnected], timeout: 1)
+        XCTAssertEqual(connection.snapshot(), ["write:1", "write:2", "complete", "complete", "disconnect"])
+
+        websocket.write(Data([3]), withTimeout: 0.01, tag: 3)
+        connection.queue.sync {}
+        XCTAssertEqual(connection.snapshot(), ["write:1", "write:2", "complete", "complete", "disconnect"])
+
+        let reconnectWrite = expectation(description: "write after reconnect")
+        connection.onWrite = { reconnectWrite.fulfill() }
+        try websocket.connect(toHost: "localhost", onPort: 8083)
+        websocket.write(Data([3]), withTimeout: 1, tag: 3)
+        wait(for: [reconnectWrite], timeout: 1)
+        XCTAssertEqual(connection.snapshot().last, "write:3")
+        connection.completeWrite(at: 0)
+        connection.queue.sync {}
+    }
+
+    func testWebSocketRejectsWritesAfterGracefulCloseStarts() throws {
+        let connection = WebSocketConnection()
+        let websocket = CocoaMQTTWebSocket(
+            uri: "/mqtt",
+            builder: WebSocketBuilder(connection: connection)
+        )
+        let writeQueued = expectation(description: "final write queued")
+        connection.onWrite = { writeQueued.fulfill() }
+        try websocket.connect(toHost: "localhost", onPort: 8083)
+
+        websocket.writeAndDisconnect(Data([2]), withTimeout: 1, tag: 2)
+        websocket.write(Data([3]), withTimeout: 1, tag: 3)
+        wait(for: [writeQueued], timeout: 1)
+        connection.queue.sync {}
+
+        XCTAssertEqual(connection.snapshot(), ["write:2"])
+        connection.completeWrite(at: 0)
+    }
+
+    func testWebSocketWriteFailureClosesWithError() throws {
+        let connection = WebSocketConnection()
+        let websocket = CocoaMQTTWebSocket(
+            uri: "/mqtt",
+            builder: WebSocketBuilder(connection: connection)
+        )
+        let delegate = SocketDelegate()
+        let callbackQueue = DispatchQueue(label: "tests.graceful-disconnect.failure-callbacks")
+        let writeQueued = expectation(description: "final write queued")
+        let disconnected = expectation(description: "failed disconnect")
+        connection.onWrite = { writeQueued.fulfill() }
+        delegate.onDisconnect = { error in
+            XCTAssertNotNil(error)
+            disconnected.fulfill()
+        }
+        websocket.setDelegate(delegate, delegateQueue: callbackQueue)
+        try websocket.connect(toHost: "localhost", onPort: 8083)
+
+        websocket.writeAndDisconnect(Data([2]), withTimeout: 1, tag: 2)
+        wait(for: [writeQueued], timeout: 1)
+        connection.completeWrite(
+            at: 0,
+            with: NSError(domain: "GracefulDisconnectTests", code: 1)
+        )
+
+        wait(for: [disconnected], timeout: 1)
+        XCTAssertEqual(connection.snapshot().last, "disconnect")
+    }
+
+    func testWebSocketWriteTimeoutClosesConnection() throws {
+        let connection = WebSocketConnection()
+        let websocket = CocoaMQTTWebSocket(
+            uri: "/mqtt",
+            builder: WebSocketBuilder(connection: connection)
+        )
+        let delegate = SocketDelegate()
+        let callbackQueue = DispatchQueue(label: "tests.graceful-disconnect.timeout-callbacks")
+        let writeQueued = expectation(description: "final write queued")
+        let disconnected = expectation(description: "timed out disconnect")
+        connection.onWrite = { writeQueued.fulfill() }
+        delegate.onDisconnect = { error in
+            XCTAssertNotNil(error)
+            disconnected.fulfill()
+        }
+        websocket.setDelegate(delegate, delegateQueue: callbackQueue)
+        try websocket.connect(toHost: "localhost", onPort: 8083)
+
+        websocket.writeAndDisconnect(Data([2]), withTimeout: 0.01, tag: 2)
+
+        wait(for: [writeQueued, disconnected], timeout: 1)
+        XCTAssertEqual(connection.snapshot().last, "disconnect")
+    }
+
+    #if os(macOS)
+    func testTCPSendsFinalBytesBeforeClosing() throws {
+        let listenerQueue = DispatchQueue(label: "tests.graceful-disconnect.tcp-listener")
+        let listener = try NWListener(using: .tcp, on: .any)
+        let listenerReady = expectation(description: "listener ready")
+        let receivedEOF = expectation(description: "received final bytes before EOF")
+        let socketDisconnected = expectation(description: "socket disconnected")
+        let expectedData = Data([FrameType.disconnect.rawValue, 0])
+        let receivedLock = NSLock()
+        var receivedData = Data()
+
+        func receiveUntilEOF(_ connection: NWConnection) {
+            connection.receive(minimumIncompleteLength: 1, maximumLength: 1024) { data, _, isComplete, error in
+                if let data {
+                    receivedLock.lock()
+                    receivedData.append(data)
+                    receivedLock.unlock()
+                }
+                if isComplete || error != nil {
+                    receivedEOF.fulfill()
+                } else {
+                    receiveUntilEOF(connection)
+                }
+            }
+        }
+
+        listener.stateUpdateHandler = { state in
+            if case .ready = state {
+                listenerReady.fulfill()
+            }
+        }
+        listener.newConnectionHandler = { connection in
+            connection.start(queue: listenerQueue)
+            receiveUntilEOF(connection)
+        }
+        listener.start(queue: listenerQueue)
+        wait(for: [listenerReady], timeout: 2)
+        let port = try XCTUnwrap(listener.port?.rawValue)
+
+        let socket = CocoaMQTTSocket()
+        let delegate = SocketDelegate()
+        delegate.onConnect = {
+            socket.writeAndDisconnect(expectedData, withTimeout: 1, tag: 1)
+        }
+        delegate.onDisconnect = { error in
+            XCTAssertNil(error)
+            socketDisconnected.fulfill()
+        }
+        socket.setDelegate(delegate, delegateQueue: DispatchQueue(label: "tests.graceful-disconnect.tcp-callbacks"))
+        try socket.connect(toHost: "127.0.0.1", onPort: port, withTimeout: 1)
+
+        wait(for: [receivedEOF, socketDisconnected], timeout: 2)
+        listener.cancel()
+        receivedLock.lock()
+        let finalData = receivedData
+        receivedLock.unlock()
+        XCTAssertEqual(finalData, expectedData)
+    }
+    #endif
+    #endif
+}
