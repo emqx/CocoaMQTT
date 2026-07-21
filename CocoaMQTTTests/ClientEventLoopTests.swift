@@ -4,10 +4,19 @@ import XCTest
 
 final class ClientEventLoopTests: XCTestCase {
 
+    private final class WeakBox<Value: AnyObject> {
+        weak var value: Value?
+
+        init(_ value: Value?) {
+            self.value = value
+        }
+    }
+
     private final class SocketSpy: CocoaMQTTSocketProtocol {
         var enableSSL = false
 
         private let lock = NSLock()
+        private weak var delegate: CocoaMQTTSocketDelegate?
         private var _delegateQueue: DispatchQueue?
         var writeHandler: (() -> Void)?
 
@@ -19,8 +28,16 @@ final class ClientEventLoopTests: XCTestCase {
 
         func setDelegate(_ theDelegate: CocoaMQTTSocketDelegate?, delegateQueue: DispatchQueue?) {
             lock.lock()
+            delegate = theDelegate
             _delegateQueue = delegateQueue
             lock.unlock()
+        }
+
+        func emitConnectedIgnoringDelegateQueue() {
+            lock.lock()
+            let delegate = delegate
+            lock.unlock()
+            delegate?.socketConnected(self)
         }
 
         func connect(toHost host: String, onPort port: UInt16) throws {}
@@ -90,6 +107,76 @@ final class ClientEventLoopTests: XCTestCase {
         }
 
         wait(for: [callback], timeout: 1)
+    }
+
+    func testMQTT311CustomSocketCallbacksAreNormalizedOntoEventLoop() {
+        let socket = SocketSpy()
+        let mqtt = CocoaMQTT(clientID: "custom-socket-event-loop-311", socket: socket)
+        let eventLoopKey = DispatchSpecificKey<Bool>()
+        mqtt.eventLoopQueue.setSpecific(key: eventLoopKey, value: true)
+        let write = expectation(description: "CONNECT is written from event loop")
+        socket.writeHandler = {
+            XCTAssertEqual(DispatchQueue.getSpecific(key: eventLoopKey), true)
+            write.fulfill()
+        }
+
+        XCTAssertTrue(mqtt.connect())
+        DispatchQueue.global().async {
+            socket.emitConnectedIgnoringDelegateQueue()
+        }
+
+        wait(for: [write], timeout: 1)
+    }
+
+    func testMQTT5CustomSocketCallbacksAreNormalizedOntoEventLoop() {
+        let socket = SocketSpy()
+        let mqtt5 = CocoaMQTT5(clientID: "custom-socket-event-loop-5", socket: socket)
+        let eventLoopKey = DispatchSpecificKey<Bool>()
+        mqtt5.eventLoopQueue.setSpecific(key: eventLoopKey, value: true)
+        let write = expectation(description: "CONNECT is written from event loop")
+        socket.writeHandler = {
+            XCTAssertEqual(DispatchQueue.getSpecific(key: eventLoopKey), true)
+            write.fulfill()
+        }
+
+        XCTAssertTrue(mqtt5.connect())
+        DispatchQueue.global().async {
+            socket.emitConnectedIgnoringDelegateQueue()
+        }
+
+        wait(for: [write], timeout: 1)
+    }
+
+    func testPendingCallbackDoesNotRetainMQTT311Client() {
+        let callbackQueue = DispatchQueue(label: "tests.event-loop.blocked-callback-311")
+        let releaseQueue = DispatchSemaphore(value: 0)
+        callbackQueue.async { releaseQueue.wait() }
+
+        var mqtt: CocoaMQTT? = CocoaMQTT(clientID: "callback-lifetime-311")
+        let weakMQTT = WeakBox(mqtt)
+        mqtt?.delegateQueue = callbackQueue
+        mqtt?.ping()
+        mqtt = nil
+
+        XCTAssertNil(weakMQTT.value)
+        releaseQueue.signal()
+        callbackQueue.sync {}
+    }
+
+    func testPendingCallbackDoesNotRetainMQTT5Client() {
+        let callbackQueue = DispatchQueue(label: "tests.event-loop.blocked-callback-5")
+        let releaseQueue = DispatchSemaphore(value: 0)
+        callbackQueue.async { releaseQueue.wait() }
+
+        var mqtt5: CocoaMQTT5? = CocoaMQTT5(clientID: "callback-lifetime-5")
+        let weakMQTT5 = WeakBox(mqtt5)
+        mqtt5?.delegateQueue = callbackQueue
+        mqtt5?.ping()
+        mqtt5 = nil
+
+        XCTAssertNil(weakMQTT5.value)
+        releaseQueue.signal()
+        callbackQueue.sync {}
     }
 
     func testCallbackQueueChangeDoesNotMoveAlreadySubmittedCallbacks() {

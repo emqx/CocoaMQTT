@@ -31,6 +31,79 @@ public protocol CocoaMQTTSocketProtocol {
     func write(_ data: Data, withTimeout timeout: TimeInterval, tag: Int)
 }
 
+/// Normalizes callbacks from built-in and custom transports onto the client's
+/// private event loop. Custom transports are not required to honor the queue
+/// passed to `setDelegate`; correctness is enforced at this boundary instead.
+final class CocoaMQTTSocketDelegateProxy: CocoaMQTTSocketDelegate {
+    weak var delegate: CocoaMQTTSocketDelegate?
+
+    private let eventLoopQueue: DispatchQueue
+    private let eventLoopQueueKey = DispatchSpecificKey<Void>()
+
+    init(eventLoopQueue: DispatchQueue) {
+        self.eventLoopQueue = eventLoopQueue
+        eventLoopQueue.setSpecific(key: eventLoopQueueKey, value: ())
+    }
+
+    private func forward(_ callback: @escaping (CocoaMQTTSocketDelegate?) -> Void) {
+        if DispatchQueue.getSpecific(key: eventLoopQueueKey) != nil {
+            callback(delegate)
+        } else {
+            eventLoopQueue.async { [self] in callback(delegate) }
+        }
+    }
+
+    func socketConnected(_ socket: CocoaMQTTSocketProtocol) {
+        forward { $0?.socketConnected(socket) }
+    }
+
+    func socket(
+        _ socket: CocoaMQTTSocketProtocol,
+        didReceive trust: SecTrust,
+        completionHandler: @escaping (Bool) -> Void
+    ) {
+        forward { delegate in
+            guard let delegate = delegate else {
+                completionHandler(false)
+                return
+            }
+            delegate.socket(socket, didReceive: trust, completionHandler: completionHandler)
+        }
+    }
+
+    func socketUrlSession(
+        _ socket: CocoaMQTTSocketProtocol,
+        didReceiveTrust trust: SecTrust,
+        didReceiveChallenge challenge: URLAuthenticationChallenge,
+        completionHandler: @escaping (URLSession.AuthChallengeDisposition, URLCredential?) -> Void
+    ) {
+        forward { delegate in
+            guard let delegate = delegate else {
+                completionHandler(.cancelAuthenticationChallenge, nil)
+                return
+            }
+            delegate.socketUrlSession(
+                socket,
+                didReceiveTrust: trust,
+                didReceiveChallenge: challenge,
+                completionHandler: completionHandler
+            )
+        }
+    }
+
+    func socket(_ socket: CocoaMQTTSocketProtocol, didWriteDataWithTag tag: Int) {
+        forward { $0?.socket(socket, didWriteDataWithTag: tag) }
+    }
+
+    func socket(_ socket: CocoaMQTTSocketProtocol, didRead data: Data, withTag tag: Int) {
+        forward { $0?.socket(socket, didRead: data, withTag: tag) }
+    }
+
+    func socketDidDisconnect(_ socket: CocoaMQTTSocketProtocol, withError err: Error?) {
+        forward { $0?.socketDidDisconnect(socket, withError: err) }
+    }
+}
+
 /// A socket transport that can close only after its final write has drained.
 public protocol CocoaMQTTDisconnectAfterWritingSocket: CocoaMQTTSocketProtocol {
     func writeAndDisconnect(_ data: Data, withTimeout timeout: TimeInterval, tag: Int)
