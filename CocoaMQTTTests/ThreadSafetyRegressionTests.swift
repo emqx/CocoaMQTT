@@ -77,21 +77,43 @@ final class ThreadSafetyRegressionTests: XCTestCase {
         XCTAssertEqual(readGroup.wait(timeout: .now() + 10), .success)
     }
 
-    func testThreadSafeDictionaryRetainsCollectionCompatibilityWithSnapshotIteration() {
+    func testThreadSafeDictionarySequenceIterationUsesSnapshots() {
         let store = ThreadSafeDictionary<String, Int>(
             label: "tests.threadsafe.collection",
             dict: ["a": 1, "b": 2]
         )
-        let collection: any Collection = store
+        let sequence = AnySequence(store)
 
         XCTAssertEqual(store.count, 2)
         XCTAssertFalse(store.isEmpty)
         XCTAssertNotNil(store.first)
         XCTAssertEqual(
-            Dictionary(uniqueKeysWithValues: store.map { ($0.key, $0.value) }),
+            Dictionary(uniqueKeysWithValues: sequence.map { ($0.key, $0.value) }),
             ["a": 1, "b": 2]
         )
-        XCTAssertEqual(collection.count, 2)
+    }
+
+    func testThreadSafeDictionaryIteratesWhileMutating() {
+        let store = ThreadSafeDictionary<Int, Int>(label: "tests.threadsafe.snapshot-iteration")
+        let queue = DispatchQueue(label: "tests.threadsafe.snapshot-writes", attributes: .concurrent)
+        let group = DispatchGroup()
+
+        for worker in 0..<4 {
+            group.enter()
+            queue.async {
+                for value in stride(from: worker, to: 2_000, by: 4) {
+                    store[value] = value
+                }
+                group.leave()
+            }
+        }
+
+        for _ in 0..<100 {
+            XCTAssertTrue(store.allSatisfy { $0.key == $0.value })
+        }
+
+        XCTAssertEqual(group.wait(timeout: .now() + 2), .success)
+        XCTAssertEqual(store.count, 2_000)
     }
 
     func testWebSocketDelegateAndLoggerConcurrentAccess() {
@@ -171,6 +193,63 @@ final class ThreadSafetyRegressionTests: XCTestCase {
 
         XCTAssertEqual(readGroup.wait(timeout: .now() + 10), .success)
         XCTAssertTrue([.connecting, .connected, .disconnected].contains(mqtt5.connState))
+    }
+
+    func testCocoaMQTT5ConnStateCallbacksPreserveWrittenStates() {
+        let mqtt5 = CocoaMQTT5(clientID: "connstate-callbacks-\(UUID().uuidString)")
+        let callbackQueue = DispatchQueue(label: "tests.threadsafe.connstate-callbacks")
+        let callbackGate = DispatchSemaphore(value: 0)
+        let callbacksReceived = expectation(description: "State callbacks received")
+        callbacksReceived.expectedFulfillmentCount = 2
+        var receivedStates = [CocoaMQTTConnState]()
+
+        callbackQueue.async {
+            callbackGate.wait()
+        }
+        mqtt5.delegateQueue = callbackQueue
+        mqtt5.didChangeState = { _, state in
+            receivedStates.append(state)
+            callbacksReceived.fulfill()
+        }
+
+        mqtt5.connState = .connecting
+        mqtt5.connState = .connected
+        callbackGate.signal()
+
+        wait(for: [callbacksReceived], timeout: 1)
+        callbackQueue.sync {}
+        XCTAssertEqual(receivedStates, [.connecting, .connected])
+    }
+
+    func testCocoaMQTT5ConnStateCallbacksFollowConcurrentDelegateQueueSemantics() {
+        let mqtt5 = CocoaMQTT5(clientID: "connstate-concurrent-callbacks-\(UUID().uuidString)")
+        mqtt5.delegateQueue = DispatchQueue(
+            label: "tests.threadsafe.connstate-concurrent-callbacks",
+            attributes: .concurrent
+        )
+        let firstCallbackStarted = DispatchSemaphore(value: 0)
+        let releaseFirstCallback = DispatchSemaphore(value: 0)
+        let secondCallbackStarted = DispatchSemaphore(value: 0)
+        let callbacksFinished = expectation(description: "Concurrent state callbacks finished")
+        callbacksFinished.expectedFulfillmentCount = 2
+
+        mqtt5.didChangeState = { _, state in
+            if state == .connecting {
+                firstCallbackStarted.signal()
+                releaseFirstCallback.wait()
+            } else if state == .connected {
+                secondCallbackStarted.signal()
+            }
+            callbacksFinished.fulfill()
+        }
+
+        mqtt5.connState = .connecting
+        mqtt5.connState = .connected
+
+        XCTAssertEqual(firstCallbackStarted.wait(timeout: .now() + 1), .success)
+        XCTAssertEqual(secondCallbackStarted.wait(timeout: .now() + 1), .success)
+        releaseFirstCallback.signal()
+        wait(for: [callbacksFinished], timeout: 1)
     }
 
     func testConcurrentPublishesAllocateUniquePacketIdentifiers() {

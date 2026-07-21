@@ -9,29 +9,28 @@ final class ConcurrentAtomicTests: XCTestCase {
         XCTAssertEqual($value.wrappedValue, 10, "Set value should be reflected")
     }
 
-    func testMutate() {
-        // Reset the value to a known state
-        $value.setSync(1)
-        XCTAssertEqual(self.value, 1, "Immediately after async mutate, value should still be 1")
-        // Asynchronously multiply the value
-        $value.mutate {
-            // 0.1 seconds delay
-            usleep(100_000)
-            $0 *= 20
-        }
-        XCTAssertEqual(self.value, 20, "Value should still be 20 immediately after async mutate is called")
+    func testAssignmentIsImmediatelyVisible() {
+        value = 10
+        XCTAssertEqual(value, 10)
     }
 
-    func testMultipleAsyncMutations() {
-        let expectation = XCTestExpectation(description: "All async mutations completed")
+    func testMutateReturnsAfterApplyingTransform() {
+        value = 1
+        let result = $value.mutate { value in
+            value *= 20
+            return value
+        }
 
-        // Reset to zero before starting concurrent increments
-        $value.setSync(0)
+        XCTAssertEqual(result, 20)
+        XCTAssertEqual(value, 20)
+    }
+
+    func testConcurrentMutationsAreAtomic() {
+        value = 0
 
         let group = DispatchGroup()
         let queue = DispatchQueue.global(qos: .userInitiated)
 
-        // Perform 100 asynchronous increments
         for _ in 0..<100 {
             group.enter()
             queue.async {
@@ -40,14 +39,29 @@ final class ConcurrentAtomicTests: XCTestCase {
             }
         }
 
-        // Wait for all tasks to finish, then check the result
-        group.notify(queue: .main) {
-            DispatchQueue.main.asyncAfter(deadline: .now() + 0.1) {
-                XCTAssertEqual(self.value, 100, "All async mutate operations should complete successfully")
-                expectation.fulfill()
-            }
-        }
+        XCTAssertEqual(group.wait(timeout: .now() + 1), .success)
+        XCTAssertEqual(value, 100)
+    }
 
-        wait(for: [expectation], timeout: 1.0)
+    func testCompareAndSet() {
+        value = 10
+
+        XCTAssertFalse($value.compareAndSet(expected: 9, newValue: 11))
+        XCTAssertEqual(value, 10)
+        XCTAssertTrue($value.compareAndSet(expected: 10, newValue: 12))
+        XCTAssertEqual(value, 12)
+    }
+
+    func testMutationObserverReceivesAssignmentsAndTransforms() {
+        var observedValues = [Int]()
+        $value.setMutationObserver { observedValues.append($0) }
+
+        value = 2
+        $value.mutate { $0 += 3 }
+        $value.setSync(8)
+        XCTAssertFalse($value.compareAndSet(expected: 7, newValue: 9))
+        XCTAssertTrue($value.compareAndSet(expected: 8, newValue: 9))
+
+        XCTAssertEqual(observedValues, [2, 5, 8, 9])
     }
 }

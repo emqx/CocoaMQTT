@@ -6,22 +6,14 @@ import Foundation
 
 /// A thread-safe dictionary.
 ///
-/// Iteration uses a stable snapshot. Explicit indices, like indices of any mutable
-/// Swift collection, are valid only until the dictionary is mutated.
-public final class ThreadSafeDictionary<K: Hashable, V>: Collection {
-    public typealias Index = Dictionary<K, V>.Index
+/// Iteration uses a stable snapshot so concurrent mutations cannot invalidate an
+/// iterator. Use `snapshot()` when an operation needs one consistent dictionary.
+public final class ThreadSafeDictionary<K: Hashable, V>: Sequence {
     public typealias Element = Dictionary<K, V>.Element
+    public typealias Iterator = Dictionary<K, V>.Iterator
 
     private var dictionary: [K: V]
     private let concurrentQueue: DispatchQueue
-
-    public var startIndex: Index {
-        concurrentQueue.sync { dictionary.startIndex }
-    }
-
-    public var endIndex: Index {
-        concurrentQueue.sync { dictionary.endIndex }
-    }
 
     public var count: Int {
         concurrentQueue.sync { dictionary.count }
@@ -40,16 +32,8 @@ public final class ThreadSafeDictionary<K: Hashable, V>: Collection {
         concurrentQueue = DispatchQueue(label: label, attributes: .concurrent)
     }
 
-    public func index(after i: Index) -> Index {
-        concurrentQueue.sync { dictionary.index(after: i) }
-    }
-
-    public subscript(index: Index) -> Element {
-        concurrentQueue.sync { dictionary[index] }
-    }
-
     /// `for-in`, `map`, and other sequence operations iterate over one snapshot.
-    public func makeIterator() -> Dictionary<K, V>.Iterator {
+    public func makeIterator() -> Iterator {
         snapshot().makeIterator()
     }
 
