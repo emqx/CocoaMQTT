@@ -195,6 +195,32 @@ final class ThreadSafetyRegressionTests: XCTestCase {
         XCTAssertTrue([.connecting, .connected, .disconnected].contains(mqtt5.connState))
     }
 
+    func testCocoaMQTT5ConnStateCallbacksPreserveWrittenStates() {
+        let mqtt5 = CocoaMQTT5(clientID: "connstate-callbacks-\(UUID().uuidString)")
+        let callbackQueue = DispatchQueue(label: "tests.threadsafe.connstate-callbacks")
+        let callbackGate = DispatchSemaphore(value: 0)
+        let callbacksReceived = expectation(description: "State callbacks received")
+        callbacksReceived.expectedFulfillmentCount = 2
+        var receivedStates = [CocoaMQTTConnState]()
+
+        callbackQueue.async {
+            callbackGate.wait()
+        }
+        mqtt5.delegateQueue = callbackQueue
+        mqtt5.didChangeState = { _, state in
+            receivedStates.append(state)
+            callbacksReceived.fulfill()
+        }
+
+        mqtt5.connState = .connecting
+        mqtt5.connState = .connected
+        callbackGate.signal()
+
+        wait(for: [callbacksReceived], timeout: 1)
+        callbackQueue.sync {}
+        XCTAssertEqual(receivedStates, [.connecting, .connected])
+    }
+
     func testConcurrentPublishesAllocateUniquePacketIdentifiers() {
         let mqtt = CocoaMQTT(clientID: "thread-safe-publish-\(UUID().uuidString)", socket: SocketStub())
         mqtt.delegateQueue = DispatchQueue(label: "tests.threadsafe.publish.delegate")

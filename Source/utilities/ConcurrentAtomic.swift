@@ -63,6 +63,10 @@ public class ConcurrentAtomic<T> {
     ///
     /// The barrier ensures the read-modify-write operation does not overlap with other access.
     ///
+    /// - Important: Do not access this `ConcurrentAtomic` instance from `transform`. The
+    ///   transform executes while its synchronization barrier is held, so re-entering the
+    ///   same instance would deadlock.
+    ///
     /// - Parameter transform: A closure that receives `inout` access to the wrapped value.
     /// - Returns: The value returned by `transform`.
     @discardableResult

@@ -188,11 +188,20 @@ public class CocoaMQTT5: NSObject, CocoaMQTT5Client {
     public var delegateQueue = DispatchQueue.main
 
     @ConcurrentAtomic(wrappedValue: CocoaMQTTConnState.disconnected, label: "CocoaMQTT5.connState")
-    public var connState {
-        didSet {
-            __delegate_queue {
-                self.delegate?.mqtt5?(self, didStateChangeTo: self.connState)
-                self.didChangeState(self, self.connState)
+    private var connStateStorage
+
+    public var connState: CocoaMQTTConnState {
+        get { connStateStorage }
+        set {
+            $connStateStorage.mutate { state in
+                state = newValue
+                // Enqueue while holding the atomic barrier so notifications retain
+                // the same order as concurrent state writes.
+                let notifiedState = newValue
+                __delegate_queue {
+                    self.delegate?.mqtt5?(self, didStateChangeTo: notifiedState)
+                    self.didChangeState(self, notifiedState)
+                }
             }
         }
     }
