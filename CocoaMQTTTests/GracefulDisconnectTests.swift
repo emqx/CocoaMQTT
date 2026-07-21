@@ -106,6 +106,12 @@ final class GracefulDisconnectTests: XCTestCase {
             }
         }
 
+        func receive(_ data: Data) {
+            queue.async {
+                self.delegate?.connection(self, receivedData: data)
+            }
+        }
+
         func snapshot() -> [String] {
             queue.sync { events }
         }
@@ -126,6 +132,7 @@ final class GracefulDisconnectTests: XCTestCase {
     private final class SocketDelegate: CocoaMQTTSocketDelegate {
         var onConnect: (() -> Void)?
         var onWrite: ((Int) -> Void)?
+        var onRead: ((Data, Int) -> Void)?
         var onDisconnect: ((Error?) -> Void)?
 
         func socketConnected(_ socket: CocoaMQTTSocketProtocol) {
@@ -145,7 +152,9 @@ final class GracefulDisconnectTests: XCTestCase {
         func socket(_ socket: CocoaMQTTSocketProtocol, didWriteDataWithTag tag: Int) {
             onWrite?(tag)
         }
-        func socket(_ socket: CocoaMQTTSocketProtocol, didRead data: Data, withTag tag: Int) {}
+        func socket(_ socket: CocoaMQTTSocketProtocol, didRead data: Data, withTag tag: Int) {
+            onRead?(data, tag)
+        }
         func socketDidDisconnect(_ socket: CocoaMQTTSocketProtocol, withError err: Error?) {
             onDisconnect?(err)
         }
@@ -278,6 +287,61 @@ final class GracefulDisconnectTests: XCTestCase {
         websocket.writeAndDisconnect(Data([2]), withTimeout: 0.01, tag: 2)
 
         wait(for: [writeQueued, disconnected], timeout: 1)
+        XCTAssertEqual(connection.snapshot().last, "disconnect")
+    }
+
+    func testWebSocketIncompletePayloadTriggersReadTimeout() throws {
+        let connection = WebSocketConnection()
+        let websocket = CocoaMQTTWebSocket(
+            uri: "/mqtt",
+            builder: WebSocketBuilder(connection: connection)
+        )
+        let delegate = SocketDelegate()
+        let callbackQueue = DispatchQueue(label: "tests.graceful-disconnect.read-timeout-callbacks")
+        let headerRead = expectation(description: "header read")
+        let lengthRead = expectation(description: "Remaining Length read")
+        let disconnected = expectation(description: "incomplete payload timed out")
+
+        delegate.onRead = { data, tag in
+            switch CocoaMQTTReadTag(rawValue: tag) {
+            case .header:
+                XCTAssertEqual(data, Data([FrameType.publish.rawValue]))
+                headerRead.fulfill()
+                websocket.readData(
+                    toLength: 1,
+                    withTimeout: 0.05,
+                    tag: CocoaMQTTReadTag.length.rawValue
+                )
+            case .length:
+                XCTAssertEqual(data, Data([2]))
+                lengthRead.fulfill()
+                websocket.readData(
+                    toLength: 2,
+                    withTimeout: 0.05,
+                    tag: CocoaMQTTReadTag.payload.rawValue
+                )
+            case .payload, .none:
+                XCTFail("Incomplete payload should not be delivered")
+            }
+        }
+        delegate.onDisconnect = { error in
+            guard let mqttError = error as? CocoaMQTTError,
+                  case .readTimeout = mqttError else {
+                return XCTFail("Expected readTimeout, got \(String(describing: error))")
+            }
+            disconnected.fulfill()
+        }
+        websocket.setDelegate(delegate, delegateQueue: callbackQueue)
+        try websocket.connect(toHost: "localhost", onPort: 8083)
+        websocket.readData(
+            toLength: 1,
+            withTimeout: -1,
+            tag: CocoaMQTTReadTag.header.rawValue
+        )
+
+        connection.receive(Data([FrameType.publish.rawValue, 2, 0x01]))
+
+        wait(for: [headerRead, lengthRead, disconnected], timeout: 1)
         XCTAssertEqual(connection.snapshot().last, "disconnect")
     }
 

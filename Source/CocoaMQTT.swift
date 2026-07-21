@@ -214,8 +214,9 @@ public class CocoaMQTT: NSObject, CocoaMQTTClient {
     public var keepAlive: UInt16 = 60
     private var aliveTimer: CocoaMQTTTimer?
 
-    /// Inactivity timeout in seconds for Remaining Length and payload reads after a packet header.
-    /// Header reads remain unlimited. Nonpositive or nonfinite values disable this timeout. Default is 30 seconds.
+    /// Maximum duration in seconds for each Remaining Length byte and the complete payload read.
+    /// Each deadline starts with its read and is not reset by partial data. Header reads remain unlimited.
+    /// Nonpositive or nonfinite values disable these deadlines. Default is 30 seconds.
     /// Changes take effect on the next connection.
     public var packetReadTimeout: TimeInterval = CocoaMQTTReader.defaultPacketReadTimeout
 
