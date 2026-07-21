@@ -43,6 +43,8 @@ protocol CocoaMQTTReaderDelegate: AnyObject {
 
 class CocoaMQTTReader {
 
+    static let defaultPacketReadTimeout: TimeInterval = 30
+
     private var socket: CocoaMQTTSocketProtocol
 
     private weak var delegate: CocoaMQTTReaderDelegate?
@@ -51,7 +53,7 @@ class CocoaMQTTReader {
 
     private let maximumPacketSize: UInt32?
 
-    private let timeout: TimeInterval = 30_000
+    private let packetReadTimeout: TimeInterval
 
     /*  -- Reader states -- */
     private var header: UInt8 = 0
@@ -64,11 +66,15 @@ class CocoaMQTTReader {
     init(socket: CocoaMQTTSocketProtocol,
          delegate: CocoaMQTTReaderDelegate?,
          protocolVersion: CocoaMQTTProtocolVersion = .v311,
-         maximumPacketSize: UInt32? = nil) {
+         maximumPacketSize: UInt32? = nil,
+         packetReadTimeout: TimeInterval = CocoaMQTTReader.defaultPacketReadTimeout) {
         self.socket = socket
         self.delegate = delegate
         self.protocolVersion = protocolVersion
         self.maximumPacketSize = maximumPacketSize
+        self.packetReadTimeout = packetReadTimeout.isFinite && packetReadTimeout > 0
+            ? packetReadTimeout
+            : -1
     }
 
     func start() {
@@ -133,11 +139,11 @@ class CocoaMQTTReader {
     }
 
     private func readLength() {
-        socket.readData(toLength: 1, withTimeout: timeout, tag: CocoaMQTTReadTag.length.rawValue)
+        socket.readData(toLength: 1, withTimeout: packetReadTimeout, tag: CocoaMQTTReadTag.length.rawValue)
     }
 
     private func readPayload() {
-        socket.readData(toLength: length, withTimeout: timeout, tag: CocoaMQTTReadTag.payload.rawValue)
+        socket.readData(toLength: length, withTimeout: packetReadTimeout, tag: CocoaMQTTReadTag.payload.rawValue)
     }
 
     private func frameReady() {

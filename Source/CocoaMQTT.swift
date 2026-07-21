@@ -214,6 +214,12 @@ public class CocoaMQTT: NSObject, CocoaMQTTClient {
     public var keepAlive: UInt16 = 60
     private var aliveTimer: CocoaMQTTTimer?
 
+    /// Maximum duration in seconds for each Remaining Length byte and the complete payload read.
+    /// Each deadline starts with its read and is not reset by partial data. Header reads remain unlimited.
+    /// Nonpositive or nonfinite values disable these deadlines. Default is 30 seconds.
+    /// Changes take effect on the next connection.
+    public var packetReadTimeout: TimeInterval = CocoaMQTTReader.defaultPacketReadTimeout
+
     /// Enable auto-reconnect mechanism
     public var autoReconnect = false
 
@@ -495,7 +501,12 @@ public class CocoaMQTT: NSObject, CocoaMQTTClient {
         deliver.beginConnection()
         clientStateLock.unlock()
         socket.setDelegate(self, delegateQueue: delegateQueue)
-        reader = CocoaMQTTReader(socket: socket, delegate: self, protocolVersion: .v311)
+        reader = CocoaMQTTReader(
+            socket: socket,
+            delegate: self,
+            protocolVersion: .v311,
+            packetReadTimeout: packetReadTimeout
+        )
         do {
             if timeout > 0 {
                 try socket.connect(toHost: self.host, onPort: self.port, withTimeout: timeout)
