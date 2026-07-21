@@ -273,6 +273,7 @@ public class CocoaMQTT5: NSObject, CocoaMQTT5Client {
     private var pendingSocketDisconnectReconnectAttemptCount: UInt?
     private var shouldResumeAutoReconnectAfterPendingDisconnect = false
     private var is_internal_disconnected = false
+    private var isExpectedDisconnectPending = false
     private let disconnectReasonLock = NSLock()
     private var pendingLocalDisconnectReasonCode: CocoaMQTTDISCONNECTReasonCode?
     private var _lastDisconnectReason: CocoaMQTT5DisconnectReason?
@@ -397,7 +398,7 @@ public class CocoaMQTT5: NSObject, CocoaMQTT5Client {
     }
 
     @discardableResult
-    fileprivate func send(_ frame: Frame, tag: Int = 0) -> Bool {
+    fileprivate func send(_ frame: Frame, tag: Int = 0, disconnectAfterWriting: Bool = false) -> Bool {
         printDebug("SEND: \(frame)")
         let data = frame.bytes(version: version)
 
@@ -409,7 +410,12 @@ public class CocoaMQTT5: NSObject, CocoaMQTT5Client {
             return false
         }
 
-        socket.write(Data(bytes: data, count: data.count), withTimeout: 5, tag: tag)
+        let packet = Data(bytes: data, count: data.count)
+        if disconnectAfterWriting {
+            socket.writeAndDisconnect(packet, withTimeout: 5, tag: tag)
+        } else {
+            socket.write(packet, withTimeout: 5, tag: tag)
+        }
         return true
     }
 
@@ -640,8 +646,7 @@ public class CocoaMQTT5: NSObject, CocoaMQTT5Client {
     /// - Note: Only can be called from outside.
     ///         This closes the connection expectedly, so auto-reconnect will not run.
     public func disconnect() {
-        markPendingLocalDisconnect(reasonCode: .normalDisconnection)
-        expected_disconnect(reasonCode: .normalDisconnection)
+        expected_disconnect(reasonCode: .normalDisconnection, recordsLocalReason: true)
     }
 
     public func disconnect(reasonCode: CocoaMQTTDISCONNECTReasonCode, userProperties: [String: String] ) {
@@ -649,8 +654,7 @@ public class CocoaMQTT5: NSObject, CocoaMQTT5Client {
             printError("Invalid MQTT 5 DISCONNECT User Properties.")
             return
         }
-        markPendingLocalDisconnect(reasonCode: reasonCode)
-        expected_disconnect(reasonCode: reasonCode, userProperties: userProperties)
+        expected_disconnect(reasonCode: reasonCode, userProperties: userProperties, recordsLocalReason: true)
     }
 
     /// Disconnect unexpectedly.
@@ -728,12 +732,26 @@ public class CocoaMQTT5: NSObject, CocoaMQTT5Client {
         expected_disconnect(reasonCode: reasonCode, userProperties: userProperties)
     }
 
-    private func expected_disconnect(reasonCode: CocoaMQTTDISCONNECTReasonCode, userProperties: [String: String]? = nil) {
+    private func expected_disconnect(reasonCode: CocoaMQTTDISCONNECTReasonCode,
+                                     userProperties: [String: String]? = nil,
+                                     recordsLocalReason: Bool = false) {
+        clientStateLock.lock()
+        guard !isExpectedDisconnectPending else {
+            clientStateLock.unlock()
+            return
+        }
+        isExpectedDisconnectPending = true
         is_internal_disconnected = true
+        clientStateLock.unlock()
+        if recordsLocalReason {
+            markPendingLocalDisconnect(reasonCode: reasonCode)
+        }
         var frameDisconnect = FrameDisconnect(disconnectReasonCode: reasonCode)
         frameDisconnect.userProperties = userProperties ?? [:]
-        send(frameDisconnect, tag: -0xE0)
-        socket.disconnect()
+        guard send(frameDisconnect, tag: -0xE0, disconnectAfterWriting: true) else {
+            socket.disconnect()
+            return
+        }
     }
     /// Send a PING request to broker
     public func ping() {
@@ -1161,6 +1179,9 @@ extension CocoaMQTT5 {
 extension CocoaMQTT5: CocoaMQTTSocketDelegate {
 
     public func socketConnected(_ socket: CocoaMQTTSocketProtocol) {
+        clientStateLock.lock()
+        isExpectedDisconnectPending = false
+        clientStateLock.unlock()
         sendConnectFrame()
     }
 
@@ -1207,6 +1228,7 @@ extension CocoaMQTT5: CocoaMQTTSocketDelegate {
         // Clean up
         socket.setDelegate(nil, delegateQueue: nil)
         clientStateLock.lock()
+        isExpectedDisconnectPending = false
         // Publish uses the same lock, so no frame can enter the new connection
         // queue while it still observes aliases or limits from the old one.
         deliver.beginConnection()

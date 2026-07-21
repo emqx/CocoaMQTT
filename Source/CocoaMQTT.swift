@@ -257,6 +257,7 @@ public class CocoaMQTT: NSObject, CocoaMQTTClient {
     private var pendingSocketDisconnectReconnectAttemptCount: UInt?
     private var shouldResumeAutoReconnectAfterPendingDisconnect = false
     private var is_internal_disconnected = false
+    private var isExpectedDisconnectPending = false
 
     /// Console log level
     public var logLevel: CocoaMQTTLoggerLevel {
@@ -350,10 +351,15 @@ public class CocoaMQTT: NSObject, CocoaMQTTClient {
         socket.disconnect()
     }
 
-    fileprivate func send(_ frame: Frame, tag: Int = 0) {
+    fileprivate func send(_ frame: Frame, tag: Int = 0, disconnectAfterWriting: Bool = false) {
         printDebug("SEND: \(frame)")
         let data = frame.bytes(version: version)
-        socket.write(Data(bytes: data, count: data.count), withTimeout: 5, tag: tag)
+        let packet = Data(bytes: data, count: data.count)
+        if disconnectAfterWriting {
+            socket.writeAndDisconnect(packet, withTimeout: 5, tag: tag)
+        } else {
+            socket.write(packet, withTimeout: 5, tag: tag)
+        }
     }
 
     fileprivate func sendConnectFrame() {
@@ -589,9 +595,15 @@ public class CocoaMQTT: NSObject, CocoaMQTTClient {
     }
 
     private func expected_disconnect() {
+        clientStateLock.lock()
+        guard !isExpectedDisconnectPending else {
+            clientStateLock.unlock()
+            return
+        }
+        isExpectedDisconnectPending = true
         is_internal_disconnected = true
-        send(FrameDisconnect(), tag: -0xE0)
-        socket.disconnect()
+        clientStateLock.unlock()
+        send(FrameDisconnect(), tag: -0xE0, disconnectAfterWriting: true)
     }
 
     /// Send a PING request to broker
@@ -852,6 +864,9 @@ extension CocoaMQTT {
 extension CocoaMQTT: CocoaMQTTSocketDelegate {
 
     public func socketConnected(_ socket: CocoaMQTTSocketProtocol) {
+        clientStateLock.lock()
+        isExpectedDisconnectPending = false
+        clientStateLock.unlock()
         sendConnectFrame()
     }
 
@@ -898,6 +913,7 @@ extension CocoaMQTT: CocoaMQTTSocketDelegate {
         // Clean up
         socket.setDelegate(nil, delegateQueue: nil)
         clientStateLock.lock()
+        isExpectedDisconnectPending = false
         // Publish uses the same lock, so queue admission cannot race with the
         // transition from the disconnected session to the next connection.
         deliver.beginConnection()

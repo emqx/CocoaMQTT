@@ -31,6 +31,26 @@ public protocol CocoaMQTTSocketProtocol {
     func write(_ data: Data, withTimeout timeout: TimeInterval, tag: Int)
 }
 
+/// A socket transport that can close only after its final write has drained.
+public protocol CocoaMQTTDisconnectAfterWritingSocket: CocoaMQTTSocketProtocol {
+    func writeAndDisconnect(_ data: Data, withTimeout timeout: TimeInterval, tag: Int)
+}
+
+public extension CocoaMQTTSocketProtocol {
+    /// Writes the final bytes for a connection and closes it afterwards.
+    ///
+    /// Custom transports can adopt `CocoaMQTTDisconnectAfterWritingSocket` to
+    /// provide drain semantics. Other transports retain the legacy immediate close.
+    func writeAndDisconnect(_ data: Data, withTimeout timeout: TimeInterval, tag: Int) {
+        if let gracefulSocket = self as? CocoaMQTTDisconnectAfterWritingSocket {
+            gracefulSocket.writeAndDisconnect(data, withTimeout: timeout, tag: tag)
+            return
+        }
+        write(data, withTimeout: timeout, tag: tag)
+        disconnect()
+    }
+}
+
 // MARK: - CocoaMQTTSocket
 
 public class CocoaMQTTSocket: NSObject {
@@ -53,7 +73,7 @@ public class CocoaMQTTSocket: NSObject {
     public override init() { super.init() }
 }
 
-extension CocoaMQTTSocket: CocoaMQTTSocketProtocol {
+extension CocoaMQTTSocket: CocoaMQTTDisconnectAfterWritingSocket {
     public func setDelegate(_ theDelegate: CocoaMQTTSocketDelegate?, delegateQueue: DispatchQueue?) {
         delegate = theDelegate
         reference.setDelegate((delegate != nil ? self : nil), delegateQueue: delegateQueue)
@@ -77,6 +97,11 @@ extension CocoaMQTTSocket: CocoaMQTTSocketProtocol {
 
     public func write(_ data: Data, withTimeout timeout: TimeInterval, tag: Int) {
         reference.write(data, withTimeout: timeout, tag: tag)
+    }
+
+    public func writeAndDisconnect(_ data: Data, withTimeout timeout: TimeInterval, tag: Int) {
+        reference.write(data, withTimeout: timeout, tag: tag)
+        reference.disconnectAfterWriting()
     }
 }
 
