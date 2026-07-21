@@ -4,16 +4,108 @@ import XCTest
 
 final class CocoaMQTTReaderProtocolErrorTests: XCTestCase {
 
+    private struct ReadRequest: Equatable {
+        let length: UInt
+        let timeout: TimeInterval
+        let tag: Int
+    }
+
     private final class SocketSpy: CocoaMQTTSocketProtocol {
         var enableSSL: Bool = false
         private(set) var disconnectCount = 0
+        private(set) var readRequests = [ReadRequest]()
 
         func setDelegate(_ theDelegate: CocoaMQTTSocketDelegate?, delegateQueue: DispatchQueue?) {}
         func connect(toHost host: String, onPort port: UInt16) throws {}
         func connect(toHost host: String, onPort port: UInt16, withTimeout timeout: TimeInterval) throws {}
         func disconnect() { disconnectCount += 1 }
-        func readData(toLength length: UInt, withTimeout timeout: TimeInterval, tag: Int) {}
+        func readData(toLength length: UInt, withTimeout timeout: TimeInterval, tag: Int) {
+            readRequests.append(ReadRequest(length: length, timeout: timeout, tag: tag))
+        }
         func write(_ data: Data, withTimeout timeout: TimeInterval, tag: Int) {}
+    }
+
+    func testReaderForwardsDefaultTimeoutToLengthAndPayloadReads() {
+        let socket = SocketSpy()
+        let reader = CocoaMQTTReader(socket: socket, delegate: ReaderDelegateSpy())
+
+        reader.start()
+        reader.headerReady(FrameType.publish.rawValue)
+        reader.lengthReady(3)
+
+        XCTAssertEqual(socket.readRequests, [
+            ReadRequest(length: 1, timeout: -1, tag: CocoaMQTTReadTag.header.rawValue),
+            ReadRequest(length: 1, timeout: 30, tag: CocoaMQTTReadTag.length.rawValue),
+            ReadRequest(length: 3, timeout: 30, tag: CocoaMQTTReadTag.payload.rawValue)
+        ])
+    }
+
+    func testReaderForwardsConfiguredTimeoutAndNormalizesDisabledTimeout() {
+        let configuredSocket = SocketSpy()
+        let configuredReader = CocoaMQTTReader(
+            socket: configuredSocket,
+            delegate: ReaderDelegateSpy(),
+            packetReadTimeout: 2.5
+        )
+        configuredReader.headerReady(FrameType.publish.rawValue)
+
+        let disabledSocket = SocketSpy()
+        let disabledReader = CocoaMQTTReader(
+            socket: disabledSocket,
+            delegate: ReaderDelegateSpy(),
+            packetReadTimeout: .infinity
+        )
+        disabledReader.headerReady(FrameType.publish.rawValue)
+
+        XCTAssertEqual(configuredSocket.readRequests.last?.timeout, 2.5)
+        XCTAssertEqual(disabledSocket.readRequests.last?.timeout, -1)
+    }
+
+    func testReaderAcceptsOneThroughFourByteRemainingLengths() {
+        let cases: [([UInt8], UInt)] = [
+            ([0x7f], 127),
+            ([0x80, 0x01], 128),
+            ([0x80, 0x80, 0x01], 16_384),
+            ([0xff, 0xff, 0xff, 0x7f], 268_435_455)
+        ]
+
+        for (encodedLength, expectedLength) in cases {
+            let socket = SocketSpy()
+            let reader = CocoaMQTTReader(socket: socket, delegate: ReaderDelegateSpy())
+            reader.headerReady(FrameType.publish.rawValue)
+            encodedLength.forEach(reader.lengthReady)
+
+            XCTAssertEqual(socket.disconnectCount, 0)
+            XCTAssertEqual(socket.readRequests.last?.length, expectedLength)
+            XCTAssertEqual(socket.readRequests.last?.tag, CocoaMQTTReadTag.payload.rawValue)
+        }
+    }
+
+    func testClientsPassPacketReadTimeoutToTheirReaders() {
+        let mqtt311Socket = SocketSpy()
+        let mqtt311 = CocoaMQTT(clientID: "reader-timeout-311", socket: mqtt311Socket)
+        mqtt311.packetReadTimeout = 4
+        XCTAssertTrue(mqtt311.connect())
+        mqtt311.socketConnected(mqtt311Socket)
+        mqtt311.socket(
+            mqtt311Socket,
+            didRead: Data([FrameType.publish.rawValue]),
+            withTag: CocoaMQTTReadTag.header.rawValue
+        )
+
+        let mqtt5Socket = SocketSpy()
+        let mqtt5 = CocoaMQTT5(clientID: "reader-timeout-5", socket: mqtt5Socket)
+        mqtt5.packetReadTimeout = 6
+        XCTAssertTrue(mqtt5.connect())
+        mqtt5.socketConnected(mqtt5Socket)
+        mqtt5.socket(
+            mqtt5Socket,
+            didRead: Data([FrameType.publish.rawValue]),
+            withTag: CocoaMQTTReadTag.header.rawValue
+        )
+
+        XCTAssertEqual(mqtt311Socket.readRequests.last?.timeout, 4)
+        XCTAssertEqual(mqtt5Socket.readRequests.last?.timeout, 6)
     }
 
     private final class ReaderDelegateSpy: CocoaMQTTReaderDelegate {

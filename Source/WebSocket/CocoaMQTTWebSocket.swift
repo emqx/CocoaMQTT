@@ -257,7 +257,11 @@ public class CocoaMQTTWebSocket: CocoaMQTTDisconnectAfterWritingSocket {
                 return
             }
 
-            self.delegate?.socket(self, didWriteDataWithTag: tag)
+            if let delegate = self.delegate {
+                self.__delegate_queue {
+                    delegate.socket(self, didWriteDataWithTag: tag)
+                }
+            }
             if self.disconnectAfterWrites && self.scheduledWrites.isEmpty {
                 self.closeConnection(withError: nil)
             } else {

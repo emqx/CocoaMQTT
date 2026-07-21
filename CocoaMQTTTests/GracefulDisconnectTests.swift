@@ -159,10 +159,18 @@ final class GracefulDisconnectTests: XCTestCase {
         )
         let delegate = SocketDelegate()
         let callbackQueue = DispatchQueue(label: "tests.graceful-disconnect.callbacks")
+        let callbackQueueKey = DispatchSpecificKey<Void>()
+        callbackQueue.setSpecific(key: callbackQueueKey, value: ())
         let writesQueued = expectation(description: "writes queued")
         writesQueued.expectedFulfillmentCount = 2
+        let writeCallbacks = expectation(description: "write callbacks")
+        writeCallbacks.expectedFulfillmentCount = 2
         let disconnected = expectation(description: "disconnected")
         connection.onWrite = { writesQueued.fulfill() }
+        delegate.onWrite = { _ in
+            XCTAssertNotNil(DispatchQueue.getSpecific(key: callbackQueueKey))
+            writeCallbacks.fulfill()
+        }
         delegate.onDisconnect = { error in
             XCTAssertNil(error)
             disconnected.fulfill()
@@ -179,7 +187,7 @@ final class GracefulDisconnectTests: XCTestCase {
         XCTAssertFalse(connection.snapshot().contains("disconnect"))
 
         connection.completeWrite(at: 0)
-        wait(for: [disconnected], timeout: 1)
+        wait(for: [writeCallbacks, disconnected], timeout: 1)
         XCTAssertEqual(connection.snapshot(), ["write:1", "write:2", "complete", "complete", "disconnect"])
 
         websocket.write(Data([3]), withTimeout: 0.01, tag: 3)
@@ -187,13 +195,18 @@ final class GracefulDisconnectTests: XCTestCase {
         XCTAssertEqual(connection.snapshot(), ["write:1", "write:2", "complete", "complete", "disconnect"])
 
         let reconnectWrite = expectation(description: "write after reconnect")
+        let reconnectCallback = expectation(description: "write callback after reconnect")
         connection.onWrite = { reconnectWrite.fulfill() }
+        delegate.onWrite = { _ in
+            XCTAssertNotNil(DispatchQueue.getSpecific(key: callbackQueueKey))
+            reconnectCallback.fulfill()
+        }
         try websocket.connect(toHost: "localhost", onPort: 8083)
         websocket.write(Data([3]), withTimeout: 1, tag: 3)
         wait(for: [reconnectWrite], timeout: 1)
         XCTAssertEqual(connection.snapshot().last, "write:3")
         connection.completeWrite(at: 0)
-        connection.queue.sync {}
+        wait(for: [reconnectCallback], timeout: 1)
     }
 
     func testWebSocketRejectsWritesAfterGracefulCloseStarts() throws {
@@ -269,6 +282,109 @@ final class GracefulDisconnectTests: XCTestCase {
     }
 
     #if os(macOS)
+    private static func extractMQTTPacket(from buffer: inout Data) -> (header: UInt8, body: [UInt8])? {
+        guard buffer.count >= 2 else { return nil }
+        var remainingLength = 0
+        var multiplier = 1
+        var index = 1
+        var lengthByteCount = 0
+
+        while index < buffer.count && lengthByteCount < 4 {
+            let byte = buffer[index]
+            remainingLength += Int(byte & 0x7f) * multiplier
+            multiplier *= 128
+            index += 1
+            lengthByteCount += 1
+            if byte & 0x80 == 0 {
+                guard buffer.count >= index + remainingLength else { return nil }
+                let header = buffer[0]
+                let body = Array(buffer[index..<(index + remainingLength)])
+                buffer = Data(buffer.dropFirst(index + remainingLength))
+                return (header, body)
+            }
+        }
+        return nil
+    }
+
+    func testMQTT5BrokerReceivesDisconnectReasonAndProperties() throws {
+        let listenerQueue = DispatchQueue(label: "tests.graceful-disconnect.mqtt5-broker")
+        let listener = try NWListener(using: .tcp, on: .any)
+        let listenerReady = expectation(description: "MQTT 5 broker ready")
+        let brokerReceivedDisconnect = expectation(description: "broker received MQTT 5 DISCONNECT")
+        let clientDisconnected = expectation(description: "MQTT 5 client disconnected")
+        let observedFrameLock = NSLock()
+        var observedFrame: FrameDisconnect?
+        var receiveBuffer = Data()
+
+        func receivePackets(from connection: NWConnection) {
+            connection.receive(minimumIncompleteLength: 1, maximumLength: 65_536) { data, _, isComplete, error in
+                if let data {
+                    receiveBuffer.append(data)
+                    while let packet = Self.extractMQTTPacket(from: &receiveBuffer) {
+                        switch packet.header & 0xf0 {
+                        case FrameType.connect.rawValue:
+                            connection.send(content: Data([FrameType.connack.rawValue, 3, 0, 0, 0]), completion: .contentProcessed { _ in })
+                        case FrameType.disconnect.rawValue:
+                            observedFrameLock.lock()
+                            observedFrame = FrameDisconnect(
+                                packetFixedHeaderType: packet.header,
+                                bytes: packet.body,
+                                protocolVersion: .v5
+                            )
+                            observedFrameLock.unlock()
+                            brokerReceivedDisconnect.fulfill()
+                        default:
+                            break
+                        }
+                    }
+                }
+                if !isComplete && error == nil {
+                    receivePackets(from: connection)
+                }
+            }
+        }
+
+        listener.stateUpdateHandler = { state in
+            if case .ready = state {
+                listenerReady.fulfill()
+            }
+        }
+        listener.newConnectionHandler = { connection in
+            connection.start(queue: listenerQueue)
+            receivePackets(from: connection)
+        }
+        listener.start(queue: listenerQueue)
+        wait(for: [listenerReady], timeout: 2)
+
+        let mqtt5 = CocoaMQTT5(
+            clientID: "graceful-disconnect-broker",
+            host: "127.0.0.1",
+            port: try XCTUnwrap(listener.port?.rawValue)
+        )
+        mqtt5.delegateQueue = DispatchQueue(label: "tests.graceful-disconnect.mqtt5-callbacks")
+        mqtt5.didConnectAck = { client, reasonCode, _ in
+            XCTAssertEqual(reasonCode, .success)
+            client.disconnect(
+                reasonCode: .disconnectWithWillMessage,
+                userProperties: ["reason": "integration"]
+            )
+        }
+        mqtt5.didDisconnect = { _, error in
+            XCTAssertNil(error)
+            clientDisconnected.fulfill()
+        }
+
+        XCTAssertTrue(mqtt5.connect(timeout: 1))
+        wait(for: [brokerReceivedDisconnect, clientDisconnected], timeout: 2)
+        listener.cancel()
+
+        observedFrameLock.lock()
+        let frame = observedFrame
+        observedFrameLock.unlock()
+        XCTAssertEqual(frame?.receiveReasonCode, .disconnectWithWillMessage)
+        XCTAssertEqual(frame?.userProperties, ["reason": "integration"])
+    }
+
     func testTCPSendsFinalBytesBeforeClosing() throws {
         let listenerQueue = DispatchQueue(label: "tests.graceful-disconnect.tcp-listener")
         let listener = try NWListener(using: .tcp, on: .any)

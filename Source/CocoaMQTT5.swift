@@ -224,6 +224,11 @@ public class CocoaMQTT5: NSObject, CocoaMQTT5Client {
     public var keepAlive: UInt16 = 60
     private var aliveTimer: CocoaMQTTTimer?
 
+    /// Inactivity timeout in seconds for Remaining Length and payload reads after a packet header.
+    /// Header reads remain unlimited. Nonpositive or nonfinite values disable this timeout. Default is 30 seconds.
+    /// Changes take effect on the next connection.
+    public var packetReadTimeout: TimeInterval = CocoaMQTTReader.defaultPacketReadTimeout
+
     /// Enable auto-reconnect mechanism
     public var autoReconnect = false
 
@@ -620,7 +625,8 @@ public class CocoaMQTT5: NSObject, CocoaMQTT5Client {
             socket: socket,
             delegate: self,
             protocolVersion: .v5,
-            maximumPacketSize: connectProperties?.maximumPacketSize
+            maximumPacketSize: connectProperties?.maximumPacketSize,
+            packetReadTimeout: packetReadTimeout
         )
         do {
             if timeout > 0 {
