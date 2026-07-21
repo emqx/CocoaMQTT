@@ -77,21 +77,43 @@ final class ThreadSafetyRegressionTests: XCTestCase {
         XCTAssertEqual(readGroup.wait(timeout: .now() + 10), .success)
     }
 
-    func testThreadSafeDictionaryRetainsCollectionCompatibilityWithSnapshotIteration() {
+    func testThreadSafeDictionarySequenceIterationUsesSnapshots() {
         let store = ThreadSafeDictionary<String, Int>(
             label: "tests.threadsafe.collection",
             dict: ["a": 1, "b": 2]
         )
-        let collection: any Collection = store
+        let sequence = AnySequence(store)
 
         XCTAssertEqual(store.count, 2)
         XCTAssertFalse(store.isEmpty)
         XCTAssertNotNil(store.first)
         XCTAssertEqual(
-            Dictionary(uniqueKeysWithValues: store.map { ($0.key, $0.value) }),
+            Dictionary(uniqueKeysWithValues: sequence.map { ($0.key, $0.value) }),
             ["a": 1, "b": 2]
         )
-        XCTAssertEqual(collection.count, 2)
+    }
+
+    func testThreadSafeDictionaryIteratesWhileMutating() {
+        let store = ThreadSafeDictionary<Int, Int>(label: "tests.threadsafe.snapshot-iteration")
+        let queue = DispatchQueue(label: "tests.threadsafe.snapshot-writes", attributes: .concurrent)
+        let group = DispatchGroup()
+
+        for worker in 0..<4 {
+            group.enter()
+            queue.async {
+                for value in stride(from: worker, to: 2_000, by: 4) {
+                    store[value] = value
+                }
+                group.leave()
+            }
+        }
+
+        for _ in 0..<100 {
+            XCTAssertTrue(store.allSatisfy { $0.key == $0.value })
+        }
+
+        XCTAssertEqual(group.wait(timeout: .now() + 2), .success)
+        XCTAssertEqual(store.count, 2_000)
     }
 
     func testWebSocketDelegateAndLoggerConcurrentAccess() {

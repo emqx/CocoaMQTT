@@ -2,17 +2,17 @@ import Foundation
 
 /// A thread-safe property wrapper that uses a concurrent dispatch queue for atomic operations.
 ///
-/// This wrapper provides both synchronous and asynchronous access to a wrapped value in a
-/// thread-safe manner using `DispatchQueue` with `.concurrent` attributes and `.barrier` writes.
+/// Reads run concurrently, while writes and compound mutations use synchronous barriers.
 ///
 /// - Important: Although this wrapper provides atomicity for access, it does not make the wrapped
 ///   value itself thread-safe if the type is not thread-safe. Avoid wrapping types that manage
-///   internal shared state without their own synchronization.
+///   internal shared state without their own synchronization. A read followed by a write is not
+///   one atomic operation; use `mutate` for compound changes.
 ///
 /// - Example:
 /// ```swift
 /// @ConcurrentAtomic var counter: Int = 0
-/// counter += 1
+/// $counter.mutate { $0 += 1 }
 /// print(counter)
 /// ```
 @propertyWrapper
@@ -23,14 +23,13 @@ public class ConcurrentAtomic<T> {
     /// Provides synchronous thread-safe access to the wrapped value.
     ///
     /// - Note: Reads use `queue.sync` and can happen concurrently.
-    /// - Warning: Writes are done asynchronously with `.barrier`, so a following read may
-    ///   not reflect the new value immediately.
+    /// - Note: Writes use a synchronous barrier and are visible when assignment returns.
     public var wrappedValue: T {
         get {
             queue.sync { _value }
         }
         set {
-            queue.async(flags: .barrier) {
+            queue.sync(flags: .barrier) {
                 self._value = newValue
             }
         }
@@ -60,14 +59,30 @@ public class ConcurrentAtomic<T> {
         }
     }
 
-    /// Asynchronously mutates the wrapped value using a transform closure.
+    /// Atomically mutates the wrapped value using a synchronous transform closure.
     ///
-    /// The mutation is performed with `.barrier`, ensuring it does not overlap with other reads or writes.
+    /// The barrier ensures the read-modify-write operation does not overlap with other access.
     ///
     /// - Parameter transform: A closure that receives `inout` access to the wrapped value.
-    public func mutate(_ transform: @escaping (inout T) -> Void) {
-        queue.async(flags: .barrier) {
-            transform(&self._value)
+    /// - Returns: The value returned by `transform`.
+    @discardableResult
+    public func mutate<Result>(_ transform: (inout T) throws -> Result) rethrows -> Result {
+        try queue.sync(flags: .barrier) {
+            try transform(&self._value)
+        }
+    }
+}
+
+public extension ConcurrentAtomic where T: Equatable {
+    /// Replaces the stored value only when it equals `expected`.
+    ///
+    /// - Returns: `true` when the value was replaced; otherwise `false`.
+    @discardableResult
+    func compareAndSet(expected: T, newValue: T) -> Bool {
+        mutate { value in
+            guard value == expected else { return false }
+            value = newValue
+            return true
         }
     }
 }
