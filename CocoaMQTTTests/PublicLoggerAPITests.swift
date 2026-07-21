@@ -51,4 +51,13 @@ final class PublicLoggerAPITests: XCTestCase {
 
         XCTAssertEqual(readGroup.wait(timeout: .now() + 10), .success)
     }
+
+    func testMQTT5ConnStateProjectionRemainsPublic() {
+        let mqtt5 = CocoaMQTT5(clientID: "public-connstate-projection-\(UUID().uuidString)")
+        let projection: ConcurrentAtomic<CocoaMQTTConnState> = mqtt5.$connState
+
+        projection.wrappedValue = .connecting
+
+        XCTAssertEqual(mqtt5.connState, .connecting)
+    }
 }

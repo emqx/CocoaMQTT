@@ -18,6 +18,7 @@ import Foundation
 @propertyWrapper
 public class ConcurrentAtomic<T> {
     private var _value: T
+    private var mutationObserver: ((T) -> Void)?
     private let queue: DispatchQueue
 
     /// Provides synchronous thread-safe access to the wrapped value.
@@ -31,6 +32,7 @@ public class ConcurrentAtomic<T> {
         set {
             queue.sync(flags: .barrier) {
                 self._value = newValue
+                self.mutationObserver?(newValue)
             }
         }
     }
@@ -56,6 +58,7 @@ public class ConcurrentAtomic<T> {
     public func setSync(_ newValue: T) {
         queue.sync(flags: .barrier) {
             self._value = newValue
+            self.mutationObserver?(newValue)
         }
     }
 
@@ -72,7 +75,17 @@ public class ConcurrentAtomic<T> {
     @discardableResult
     public func mutate<Result>(_ transform: (inout T) throws -> Result) rethrows -> Result {
         try queue.sync(flags: .barrier) {
-            try transform(&self._value)
+            defer { self.mutationObserver?(self._value) }
+            return try transform(&self._value)
+        }
+    }
+
+    /// Installs an observer that runs inside the mutation barrier.
+    ///
+    /// The observer must not re-enter this `ConcurrentAtomic` instance.
+    func setMutationObserver(_ observer: ((T) -> Void)?) {
+        queue.sync(flags: .barrier) {
+            mutationObserver = observer
         }
     }
 }
@@ -83,9 +96,10 @@ public extension ConcurrentAtomic where T: Equatable {
     /// - Returns: `true` when the value was replaced; otherwise `false`.
     @discardableResult
     func compareAndSet(expected: T, newValue: T) -> Bool {
-        mutate { value in
-            guard value == expected else { return false }
-            value = newValue
+        queue.sync(flags: .barrier) {
+            guard _value == expected else { return false }
+            _value = newValue
+            mutationObserver?(newValue)
             return true
         }
     }

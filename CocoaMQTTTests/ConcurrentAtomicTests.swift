@@ -51,4 +51,17 @@ final class ConcurrentAtomicTests: XCTestCase {
         XCTAssertTrue($value.compareAndSet(expected: 10, newValue: 12))
         XCTAssertEqual(value, 12)
     }
+
+    func testMutationObserverReceivesAssignmentsAndTransforms() {
+        var observedValues = [Int]()
+        $value.setMutationObserver { observedValues.append($0) }
+
+        value = 2
+        $value.mutate { $0 += 3 }
+        $value.setSync(8)
+        XCTAssertFalse($value.compareAndSet(expected: 7, newValue: 9))
+        XCTAssertTrue($value.compareAndSet(expected: 8, newValue: 9))
+
+        XCTAssertEqual(observedValues, [2, 5, 8, 9])
+    }
 }

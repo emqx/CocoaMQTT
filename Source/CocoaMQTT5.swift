@@ -188,23 +188,9 @@ public class CocoaMQTT5: NSObject, CocoaMQTT5Client {
     public var delegateQueue = DispatchQueue.main
 
     @ConcurrentAtomic(wrappedValue: CocoaMQTTConnState.disconnected, label: "CocoaMQTT5.connState")
-    private var connStateStorage
+    public var connState
 
-    public var connState: CocoaMQTTConnState {
-        get { connStateStorage }
-        set {
-            $connStateStorage.mutate { state in
-                state = newValue
-                // Enqueue while holding the atomic barrier so notifications retain
-                // the same order as concurrent state writes.
-                let notifiedState = newValue
-                __delegate_queue {
-                    self.delegate?.mqtt5?(self, didStateChangeTo: notifiedState)
-                    self.didChangeState(self, notifiedState)
-                }
-            }
-        }
-    }
+    private let stateNotificationQueue = DispatchQueue(label: "CocoaMQTT5.stateNotifications")
 
     // deliver
     private var deliver = CocoaMQTTDeliver()
@@ -399,6 +385,9 @@ public class CocoaMQTT5: NSObject, CocoaMQTT5Client {
         self.port = port
         self.socket = socket
         super.init()
+        $connState.setMutationObserver { [weak self] state in
+            self?.enqueueStateNotification(state)
+        }
         configureSessionExpiryController(for: clientID)
         deliver.protocolVersion = .v5
         deliver.delegate = self
@@ -1085,6 +1074,16 @@ extension CocoaMQTT5: CocoaMQTTDeliverProtocol {
 }
 
 extension CocoaMQTT5 {
+
+    private func enqueueStateNotification(_ state: CocoaMQTTConnState) {
+        let callbackQueue = delegateQueue
+        stateNotificationQueue.async {
+            callbackQueue.sync {
+                self.delegate?.mqtt5?(self, didStateChangeTo: state)
+                self.didChangeState(self, state)
+            }
+        }
+    }
 
     func __delegate_queue(_ fun: @escaping () -> Void) {
         delegateQueue.async { [weak self] in
