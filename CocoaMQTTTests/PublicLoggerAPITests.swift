@@ -59,5 +59,7 @@ final class PublicLoggerAPITests: XCTestCase {
         projection.wrappedValue = .connecting
 
         XCTAssertEqual(mqtt5.connState, .connecting)
+        XCTAssertTrue(projection.compareAndSet(expected: .connecting, newValue: .connected))
+        XCTAssertEqual(mqtt5.connState, .connected)
     }
 }
