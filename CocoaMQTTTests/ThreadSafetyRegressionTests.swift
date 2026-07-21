@@ -221,7 +221,7 @@ final class ThreadSafetyRegressionTests: XCTestCase {
         XCTAssertEqual(receivedStates, [.connecting, .connected])
     }
 
-    func testCocoaMQTT5ConnStateCallbacksAreSerializedOnConcurrentDelegateQueue() {
+    func testCocoaMQTT5ConnStateCallbacksFollowConcurrentDelegateQueueSemantics() {
         let mqtt5 = CocoaMQTT5(clientID: "connstate-concurrent-callbacks-\(UUID().uuidString)")
         mqtt5.delegateQueue = DispatchQueue(
             label: "tests.threadsafe.connstate-concurrent-callbacks",
@@ -230,26 +230,26 @@ final class ThreadSafetyRegressionTests: XCTestCase {
         let firstCallbackStarted = DispatchSemaphore(value: 0)
         let releaseFirstCallback = DispatchSemaphore(value: 0)
         let secondCallbackStarted = DispatchSemaphore(value: 0)
-        var receivedStates = [CocoaMQTTConnState]()
+        let callbacksFinished = expectation(description: "Concurrent state callbacks finished")
+        callbacksFinished.expectedFulfillmentCount = 2
 
         mqtt5.didChangeState = { _, state in
-            receivedStates.append(state)
             if state == .connecting {
                 firstCallbackStarted.signal()
                 releaseFirstCallback.wait()
             } else if state == .connected {
                 secondCallbackStarted.signal()
             }
+            callbacksFinished.fulfill()
         }
 
         mqtt5.connState = .connecting
         mqtt5.connState = .connected
 
         XCTAssertEqual(firstCallbackStarted.wait(timeout: .now() + 1), .success)
-        XCTAssertEqual(secondCallbackStarted.wait(timeout: .now() + 0.05), .timedOut)
-        releaseFirstCallback.signal()
         XCTAssertEqual(secondCallbackStarted.wait(timeout: .now() + 1), .success)
-        XCTAssertEqual(receivedStates, [.connecting, .connected])
+        releaseFirstCallback.signal()
+        wait(for: [callbacksFinished], timeout: 1)
     }
 
     func testConcurrentPublishesAllocateUniquePacketIdentifiers() {

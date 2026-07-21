@@ -190,8 +190,6 @@ public class CocoaMQTT5: NSObject, CocoaMQTT5Client {
     @ConcurrentAtomic(wrappedValue: CocoaMQTTConnState.disconnected, label: "CocoaMQTT5.connState")
     public var connState
 
-    private let stateNotificationQueue = DispatchQueue(label: "CocoaMQTT5.stateNotifications")
-
     // deliver
     private var deliver = CocoaMQTTDeliver()
 
@@ -386,7 +384,11 @@ public class CocoaMQTT5: NSObject, CocoaMQTT5Client {
         self.socket = socket
         super.init()
         $connState.setMutationObserver { [weak self] state in
-            self?.enqueueStateNotification(state)
+            guard let self = self else { return }
+            self.__delegate_queue {
+                self.delegate?.mqtt5?(self, didStateChangeTo: state)
+                self.didChangeState(self, state)
+            }
         }
         configureSessionExpiryController(for: clientID)
         deliver.protocolVersion = .v5
@@ -1074,16 +1076,6 @@ extension CocoaMQTT5: CocoaMQTTDeliverProtocol {
 }
 
 extension CocoaMQTT5 {
-
-    private func enqueueStateNotification(_ state: CocoaMQTTConnState) {
-        let callbackQueue = delegateQueue
-        stateNotificationQueue.async {
-            callbackQueue.sync {
-                self.delegate?.mqtt5?(self, didStateChangeTo: state)
-                self.didChangeState(self, state)
-            }
-        }
-    }
 
     func __delegate_queue(_ fun: @escaping () -> Void) {
         delegateQueue.async { [weak self] in
