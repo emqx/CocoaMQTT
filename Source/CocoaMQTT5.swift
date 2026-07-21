@@ -593,8 +593,10 @@ public class CocoaMQTT5: NSObject, CocoaMQTT5Client {
             printError("Invalid MQTT 5 CONNECT properties.")
             return false
         }
-        deliver.setTransportEnabled(false)
+        // Publish uses the same lock, so pausing transport and starting the
+        // connection queue are atomic relative to queue admission.
         clientStateLock.lock()
+        deliver.setTransportEnabled(false)
         if activeClientID != clientID {
             discardInMemorySession()
         }

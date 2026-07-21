@@ -478,8 +478,10 @@ public class CocoaMQTT: NSObject, CocoaMQTTClient {
             printError("Invalid MQTT CONNECT fields.")
             return false
         }
-        deliver.setTransportEnabled(false)
+        // Publish uses the same lock, so pausing transport and starting the
+        // connection queue are atomic relative to queue admission.
         clientStateLock.lock()
+        deliver.setTransportEnabled(false)
         if activeClientID != clientID {
             discardInMemorySession()
         }

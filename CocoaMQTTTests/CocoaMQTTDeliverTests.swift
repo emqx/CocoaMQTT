@@ -232,6 +232,29 @@ class CocoaMQTTDeliverTests: XCTestCase {
         XCTAssertTrue(caller.frames.isEmpty)
     }
 
+    func testBeginConnectionPausesTransportAndRedirectsNewFrames() {
+        let caller = Caller()
+        let deliver = CocoaMQTTDeliver()
+        let frame = FramePublish(topic: "t/pending", payload: [0x01], qos: .qos1, msgid: 102)
+
+        deliver.delegate = caller
+        deliver.beginConnection()
+        XCTAssertTrue(deliver.add(frame))
+        deliver.t_waitUntilIdle()
+        caller.delegateQueue.sync {}
+
+        XCTAssertTrue(caller.frames.isEmpty)
+        XCTAssertTrue(deliver.t_queuedFrames().isEmpty)
+        XCTAssertEqual(deliver.connectionPendingFrames().count, 1)
+
+        deliver.completeConnection()
+        deliver.t_waitUntilIdle()
+        caller.delegateQueue.sync {}
+
+        XCTAssertEqual(caller.frames.count, 1)
+        assertEqual(caller.frames[0], frame)
+    }
+
     func testReceiveMaximumKeepsQoS2QuotaUntilPubComp() {
         let caller = Caller()
         let deliver = CocoaMQTTDeliver()
