@@ -1015,6 +1015,7 @@ final class SendingMessageLifecycleTests: XCTestCase {
         mqtt.cleanSession = true
         XCTAssertTrue(mqtt.connect())
         mqtt.socketConnected(socket)
+        queue.sync {}
         socket.writes.removeAll()
         socket.writeTags.removeAll()
 
@@ -1035,6 +1036,45 @@ final class SendingMessageLifecycleTests: XCTestCase {
 
         XCTAssertGreaterThan(packetIdentifier, 0)
         XCTAssertTrue(socket.writeTags.contains(packetIdentifier))
+        XCTAssertEqual(mqtt.t_reservedPacketIdentifierCount(), 1)
+    }
+
+    func testMQTT311PublishAfterDisconnectSurvivesNextCleanSessionSetup() {
+        let clientID = "post-disconnect-311-\(UUID().uuidString)"
+        defer { clearStorage(clientID) }
+        let socket = SocketSpy()
+        let queue = DispatchQueue(label: "tests.post-disconnect-311")
+        let mqtt = CocoaMQTT(clientID: clientID, socket: socket)
+        mqtt.delegateQueue = queue
+        mqtt.cleanSession = true
+
+        mqtt.socketDidDisconnect(socket, withError: nil)
+        let packetIdentifier = mqtt.publish(
+            CocoaMQTTMessage(topic: "t/after-disconnect", payload: [1], qos: .qos1)
+        )
+        queue.sync {}
+        XCTAssertGreaterThan(packetIdentifier, 0)
+        XCTAssertTrue(socket.writes.isEmpty)
+
+        XCTAssertTrue(mqtt.connect())
+        mqtt.socketConnected(socket)
+        queue.sync {}
+        socket.writes.removeAll()
+        socket.writeTags.removeAll()
+
+        let connack = FrameConnAck(
+            packetFixedHeaderType: FrameType.connack.rawValue,
+            bytes: [0, CocoaMQTTCONNACKReasonCode.success.rawValue],
+            protocolVersion: .v311
+        )
+        XCTAssertNotNil(connack)
+        if let connack = connack {
+            mqtt.didReceive(CocoaMQTTReader(socket: socket, delegate: nil), connack: connack)
+        }
+        queue.sync {}
+
+        XCTAssertTrue(socket.writeTags.contains(packetIdentifier))
+        XCTAssertEqual(mqtt.t_sendingMessagesCount(), 1)
         XCTAssertEqual(mqtt.t_reservedPacketIdentifierCount(), 1)
     }
 

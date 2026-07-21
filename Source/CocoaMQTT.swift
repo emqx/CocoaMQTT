@@ -427,9 +427,8 @@ public class CocoaMQTT: NSObject, CocoaMQTTClient {
         }
     }
 
-    private func clearPendingSubscriptionRequests() {
-        clientStateLock.lock()
-        defer { clientStateLock.unlock() }
+    /// Callers must hold `clientStateLock`.
+    private func clearPendingSubscriptionRequestsLocked() {
         for identifier in subscriptionsWaitingAck.removeAllValues().keys {
             packetIdentifiers.release(identifier)
         }
@@ -898,19 +897,22 @@ extension CocoaMQTT: CocoaMQTTSocketDelegate {
     public func socketDidDisconnect(_ socket: CocoaMQTTSocketProtocol, withError err: Error?) {
         // Clean up
         socket.setDelegate(nil, delegateQueue: nil)
-        deliver.beginConnection()
-        clearPendingSubscriptionRequests()
         clientStateLock.lock()
+        // Publish uses the same lock, so queue admission cannot race with the
+        // transition from the disconnected session to the next connection.
+        deliver.beginConnection()
+        clearPendingSubscriptionRequestsLocked()
         let pendingDeliveryTokens = Set(deliver.connectionPendingFrames().compactMap {
             ($0 as? FramePublish)?.deliveryToken
         })
         sendingMessages.removeValues { key, _ in
             key > UInt64(UInt16.max) && !pendingDeliveryTokens.contains(key)
         }
-        clientStateLock.unlock()
         if cleanSession {
-            discardCurrentSession(preservingConnectionQueue: true)
+            discardStoredSession()
+            discardInMemorySession(preservingConnectionQueue: true)
         }
+        clientStateLock.unlock()
         if is_internal_disconnected || !autoReconnect {
             resetAutoReconnectState()
         }
