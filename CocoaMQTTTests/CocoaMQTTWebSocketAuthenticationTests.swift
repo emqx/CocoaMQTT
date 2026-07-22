@@ -85,7 +85,7 @@ final class CocoaMQTTWebSocketAuthenticationTests: XCTestCase {
         XCTAssertEqual(builder.connection.connectCallCount, 1)
     }
 
-    func testMissingSocketDelegateQueueUsesSystemTrustHandling() throws {
+    func testMissingSocketDelegateQueueStillForwardsCustomTrustHandling() throws {
         let builder = BuilderSpy()
         let websocket = CocoaMQTTWebSocket(uri: "/mqtt", builder: builder)
         let delegate = SocketDelegateSpy()
@@ -99,13 +99,13 @@ final class CocoaMQTTWebSocketAuthenticationTests: XCTestCase {
             didReceiveTrust: try makeTrust(),
             didReceiveChallenge: makeChallenge()
         ) { disposition, credential in
-            XCTAssertEqual(disposition, .performDefaultHandling)
+            XCTAssertEqual(disposition, .cancelAuthenticationChallenge)
             XCTAssertNil(credential)
             completed.fulfill()
         }
 
         wait(for: [completed], timeout: 1)
-        XCTAssertEqual(delegate.urlSessionTrustCallCount, 0)
+        XCTAssertEqual(delegate.urlSessionTrustCallCount, 1)
     }
 
     private func makeTrust() throws -> SecTrust {

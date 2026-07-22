@@ -235,11 +235,6 @@ class WebSocketManager {
 
 extension WebSocketManager: CocoaMQTTDelegate {
 
-    // Optional. Omit this method to use the system certificate validation.
-    func mqttUrlSession(_ mqtt: CocoaMQTT, didReceiveTrust trust: SecTrust, didReceiveChallenge challenge: URLAuthenticationChallenge, completionHandler: @escaping (URLSession.AuthChallengeDisposition, URLCredential?) -> Void) {
-        completionHandler(.performDefaultHandling, nil)
-    }
-    
     func mqtt(_ mqtt: CocoaMQTT, didPublishAck id: UInt16) {
         print("Published message with ID: \(id)")
     }

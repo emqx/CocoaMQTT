@@ -216,6 +216,60 @@ final class TLSChallengeResolutionTests: XCTestCase {
         try assertSystemDefaultChallengeHandling(client: mqtt, socket: socket)
     }
 
+    func testMQTT311URLSessionChallengeCancelsIfClientIsReleasedBeforeCallback() throws {
+        let socket = SocketStub()
+        let trust = try makeTrust()
+        let challenge = makeChallenge()
+        let callbackQueue = DispatchQueue(label: "tests.tls-release-311")
+        let completed = expectation(description: "challenge cancelled")
+        callbackQueue.suspend()
+        var mqtt: CocoaMQTT? = CocoaMQTT(clientID: "tls-release-311", socket: socket)
+        mqtt?.delegateQueue = callbackQueue
+
+        mqtt?.socketUrlSession(
+            socket,
+            didReceiveTrust: trust,
+            didReceiveChallenge: challenge
+        ) { disposition, credential in
+            XCTAssertEqual(disposition, .cancelAuthenticationChallenge)
+            XCTAssertNil(credential)
+            completed.fulfill()
+        }
+
+        weak let releasedClient = mqtt
+        mqtt = nil
+        XCTAssertNil(releasedClient)
+        callbackQueue.resume()
+        wait(for: [completed], timeout: 1)
+    }
+
+    func testMQTT5URLSessionChallengeCancelsIfClientIsReleasedBeforeCallback() throws {
+        let socket = SocketStub()
+        let trust = try makeTrust()
+        let challenge = makeChallenge()
+        let callbackQueue = DispatchQueue(label: "tests.tls-release-5")
+        let completed = expectation(description: "challenge cancelled")
+        callbackQueue.suspend()
+        var mqtt: CocoaMQTT5? = CocoaMQTT5(clientID: "tls-release-5", socket: socket)
+        mqtt?.delegateQueue = callbackQueue
+
+        mqtt?.socketUrlSession(
+            socket,
+            didReceiveTrust: trust,
+            didReceiveChallenge: challenge
+        ) { disposition, credential in
+            XCTAssertEqual(disposition, .cancelAuthenticationChallenge)
+            XCTAssertNil(credential)
+            completed.fulfill()
+        }
+
+        weak let releasedClient = mqtt
+        mqtt = nil
+        XCTAssertNil(releasedClient)
+        callbackQueue.resume()
+        wait(for: [completed], timeout: 1)
+    }
+
     func testMQTT311URLSessionChallengeFallsBackToTrustClosure() throws {
         let socket = SocketStub()
         let mqtt = CocoaMQTT(clientID: "tls-closure-311", socket: socket)

@@ -83,9 +83,13 @@ import MqttCocoaAsyncSocket
     /// Manually validate an SSL/TLS server certificate.
     ///
     /// Raw sockets call this when `allowUntrustCACertificate` is enabled.
-    /// WebSockets use it as a fallback when `mqtt5UrlSession` is not implemented.
+    /// WebSockets use it when `mqtt5UrlSession` is not implemented. This delegate
+    /// method takes precedence over the `didReceiveTrust` closure.
     @objc optional func mqtt5(_ mqtt5: CocoaMQTT5, didReceive trust: SecTrust, completionHandler: @escaping (Bool) -> Void)
 
+    /// Handle a URLSession server-trust challenge.
+    ///
+    /// This method takes precedence over the legacy trust delegate and closure.
     @objc optional func mqtt5UrlSession(_ mqtt: CocoaMQTT5, didReceiveTrust trust: SecTrust, didReceiveChallenge challenge: URLAuthenticationChallenge, completionHandler: @escaping (URLSession.AuthChallengeDisposition, URLCredential?) -> Void)
 
     ///
@@ -426,6 +430,7 @@ public class CocoaMQTT5: NSObject, CocoaMQTT5Client {
     public var didDisconnect: (CocoaMQTT5, Error?) -> Void = { _, _ in }
     public var didDisconnectReasonCode: (CocoaMQTT5, CocoaMQTTDISCONNECTReasonCode) -> Void = { _, _ in }
     public var didAuthReasonCode: (CocoaMQTT5, CocoaMQTTAUTHReasonCode) -> Void = { _, _ in }
+    /// Trust fallback used when neither trust delegate method is implemented.
     public var didReceiveTrust: (CocoaMQTT5, SecTrust, @escaping (Bool) -> Swift.Void) -> Void {
         get { customDidReceiveTrust ?? { _, _, _ in } }
         set { customDidReceiveTrust = newValue }
@@ -1150,11 +1155,15 @@ extension CocoaMQTT5 {
 
     func __delegate_queue(
         _ fun: @escaping (CocoaMQTT5) -> Void,
-        completionOnEventLoop: ((CocoaMQTT5) -> Void)? = nil
+        completionOnEventLoop: ((CocoaMQTT5) -> Void)? = nil,
+        onDeallocated: (() -> Void)? = nil
     ) {
         let callbackQueue = delegateQueue
         callbackQueue.async { [weak self] in
-            guard let self = self else { return }
+            guard let self = self else {
+                onDeallocated?()
+                return
+            }
             fun(self)
             guard let completionOnEventLoop = completionOnEventLoop else { return }
             self.eventLoopQueue.async { [weak self] in
@@ -1293,7 +1302,7 @@ extension CocoaMQTT5: CocoaMQTTSocketDelegate {
 
         printDebug("Call the SSL/TLS manually validating function")
 
-        __delegate_queue { mqtt5 in
+        __delegate_queue({ mqtt5 in
             CocoaMQTTTrustHandling.resolveManualTrust(handler: { completion in
                 if mqtt5.delegate?.mqtt5?(mqtt5, didReceive: trust, completionHandler: completion) != nil {
                     return true
@@ -1302,13 +1311,13 @@ extension CocoaMQTT5: CocoaMQTTSocketDelegate {
                 handler(mqtt5, trust, completion)
                 return true
             }, completionHandler: completionHandler)
-        }
+        }, onDeallocated: { completionHandler(false) })
     }
 
     public func socketUrlSession(_ socket: CocoaMQTTSocketProtocol, didReceiveTrust trust: SecTrust, didReceiveChallenge challenge: URLAuthenticationChallenge, completionHandler: @escaping (URLSession.AuthChallengeDisposition, URLCredential?) -> Void) {
         printDebug("Call the SSL/TLS manually validating function - socketUrlSession")
 
-        __delegate_queue { mqtt5 in
+        __delegate_queue({ mqtt5 in
             CocoaMQTTTrustHandling.resolveURLSessionChallenge(
                 urlSessionHandler: { completion in
                     mqtt5.delegate?.mqtt5UrlSession?(
@@ -1329,7 +1338,7 @@ extension CocoaMQTT5: CocoaMQTTSocketDelegate {
                 legacyCredential: URLCredential(trust: trust),
                 completionHandler: completionHandler
             )
-        }
+        }, onDeallocated: { completionHandler(.cancelAuthenticationChallenge, nil) })
     }
 
     // ?
