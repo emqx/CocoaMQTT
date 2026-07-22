@@ -243,10 +243,15 @@ public class CocoaMQTTSocket: NSObject {
     @objc public class func serverCertificate(from data: Data) -> SecCertificate? {
         var certificateData = data
         if let pem = String(data: data, encoding: .utf8),
-           pem.contains("-----BEGIN CERTIFICATE-----") {
-            let base64 = pem
+           let begin = pem.range(of: "-----BEGIN CERTIFICATE-----"),
+           let end = pem.range(
+               of: "-----END CERTIFICATE-----",
+               range: begin.upperBound..<pem.endIndex
+           ) {
+            let base64 = pem[begin.upperBound..<end.lowerBound]
                 .components(separatedBy: .newlines)
-                .filter { !$0.hasPrefix("-----") }
+                .map { $0.trimmingCharacters(in: .whitespaces) }
+                .filter { !$0.isEmpty }
                 .joined()
             guard let decoded = Data(base64Encoded: base64) else { return nil }
             certificateData = decoded

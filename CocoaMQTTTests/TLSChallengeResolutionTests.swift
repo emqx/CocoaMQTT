@@ -187,6 +187,9 @@ final class TLSChallengeResolutionTests: XCTestCase {
         -----END CERTIFICATE-----
         """
         XCTAssertNotNil(CocoaMQTTSocket.serverCertificate(from: Data(pem.utf8)))
+        let indentedPEM = "\n  -----BEGIN CERTIFICATE-----\n"
+            + "    \(testRootCertificate)\n  -----END CERTIFICATE-----  \n\n"
+        XCTAssertNotNil(CocoaMQTTSocket.serverCertificate(from: Data(indentedPEM.utf8)))
         XCTAssertNil(CocoaMQTTSocket.serverCertificate(from: Data("invalid".utf8)))
     }
 

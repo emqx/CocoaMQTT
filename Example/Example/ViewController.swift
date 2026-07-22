@@ -76,7 +76,7 @@ class ViewController: UIViewController {
 
     func mqttSettingList(){
         mqttSetting()
-        //selfSignedSSLSetting()
+        //mutualTLSSetting()
         //simpleSSLSetting()
         //mqttWebsocketsSetting()
         //mqttWebsocketSSLSetting()
@@ -166,7 +166,7 @@ class ViewController: UIViewController {
 
     }
     
-    func selfSignedSSLSetting() {
+    func mutualTLSSetting() {
         if mqttVesion == "3.1.1" {
 
             let clientID = "CocoaMQTT-\(animal!)-" + String(ProcessInfo().processIdentifier)
@@ -177,7 +177,6 @@ class ViewController: UIViewController {
             mqtt!.keepAlive = 60
             mqtt!.delegate = self
             mqtt!.enableSSL = true
-            mqtt!.manuallyEvaluateTrust = true
 
             let clientCertArray = getClientCertFromP12File(certName: "client-keycert", certPassword: "MySecretPassword")
 
@@ -206,7 +205,6 @@ class ViewController: UIViewController {
             mqtt5!.delegate = self
 
             mqtt5!.enableSSL = true
-            mqtt5!.manuallyEvaluateTrust = true
             let clientCertArray = getClientCertFromP12File(certName: "client-keycert", certPassword: "MySecretPassword")
             var sslSettings: [String: NSObject] = [:]
             sslSettings[kCFStreamSSLCertificates as String] = clientCertArray
@@ -575,4 +573,3 @@ extension Optional {
         return ""
     }
 }
-
