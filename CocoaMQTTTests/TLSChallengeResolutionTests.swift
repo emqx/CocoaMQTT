@@ -122,6 +122,144 @@ final class TLSChallengeResolutionTests: XCTestCase {
         XCTAssertEqual(decisions, [true])
     }
 
+    func testManualTrustHandlerTakesPriorityOverBuiltInFallback() {
+        var fallbackCalled = false
+        var decisions = [Bool]()
+
+        CocoaMQTTTrustHandling.resolveManualTrust(
+            handler: { completion in
+                completion(false)
+                return true
+            },
+            fallback: { _ in
+                fallbackCalled = true
+                return true
+            },
+            completionHandler: { decisions.append($0) }
+        )
+
+        XCTAssertFalse(fallbackCalled)
+        XCTAssertEqual(decisions, [false])
+    }
+
+    func testTLSSettingsUseConnectionHostByDefault() {
+        let socket = CocoaMQTTSocket()
+
+        let settings = socket.tlsSettings(forHost: "broker.example.com")
+
+        XCTAssertEqual(settings[kCFStreamSSLPeerName as String] as? String, "broker.example.com")
+    }
+
+    func testTLSSettingsAllowServerNameAndRawSettingsOverrides() {
+        let socket = CocoaMQTTSocket()
+        socket.tlsServerName = "certificate.example.com"
+        XCTAssertEqual(
+            socket.tlsSettings(forHost: "192.0.2.1")[kCFStreamSSLPeerName as String] as? String,
+            "certificate.example.com"
+        )
+
+        socket.sslSettings = [kCFStreamSSLPeerName as String: "raw.example.com" as NSString]
+        XCTAssertEqual(
+            socket.tlsSettings(forHost: "192.0.2.1")[kCFStreamSSLPeerName as String] as? String,
+            "raw.example.com"
+        )
+    }
+
+    func testCustomAnchorsEnableManualEvaluation() throws {
+        let socket = CocoaMQTTSocket()
+        socket.trustedServerCertificates = [try certificate(base64: testRootCertificate)]
+
+        let settings = socket.tlsSettings(forHost: "broker.example.com")
+
+        XCTAssertEqual(
+            (settings["MGCDAsyncSocketManuallyEvaluateTrust"] as? NSNumber)?.boolValue,
+            true
+        )
+    }
+
+    func testServerCertificateLoadsDERAndPEM() throws {
+        let der = try XCTUnwrap(Data(base64Encoded: testRootCertificate))
+        XCTAssertNotNil(CocoaMQTTSocket.serverCertificate(from: der))
+
+        let pem = """
+        -----BEGIN CERTIFICATE-----
+        \(testRootCertificate)
+        -----END CERTIFICATE-----
+        """
+        XCTAssertNotNil(CocoaMQTTSocket.serverCertificate(from: Data(pem.utf8)))
+        let indentedPEM = "\n  -----BEGIN CERTIFICATE-----\n"
+            + "    \(testRootCertificate)\n  -----END CERTIFICATE-----  \n\n"
+        XCTAssertNotNil(CocoaMQTTSocket.serverCertificate(from: Data(indentedPEM.utf8)))
+        XCTAssertNil(CocoaMQTTSocket.serverCertificate(from: Data("invalid".utf8)))
+    }
+
+    func testCustomCAAcceptsMatchingServerAndRejectsWrongHostname() throws {
+        let socket = CocoaMQTTSocket()
+        socket.tlsServerName = "broker.example.com"
+        socket.trustedServerCertificates = [try certificate(base64: testRootCertificate)]
+        socket.usesSystemTrustStore = false
+
+        let accepted = expectation(description: "matching hostname accepted")
+        XCTAssertTrue(socket.evaluateServerTrust(try leafTrust()) { trusted in
+            XCTAssertTrue(trusted)
+            accepted.fulfill()
+        })
+        wait(for: [accepted], timeout: 2)
+
+        socket.tlsServerName = "wrong.example.com"
+        let rejected = expectation(description: "wrong hostname rejected")
+        XCTAssertTrue(socket.evaluateServerTrust(try leafTrust()) { trusted in
+            XCTAssertFalse(trusted)
+            rejected.fulfill()
+        })
+        wait(for: [rejected], timeout: 2)
+    }
+
+    func testCustomCAUsesRawPeerNameOverride() throws {
+        let socket = CocoaMQTTSocket()
+        socket.tlsServerName = "wrong.example.com"
+        socket.sslSettings = [
+            kCFStreamSSLPeerName as String: "broker.example.com" as NSString
+        ]
+        socket.trustedServerCertificates = [try certificate(base64: testRootCertificate)]
+        socket.usesSystemTrustStore = false
+        let accepted = expectation(description: "raw peer name accepted")
+
+        XCTAssertTrue(socket.evaluateServerTrust(try leafTrust()) { trusted in
+            XCTAssertTrue(trusted)
+            accepted.fulfill()
+        })
+        wait(for: [accepted], timeout: 2)
+    }
+
+    func testMQTT311UsesBuiltInCustomCAFallback() throws {
+        let socket = CocoaMQTTSocket()
+        let mqtt = CocoaMQTT(clientID: "custom-ca-311", socket: socket)
+        try configureCustomCA(on: mqtt)
+        let completed = expectation(description: "MQTT 3.1.1 trust accepted")
+
+        mqtt.socket(socket, didReceive: try leafTrust()) { trusted in
+            XCTAssertTrue(trusted)
+            completed.fulfill()
+        }
+
+        wait(for: [completed], timeout: 2)
+    }
+
+    func testMQTT5UsesBuiltInCustomCAFallback() throws {
+        let socket = CocoaMQTTSocket()
+        let mqtt = CocoaMQTT5(clientID: "custom-ca-5", socket: socket)
+        try configureCustomCA(on: mqtt)
+        let completed = expectation(description: "MQTT 5 trust accepted")
+
+        mqtt.socket(socket, didReceive: try leafTrust()) { trusted in
+            XCTAssertTrue(trusted)
+            completed.fulfill()
+        }
+
+        wait(for: [completed], timeout: 2)
+    }
+
     func testURLSessionChallengeDefaultsToSystemValidation() throws {
         var dispositions = [URLSession.AuthChallengeDisposition]()
 
@@ -463,4 +601,36 @@ final class TLSChallengeResolutionTests: XCTestCase {
     private func makeCredential() throws -> URLCredential {
         URLCredential(trust: try makeTrust())
     }
+
+    private func certificate(base64: String) throws -> SecCertificate {
+        let data = try XCTUnwrap(Data(base64Encoded: base64))
+        return try XCTUnwrap(CocoaMQTTSocket.serverCertificate(from: data))
+    }
+
+    private func leafTrust() throws -> SecTrust {
+        let leaf = try certificate(base64: testLeafCertificate)
+        let policy = SecPolicyCreateSSL(true, "broker.example.com" as CFString)
+        var trust: SecTrust?
+        XCTAssertEqual(SecTrustCreateWithCertificates(leaf, policy, &trust), errSecSuccess)
+        let unwrappedTrust = try XCTUnwrap(trust)
+        let verificationDate = Date(timeIntervalSince1970: 1_784_764_800)
+        XCTAssertEqual(SecTrustSetVerifyDate(unwrappedTrust, verificationDate as CFDate), errSecSuccess)
+        return unwrappedTrust
+    }
+
+    private func configureCustomCA(on mqtt: CocoaMQTT) throws {
+        mqtt.tlsServerName = "broker.example.com"
+        mqtt.trustedServerCertificates = [try certificate(base64: testRootCertificate)]
+        mqtt.usesSystemTrustStore = false
+    }
+
+    private func configureCustomCA(on mqtt: CocoaMQTT5) throws {
+        mqtt.tlsServerName = "broker.example.com"
+        mqtt.trustedServerCertificates = [try certificate(base64: testRootCertificate)]
+        mqtt.usesSystemTrustStore = false
+    }
+
+    private let testRootCertificate = "MIIDGTCCAgGgAwIBAgIUDyLKePsFbiSs+UbrI28jTUZjkaowDQYJKoZIhvcNAQELBQAwHDEaMBgGA1UEAwwRQ29jb2FNUVRUIFRlc3QgQ0EwHhcNMjYwNzIyMTIzOTI5WhcNMzYwNzE5MTIzOTI5WjAcMRowGAYDVQQDDBFDb2NvYU1RVFQgVGVzdCBDQTCCASIwDQYJKoZIhvcNAQEBBQADggEPADCCAQoCggEBAI6FS7w/lPHRmKHshtuBptgkyufKRAGyEv+nyeOfX/J7iZ42NtaMk5AC5UVWozBhX2zpx4QzfNy/KeILSUhJmAtK5F64z/MktJTjTep9eng/zSUvP/HtzP4cY1ShMEWZlgIhuq/+8bzcw2Et0DDaIUuhZZWUirnAMdsuiUcFbG6LXSjPg3yiCym8z/Hj8FVi/Dv/3N75dD1HGfJfT9xRzYNZTCBySj/LtkQG3pO7ea7UgaNHAY4rvYaIESdaoG8rNfxrnpwO56iauHWxW+WOKoeSaLzYexl62/VrBJi2O3297e2bSJ/f+cjz6lhBmZTLlzPuMqO6plHOZomfQym33FkCAwEAAaNTMFEwHQYDVR0OBBYEFNK/zQbngegfsls/g4m05iuAQFvnMB8GA1UdIwQYMBaAFNK/zQbngegfsls/g4m05iuAQFvnMA8GA1UdEwEB/wQFMAMBAf8wDQYJKoZIhvcNAQELBQADggEBACL9lfvv3teAoQUOpMenpKy6GAx6l7KM7Pn6TxIP9SJvd0ZXcwY/HqzuuHUtvG9+ien7sDx4XYBVuSgpLXVg853oHCDR6X2R5sQcFBOAls5sqeaTR7GsyVhljhvkqdBUaBpE7n6mWm2Njb9YvNZqxjMqjz0e/bv7izVFHfLAz9mgfCG2whm7+iT61lqJJe9Z6/fSKMMxmDPahFnICAodcRsabAgqJ6al5JuT6vkrcPYGDio/mj3j200v1sKPs7H05HjH3th0/7WeupPiGGjZK6MuM1ZNo8hxtbseIYDtnRFsL7z+9EIxVBc6Rh1RECo0LVqbKPN3obvMDYYGVgDSyJM="
+
+    private let testLeafCertificate = "MIIDPTCCAiWgAwIBAgIUJeIajR3eWzfdKZ3nP0bqRBIvDj8wDQYJKoZIhvcNAQELBQAwHDEaMBgGA1UEAwwRQ29jb2FNUVRUIFRlc3QgQ0EwHhcNMjYwNzIyMTI0MzIyWhcNMjcwNzIyMTI0MzIyWjAdMRswGQYDVQQDDBJicm9rZXIuZXhhbXBsZS5jb20wggEiMA0GCSqGSIb3DQEBAQUAA4IBDwAwggEKAoIBAQDFvlsaaGQrskF1IUJsNkWo7OgVAbcqSmY2MhtN8l0OfHV+CSNdwDBJHX/HWL1Zpvh/L3hylSDIKat6PiaWtUQr6C3UREuQJgp+vOg/+CCTer7MB3qjT/0BLW2Hz2q6fFpULrEFswPMcYinALV3TQslbSvqq6oUPhisH1wFR/6E9mcdBlfFwfF4OjNjAqOt2Uv1TNuBNtvyYsTO8GU6+1bqVTnF8gMVrvgVnpf3LBWTr9XJJGkXfhk1cvJBOW2VsNK4uM7pJblFXYCgJPNZZXzjhIk1ZtweRsld2l85rEyruQKndDFhApNxLi3MxDA2TpWiFZI50nsjxWUWqXBoN+J9AgMBAAGjdjB0MB0GA1UdEQQWMBSCEmJyb2tlci5leGFtcGxlLmNvbTATBgNVHSUEDDAKBggrBgEFBQcDATAdBgNVHQ4EFgQU1n3Uvp2QkGPQ6u0oyJ6CrYjBO78wHwYDVR0jBBgwFoAU0r/NBueB6B+yWz+DibTmK4BAW+cwDQYJKoZIhvcNAQELBQADggEBAEsXExWdIuHHqZNMK/D+PgjfgTEpJAUmFWyGMUFmRE+iKOJdcdZ0iofkvHVtonBg1DZXbkYgLx48gIqPbFUryE74N0KegKB4NieQkkBmppML4GmeaFXB0VByAFsF2x9/3iKCuQo+xvJ1VaC40d9BshOYh7l28qJH+FFU1IvDEVFtnbd2qm4R3HJq2v/iuE5ckssvXOlHTtqQLIjfL+iM7A3lIKiFxw3sPsAv6pgx1VvnkHXMMMOgbY9eC7CEe1mZRD3LmUbPWpHRTJSUvDbCRU7yLm6mxfdmRb2VDjcg7Y/zNyUW75hBKCOhv1ONu6UUk6tVqT2CndcL1yLK24ONUR0="
 }

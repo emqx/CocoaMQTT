@@ -6,6 +6,7 @@
 //
 
 import Foundation
+import Security
 import MqttCocoaAsyncSocket
 
 /// Selects one trust callback and prevents competing callbacks from resolving
@@ -35,10 +36,14 @@ enum CocoaMQTTTrustHandling {
 
     static func resolveManualTrust(
         handler: (@escaping (Bool) -> Void) -> Bool,
+        fallback: (@escaping (Bool) -> Void) -> Bool = { _ in false },
         completionHandler: @escaping (Bool) -> Void
     ) {
         let completion = CompletionOnce(completionHandler)
-        if !handler({ completion($0) }) {
+        if handler({ completion($0) }) {
+            return
+        }
+        if !fallback({ completion($0) }) {
             completion(false)
         }
     }
@@ -192,6 +197,11 @@ public extension CocoaMQTTSocketProtocol {
 
 public class CocoaMQTTSocket: NSObject {
 
+    private static let trustEvaluationQueue = DispatchQueue(
+        label: "trust.cocoamqtt.emqx",
+        qos: .userInitiated
+    )
+
     public var backgroundOnSocket = true
 
     public var enableSSL = false
@@ -199,15 +209,55 @@ public class CocoaMQTTSocket: NSObject {
     ///
     public var sslSettings: [String: NSObject]?
 
-    /// Allow self-signed ca certificate.
-    ///
-    /// Default is false
-    public var allowUntrustCACertificate = false
+    /// Server name used for TLS identity verification. When unset, the host
+    /// passed to `connect` is used.
+    @objc public var tlsServerName: String?
+
+    /// Additional CA certificates trusted for this connection.
+    public var trustedServerCertificates = [SecCertificate]()
+
+    /// Whether custom CA validation also accepts certificates rooted in the
+    /// system trust store. Default is true.
+    @objc public var usesSystemTrustStore = true
+
+    /// Pauses automatic server trust handling and forwards the trust decision
+    /// to the client's delegate or `didReceiveTrust` closure.
+    @objc public var manuallyEvaluateTrust = false
+
+    /// Legacy name for enabling manual trust evaluation. Setting this does not
+    /// accept an untrusted certificate by itself.
+    @available(*, deprecated, renamed: "manuallyEvaluateTrust")
+    public var allowUntrustCACertificate: Bool {
+        get { manuallyEvaluateTrust }
+        set { manuallyEvaluateTrust = newValue }
+    }
 
     fileprivate let reference = MGCDAsyncSocket()
     fileprivate weak var delegate: CocoaMQTTSocketDelegate?
+    private let connectionStateLock = NSLock()
+    private var connectedHost: String?
 
     public override init() { super.init() }
+
+    /// Creates a certificate from DER or PEM encoded certificate data.
+    @objc public class func serverCertificate(from data: Data) -> SecCertificate? {
+        var certificateData = data
+        if let pem = String(data: data, encoding: .utf8),
+           let begin = pem.range(of: "-----BEGIN CERTIFICATE-----"),
+           let end = pem.range(
+               of: "-----END CERTIFICATE-----",
+               range: begin.upperBound..<pem.endIndex
+           ) {
+            let base64 = pem[begin.upperBound..<end.lowerBound]
+                .components(separatedBy: .newlines)
+                .map { $0.trimmingCharacters(in: .whitespaces) }
+                .filter { !$0.isEmpty }
+                .joined()
+            guard let decoded = Data(base64Encoded: base64) else { return nil }
+            certificateData = decoded
+        }
+        return SecCertificateCreateWithData(nil, certificateData as CFData)
+    }
 }
 
 extension CocoaMQTTSocket: CocoaMQTTDisconnectAfterWritingSocket {
@@ -221,6 +271,9 @@ extension CocoaMQTTSocket: CocoaMQTTDisconnectAfterWritingSocket {
     }
 
     public func connect(toHost host: String, onPort port: UInt16, withTimeout timeout: TimeInterval) throws {
+        connectionStateLock.lock()
+        connectedHost = host
+        connectionStateLock.unlock()
         try reference.connect(toHost: host, onPort: port, withTimeout: timeout)
     }
 
@@ -259,14 +312,67 @@ extension CocoaMQTTSocket: MGCDAsyncSocketDelegate {
         #endif
 
         if enableSSL {
-            var setting = sslSettings ?? [:]
-            if allowUntrustCACertificate {
-                setting[MGCDAsyncSocketManuallyEvaluateTrust as String] = NSNumber(value: true)
-            }
-            sock.startTLS(setting)
+            sock.startTLS(tlsSettings(forHost: host))
         } else {
             delegate?.socketConnected(self)
         }
+    }
+
+    func tlsSettings(forHost host: String) -> [String: NSObject] {
+        var settings = sslSettings ?? [:]
+        let peerNameKey = kCFStreamSSLPeerName as String
+        if settings[peerNameKey] == nil {
+            settings[peerNameKey] = (effectiveTLSServerName(fallback: host) ?? host) as NSString
+        }
+        if manuallyEvaluateTrust || !trustedServerCertificates.isEmpty {
+            settings[MGCDAsyncSocketManuallyEvaluateTrust as String] = NSNumber(value: true)
+        }
+        return settings
+    }
+
+    /// Evaluates a server trust using configured custom anchors. Returns false
+    /// when no built-in custom-anchor policy is configured.
+    @discardableResult
+    func evaluateServerTrust(_ trust: SecTrust, completionHandler: @escaping (Bool) -> Void) -> Bool {
+        guard !trustedServerCertificates.isEmpty,
+              let serverName = effectiveTLSServerName() else { return false }
+
+        let policy = SecPolicyCreateSSL(true, serverName as CFString)
+        guard SecTrustSetPolicies(trust, policy) == errSecSuccess,
+              SecTrustSetAnchorCertificates(trust, trustedServerCertificates as CFArray) == errSecSuccess,
+              SecTrustSetAnchorCertificatesOnly(trust, !usesSystemTrustStore) == errSecSuccess else {
+            completionHandler(false)
+            return true
+        }
+
+        let queue = Self.trustEvaluationQueue
+        queue.async {
+            if #available(macOS 10.15, iOS 13.0, tvOS 13.0, *) {
+                SecTrustEvaluateAsyncWithError(trust, queue) { _, trusted, error in
+                    if let error = error {
+                        printError("TLS server trust evaluation failed: \(error)")
+                    }
+                    completionHandler(trusted)
+                }
+            } else {
+                SecTrustEvaluateAsync(trust, queue) { _, result in
+                    completionHandler(result == .proceed || result == .unspecified)
+                }
+            }
+        }
+        return true
+    }
+
+    private func effectiveTLSServerName(fallback: String? = nil) -> String? {
+        let peerNameKey = kCFStreamSSLPeerName as String
+        if let peerName = sslSettings?[peerNameKey] {
+            return peerName as? String
+        }
+
+        connectionStateLock.lock()
+        let host = connectedHost
+        connectionStateLock.unlock()
+        return tlsServerName ?? host ?? fallback
     }
 
     public func socket(_ sock: MGCDAsyncSocket, didReceive trust: SecTrust, completionHandler: @escaping (Bool) -> Swift.Void) {
