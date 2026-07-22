@@ -162,7 +162,7 @@ class CocoaMQTTDeliver: NSObject {
         let frames = storage.readAll().map { frame -> Frame in
             if var publish = frame as? FramePublish {
                 if let decodedProperties = publish.publishRecProperties {
-                    publish.publishProperties = MqttPublishProperties(recovering: decodedProperties)
+                    publish.snapshotPublishProperties(MqttPublishProperties(recovering: decodedProperties))
                 }
                 publish.dup = true
                 publish.isSessionRecovery = true

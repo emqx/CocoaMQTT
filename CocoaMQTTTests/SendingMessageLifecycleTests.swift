@@ -899,6 +899,53 @@ final class SendingMessageLifecycleTests: XCTestCase {
         XCTAssertEqual(mqtt.t_sendingMessagesCount(), 0)
     }
 
+    func testMQTT5SnapshotsPublishPropertiesBeforeQueuedSend() throws {
+        let socket = SocketSpy()
+        let queue = DispatchQueue(label: "tests.publish-properties-snapshot")
+        let mqtt = CocoaMQTT5(
+            clientID: "publish-properties-snapshot-\(UUID().uuidString)",
+            socket: socket
+        )
+        mqtt.delegateQueue = queue
+        let properties = MqttPublishProperties(
+            responseTopic: "reply/original",
+            correlation: "original",
+            userProperty: ["key": "original"],
+            contentType: "application/original"
+        )
+        var packetIdentifier = -1
+
+        establishSession(
+            mqtt,
+            socket: socket,
+            cleanStart: true,
+            requestedExpiry: 0,
+            preConnackAction: {
+                socket.writes.removeAll()
+                packetIdentifier = mqtt.publish(
+                    CocoaMQTT5Message(topic: "t/snapshot", payload: [1], qos: .qos1),
+                    properties: properties
+                )
+                properties.responseTopic = "reply/mutated"
+                properties.correlationData = Array("mutated".utf8)
+                properties.userProperty = ["key": "mutated"]
+                properties.contentType = "application/mutated"
+            }
+        )
+        queue.sync {}
+
+        XCTAssertGreaterThan(packetIdentifier, 0)
+        let publishData = try XCTUnwrap(socket.writes.first {
+            $0.first.map { $0 & 0xf0 } == FrameType.publish.rawValue
+        })
+        let publish = try XCTUnwrap(mqtt5Publish(from: publishData))
+        let decodedProperties = try XCTUnwrap(publish.publishRecProperties)
+        XCTAssertEqual(decodedProperties.responseTopic, "reply/original")
+        XCTAssertEqual(decodedProperties.correlationData, Array("original".utf8))
+        XCTAssertEqual(decodedProperties.userProperty, ["key": "original"])
+        XCTAssertEqual(decodedProperties.contentType, "application/original")
+    }
+
     func testMQTT5PreConnackPublishAvoidsStoredIdentifierAndSendsAfterRecovery() {
         let socket = SocketSpy()
         let queue = DispatchQueue(label: "tests.pre-connack-recovery")

@@ -21,6 +21,9 @@ struct FramePublish: Frame {
 
     // 3.3.2.3 PUBLISH Properties
     public var publishProperties: MqttPublishProperties?
+    /// Encoded at the publish boundary so queued and retried frames do not retain
+    /// a caller-owned, mutable properties object.
+    private var publishPropertiesSnapshot: [UInt8]?
     public var publishRecProperties: MqttDecodePublish?
 
     var packetFixedHeaderType: UInt8 = FrameType.publish.rawValue
@@ -87,9 +90,12 @@ extension FramePublish {
     func payload5() -> [UInt8] { return _payload }
 
     func properties() -> [UInt8] {
+        return publishPropertiesSnapshot ?? publishProperties?.properties ?? []
+    }
 
-        // Properties
-        return publishProperties?.properties ?? []
+    mutating func snapshotPublishProperties(_ properties: MqttPublishProperties) {
+        publishPropertiesSnapshot = properties.properties
+        publishProperties = nil
     }
 
     func allData() -> [UInt8] {
