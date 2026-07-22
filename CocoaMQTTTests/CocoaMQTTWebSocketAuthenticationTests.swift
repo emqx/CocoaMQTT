@@ -43,8 +43,8 @@ final class CocoaMQTTWebSocketAuthenticationTests: XCTestCase {
         let headers = [
             "x-amz-customauthorizer-name": "authorizer",
             "x-amz-customauthorizer-signature": "signature",
-            "token": "token",
-            "Sec-WebSocket-Protocol": "mqttv3.1"
+            "custom-token": "token",
+            "Sec-WebSocket-Protocol": "mqtt"
         ]
         websocket.enableSSL = true
         websocket.headers = headers
@@ -79,6 +79,15 @@ final class AWSIoTIntegrationTests: XCTestCase {
         func mqttDidDisconnect(_ mqtt: CocoaMQTT, withError err: Error?) {
             disconnected?()
         }
+
+        func mqttUrlSession(
+            _ mqtt: CocoaMQTT,
+            didReceiveTrust trust: SecTrust,
+            didReceiveChallenge challenge: URLAuthenticationChallenge,
+            completionHandler: @escaping (URLSession.AuthChallengeDisposition, URLCredential?) -> Void
+        ) {
+            completionHandler(.performDefaultHandling, nil)
+        }
     }
 
     func testCustomAuthorizerConnection() throws {
@@ -87,6 +96,7 @@ final class AWSIoTIntegrationTests: XCTestCase {
             let host = environment["COCOAMQTT_AWS_IOT_HOST"], !host.isEmpty,
             let authorizer = environment["COCOAMQTT_AWS_AUTHORIZER_NAME"], !authorizer.isEmpty,
             let signature = environment["COCOAMQTT_AWS_AUTHORIZER_SIGNATURE"], !signature.isEmpty,
+            let tokenKeyName = environment["COCOAMQTT_AWS_TOKEN_KEY_NAME"], !tokenKeyName.isEmpty,
             let token = environment["COCOAMQTT_AWS_AUTHORIZER_TOKEN"], !token.isEmpty
         else {
             throw XCTSkip("Set the COCOAMQTT_AWS_* variables to run the AWS IoT integration test")
@@ -97,8 +107,8 @@ final class AWSIoTIntegrationTests: XCTestCase {
         websocket.headers = [
             "x-amz-customauthorizer-name": authorizer,
             "x-amz-customauthorizer-signature": signature,
-            "token": token,
-            "Sec-WebSocket-Protocol": "mqttv3.1"
+            tokenKeyName: token,
+            "Sec-WebSocket-Protocol": "mqtt"
         ]
 
         let mqtt = CocoaMQTT(
