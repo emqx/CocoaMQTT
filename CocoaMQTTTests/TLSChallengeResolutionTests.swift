@@ -236,7 +236,7 @@ final class TLSChallengeResolutionTests: XCTestCase {
             completed.fulfill()
         }
 
-        weak let releasedClient = mqtt
+        weak var releasedClient = mqtt
         mqtt = nil
         XCTAssertNil(releasedClient)
         callbackQueue.resume()
@@ -263,7 +263,7 @@ final class TLSChallengeResolutionTests: XCTestCase {
             completed.fulfill()
         }
 
-        weak let releasedClient = mqtt
+        weak var releasedClient = mqtt
         mqtt = nil
         XCTAssertNil(releasedClient)
         callbackQueue.resume()
