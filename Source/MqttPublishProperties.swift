@@ -7,6 +7,10 @@
 
 import Foundation
 
+/// Mutable MQTT 5 PUBLISH properties.
+///
+/// CocoaMQTT captures these properties when `publish` is called. Later mutations
+/// affect only subsequent publishes, including when the same instance is reused.
 public class MqttPublishProperties: NSObject {
 
     // 3.3.2.3 PUBLISH Properties

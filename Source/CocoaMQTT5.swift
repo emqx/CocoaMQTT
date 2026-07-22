@@ -917,7 +917,7 @@ public class CocoaMQTT5: NSObject, CocoaMQTT5Client {
                                  msgid: msgid)
         frame.qos = message.qos
         frame.dup = DUP
-        frame.publishProperties = properties
+        frame.snapshotPublishProperties(properties)
         frame.retained = message.retained
         frame.deliveryToken = deliveryToken
         if message.topic.isEmpty {

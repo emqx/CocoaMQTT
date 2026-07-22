@@ -229,6 +229,42 @@ class FrameTests: XCTestCase {
         XCTAssertEqual(decoded.subscriptionIdentifiers, [1, 2])
     }
 
+    func testMQTT5PublishRejectsTruncatedUserPropertyWithoutCrashing() {
+        let truncatedProperties: [[UInt8]] = [
+            [CocoaMQTTPropertyName.userProperty.rawValue],
+            [CocoaMQTTPropertyName.userProperty.rawValue, 0x00],
+            [CocoaMQTTPropertyName.userProperty.rawValue, 0x00, 0x02],
+            [CocoaMQTTPropertyName.userProperty.rawValue, 0x00, 0x02, 0x6b],
+            [CocoaMQTTPropertyName.userProperty.rawValue, 0x00, 0x01, 0x6b, 0x00],
+            [CocoaMQTTPropertyName.userProperty.rawValue, 0x00, 0x01, 0x6b, 0x00, 0x02, 0x76]
+        ]
+
+        for properties in truncatedProperties {
+            XCTAssertNil(FramePublish(
+                packetFixedHeaderType: FrameType.publish.rawValue,
+                bytes: [0x00, 0x01, 0x74]
+                    + beVariableByteInteger(length: properties.count)
+                    + properties,
+                protocolVersion: .v5
+            ))
+        }
+    }
+
+    func testMQTT5PublishPropertySnapshotDoesNotRetainMutableProperties() throws {
+        var properties: MqttPublishProperties? = MqttPublishProperties(
+            userProperty: ["key": "value"],
+            contentType: "application/test"
+        )
+        weak var releasedProperties = properties
+        var frame = FramePublish(topic: "t/snapshot", payload: [1], qos: .qos1, msgid: 1)
+
+        frame.snapshotPublishProperties(try XCTUnwrap(properties))
+        properties = nil
+
+        XCTAssertNil(releasedProperties)
+        XCTAssertFalse(frame.properties().isEmpty)
+    }
+
     func testPublicDecodersRejectWrongFixedHeaders() {
         XCTAssertFalse(MqttDecodePublish().decodePublish(
             fixedHeader: FrameType.puback.rawValue,
