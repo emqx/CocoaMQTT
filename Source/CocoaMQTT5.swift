@@ -80,11 +80,16 @@ import MqttCocoaAsyncSocket
     ///
     func mqtt5DidDisconnect(_ mqtt5: CocoaMQTT5, withError err: Error?)
 
-    /// Manually validate SSL/TLS server certificate.
+    /// Manually validate an SSL/TLS server certificate.
     ///
-    /// This method will be called if enable  `allowUntrustCACertificate`
+    /// Raw sockets call this when `allowUntrustCACertificate` is enabled.
+    /// WebSockets use it when `mqtt5UrlSession` is not implemented. This delegate
+    /// method takes precedence over the `didReceiveTrust` closure.
     @objc optional func mqtt5(_ mqtt5: CocoaMQTT5, didReceive trust: SecTrust, completionHandler: @escaping (Bool) -> Void)
 
+    /// Handle a URLSession server-trust challenge.
+    ///
+    /// This method takes precedence over the legacy trust delegate and closure.
     @objc optional func mqtt5UrlSession(_ mqtt: CocoaMQTT5, didReceiveTrust trust: SecTrust, didReceiveChallenge challenge: URLAuthenticationChallenge, completionHandler: @escaping (URLSession.AuthChallengeDisposition, URLCredential?) -> Void)
 
     ///
@@ -387,9 +392,11 @@ public class CocoaMQTT5: NSObject, CocoaMQTT5Client {
         set { (self.socket as? CocoaMQTTSocket)?.sslSettings = newValue }
     }
 
-    /// Allow self-signed ca certificate.
+    /// Allow a self-signed CA certificate on the built-in TCP socket.
     ///
-    /// Default is false
+    /// This setting does not apply to `CocoaMQTTWebSocket`. Handle a WebSocket
+    /// trust challenge with `mqtt5UrlSession` or `didReceiveTrust` instead.
+    /// Default is false.
     public var allowUntrustCACertificate: Bool {
         get { return (self.socket as? CocoaMQTTSocket)?.allowUntrustCACertificate ?? false }
         set { (self.socket as? CocoaMQTTSocket)?.allowUntrustCACertificate = newValue }
@@ -423,7 +430,12 @@ public class CocoaMQTT5: NSObject, CocoaMQTT5Client {
     public var didDisconnect: (CocoaMQTT5, Error?) -> Void = { _, _ in }
     public var didDisconnectReasonCode: (CocoaMQTT5, CocoaMQTTDISCONNECTReasonCode) -> Void = { _, _ in }
     public var didAuthReasonCode: (CocoaMQTT5, CocoaMQTTAUTHReasonCode) -> Void = { _, _ in }
-    public var didReceiveTrust: (CocoaMQTT5, SecTrust, @escaping (Bool) -> Swift.Void) -> Void = { _, _, _ in }
+    /// Trust fallback used when neither trust delegate method is implemented.
+    public var didReceiveTrust: (CocoaMQTT5, SecTrust, @escaping (Bool) -> Swift.Void) -> Void {
+        get { customDidReceiveTrust ?? { _, _, _ in } }
+        set { customDidReceiveTrust = newValue }
+    }
+    private var customDidReceiveTrust: ((CocoaMQTT5, SecTrust, @escaping (Bool) -> Swift.Void) -> Void)?
     public var didCompletePublish: (CocoaMQTT5, UInt16, MqttDecodePubComp?) -> Void = { _, _, _ in }
     public var didChangeState: (CocoaMQTT5, CocoaMQTTConnState) -> Void = { _, _ in }
     public var didScheduleReconnect: (CocoaMQTT5, UInt, UInt16) -> Void = { _, _, _ in }
@@ -1143,11 +1155,15 @@ extension CocoaMQTT5 {
 
     func __delegate_queue(
         _ fun: @escaping (CocoaMQTT5) -> Void,
-        completionOnEventLoop: ((CocoaMQTT5) -> Void)? = nil
+        completionOnEventLoop: ((CocoaMQTT5) -> Void)? = nil,
+        onDeallocated: (() -> Void)? = nil
     ) {
         let callbackQueue = delegateQueue
         callbackQueue.async { [weak self] in
-            guard let self = self else { return }
+            guard let self = self else {
+                onDeallocated?()
+                return
+            }
             fun(self)
             guard let completionOnEventLoop = completionOnEventLoop else { return }
             self.eventLoopQueue.async { [weak self] in
@@ -1286,18 +1302,43 @@ extension CocoaMQTT5: CocoaMQTTSocketDelegate {
 
         printDebug("Call the SSL/TLS manually validating function")
 
-        __delegate_queue { mqtt5 in
-            mqtt5.delegate?.mqtt5?(mqtt5, didReceive: trust, completionHandler: completionHandler)
-            mqtt5.didReceiveTrust(mqtt5, trust, completionHandler)
-        }
+        __delegate_queue({ mqtt5 in
+            CocoaMQTTTrustHandling.resolveManualTrust(handler: { completion in
+                if mqtt5.delegate?.mqtt5?(mqtt5, didReceive: trust, completionHandler: completion) != nil {
+                    return true
+                }
+                guard let handler = mqtt5.customDidReceiveTrust else { return false }
+                handler(mqtt5, trust, completion)
+                return true
+            }, completionHandler: completionHandler)
+        }, onDeallocated: { completionHandler(false) })
     }
 
     public func socketUrlSession(_ socket: CocoaMQTTSocketProtocol, didReceiveTrust trust: SecTrust, didReceiveChallenge challenge: URLAuthenticationChallenge, completionHandler: @escaping (URLSession.AuthChallengeDisposition, URLCredential?) -> Void) {
         printDebug("Call the SSL/TLS manually validating function - socketUrlSession")
 
-        __delegate_queue { mqtt5 in
-            mqtt5.delegate?.mqtt5UrlSession?(mqtt5, didReceiveTrust: trust, didReceiveChallenge: challenge, completionHandler: completionHandler)
-        }
+        __delegate_queue({ mqtt5 in
+            CocoaMQTTTrustHandling.resolveURLSessionChallenge(
+                urlSessionHandler: { completion in
+                    mqtt5.delegate?.mqtt5UrlSession?(
+                        mqtt5,
+                        didReceiveTrust: trust,
+                        didReceiveChallenge: challenge,
+                        completionHandler: completion
+                    ) != nil
+                },
+                legacyHandler: { completion in
+                    if mqtt5.delegate?.mqtt5?(mqtt5, didReceive: trust, completionHandler: completion) != nil {
+                        return true
+                    }
+                    guard let handler = mqtt5.customDidReceiveTrust else { return false }
+                    handler(mqtt5, trust, completion)
+                    return true
+                },
+                legacyCredential: URLCredential(trust: trust),
+                completionHandler: completionHandler
+            )
+        }, onDeallocated: { completionHandler(.cancelAuthenticationChallenge, nil) })
     }
 
     // ?

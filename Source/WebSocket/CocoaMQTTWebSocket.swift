@@ -285,12 +285,22 @@ public class CocoaMQTTWebSocket: CocoaMQTTDisconnectAfterWritingSocket {
 
 extension CocoaMQTTWebSocket: CocoaMQTTWebSocketConnectionDelegate {
     public func urlSessionConnection(_ conn: CocoaMQTTWebSocketConnection, didReceiveTrust trust: SecTrust, didReceiveChallenge challenge: URLAuthenticationChallenge, completionHandler: @escaping (URLSession.AuthChallengeDisposition, URLCredential?) -> Void) {
-        if let del = delegate {
-            __delegate_queue {
-                del.socketUrlSession(self, didReceiveTrust: trust, didReceiveChallenge: challenge, completionHandler: completionHandler)
-            }
-        } else {
+        guard let delegate = delegate else {
             completionHandler(.performDefaultHandling, nil)
+            return
+        }
+        let forwardChallenge = { [self] in
+            delegate.socketUrlSession(
+                self,
+                didReceiveTrust: trust,
+                didReceiveChallenge: challenge,
+                completionHandler: completionHandler
+            )
+        }
+        if let delegateQueue = delegateQueue {
+            delegateQueue.async(execute: forwardChallenge)
+        } else {
+            forwardChallenge()
         }
     }
 
@@ -400,11 +410,7 @@ extension CocoaMQTTWebSocket.FoundationConnection: URLSessionWebSocketDelegate {
     public func urlSession(_ session: URLSession, task: URLSessionTask, didReceive challenge: URLAuthenticationChallenge, completionHandler: @escaping (URLSession.AuthChallengeDisposition, URLCredential?) -> Void) {
         queue.async {
             if let trust = challenge.protectionSpace.serverTrust, let delegate = self.delegate {
-                delegate.connection(self, didReceive: trust) { shouldTrust in
-                    completionHandler(shouldTrust ? .performDefaultHandling : .rejectProtectionSpace, nil)
-                }
                 delegate.urlSessionConnection(self, didReceiveTrust: trust, didReceiveChallenge: challenge, completionHandler: completionHandler)
-
             } else {
                 completionHandler(.performDefaultHandling, nil)
             }
