@@ -82,7 +82,7 @@ import MqttCocoaAsyncSocket
 
     /// Manually validate an SSL/TLS server certificate.
     ///
-    /// Raw sockets call this when `allowUntrustCACertificate` is enabled.
+    /// Raw sockets call this when manual server trust evaluation is enabled.
     /// WebSockets use it when `mqtt5UrlSession` is not implemented. This delegate
     /// method takes precedence over the `didReceiveTrust` closure.
     @objc optional func mqtt5(_ mqtt5: CocoaMQTT5, didReceive trust: SecTrust, completionHandler: @escaping (Bool) -> Void)
@@ -392,14 +392,41 @@ public class CocoaMQTT5: NSObject, CocoaMQTT5Client {
         set { (self.socket as? CocoaMQTTSocket)?.sslSettings = newValue }
     }
 
-    /// Allow a self-signed CA certificate on the built-in TCP socket.
+    /// Server name used for TLS identity verification. Defaults to `host`.
+    @objc public var tlsServerName: String? {
+        get { return (self.socket as? CocoaMQTTSocket)?.tlsServerName }
+        set { (self.socket as? CocoaMQTTSocket)?.tlsServerName = newValue }
+    }
+
+    /// Additional CA certificates trusted by the built-in TCP socket.
+    public var trustedServerCertificates: [SecCertificate] {
+        get { return (self.socket as? CocoaMQTTSocket)?.trustedServerCertificates ?? [] }
+        set { (self.socket as? CocoaMQTTSocket)?.trustedServerCertificates = newValue }
+    }
+
+    /// Whether custom CA validation also accepts the system trust store.
+    @objc public var usesSystemTrustStore: Bool {
+        get { return (self.socket as? CocoaMQTTSocket)?.usesSystemTrustStore ?? true }
+        set { (self.socket as? CocoaMQTTSocket)?.usesSystemTrustStore = newValue }
+    }
+
+    /// Enables manual server trust evaluation on the built-in TCP socket.
+    /// Implement the trust delegate method or `didReceiveTrust` closure before
+    /// enabling this property.
+    @objc public var manuallyEvaluateTrust: Bool {
+        get { return (self.socket as? CocoaMQTTSocket)?.manuallyEvaluateTrust ?? false }
+        set { (self.socket as? CocoaMQTTSocket)?.manuallyEvaluateTrust = newValue }
+    }
+
+    /// Legacy name for enabling manual trust evaluation.
     ///
     /// This setting does not apply to `CocoaMQTTWebSocket`. Handle a WebSocket
     /// trust challenge with `mqtt5UrlSession` or `didReceiveTrust` instead.
-    /// Default is false.
+    /// Default is false. Setting this does not accept a certificate by itself.
+    @available(*, deprecated, renamed: "manuallyEvaluateTrust")
     public var allowUntrustCACertificate: Bool {
-        get { return (self.socket as? CocoaMQTTSocket)?.allowUntrustCACertificate ?? false }
-        set { (self.socket as? CocoaMQTTSocket)?.allowUntrustCACertificate = newValue }
+        get { return manuallyEvaluateTrust }
+        set { manuallyEvaluateTrust = newValue }
     }
 
     /// The subscribed topics in current communication
@@ -1310,6 +1337,11 @@ extension CocoaMQTT5: CocoaMQTTSocketDelegate {
                 guard let handler = mqtt5.customDidReceiveTrust else { return false }
                 handler(mqtt5, trust, completion)
                 return true
+            }, fallback: { completion in
+                (socket as? CocoaMQTTSocket)?.evaluateServerTrust(
+                    trust,
+                    completionHandler: completion
+                ) ?? false
             }, completionHandler: completionHandler)
         }, onDeallocated: { completionHandler(false) })
     }

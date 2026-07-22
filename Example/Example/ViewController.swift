@@ -177,7 +177,7 @@ class ViewController: UIViewController {
             mqtt!.keepAlive = 60
             mqtt!.delegate = self
             mqtt!.enableSSL = true
-            mqtt!.allowUntrustCACertificate = true
+            mqtt!.manuallyEvaluateTrust = true
 
             let clientCertArray = getClientCertFromP12File(certName: "client-keycert", certPassword: "MySecretPassword")
 
@@ -206,7 +206,7 @@ class ViewController: UIViewController {
             mqtt5!.delegate = self
 
             mqtt5!.enableSSL = true
-            mqtt5!.allowUntrustCACertificate = true
+            mqtt5!.manuallyEvaluateTrust = true
             let clientCertArray = getClientCertFromP12File(certName: "client-keycert", certPassword: "MySecretPassword")
             var sslSettings: [String: NSObject] = [:]
             sslSettings[kCFStreamSSLCertificates as String] = clientCertArray
@@ -575,5 +575,4 @@ extension Optional {
         return ""
     }
 }
-
 

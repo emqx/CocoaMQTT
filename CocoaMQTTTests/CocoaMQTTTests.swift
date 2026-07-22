@@ -266,7 +266,7 @@ class CocoaMQTTTests: XCTestCase {
         mqtt.delegate = caller
         mqtt.logLevel = .error
         mqtt.enableSSL = true
-        mqtt.allowUntrustCACertificate = true
+        mqtt.manuallyEvaluateTrust = true
 
         _ = mqtt.connect()
         wait_for { caller.isConnected }
@@ -285,7 +285,7 @@ class CocoaMQTTTests: XCTestCase {
         mqtt.delegate = caller
         mqtt.logLevel = .error
         mqtt.enableSSL = true
-        mqtt.allowUntrustCACertificate = true
+        mqtt.manuallyEvaluateTrust = true
 
         let clientCertArray = getClientCertFromP12File(certName: "client-keycert", certPassword: "MySecretPassword")
 
