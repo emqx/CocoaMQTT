@@ -285,12 +285,17 @@ public class CocoaMQTTWebSocket: CocoaMQTTDisconnectAfterWritingSocket {
 
 extension CocoaMQTTWebSocket: CocoaMQTTWebSocketConnectionDelegate {
     public func urlSessionConnection(_ conn: CocoaMQTTWebSocketConnection, didReceiveTrust trust: SecTrust, didReceiveChallenge challenge: URLAuthenticationChallenge, completionHandler: @escaping (URLSession.AuthChallengeDisposition, URLCredential?) -> Void) {
-        if let del = delegate {
-            __delegate_queue {
-                del.socketUrlSession(self, didReceiveTrust: trust, didReceiveChallenge: challenge, completionHandler: completionHandler)
-            }
-        } else {
+        guard let delegate = delegate, let delegateQueue = delegateQueue else {
             completionHandler(.performDefaultHandling, nil)
+            return
+        }
+        delegateQueue.async { [self] in
+            delegate.socketUrlSession(
+                self,
+                didReceiveTrust: trust,
+                didReceiveChallenge: challenge,
+                completionHandler: completionHandler
+            )
         }
     }
 

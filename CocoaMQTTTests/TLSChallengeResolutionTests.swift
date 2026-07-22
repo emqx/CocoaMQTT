@@ -58,6 +58,44 @@ final class TLSChallengeResolutionTests: XCTestCase {
         }
     }
 
+    private final class MQTT5DelegateStub: NSObject, CocoaMQTT5Delegate {
+        var legacyTrustCallCount = 0
+        var urlSessionTrustCallCount = 0
+
+        func mqtt5(_ mqtt5: CocoaMQTT5, didConnectAck ack: CocoaMQTTCONNACKReasonCode, connAckData: MqttDecodeConnAck?) {}
+        func mqtt5(_ mqtt5: CocoaMQTT5, didPublishMessage message: CocoaMQTT5Message, id: UInt16) {}
+        func mqtt5(_ mqtt5: CocoaMQTT5, didPublishAck id: UInt16, pubAckData: MqttDecodePubAck?) {}
+        func mqtt5(_ mqtt5: CocoaMQTT5, didPublishRec id: UInt16, pubRecData: MqttDecodePubRec?) {}
+        func mqtt5(_ mqtt5: CocoaMQTT5, didReceiveMessage message: CocoaMQTT5Message, id: UInt16, publishData: MqttDecodePublish?) {}
+        func mqtt5(_ mqtt5: CocoaMQTT5, didSubscribeTopics success: NSDictionary, failed: [String], subAckData: MqttDecodeSubAck?) {}
+        func mqtt5(_ mqtt5: CocoaMQTT5, didUnsubscribeTopics topics: [String], unsubAckData: MqttDecodeUnsubAck?) {}
+        func mqtt5(_ mqtt5: CocoaMQTT5, didReceiveDisconnectReasonCode reasonCode: CocoaMQTTDISCONNECTReasonCode) {}
+        func mqtt5(_ mqtt5: CocoaMQTT5, didReceiveAuthReasonCode reasonCode: CocoaMQTTAUTHReasonCode) {}
+        func mqtt5DidPing(_ mqtt5: CocoaMQTT5) {}
+        func mqtt5DidReceivePong(_ mqtt5: CocoaMQTT5) {}
+        func mqtt5DidDisconnect(_ mqtt5: CocoaMQTT5, withError err: Error?) {}
+
+        func mqtt5(
+            _ mqtt5: CocoaMQTT5,
+            didReceive trust: SecTrust,
+            completionHandler: @escaping (Bool) -> Void
+        ) {
+            legacyTrustCallCount += 1
+            completionHandler(false)
+        }
+
+        func mqtt5UrlSession(
+            _ mqtt5: CocoaMQTT5,
+            didReceiveTrust trust: SecTrust,
+            didReceiveChallenge challenge: URLAuthenticationChallenge,
+            completionHandler: @escaping CocoaMQTTTrustHandling.URLSessionCompletion
+        ) {
+            urlSessionTrustCallCount += 1
+            completionHandler(.performDefaultHandling, nil)
+            completionHandler(.cancelAuthenticationChallenge, nil)
+        }
+    }
+
     func testManualTrustDefaultsToRejecting() {
         var decisions = [Bool]()
 
@@ -233,6 +271,36 @@ final class TLSChallengeResolutionTests: XCTestCase {
         let socket = SocketStub()
         let mqtt = CocoaMQTT(clientID: "tls-priority-311", socket: socket)
         let delegate = MQTT311DelegateStub()
+        let completed = expectation(description: "challenge completed")
+        var closureCalled = false
+        var completionCount = 0
+        mqtt.delegate = delegate
+        mqtt.didReceiveTrust = { _, _, completion in
+            closureCalled = true
+            completion(true)
+        }
+
+        mqtt.socketUrlSession(
+            socket,
+            didReceiveTrust: try makeTrust(),
+            didReceiveChallenge: makeChallenge()
+        ) { disposition, _ in
+            completionCount += 1
+            XCTAssertEqual(disposition, .performDefaultHandling)
+            completed.fulfill()
+        }
+
+        wait(for: [completed], timeout: 1)
+        XCTAssertEqual(completionCount, 1)
+        XCTAssertEqual(delegate.urlSessionTrustCallCount, 1)
+        XCTAssertEqual(delegate.legacyTrustCallCount, 0)
+        XCTAssertFalse(closureCalled)
+    }
+
+    func testMQTT5URLSessionDelegateHasExclusivePriorityAndCompletesOnce() throws {
+        let socket = SocketStub()
+        let mqtt = CocoaMQTT5(clientID: "tls-priority-5", socket: socket)
+        let delegate = MQTT5DelegateStub()
         let completed = expectation(description: "challenge completed")
         var closureCalled = false
         var completionCount = 0

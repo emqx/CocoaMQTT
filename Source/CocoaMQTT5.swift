@@ -388,9 +388,11 @@ public class CocoaMQTT5: NSObject, CocoaMQTT5Client {
         set { (self.socket as? CocoaMQTTSocket)?.sslSettings = newValue }
     }
 
-    /// Allow self-signed ca certificate.
+    /// Allow a self-signed CA certificate on the built-in TCP socket.
     ///
-    /// Default is false
+    /// This setting does not apply to `CocoaMQTTWebSocket`. Handle a WebSocket
+    /// trust challenge with `mqtt5UrlSession` or `didReceiveTrust` instead.
+    /// Default is false.
     public var allowUntrustCACertificate: Bool {
         get { return (self.socket as? CocoaMQTTSocket)?.allowUntrustCACertificate ?? false }
         set { (self.socket as? CocoaMQTTSocket)?.allowUntrustCACertificate = newValue }
