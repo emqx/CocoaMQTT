@@ -4,6 +4,12 @@ import XCTest
 
 final class CocoaMQTT5DisconnectReasonStateTests: XCTestCase {
 
+    private func installCallbackQueue(on mqtt5: CocoaMQTT5) -> DispatchQueue {
+        let queue = DispatchQueue(label: "tests.disconnect-reason.\(UUID().uuidString)")
+        mqtt5.delegateQueue = queue
+        return queue
+    }
+
     private final class SocketSpy: CocoaMQTTSocketProtocol {
         var enableSSL: Bool = false
         private(set) var disconnectCount = 0
@@ -61,6 +67,7 @@ final class CocoaMQTT5DisconnectReasonStateTests: XCTestCase {
         let socket = SocketSpy()
         let delegate = DelegateSpy()
         let mqtt5 = CocoaMQTT5(clientID: "manual-disconnect-reason-\(UUID().uuidString)", socket: socket)
+        let callbackQueue = installCallbackQueue(on: mqtt5)
         mqtt5.delegate = delegate
 
         mqtt5.disconnect()
@@ -70,6 +77,7 @@ final class CocoaMQTT5DisconnectReasonStateTests: XCTestCase {
         XCTAssertTrue(socket.writes.contains { $0.first == FrameType.disconnect.rawValue })
 
         mqtt5.socketDidDisconnect(socket, withError: nil)
+        callbackQueue.sync {}
 
         XCTAssertEqual(delegate.disconnectSnapshots.count, 1)
         XCTAssertEqual(delegate.disconnectSnapshots[0].source, .local)
@@ -83,10 +91,12 @@ final class CocoaMQTT5DisconnectReasonStateTests: XCTestCase {
         let socket = SocketSpy()
         let delegate = DelegateSpy()
         let mqtt5 = CocoaMQTT5(clientID: "manual-custom-disconnect-reason-\(UUID().uuidString)", socket: socket)
+        let callbackQueue = installCallbackQueue(on: mqtt5)
         mqtt5.delegate = delegate
 
         mqtt5.disconnect(reasonCode: .disconnectWithWillMessage, userProperties: ["reason": "manual"])
         mqtt5.socketDidDisconnect(socket, withError: nil)
+        callbackQueue.sync {}
 
         XCTAssertEqual(delegate.disconnectSnapshots.count, 1)
         XCTAssertEqual(delegate.disconnectSnapshots[0].source, .local)
@@ -98,10 +108,12 @@ final class CocoaMQTT5DisconnectReasonStateTests: XCTestCase {
         let socket = SocketSpy()
         let delegate = DelegateSpy()
         let mqtt5 = CocoaMQTT5(clientID: "manual-disconnect-error-\(UUID().uuidString)", socket: socket)
+        let callbackQueue = installCallbackQueue(on: mqtt5)
         mqtt5.delegate = delegate
 
         mqtt5.disconnect()
         mqtt5.socketDidDisconnect(socket, withError: CocoaMQTTError.writeTimeout)
+        callbackQueue.sync {}
 
         XCTAssertEqual(delegate.disconnectSnapshots.count, 1)
         XCTAssertNil(delegate.disconnectSnapshots[0].source)
@@ -114,6 +126,7 @@ final class CocoaMQTT5DisconnectReasonStateTests: XCTestCase {
         let socket = SocketSpy()
         let delegate = DelegateSpy()
         let mqtt5 = CocoaMQTT5(clientID: "remote-disconnect-reason-\(UUID().uuidString)", socket: socket)
+        let callbackQueue = installCallbackQueue(on: mqtt5)
         let reader = CocoaMQTTReader(socket: socket, delegate: nil, protocolVersion: .v5)
         let frame = FrameDisconnect(
             packetFixedHeaderType: FrameType.disconnect.rawValue,
@@ -126,6 +139,7 @@ final class CocoaMQTT5DisconnectReasonStateTests: XCTestCase {
 
         mqtt5.didReceive(reader, disconnect: frame!)
         mqtt5.socketDidDisconnect(socket, withError: nil)
+        callbackQueue.sync {}
 
         XCTAssertEqual(delegate.receivedDisconnectReasonCodes, [.serverBusy])
         XCTAssertEqual(delegate.disconnectSnapshots.count, 1)
@@ -140,6 +154,7 @@ final class CocoaMQTT5DisconnectReasonStateTests: XCTestCase {
         let socket = SocketSpy()
         let delegate = DelegateSpy()
         let mqtt5 = CocoaMQTT5(clientID: "remote-disconnect-error-\(UUID().uuidString)", socket: socket)
+        let callbackQueue = installCallbackQueue(on: mqtt5)
         let reader = CocoaMQTTReader(socket: socket, delegate: nil, protocolVersion: .v5)
         let frame = FrameDisconnect(
             packetFixedHeaderType: FrameType.disconnect.rawValue,
@@ -152,6 +167,7 @@ final class CocoaMQTT5DisconnectReasonStateTests: XCTestCase {
 
         mqtt5.didReceive(reader, disconnect: frame!)
         mqtt5.socketDidDisconnect(socket, withError: CocoaMQTTError.readTimeout)
+        callbackQueue.sync {}
 
         XCTAssertEqual(delegate.receivedDisconnectReasonCodes, [.serverBusy])
         XCTAssertEqual(delegate.disconnectSnapshots.count, 1)
@@ -165,9 +181,11 @@ final class CocoaMQTT5DisconnectReasonStateTests: XCTestCase {
         let socket = SocketSpy()
         let delegate = DelegateSpy()
         let mqtt5 = CocoaMQTT5(clientID: "clean-close-no-reason-\(UUID().uuidString)", socket: socket)
+        let callbackQueue = installCallbackQueue(on: mqtt5)
         mqtt5.delegate = delegate
 
         mqtt5.socketDidDisconnect(socket, withError: nil)
+        callbackQueue.sync {}
 
         XCTAssertEqual(delegate.disconnectSnapshots.count, 1)
         XCTAssertNil(delegate.disconnectSnapshots[0].source)

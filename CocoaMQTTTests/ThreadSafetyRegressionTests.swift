@@ -195,6 +195,24 @@ final class ThreadSafetyRegressionTests: XCTestCase {
         XCTAssertTrue([.connecting, .connected, .disconnected].contains(mqtt5.connState))
     }
 
+    func testCocoaMQTT311ConnStateConcurrentAccess() {
+        let mqtt = CocoaMQTT(clientID: "thread-safe-connstate-311-\(UUID().uuidString)")
+        let queue = DispatchQueue(label: "tests.threadsafe.connstate-311", attributes: .concurrent)
+        let group = DispatchGroup()
+
+        for idx in 0..<300 {
+            group.enter()
+            queue.async {
+                mqtt.connState = (idx % 2 == 0) ? .connecting : .connected
+                _ = mqtt.connState
+                group.leave()
+            }
+        }
+
+        XCTAssertEqual(group.wait(timeout: .now() + 10), .success)
+        XCTAssertTrue([.connecting, .connected].contains(mqtt.connState))
+    }
+
     func testCocoaMQTT5ConnStateCallbacksPreserveWrittenStates() {
         let mqtt5 = CocoaMQTT5(clientID: "connstate-callbacks-\(UUID().uuidString)")
         let callbackQueue = DispatchQueue(label: "tests.threadsafe.connstate-callbacks")
