@@ -2,7 +2,7 @@
 
 set -eu
 
-repository_root=$(CDPATH= cd -- "$(dirname -- "$0")/.." && pwd)
+repository_root=$(CDPATH= cd "$(dirname "$0")/.." && pwd)
 
 exec swift package --package-path "$repository_root/Tools" \
     plugin --allow-writing-to-package-directory \
