@@ -682,7 +682,6 @@ public class CocoaMQTT5: NSObject, CocoaMQTT5Client {
         clientStateLock.unlock()
         resetDisconnectReasonState()
         sessionExpiryController?.prepareStoredSessionForConnect()
-        socketDelegateProxy.delegate = self
         socket.setDelegate(socketDelegateProxy, delegateQueue: eventLoopQueue)
         reader = CocoaMQTTReader(
             socket: socket,

@@ -571,7 +571,6 @@ public class CocoaMQTT: NSObject, CocoaMQTTClient {
         markStoredPacketIdentifiersInUse()
         deliver.beginConnection()
         clientStateLock.unlock()
-        socketDelegateProxy.delegate = self
         socket.setDelegate(socketDelegateProxy, delegateQueue: eventLoopQueue)
         reader = CocoaMQTTReader(
             socket: socket,
