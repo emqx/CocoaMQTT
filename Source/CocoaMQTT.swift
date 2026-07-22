@@ -73,9 +73,10 @@ import MqttCocoaAsyncSocket
     ///
     func mqttDidDisconnect(_ mqtt: CocoaMQTT, withError err: Error?)
 
-    /// Manually validate SSL/TLS server certificate.
+    /// Manually validate an SSL/TLS server certificate.
     ///
-    /// This method will be called if enable  `allowUntrustCACertificate`
+    /// Raw sockets call this when `allowUntrustCACertificate` is enabled.
+    /// WebSockets use it as a fallback when `mqttUrlSession` is not implemented.
     @objc optional func mqtt(_ mqtt: CocoaMQTT, didReceive trust: SecTrust, completionHandler: @escaping (Bool) -> Void)
 
     @objc optional func mqttUrlSession(_ mqtt: CocoaMQTT, didReceiveTrust trust: SecTrust, didReceiveChallenge challenge: URLAuthenticationChallenge, completionHandler: @escaping (URLSession.AuthChallengeDisposition, URLCredential?) -> Void)
@@ -396,7 +397,11 @@ public class CocoaMQTT: NSObject, CocoaMQTTClient {
     public var didPing: (CocoaMQTT) -> Void = { _ in }
     public var didReceivePong: (CocoaMQTT) -> Void = { _ in }
     public var didDisconnect: (CocoaMQTT, Error?) -> Void = { _, _ in }
-    public var didReceiveTrust: (CocoaMQTT, SecTrust, @escaping (Bool) -> Swift.Void) -> Void = { _, _, _ in }
+    public var didReceiveTrust: (CocoaMQTT, SecTrust, @escaping (Bool) -> Swift.Void) -> Void {
+        get { customDidReceiveTrust ?? { _, _, _ in } }
+        set { customDidReceiveTrust = newValue }
+    }
+    private var customDidReceiveTrust: ((CocoaMQTT, SecTrust, @escaping (Bool) -> Swift.Void) -> Void)?
     public var didCompletePublish: (CocoaMQTT, UInt16) -> Void = { _, _ in }
     public var didChangeState: (CocoaMQTT, CocoaMQTTConnState) -> Void = { _, _ in }
     public var didScheduleReconnect: (CocoaMQTT, UInt, UInt16) -> Void = { _, _, _ in }
@@ -986,8 +991,14 @@ extension CocoaMQTT: CocoaMQTTSocketDelegate {
         printDebug("Call the SSL/TLS manually validating function")
 
         __delegate_queue { mqtt in
-            mqtt.delegate?.mqtt?(mqtt, didReceive: trust, completionHandler: completionHandler)
-            mqtt.didReceiveTrust(mqtt, trust, completionHandler)
+            CocoaMQTTTrustHandling.resolveManualTrust(handler: { completion in
+                if mqtt.delegate?.mqtt?(mqtt, didReceive: trust, completionHandler: completion) != nil {
+                    return true
+                }
+                guard let handler = mqtt.customDidReceiveTrust else { return false }
+                handler(mqtt, trust, completion)
+                return true
+            }, completionHandler: completionHandler)
         }
     }
 
@@ -995,7 +1006,26 @@ extension CocoaMQTT: CocoaMQTTSocketDelegate {
         printDebug("Call the SSL/TLS manually validating function - socketUrlSession")
 
         __delegate_queue { mqtt in
-            mqtt.delegate?.mqttUrlSession?(mqtt, didReceiveTrust: trust, didReceiveChallenge: challenge, completionHandler: completionHandler)
+            CocoaMQTTTrustHandling.resolveURLSessionChallenge(
+                urlSessionHandler: { completion in
+                    mqtt.delegate?.mqttUrlSession?(
+                        mqtt,
+                        didReceiveTrust: trust,
+                        didReceiveChallenge: challenge,
+                        completionHandler: completion
+                    ) != nil
+                },
+                legacyHandler: { completion in
+                    if mqtt.delegate?.mqtt?(mqtt, didReceive: trust, completionHandler: completion) != nil {
+                        return true
+                    }
+                    guard let handler = mqtt.customDidReceiveTrust else { return false }
+                    handler(mqtt, trust, completion)
+                    return true
+                },
+                legacyCredential: URLCredential(trust: trust),
+                completionHandler: completionHandler
+            )
         }
     }
 

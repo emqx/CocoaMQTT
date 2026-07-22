@@ -400,11 +400,7 @@ extension CocoaMQTTWebSocket.FoundationConnection: URLSessionWebSocketDelegate {
     public func urlSession(_ session: URLSession, task: URLSessionTask, didReceive challenge: URLAuthenticationChallenge, completionHandler: @escaping (URLSession.AuthChallengeDisposition, URLCredential?) -> Void) {
         queue.async {
             if let trust = challenge.protectionSpace.serverTrust, let delegate = self.delegate {
-                delegate.connection(self, didReceive: trust) { shouldTrust in
-                    completionHandler(shouldTrust ? .performDefaultHandling : .rejectProtectionSpace, nil)
-                }
                 delegate.urlSessionConnection(self, didReceiveTrust: trust, didReceiveChallenge: challenge, completionHandler: completionHandler)
-
             } else {
                 completionHandler(.performDefaultHandling, nil)
             }

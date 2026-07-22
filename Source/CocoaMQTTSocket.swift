@@ -8,6 +8,70 @@
 import Foundation
 import MqttCocoaAsyncSocket
 
+/// Selects one trust callback and prevents competing callbacks from resolving
+/// the same transport challenge more than once.
+enum CocoaMQTTTrustHandling {
+    typealias URLSessionCompletion = (URLSession.AuthChallengeDisposition, URLCredential?) -> Void
+
+    private final class CompletionOnce<Value> {
+        private let lock = NSLock()
+        private var completion: ((Value) -> Void)?
+
+        init(_ completion: @escaping (Value) -> Void) {
+            self.completion = completion
+        }
+
+        func callAsFunction(_ value: Value) {
+            lock.lock()
+            guard let completion = completion else {
+                lock.unlock()
+                return
+            }
+            self.completion = nil
+            lock.unlock()
+            completion(value)
+        }
+    }
+
+    static func resolveManualTrust(
+        handler: (@escaping (Bool) -> Void) -> Bool,
+        completionHandler: @escaping (Bool) -> Void
+    ) {
+        let completion = CompletionOnce(completionHandler)
+        if !handler({ completion($0) }) {
+            completion(false)
+        }
+    }
+
+    static func resolveURLSessionChallenge(
+        urlSessionHandler: (@escaping URLSessionCompletion) -> Bool,
+        legacyHandler: (@escaping (Bool) -> Void) -> Bool,
+        legacyCredential: URLCredential,
+        completionHandler: @escaping URLSessionCompletion
+    ) {
+        let completion = CompletionOnce<(URLSession.AuthChallengeDisposition, URLCredential?)> {
+            completionHandler($0.0, $0.1)
+        }
+        let urlSessionCompletion: URLSessionCompletion = {
+            completion(($0, $1))
+        }
+
+        if urlSessionHandler(urlSessionCompletion) {
+            return
+        }
+        if legacyHandler({ accepted in
+            // A legacy `true` is an explicit trust decision, not a request to
+            // repeat the system validation that may already have failed.
+            completion(accepted
+                ? (.useCredential, legacyCredential)
+                : (.rejectProtectionSpace, nil))
+        }) {
+            return
+        }
+        completion((.performDefaultHandling, nil))
+    }
+}
+
 // MARK: - Interfaces
 
 public protocol CocoaMQTTSocketDelegate: AnyObject {

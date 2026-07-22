@@ -234,26 +234,10 @@ class WebSocketManager {
 }
 
 extension WebSocketManager: CocoaMQTTDelegate {
-    
-    func mqtt(_ mqtt: CocoaMQTT, didReceive trust: SecTrust, completionHandler: @escaping (Bool) -> Void) {
-        // Implement your custom SSL validation logic here.
-        // For example, you might want to always trust the certificate for testing purposes:
-        completionHandler(true)
-    }
-    
-    func mqtt(_ mqtt: CocoaMQTT, didReceive challenge: URLAuthenticationChallenge, completionHandler: @escaping (URLSession.AuthChallengeDisposition, URLCredential?) -> Void) {
-        if challenge.protectionSpace.authenticationMethod == NSURLAuthenticationMethodServerTrust {
-            if let serverTrust = challenge.protectionSpace.serverTrust {
-                completionHandler(.useCredential, URLCredential(trust: serverTrust))
-                return
-            }
-        }
-        completionHandler(.performDefaultHandling, nil)
-    }
-    
+
+    // Optional. Omit this method to use the system certificate validation.
     func mqttUrlSession(_ mqtt: CocoaMQTT, didReceiveTrust trust: SecTrust, didReceiveChallenge challenge: URLAuthenticationChallenge, completionHandler: @escaping (URLSession.AuthChallengeDisposition, URLCredential?) -> Void) {
-        
-        print("\(#function), \n result:- \(challenge.debugDescription)")
+        completionHandler(.performDefaultHandling, nil)
     }
     
     func mqtt(_ mqtt: CocoaMQTT, didPublishAck id: UInt16) {
