@@ -32,6 +32,8 @@ struct MQTTAutoReconnectDisconnectContext {
 
 /// Owns protocol-neutral reconnect state for both MQTT 3.1.1 and MQTT 5 clients.
 final class MQTTAutoReconnectController {
+    private static let minimumFailedStartRetryInterval: UInt16 = 1
+
     private enum PendingAttempt: Equatable {
         case none
         case unprepared
@@ -346,7 +348,7 @@ final class MQTTAutoReconnectController {
             // retrying a synchronously rejected connection without delay forms
             // a hot loop. Keep the configured backoff unchanged and apply the
             // floor only to this failed-start retry.
-            return scheduleLocked(after: max(currentInterval, 1))
+            return scheduleLocked(after: max(currentInterval, Self.minimumFailedStartRetryInterval))
         case .paused:
             attemptState = .paused(.unprepared)
             return nil
