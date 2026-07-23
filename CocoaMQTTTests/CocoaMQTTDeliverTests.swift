@@ -129,6 +129,8 @@ class CocoaMQTTDeliverTests: XCTestCase {
         for i in 0 ..< sents.count {
             assertEqual(caller.frames[i], sents[i])
         }
+        XCTAssertTrue((caller.frames[1] as? FramePublish)?.dup == true)
+        XCTAssertEqual(caller.frames[4].packetFixedHeaderType, 0x62)
     }
 
     func testRedeliverTimerDriftDoesNotSkipRetry() {
@@ -163,6 +165,54 @@ class CocoaMQTTDeliverTests: XCTestCase {
             assertEqual(publish, frame)
             XCTAssertTrue(publish.dup)
         }
+    }
+
+    func testMQTT5DoesNotRedeliverPublishWhileConnectionRemainsOpen() {
+        let caller = Caller()
+        let deliver = CocoaMQTTDeliver()
+        let frame = FramePublish(topic: "t/mqtt5", payload: [0x01], qos: .qos1, msgid: 43)
+
+        deliver.protocolVersion = .v5
+        deliver.retryTimeInterval = 1
+        deliver.delegate = caller
+        XCTAssertTrue(deliver.add(frame))
+        deliver.t_waitUntilIdle()
+        caller.delegateQueue.sync {}
+        caller.reset()
+
+        XCTAssertTrue(deliver.t_setInflightNextRetryTime(0, forMsgid: frame.msgid))
+        deliver.t_redeliver(atUptimeNanoseconds: UInt64.max)
+        deliver.t_waitUntilIdle()
+        caller.delegateQueue.sync {}
+
+        XCTAssertTrue(caller.frames.isEmpty)
+        XCTAssertEqual(deliver.t_inflightFrames().count, 1)
+    }
+
+    func testMQTT5DoesNotRedeliverPubrelWhileConnectionRemainsOpen() {
+        let caller = Caller()
+        let deliver = CocoaMQTTDeliver()
+        let publish = FramePublish(topic: "t/mqtt5-qos2", payload: [0x02], qos: .qos2, msgid: 44)
+
+        deliver.protocolVersion = .v5
+        deliver.retryTimeInterval = 1
+        deliver.delegate = caller
+        XCTAssertTrue(deliver.add(publish))
+        deliver.t_waitUntilIdle()
+        deliver.ack(by: FramePubRec(msgid: publish.msgid))
+        deliver.t_waitUntilIdle()
+        caller.delegateQueue.sync {}
+        caller.reset()
+
+        XCTAssertTrue(deliver.t_setInflightNextRetryTime(0, forMsgid: publish.msgid))
+        deliver.t_redeliver(atUptimeNanoseconds: UInt64.max)
+        deliver.t_waitUntilIdle()
+        caller.delegateQueue.sync {}
+
+        XCTAssertTrue(caller.frames.isEmpty)
+        let inflight = deliver.t_inflightFrames()
+        XCTAssertEqual(inflight.count, 1)
+        XCTAssertTrue(inflight.first is FramePubRel)
     }
 
     func testRetryIntervalNanosecondsClampsNonPositiveValues() {

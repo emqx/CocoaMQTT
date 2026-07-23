@@ -218,7 +218,9 @@ public class CocoaMQTT5: NSObject, CocoaMQTT5Client {
     // deliver
     private var deliver = CocoaMQTTDeliver()
 
-    /// Re-deliver the un-acked messages
+    /// Retained for source compatibility. MQTT 5 retransmits unacknowledged
+    /// messages only when a persistent session is resumed, so this value does
+    /// not schedule retries while a connection remains open.
     public var deliverTimeout: Double {
         get { return deliver.retryTimeInterval }
         set { deliver.retryTimeInterval = newValue }

@@ -353,8 +353,11 @@ extension CocoaMQTTDeliver {
                 consumesSendQuota: frame is FramePublish
             ))
 
-            // Start a retry timer for resending it if it not receive PUBACK or PUBREC
-            if awaitingTimer == nil {
+            // MQTT 3.1.1 permits retrying an unacknowledged packet on the
+            // current connection. MQTT 5 only permits retransmission when a
+            // persistent session is resumed; that path is handled by session
+            // recovery after CONNACK.
+            if protocolVersion == .v311, awaitingTimer == nil {
                 awaitingTimer = CocoaMQTTTimer.every(retryTimeInterval / 1000.0, name: "awaitingTimer") { [weak self] in
                     guard let self = self else { return }
                     self.deliverQueue.async {
@@ -367,6 +370,10 @@ extension CocoaMQTTDeliver {
 
     /// Attempt to redeliver in-flight messages
     private func redeliver(nowUptimeNs: UInt64 = DispatchTime.now().uptimeNanoseconds) {
+        guard protocolVersion == .v311 else {
+            awaitingTimer = nil
+            return
+        }
         guard transportEnabled else { return }
         if isInflightEmpty {
             // Revoke the awaiting timer
@@ -375,7 +382,10 @@ extension CocoaMQTTDeliver {
         }
         for (idx, frame) in inflight.enumerated() where nowUptimeNs >= frame.nextRetryAtUptimeNs {
             var duplicatedFrame = frame
-            duplicatedFrame.frame.dup = true
+            if var publish = duplicatedFrame.frame as? FramePublish {
+                publish.dup = true
+                duplicatedFrame.frame = publish
+            }
             duplicatedFrame.nextRetryAtUptimeNs = nextRetryDeadline(after: frame.nextRetryAtUptimeNs, nowUptimeNs: nowUptimeNs)
 
             inflight[idx] = duplicatedFrame
