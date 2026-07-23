@@ -238,6 +238,8 @@ final class MQTTAutoReconnectController {
             return nil
         }
 
+        // An unexpected disconnect owns this pending work until the socket
+        // callback confirms that transport cleanup has completed.
         if var pendingReconnect = pendingReconnect {
             pendingReconnect.pendingAttempt = pendingReconnect.pendingAttempt.merging(pausedAttempt)
             pendingReconnect.delay = .immediate
