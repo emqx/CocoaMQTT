@@ -26,6 +26,7 @@ private struct CocoaMQTTReconnectScheduler: MQTTReconnectScheduling {
 }
 
 struct MQTTAutoReconnectDisconnectContext {
+    fileprivate let epoch: UInt64
     fileprivate let token: UInt64
     let suppressesReconnect: Bool
 }
@@ -93,9 +94,8 @@ final class MQTTAutoReconnectController {
     private var attemptState = AttemptState.idle
     private var disconnectIntent = DisconnectIntent.none
     private var pendingReconnect: PendingReconnect?
+    private var disconnectEpoch: UInt64 = 0
     private var nextDisconnectToken: UInt64 = 0
-    // Tokens survive reconnect-cycle resets so an older callback cannot unblock
-    // or consume a newer lifecycle's pending reconnect.
     private var inFlightDisconnectCallbacks = Set<UInt64>()
 
     init(
@@ -184,7 +184,7 @@ final class MQTTAutoReconnectController {
             return false
         }
         disconnectIntent = .expected(requestPending: true)
-        pendingReconnect = nil
+        resetReconnectCycleLocked()
         return true
     }
 
@@ -288,7 +288,11 @@ final class MQTTAutoReconnectController {
         nextDisconnectToken &+= 1
         let token = nextDisconnectToken
         inFlightDisconnectCallbacks.insert(token)
-        return MQTTAutoReconnectDisconnectContext(token: token, suppressesReconnect: suppressesReconnect)
+        return MQTTAutoReconnectDisconnectContext(
+            epoch: disconnectEpoch,
+            token: token,
+            suppressesReconnect: suppressesReconnect
+        )
     }
 
     /// Must be called after the public disconnect callbacks have completed.
@@ -298,7 +302,8 @@ final class MQTTAutoReconnectController {
         lock.lock()
         defer { lock.unlock() }
 
-        guard inFlightDisconnectCallbacks.remove(context.token) != nil else { return nil }
+        guard context.epoch == disconnectEpoch,
+              inFlightDisconnectCallbacks.remove(context.token) != nil else { return nil }
         guard inFlightDisconnectCallbacks.isEmpty else { return nil }
         guard enabled else {
             resetReconnectCycleLocked()
@@ -320,6 +325,25 @@ final class MQTTAutoReconnectController {
             }
             let delay: UInt16? = pendingReconnect.delay == .immediate ? 0 : nil
             return scheduleLocked(after: delay)
+        }
+    }
+
+    /// Restores backoff after the transport rejects a reconnect synchronously.
+    func reconnectAttemptFailedToStart() -> CocoaMQTTAutoReconnectSchedule? {
+        lock.lock()
+        defer { lock.unlock() }
+
+        guard enabled else { return nil }
+        switch attemptState {
+        case .connecting:
+            attemptState = .idle
+            prepareAttemptLocked()
+            return scheduleLocked(after: nil)
+        case .paused:
+            attemptState = .paused(.unprepared)
+            return nil
+        case .idle, .scheduled:
+            return nil
         }
     }
 
@@ -398,6 +422,8 @@ final class MQTTAutoReconnectController {
         if case .unexpected = disconnectIntent {
             disconnectIntent = .none
         }
+        disconnectEpoch &+= 1
+        inFlightDisconnectCallbacks.removeAll(keepingCapacity: true)
         generation &+= 1
     }
 }

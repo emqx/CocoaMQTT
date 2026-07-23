@@ -855,7 +855,9 @@ extension CocoaMQTT {
 
 extension CocoaMQTT: MQTTAutoReconnectControllerDelegate {
     func autoReconnectControllerRequestsReconnect(_ controller: MQTTAutoReconnectController) {
-        _ = connect()
+        guard !connect(),
+              let schedule = controller.reconnectAttemptFailedToStart() else { return }
+        notifyAutoReconnectScheduled(schedule)
     }
 }
 
