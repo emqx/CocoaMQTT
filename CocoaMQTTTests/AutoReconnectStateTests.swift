@@ -239,8 +239,8 @@ final class AutoReconnectStateTests: XCTestCase {
         XCTAssertEqual(mqtt.reconnectAttemptCount, 0)
     }
 
-    func testCocoaMQTTRetriesWhenReconnectFailsSynchronously() {
-        let socket = SocketSpy(connectFailuresRemaining: 1)
+    func testCocoaMQTTThrottlesRepeatedSynchronousReconnectFailures() {
+        let socket = SocketSpy(connectFailuresRemaining: 2)
         let mqtt = CocoaMQTT(clientID: "reconnect-sync-failure-\(UUID().uuidString)", socket: socket)
         mqtt.delegateQueue = makeDelegateQueue()
         mqtt.autoReconnect = true
@@ -249,7 +249,9 @@ final class AutoReconnectStateTests: XCTestCase {
 
         mqtt.socketDidDisconnect(socket, withError: nil)
 
-        XCTAssertTrue(waitUntil { socket.connectCount == 2 })
+        XCTAssertTrue(waitUntil { mqtt.reconnectAttemptCount == 2 })
+        XCTAssertEqual(socket.connectCount, 1)
+        XCTAssertFalse(waitUntil(timeout: 0.1) { socket.connectCount > 1 })
         XCTAssertEqual(mqtt.reconnectAttemptCount, 2)
         XCTAssertEqual(mqtt.reconnectTimeInterval, 0)
     }
@@ -790,8 +792,8 @@ final class AutoReconnectStateTests: XCTestCase {
         XCTAssertEqual(mqtt5.reconnectAttemptCount, 0)
     }
 
-    func testCocoaMQTT5RetriesWhenReconnectFailsSynchronously() {
-        let socket = SocketSpy(connectFailuresRemaining: 1)
+    func testCocoaMQTT5ThrottlesRepeatedSynchronousReconnectFailures() {
+        let socket = SocketSpy(connectFailuresRemaining: 2)
         let mqtt5 = CocoaMQTT5(clientID: "reconnect-sync-failure-5-\(UUID().uuidString)", socket: socket)
         mqtt5.delegateQueue = makeDelegateQueue()
         mqtt5.autoReconnect = true
@@ -800,7 +802,9 @@ final class AutoReconnectStateTests: XCTestCase {
 
         mqtt5.socketDidDisconnect(socket, withError: nil)
 
-        XCTAssertTrue(waitUntil { socket.connectCount == 2 })
+        XCTAssertTrue(waitUntil { mqtt5.reconnectAttemptCount == 2 })
+        XCTAssertEqual(socket.connectCount, 1)
+        XCTAssertFalse(waitUntil(timeout: 0.1) { socket.connectCount > 1 })
         XCTAssertEqual(mqtt5.reconnectAttemptCount, 2)
         XCTAssertEqual(mqtt5.reconnectTimeInterval, 0)
     }

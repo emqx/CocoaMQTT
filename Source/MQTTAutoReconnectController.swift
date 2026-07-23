@@ -342,7 +342,11 @@ final class MQTTAutoReconnectController {
         case .connecting:
             attemptState = .idle
             prepareAttemptLocked()
-            return scheduleLocked(after: nil)
+            // A zero backoff is valid for the first reconnect, but repeatedly
+            // retrying a synchronously rejected connection without delay forms
+            // a hot loop. Keep the configured backoff unchanged and apply the
+            // floor only to this failed-start retry.
+            return scheduleLocked(after: max(currentInterval, 1))
         case .paused:
             attemptState = .paused(.unprepared)
             return nil

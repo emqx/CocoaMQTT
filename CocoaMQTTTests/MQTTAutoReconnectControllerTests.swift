@@ -386,6 +386,37 @@ final class MQTTAutoReconnectControllerTests: XCTestCase {
         XCTAssertEqual(scheduler.intervals, [1, 2])
     }
 
+    func testRepeatedSynchronousReconnectFailureUsesMinimumPositiveDelay() {
+        let eventLoop = DispatchQueue(label: "tests.reconnect-controller.repeated-synchronous-failure")
+        let scheduler = Scheduler()
+        let delegate = Delegate()
+        let controller = MQTTAutoReconnectController(
+            eventLoopQueue: eventLoop,
+            scheduler: scheduler
+        )
+        controller.delegate = delegate
+        controller.autoReconnectTimeInterval = 0
+        controller.maxAutoReconnectTimeInterval = 0
+        controller.isEnabled = true
+
+        let context = controller.socketDidDisconnect()
+        XCTAssertEqual(controller.completeDisconnectCallbacks(context)?.interval, 0)
+        scheduler.tasks[0].fire()
+        eventLoop.sync {}
+
+        let firstRetry = controller.reconnectAttemptFailedToStart()
+        XCTAssertEqual(firstRetry?.attemptCount, 2)
+        XCTAssertEqual(firstRetry?.interval, 1)
+        scheduler.tasks[1].fire()
+        eventLoop.sync {}
+
+        let secondRetry = controller.reconnectAttemptFailedToStart()
+        XCTAssertEqual(secondRetry?.attemptCount, 3)
+        XCTAssertEqual(secondRetry?.interval, 1)
+        XCTAssertEqual(scheduler.intervals, [0, 1, 1])
+        XCTAssertEqual(controller.reconnectTimeInterval, 0)
+    }
+
     func testPauseDuringSynchronousReconnectFailurePreservesRetry() {
         let eventLoop = DispatchQueue(label: "tests.reconnect-controller.paused-synchronous-failure")
         let scheduler = Scheduler()
