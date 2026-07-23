@@ -1376,9 +1376,7 @@ extension CocoaMQTT5: CocoaMQTTReaderDelegate {
 
             autoReconnectController.connectionSucceeded()
 
-            // Start keepalive liveness tracking.
             let negotiatedKeepAlive = properties?.serverKeepAlive ?? keepAlive
-            keepAliveController.start(interval: negotiatedKeepAlive)
 
             // recover session if enable
 
@@ -1418,6 +1416,8 @@ extension CocoaMQTT5: CocoaMQTTReaderDelegate {
 
             deliver.completeConnection()
             connState = .connected
+            // Start only after session recovery has completed and the client can send PINGREQ.
+            keepAliveController.start(interval: negotiatedKeepAlive)
 
         } else {
             connState = .disconnected

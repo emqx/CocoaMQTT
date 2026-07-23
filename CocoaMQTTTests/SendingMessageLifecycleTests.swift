@@ -1111,6 +1111,7 @@ final class SendingMessageLifecycleTests: XCTestCase {
     func testMQTT5UsesServerKeepAlive() {
         let socket = SocketSpy()
         let mqtt = CocoaMQTT5(clientID: "server-keepalive-\(UUID().uuidString)", socket: socket)
+        mqtt.keepAlive = 30
         establishSession(
             mqtt,
             socket: socket,
@@ -1119,6 +1120,20 @@ final class SendingMessageLifecycleTests: XCTestCase {
             serverKeepAlive: 7
         )
         XCTAssertEqual(mqtt.t_keepAliveInterval(), 7)
+    }
+
+    func testMQTT5ServerKeepAliveZeroDisablesAutomaticPing() {
+        let socket = SocketSpy()
+        let mqtt = CocoaMQTT5(clientID: "server-keepalive-zero-\(UUID().uuidString)", socket: socket)
+        mqtt.keepAlive = 30
+        establishSession(
+            mqtt,
+            socket: socket,
+            cleanStart: true,
+            requestedExpiry: 0,
+            serverKeepAlive: 0
+        )
+        XCTAssertNil(mqtt.t_keepAliveInterval())
     }
 
     func testMQTT5ReusesSessionControllerWhenClientIdentifierCycles() {

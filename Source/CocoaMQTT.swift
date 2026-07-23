@@ -1000,10 +1000,6 @@ extension CocoaMQTT: CocoaMQTTReaderDelegate {
 
             autoReconnectController.connectionSucceeded()
 
-            // Start keepalive liveness tracking. A zero value disables it.
-
-            keepAliveController.start(interval: keepAlive)
-
             // recover session if enable
 
             if cleanSession || !connack.sessPresent {
@@ -1034,6 +1030,8 @@ extension CocoaMQTT: CocoaMQTTReaderDelegate {
 
             deliver.completeConnection()
             connState = .connected
+            // Start only after session recovery has completed and the client can send PINGREQ.
+            keepAliveController.start(interval: keepAlive)
 
         } else {
             connState = .disconnected
