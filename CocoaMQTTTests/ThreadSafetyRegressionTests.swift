@@ -295,6 +295,40 @@ final class ThreadSafetyRegressionTests: XCTestCase {
         mqtt.socketDidDisconnect(SocketStub(), withError: nil)
     }
 
+    func testConcurrentQoS0PublishesPreserveCallbackMessages() {
+        let messageCount = 400
+        let mqtt = CocoaMQTT(
+            clientID: "thread-safe-qos0-publish-\(UUID().uuidString)",
+            socket: SocketStub()
+        )
+        let callbackQueue = DispatchQueue(label: "tests.threadsafe.qos0-publish.callback")
+        mqtt.delegateQueue = callbackQueue
+
+        let callbacks = expectation(description: "All QoS 0 publish callbacks")
+        callbacks.expectedFulfillmentCount = messageCount
+        var callbackTopics = [String]()
+        mqtt.didPublishMessage = { _, message, messageID in
+            XCTAssertEqual(messageID, 0)
+            callbackTopics.append(message.topic)
+            callbacks.fulfill()
+        }
+
+        let resultCodes = ThreadSafeDictionary<Int, Int>(label: "tests.threadsafe.qos0-publish.results")
+        DispatchQueue.concurrentPerform(iterations: messageCount) { index in
+            resultCodes[index] = mqtt.publish(
+                CocoaMQTTMessage(topic: "t/qos0/\(index)", payload: [UInt8(index % 255)], qos: .qos0)
+            )
+        }
+
+        wait(for: [callbacks], timeout: 5)
+        callbackQueue.sync {}
+
+        XCTAssertEqual(resultCodes.snapshot().count, messageCount)
+        XCTAssertTrue(resultCodes.snapshot().values.allSatisfy { $0 == 0 })
+        XCTAssertEqual(Set(callbackTopics), Set((0..<messageCount).map { "t/qos0/\($0)" }))
+        XCTAssertEqual(mqtt.t_sendingMessagesCount(), 0)
+    }
+
     func testPacketIdentifierAllocatorExhaustionAndReuse() {
         let allocator = MQTTPacketIdentifierAllocator()
         var identifiers = Set<UInt16>()
