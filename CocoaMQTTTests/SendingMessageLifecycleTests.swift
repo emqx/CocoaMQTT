@@ -482,6 +482,134 @@ final class SendingMessageLifecycleTests: XCTestCase {
         XCTAssertEqual(recoveredProperties.contentType, "text/plain")
     }
 
+    func testMQTT5SessionResumeContinuesQoS2WithPubrel() {
+        let clientID = "mqtt5-qos2-resume-\(UUID().uuidString)"
+        defer { clearStorage(clientID) }
+        let socket = SocketSpy()
+        let mqtt = CocoaMQTT5(clientID: clientID, socket: socket)
+        establishSession(
+            mqtt,
+            socket: socket,
+            cleanStart: true,
+            requestedExpiry: UInt32.max
+        )
+
+        let packetIdentifier = mqtt.publish(
+            CocoaMQTT5Message(topic: "t/qos2", payload: [2], qos: .qos2),
+            properties: MqttPublishProperties()
+        )
+        mqtt.t_waitUntilDeliverIdle()
+        mqtt.didReceive(
+            CocoaMQTTReader(socket: socket, delegate: nil, protocolVersion: .v5),
+            pubrec: FramePubRec(msgid: UInt16(packetIdentifier))
+        )
+        mqtt.t_waitUntilDeliverIdle()
+
+        mqtt.socketDidDisconnect(socket, withError: nil)
+        socket.writes.removeAll()
+        establishSession(
+            mqtt,
+            socket: socket,
+            cleanStart: false,
+            requestedExpiry: UInt32.max,
+            sessionPresent: true
+        )
+        mqtt.t_waitUntilDeliverIdle()
+
+        XCTAssertFalse(socket.writes.contains { $0.first.map { $0 & 0xf0 } == FrameType.publish.rawValue })
+        let pubrel = socket.writes.first { $0.first == 0x62 }
+        XCTAssertEqual(pubrel.map { Array([UInt8]($0)[2...3]) }, UInt16(packetIdentifier).hlBytes)
+    }
+
+    func testMQTT5SessionPresentFalseDiscardsUnacknowledgedQoSState() {
+        let clientID = "mqtt5-session-missing-\(UUID().uuidString)"
+        defer { clearStorage(clientID) }
+        let socket = SocketSpy()
+        let mqtt = CocoaMQTT5(clientID: clientID, socket: socket)
+        establishSession(
+            mqtt,
+            socket: socket,
+            cleanStart: true,
+            requestedExpiry: UInt32.max
+        )
+        XCTAssertGreaterThan(
+            mqtt.publish(
+                CocoaMQTT5Message(topic: "t/discard", payload: [1], qos: .qos1),
+                properties: MqttPublishProperties()
+            ),
+            0
+        )
+        mqtt.t_waitUntilDeliverIdle()
+
+        mqtt.socketDidDisconnect(socket, withError: nil)
+        socket.writes.removeAll()
+        establishSession(
+            mqtt,
+            socket: socket,
+            cleanStart: false,
+            requestedExpiry: UInt32.max,
+            sessionPresent: false
+        )
+        mqtt.t_waitUntilDeliverIdle()
+
+        XCTAssertFalse(socket.writes.contains { $0.first.map { $0 & 0xf0 } == FrameType.publish.rawValue })
+        XCTAssertFalse(socket.writes.contains { $0.first == 0x62 })
+        XCTAssertTrue(CocoaMQTTStorage(by: clientID, protocolVersion: .v5)?.readAll().isEmpty == true)
+        XCTAssertEqual(mqtt.t_sendingMessagesCount(), 0)
+        XCTAssertEqual(mqtt.t_reservedPacketIdentifierCount(), 0)
+    }
+
+    func testMQTT311SessionResumeContinuesQoS2WithPubrel() {
+        let clientID = "mqtt311-qos2-resume-\(UUID().uuidString)"
+        defer { clearStorage(clientID) }
+        let socket = SocketSpy()
+        let mqtt = CocoaMQTT(clientID: clientID, socket: socket)
+        establishSession(mqtt, socket: socket, cleanSession: false, sessionPresent: false)
+
+        let packetIdentifier = mqtt.publish(
+            CocoaMQTTMessage(topic: "t/qos2", payload: [2], qos: .qos2)
+        )
+        mqtt.t_waitUntilDeliverIdle()
+        mqtt.didReceive(
+            CocoaMQTTReader(socket: socket, delegate: nil, protocolVersion: .v311),
+            pubrec: FramePubRec(msgid: UInt16(packetIdentifier))
+        )
+        mqtt.t_waitUntilDeliverIdle()
+
+        mqtt.socketDidDisconnect(socket, withError: nil)
+        socket.writes.removeAll()
+        establishSession(mqtt, socket: socket, cleanSession: false, sessionPresent: true)
+        mqtt.t_waitUntilDeliverIdle()
+
+        XCTAssertFalse(socket.writes.contains { $0.first.map { $0 & 0xf0 } == FrameType.publish.rawValue })
+        let pubrel = socket.writes.first { $0.first == 0x62 }
+        XCTAssertEqual(pubrel.map { Array([UInt8]($0)[2...3]) }, UInt16(packetIdentifier).hlBytes)
+    }
+
+    func testMQTT311SessionPresentFalseDiscardsPreviousQoSState() {
+        let clientID = "mqtt311-session-missing-\(UUID().uuidString)"
+        defer { clearStorage(clientID) }
+        let socket = SocketSpy()
+        let mqtt = CocoaMQTT(clientID: clientID, socket: socket)
+        establishSession(mqtt, socket: socket, cleanSession: false, sessionPresent: false)
+        XCTAssertGreaterThan(
+            mqtt.publish(CocoaMQTTMessage(topic: "t/discard", payload: [1], qos: .qos1)),
+            0
+        )
+        mqtt.t_waitUntilDeliverIdle()
+
+        mqtt.socketDidDisconnect(socket, withError: nil)
+        socket.writes.removeAll()
+        establishSession(mqtt, socket: socket, cleanSession: false, sessionPresent: false)
+        mqtt.t_waitUntilDeliverIdle()
+
+        XCTAssertFalse(socket.writes.contains { $0.first.map { $0 & 0xf0 } == FrameType.publish.rawValue })
+        XCTAssertFalse(socket.writes.contains { $0.first == 0x62 })
+        XCTAssertTrue(CocoaMQTTStorage(by: clientID, protocolVersion: .v311)?.readAll().isEmpty == true)
+        XCTAssertEqual(mqtt.t_sendingMessagesCount(), 0)
+        XCTAssertEqual(mqtt.t_reservedPacketIdentifierCount(), 0)
+    }
+
     func testDisconnectReleasesPendingSubscriptionPacketIdentifiers() {
         let mqtt311 = CocoaMQTT(clientID: "pending-requests-311", socket: SocketSpy())
         mqtt311.cleanSession = false
@@ -1159,6 +1287,30 @@ final class SendingMessageLifecycleTests: XCTestCase {
             defaults.removeObject(forKey: key)
         }
         defaults.synchronize()
+    }
+
+    private func establishSession(_ mqtt: CocoaMQTT,
+                                  socket: SocketSpy,
+                                  cleanSession: Bool,
+                                  sessionPresent: Bool) {
+        mqtt.cleanSession = cleanSession
+        XCTAssertTrue(mqtt.connect())
+        mqtt.socketConnected(socket)
+        let connack = FrameConnAck(
+            packetFixedHeaderType: FrameType.connack.rawValue,
+            bytes: [
+                sessionPresent ? UInt8(1) : UInt8(0),
+                CocoaMQTTCONNACKReasonCode.success.rawValue
+            ],
+            protocolVersion: .v311
+        )
+        XCTAssertNotNil(connack)
+        if let connack {
+            mqtt.didReceive(
+                CocoaMQTTReader(socket: socket, delegate: nil, protocolVersion: .v311),
+                connack: connack
+            )
+        }
     }
 
     private func establishSession(_ mqtt: CocoaMQTT5,
