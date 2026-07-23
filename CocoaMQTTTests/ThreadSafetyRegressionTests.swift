@@ -11,6 +11,13 @@ import XCTest
 
 final class ThreadSafetyRegressionTests: XCTestCase {
 
+    private struct PublishCallbackSnapshot: Equatable {
+        let messageID: UInt16
+        let payload: [UInt8]
+        let qos: CocoaMQTTQoS
+        let retained: Bool
+    }
+
     private final class SocketDelegateStub: CocoaMQTTSocketDelegate {
         func socketConnected(_ socket: CocoaMQTTSocketProtocol) {}
         func socket(_ socket: CocoaMQTTSocketProtocol, didReceive trust: SecTrust, completionHandler: @escaping (Bool) -> Void) {
@@ -297,36 +304,126 @@ final class ThreadSafetyRegressionTests: XCTestCase {
 
     func testConcurrentQoS0PublishesPreserveCallbackMessages() {
         let messageCount = 400
+        let socket = SocketStub()
         let mqtt = CocoaMQTT(
             clientID: "thread-safe-qos0-publish-\(UUID().uuidString)",
-            socket: SocketStub()
+            socket: socket
         )
-        let callbackQueue = DispatchQueue(label: "tests.threadsafe.qos0-publish.callback")
+        let callbackQueue = DispatchQueue(
+            label: "tests.threadsafe.qos0-publish.callback",
+            attributes: .concurrent
+        )
         mqtt.delegateQueue = callbackQueue
 
         let callbacks = expectation(description: "All QoS 0 publish callbacks")
         callbacks.expectedFulfillmentCount = messageCount
-        var callbackTopics = [String]()
+        let callbackMessages = ThreadSafeDictionary<String, PublishCallbackSnapshot>(
+            label: "tests.threadsafe.qos0-publish.callbacks"
+        )
         mqtt.didPublishMessage = { _, message, messageID in
-            XCTAssertEqual(messageID, 0)
-            callbackTopics.append(message.topic)
+            callbackMessages[message.topic] = PublishCallbackSnapshot(
+                messageID: messageID,
+                payload: message.payload,
+                qos: message.qos,
+                retained: message.retained
+            )
             callbacks.fulfill()
         }
 
         let resultCodes = ThreadSafeDictionary<Int, Int>(label: "tests.threadsafe.qos0-publish.results")
         DispatchQueue.concurrentPerform(iterations: messageCount) { index in
             resultCodes[index] = mqtt.publish(
-                CocoaMQTTMessage(topic: "t/qos0/\(index)", payload: [UInt8(index % 255)], qos: .qos0)
+                CocoaMQTTMessage(
+                    topic: "t/qos0/\(index)",
+                    payload: [UInt8(index % 255)],
+                    qos: .qos0,
+                    retained: index.isMultiple(of: 2)
+                )
             )
         }
 
         wait(for: [callbacks], timeout: 5)
-        callbackQueue.sync {}
+        mqtt.eventLoopQueue.sync {}
+
+        let expectedMessages = Dictionary(uniqueKeysWithValues: (0..<messageCount).map { index in
+            (
+                "t/qos0/\(index)",
+                PublishCallbackSnapshot(
+                    messageID: 0,
+                    payload: [UInt8(index % 255)],
+                    qos: .qos0,
+                    retained: index.isMultiple(of: 2)
+                )
+            )
+        })
 
         XCTAssertEqual(resultCodes.snapshot().count, messageCount)
         XCTAssertTrue(resultCodes.snapshot().values.allSatisfy { $0 == 0 })
-        XCTAssertEqual(Set(callbackTopics), Set((0..<messageCount).map { "t/qos0/\($0)" }))
+        XCTAssertEqual(callbackMessages.snapshot(), expectedMessages)
         XCTAssertEqual(mqtt.t_sendingMessagesCount(), 0)
+        mqtt.socketDidDisconnect(socket, withError: nil)
+    }
+
+    func testCocoaMQTT5ConcurrentQoS0PublishesPreserveCallbackMessages() {
+        let messageCount = 400
+        let socket = SocketStub()
+        let mqtt5 = CocoaMQTT5(
+            clientID: "thread-safe-qos0-publish-5-\(UUID().uuidString)",
+            socket: socket
+        )
+        mqtt5.delegateQueue = DispatchQueue(
+            label: "tests.threadsafe.qos0-publish-5.callback",
+            attributes: .concurrent
+        )
+
+        let callbacks = expectation(description: "All MQTT 5 QoS 0 publish callbacks")
+        callbacks.expectedFulfillmentCount = messageCount
+        let callbackMessages = ThreadSafeDictionary<String, PublishCallbackSnapshot>(
+            label: "tests.threadsafe.qos0-publish-5.callbacks"
+        )
+        mqtt5.didPublishMessage = { _, message, messageID in
+            callbackMessages[message.topic] = PublishCallbackSnapshot(
+                messageID: messageID,
+                payload: message.payload,
+                qos: message.qos,
+                retained: message.retained
+            )
+            callbacks.fulfill()
+        }
+
+        let resultCodes = ThreadSafeDictionary<Int, Int>(label: "tests.threadsafe.qos0-publish-5.results")
+        DispatchQueue.concurrentPerform(iterations: messageCount) { index in
+            resultCodes[index] = mqtt5.publish(
+                CocoaMQTT5Message(
+                    topic: "t/qos0/\(index)",
+                    payload: [UInt8(index % 255)],
+                    qos: .qos0,
+                    retained: index.isMultiple(of: 2)
+                ),
+                properties: MqttPublishProperties()
+            )
+        }
+
+        wait(for: [callbacks], timeout: 5)
+        mqtt5.eventLoopQueue.sync {}
+
+        let expectedMessages = Dictionary(uniqueKeysWithValues: (0..<messageCount).map { index in
+            (
+                "t/qos0/\(index)",
+                PublishCallbackSnapshot(
+                    messageID: 0,
+                    payload: [UInt8(index % 255)],
+                    qos: .qos0,
+                    retained: index.isMultiple(of: 2)
+                )
+            )
+        })
+
+        XCTAssertEqual(resultCodes.snapshot().count, messageCount)
+        XCTAssertTrue(resultCodes.snapshot().values.allSatisfy { $0 == 0 })
+        XCTAssertEqual(callbackMessages.snapshot(), expectedMessages)
+        XCTAssertEqual(mqtt5.t_sendingMessagesCount(), 0)
+        mqtt5.socketDidDisconnect(socket, withError: nil)
     }
 
     func testPacketIdentifierAllocatorExhaustionAndReuse() {
