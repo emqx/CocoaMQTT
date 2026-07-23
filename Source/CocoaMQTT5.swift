@@ -294,7 +294,7 @@ public class CocoaMQTT5: NSObject, CocoaMQTT5Client {
         autoReconnectController.isPaused
     }
 
-    private var autoReconnectController: MQTTAutoReconnectController!
+    private let autoReconnectController: MQTTAutoReconnectController
     private let disconnectReasonLock = NSLock()
     private var pendingLocalDisconnectReasonCode: CocoaMQTTDISCONNECTReasonCode?
     private var _lastDisconnectReason: CocoaMQTT5DisconnectReason?
@@ -438,12 +438,11 @@ public class CocoaMQTT5: NSObject, CocoaMQTT5Client {
         self.host = host
         self.port = port
         self.socket = socket
-        self.eventLoopQueue = DispatchQueue(label: "io.emqx.CocoaMQTT5.event-loop.\(UUID().uuidString)")
+        let eventLoopQueue = DispatchQueue(label: "io.emqx.CocoaMQTT5.event-loop.\(UUID().uuidString)")
+        self.eventLoopQueue = eventLoopQueue
+        self.autoReconnectController = MQTTAutoReconnectController(eventLoopQueue: eventLoopQueue)
         super.init()
-        autoReconnectController = MQTTAutoReconnectController(
-            eventLoopQueue: eventLoopQueue,
-            reconnect: { [weak self] in _ = self?.connect() }
-        )
+        autoReconnectController.delegate = self
         socketDelegateProxy = CocoaMQTTSocketDelegateProxy(eventLoopQueue: eventLoopQueue)
         socketDelegateProxy.delegate = self
         $connState.setMutationObserver { [weak self] state in
@@ -1151,6 +1150,12 @@ extension CocoaMQTT5 {
         } else if _lastDisconnectReason?.source != .remote {
             _lastDisconnectReason = nil
         }
+    }
+}
+
+extension CocoaMQTT5: MQTTAutoReconnectControllerDelegate {
+    func autoReconnectControllerRequestsReconnect(_ controller: MQTTAutoReconnectController) {
+        _ = connect()
     }
 }
 

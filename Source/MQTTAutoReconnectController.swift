@@ -13,6 +13,10 @@ protocol MQTTReconnectScheduling {
     func schedule(after interval: TimeInterval, _ action: @escaping () -> Void) -> MQTTReconnectScheduledTask
 }
 
+protocol MQTTAutoReconnectControllerDelegate: AnyObject {
+    func autoReconnectControllerRequestsReconnect(_ controller: MQTTAutoReconnectController)
+}
+
 extension CocoaMQTTTimer: MQTTReconnectScheduledTask {}
 
 private struct CocoaMQTTReconnectScheduler: MQTTReconnectScheduling {
@@ -22,45 +26,90 @@ private struct CocoaMQTTReconnectScheduler: MQTTReconnectScheduling {
 }
 
 struct MQTTAutoReconnectDisconnectContext {
-    let attemptCountBeforeCallbacks: UInt
+    fileprivate let token: UInt64
     let suppressesReconnect: Bool
 }
 
 /// Owns protocol-neutral reconnect state for both MQTT 3.1.1 and MQTT 5 clients.
 final class MQTTAutoReconnectController {
-    private let lock = NSRecursiveLock()
+    private enum PendingAttempt: Equatable {
+        case none
+        case unprepared
+        case prepared
+
+        func merging(_ other: PendingAttempt) -> PendingAttempt {
+            switch (self, other) {
+            case (.prepared, _), (_, .prepared):
+                return .prepared
+            case (.unprepared, _), (_, .unprepared):
+                return .unprepared
+            case (.none, .none):
+                return .none
+            }
+        }
+    }
+
+    private struct ScheduledAttempt {
+        let generation: UInt64
+        let task: MQTTReconnectScheduledTask
+    }
+
+    private enum AttemptState {
+        case idle
+        case scheduled(ScheduledAttempt)
+        case connecting
+        case paused(PendingAttempt)
+    }
+
+    private enum DisconnectIntent {
+        case none
+        case expected(requestPending: Bool)
+        case unexpected
+    }
+
+    private enum ReconnectDelay: Equatable {
+        case normal
+        case immediate
+    }
+
+    private struct PendingReconnect {
+        var attemptCountBeforeDisconnect: UInt
+        var pendingAttempt: PendingAttempt
+        var delay: ReconnectDelay
+    }
+
+    private let lock = NSLock()
     private let eventLoopQueue: DispatchQueue
     private let scheduler: MQTTReconnectScheduling
-    private let reconnect: () -> Void
+
+    weak var delegate: MQTTAutoReconnectControllerDelegate?
 
     private var enabled = false
     private var initialInterval: UInt16 = 1
     private var maximumInterval: UInt16 = 128
     private var currentInterval: UInt16 = 0
     private var attemptCount: UInt = 0
-    private var paused = false
-    private var scheduledTask: MQTTReconnectScheduledTask?
-    private var isAttemptScheduled = false
-    private var hasPausedAttempt = false
-    private var hasPendingAttempt = false
     private var generation: UInt64 = 0
-    private var pendingSocketDisconnectAttemptCount: UInt?
-    private var shouldResumeAfterPendingDisconnect = false
-    private var expectedDisconnectPending = false
-    private var suppressReconnectForNextDisconnect = false
+    private var attemptState = AttemptState.idle
+    private var disconnectIntent = DisconnectIntent.none
+    private var pendingReconnect: PendingReconnect?
+    private var nextDisconnectToken: UInt64 = 0
+    // Tokens survive reconnect-cycle resets so an older callback cannot unblock
+    // or consume a newer lifecycle's pending reconnect.
+    private var inFlightDisconnectCallbacks = Set<UInt64>()
 
     init(
         eventLoopQueue: DispatchQueue,
-        scheduler: MQTTReconnectScheduling = CocoaMQTTReconnectScheduler(),
-        reconnect: @escaping () -> Void
+        scheduler: MQTTReconnectScheduling = CocoaMQTTReconnectScheduler()
     ) {
         self.eventLoopQueue = eventLoopQueue
         self.scheduler = scheduler
-        self.reconnect = reconnect
     }
 
     deinit {
-        scheduledTask?.cancel()
+        if case let .scheduled(attempt) = attemptState {
+            attempt.task.cancel()
+        }
     }
 
     var isEnabled: Bool {
@@ -73,7 +122,7 @@ final class MQTTAutoReconnectController {
             lock.lock()
             enabled = newValue
             if !newValue {
-                resetLocked()
+                resetReconnectCycleLocked()
             }
             lock.unlock()
         }
@@ -120,7 +169,10 @@ final class MQTTAutoReconnectController {
     var isPaused: Bool {
         lock.lock()
         defer { lock.unlock() }
-        return paused
+        if case .paused = attemptState {
+            return true
+        }
+        return false
     }
 
     /// Prevents duplicate expected disconnect requests until the socket either
@@ -128,42 +180,50 @@ final class MQTTAutoReconnectController {
     func beginExpectedDisconnect() -> Bool {
         lock.lock()
         defer { lock.unlock() }
-        guard !expectedDisconnectPending else { return false }
-        expectedDisconnectPending = true
-        suppressReconnectForNextDisconnect = true
+        if case .expected(requestPending: true) = disconnectIntent {
+            return false
+        }
+        disconnectIntent = .expected(requestPending: true)
+        pendingReconnect = nil
         return true
     }
 
-    /// Records the reconnect generation before requesting an unexpected socket close.
+    /// Records the reconnect cycle before requesting an unexpected socket close.
     func beginUnexpectedDisconnect() {
         lock.lock()
-        pendingSocketDisconnectAttemptCount = attemptCount
-        suppressReconnectForNextDisconnect = false
+        disconnectIntent = .unexpected
+        registerPendingReconnectLocked(attemptCountBeforeDisconnect: attemptCount)
         lock.unlock()
     }
 
     func socketConnected() {
         lock.lock()
-        expectedDisconnectPending = false
+        if case .expected = disconnectIntent {
+            disconnectIntent = .expected(requestPending: false)
+        }
         lock.unlock()
     }
 
     func connectionSucceeded() {
         lock.lock()
-        suppressReconnectForNextDisconnect = false
-        resetLocked()
+        disconnectIntent = .none
+        resetReconnectCycleLocked()
         lock.unlock()
     }
 
     func pause() {
         lock.lock()
-        paused = true
-        if isAttemptScheduled {
-            hasPausedAttempt = true
-            isAttemptScheduled = false
+        let pendingAttempt: PendingAttempt
+        switch attemptState {
+        case let .scheduled(attempt):
+            attempt.task.cancel()
+            pendingAttempt = .prepared
+        case let .paused(existing):
+            pendingAttempt = existing
+        case .idle, .connecting:
+            pendingAttempt = .none
         }
-        shouldResumeAfterPendingDisconnect = false
-        cancelScheduledTaskLocked()
+        attemptState = .paused(pendingAttempt)
         generation &+= 1
         lock.unlock()
     }
@@ -171,28 +231,27 @@ final class MQTTAutoReconnectController {
     func resume(connectionIsDisconnected: Bool) -> CocoaMQTTAutoReconnectSchedule? {
         lock.lock()
         defer { lock.unlock() }
-        guard paused else { return nil }
+        guard case let .paused(pausedAttempt) = attemptState else { return nil }
 
-        paused = false
+        attemptState = .idle
         guard enabled, connectionIsDisconnected else {
-            hasPausedAttempt = false
-            hasPendingAttempt = false
-            shouldResumeAfterPendingDisconnect = false
+            pendingReconnect = nil
             return nil
         }
 
-        if pendingSocketDisconnectAttemptCount != nil {
-            // The old socket delegate must be cleared before a new connection starts.
-            shouldResumeAfterPendingDisconnect = true
+        if pendingReconnect != nil || !inFlightDisconnectCallbacks.isEmpty {
+            if var pendingReconnect = pendingReconnect {
+                pendingReconnect.pendingAttempt = pendingReconnect.pendingAttempt.merging(pausedAttempt)
+                pendingReconnect.delay = .immediate
+                self.pendingReconnect = pendingReconnect
+            }
             return nil
         }
 
-        guard hasPausedAttempt || hasPendingAttempt else { return nil }
-        if !hasPausedAttempt {
+        guard pausedAttempt != .none else { return nil }
+        if pausedAttempt == .unprepared {
             prepareAttemptLocked()
         }
-        hasPausedAttempt = false
-        hasPendingAttempt = false
         return scheduleLocked(after: 0)
     }
 
@@ -200,21 +259,36 @@ final class MQTTAutoReconnectController {
         lock.lock()
         defer { lock.unlock() }
 
-        expectedDisconnectPending = false
-        let suppressesReconnect = suppressReconnectForNextDisconnect
-        suppressReconnectForNextDisconnect = false
-        if suppressesReconnect || !enabled {
-            resetLocked()
+        let suppressesReconnect: Bool
+        switch disconnectIntent {
+        case .expected:
+            suppressesReconnect = true
+        case .none, .unexpected:
+            suppressesReconnect = false
         }
 
-        let countBeforeCallbacks = pendingSocketDisconnectAttemptCount ?? attemptCount
-        if !suppressesReconnect && enabled {
-            pendingSocketDisconnectAttemptCount = countBeforeCallbacks
+        let wasUnexpectedRequest: Bool
+        if case .unexpected = disconnectIntent {
+            wasUnexpectedRequest = true
+        } else {
+            wasUnexpectedRequest = false
         }
-        return MQTTAutoReconnectDisconnectContext(
-            attemptCountBeforeCallbacks: countBeforeCallbacks,
-            suppressesReconnect: suppressesReconnect
-        )
+        disconnectIntent = .none
+
+        if case .connecting = attemptState {
+            attemptState = .idle
+        }
+
+        if suppressesReconnect || !enabled {
+            resetReconnectCycleLocked()
+        } else if !wasUnexpectedRequest {
+            registerPendingReconnectLocked(attemptCountBeforeDisconnect: attemptCount)
+        }
+
+        nextDisconnectToken &+= 1
+        let token = nextDisconnectToken
+        inFlightDisconnectCallbacks.insert(token)
+        return MQTTAutoReconnectDisconnectContext(token: token, suppressesReconnect: suppressesReconnect)
     }
 
     /// Must be called after the public disconnect callbacks have completed.
@@ -224,39 +298,52 @@ final class MQTTAutoReconnectController {
         lock.lock()
         defer { lock.unlock() }
 
-        guard !context.suppressesReconnect else { return nil }
+        guard inFlightDisconnectCallbacks.remove(context.token) != nil else { return nil }
+        guard inFlightDisconnectCallbacks.isEmpty else { return nil }
         guard enabled else {
-            resetLocked()
+            resetReconnectCycleLocked()
             return nil
         }
+        guard let pendingReconnect = pendingReconnect else { return nil }
+        self.pendingReconnect = nil
+        guard attemptCount == pendingReconnect.attemptCountBeforeDisconnect else { return nil }
 
-        pendingSocketDisconnectAttemptCount = nil
-        guard !paused,
-              !isAttemptScheduled,
-              attemptCount == context.attemptCountBeforeCallbacks else {
-            if paused,
-               !isAttemptScheduled,
-               attemptCount == context.attemptCountBeforeCallbacks {
-                hasPendingAttempt = true
+        switch attemptState {
+        case let .paused(pausedAttempt):
+            attemptState = .paused(pausedAttempt.merging(pendingReconnect.pendingAttempt))
+            return nil
+        case .scheduled, .connecting:
+            return nil
+        case .idle:
+            if pendingReconnect.pendingAttempt != .prepared {
+                prepareAttemptLocked()
             }
-            shouldResumeAfterPendingDisconnect = false
-            return nil
+            let delay: UInt16? = pendingReconnect.delay == .immediate ? 0 : nil
+            return scheduleLocked(after: delay)
         }
-
-        let resumeImmediately = shouldResumeAfterPendingDisconnect
-        shouldResumeAfterPendingDisconnect = false
-        if !hasPausedAttempt {
-            prepareAttemptLocked()
-        }
-        hasPausedAttempt = false
-        hasPendingAttempt = false
-        return scheduleLocked(after: resumeImmediately ? 0 : nil)
     }
 
     func isCurrent(_ schedule: CocoaMQTTAutoReconnectSchedule) -> Bool {
         lock.lock()
         defer { lock.unlock() }
         return enabled && generation == schedule.generation
+    }
+
+    private func registerPendingReconnectLocked(attemptCountBeforeDisconnect: UInt) {
+        let statePendingAttempt: PendingAttempt
+        if case .paused(.prepared) = attemptState {
+            statePendingAttempt = .prepared
+        } else {
+            statePendingAttempt = .unprepared
+        }
+
+        let existingPendingAttempt = pendingReconnect?.pendingAttempt ?? .none
+        let existingDelay = pendingReconnect?.delay ?? .normal
+        pendingReconnect = PendingReconnect(
+            attemptCountBeforeDisconnect: attemptCountBeforeDisconnect,
+            pendingAttempt: existingPendingAttempt.merging(statePendingAttempt),
+            delay: existingDelay
+        )
     }
 
     private func prepareAttemptLocked() {
@@ -269,18 +356,17 @@ final class MQTTAutoReconnectController {
     private func scheduleLocked(after interval: UInt16?) -> CocoaMQTTAutoReconnectSchedule {
         let delay = interval ?? currentInterval
         printInfo("Try reconnect to server after \(delay)s")
-        isAttemptScheduled = true
         generation &+= 1
         let scheduledGeneration = generation
-        cancelScheduledTaskLocked()
-        scheduledTask = scheduler.schedule(after: Double(delay)) { [weak self] in
+        let task = scheduler.schedule(after: Double(delay)) { [weak self] in
             guard let self = self else { return }
             self.eventLoopQueue.async { [weak self] in
                 guard let self = self,
                       self.prepareScheduledAttempt(generation: scheduledGeneration) else { return }
-                self.reconnect()
+                self.delegate?.autoReconnectControllerRequestsReconnect(self)
             }
         }
+        attemptState = .scheduled(ScheduledAttempt(generation: scheduledGeneration, task: task))
         return CocoaMQTTAutoReconnectSchedule(
             attemptCount: attemptCount,
             interval: delay,
@@ -291,33 +377,27 @@ final class MQTTAutoReconnectController {
     private func prepareScheduledAttempt(generation scheduledGeneration: UInt64) -> Bool {
         lock.lock()
         defer { lock.unlock() }
-        guard generation == scheduledGeneration else { return false }
-        guard enabled, !paused else {
-            isAttemptScheduled = false
-            return false
-        }
-        isAttemptScheduled = false
-        scheduledTask = nil
+        guard generation == scheduledGeneration,
+              case let .scheduled(attempt) = attemptState,
+              attempt.generation == scheduledGeneration,
+              enabled else { return false }
+        attemptState = .connecting
         let doubled = UInt32(currentInterval) * 2
         currentInterval = UInt16(min(doubled, UInt32(maximumInterval)))
         return true
     }
 
-    private func resetLocked() {
+    private func resetReconnectCycleLocked() {
+        if case let .scheduled(attempt) = attemptState {
+            attempt.task.cancel()
+        }
+        attemptState = .idle
         currentInterval = 0
         attemptCount = 0
-        paused = false
-        cancelScheduledTaskLocked()
-        isAttemptScheduled = false
-        hasPausedAttempt = false
-        hasPendingAttempt = false
-        pendingSocketDisconnectAttemptCount = nil
-        shouldResumeAfterPendingDisconnect = false
+        pendingReconnect = nil
+        if case .unexpected = disconnectIntent {
+            disconnectIntent = .none
+        }
         generation &+= 1
-    }
-
-    private func cancelScheduledTaskLocked() {
-        scheduledTask?.cancel()
-        scheduledTask = nil
     }
 }

@@ -295,7 +295,7 @@ public class CocoaMQTT: NSObject, CocoaMQTTClient {
         autoReconnectController.isPaused
     }
 
-    private var autoReconnectController: MQTTAutoReconnectController!
+    private let autoReconnectController: MQTTAutoReconnectController
 
     /// Console log level
     public var logLevel: CocoaMQTTLoggerLevel {
@@ -411,12 +411,11 @@ public class CocoaMQTT: NSObject, CocoaMQTTClient {
         self.host = host
         self.port = port
         self.socket = socket
-        self.eventLoopQueue = DispatchQueue(label: "io.emqx.CocoaMQTT.event-loop.\(UUID().uuidString)")
+        let eventLoopQueue = DispatchQueue(label: "io.emqx.CocoaMQTT.event-loop.\(UUID().uuidString)")
+        self.eventLoopQueue = eventLoopQueue
+        self.autoReconnectController = MQTTAutoReconnectController(eventLoopQueue: eventLoopQueue)
         super.init()
-        autoReconnectController = MQTTAutoReconnectController(
-            eventLoopQueue: eventLoopQueue,
-            reconnect: { [weak self] in _ = self?.connect() }
-        )
+        autoReconnectController.delegate = self
         socketDelegateProxy = CocoaMQTTSocketDelegateProxy(eventLoopQueue: eventLoopQueue)
         socketDelegateProxy.delegate = self
         deliver.delegate = self
@@ -851,6 +850,12 @@ extension CocoaMQTT {
             mqtt.delegate?.mqtt?(mqtt, didScheduleReconnect: schedule.attemptCount, after: schedule.interval)
             mqtt.didScheduleReconnect(mqtt, schedule.attemptCount, schedule.interval)
         }
+    }
+}
+
+extension CocoaMQTT: MQTTAutoReconnectControllerDelegate {
+    func autoReconnectControllerRequestsReconnect(_ controller: MQTTAutoReconnectController) {
+        _ = connect()
     }
 }
 

@@ -44,15 +44,23 @@ final class MQTTAutoReconnectControllerTests: XCTestCase {
         }
     }
 
+    private final class Delegate: MQTTAutoReconnectControllerDelegate {
+        private(set) var reconnectCount = 0
+
+        func autoReconnectControllerRequestsReconnect(_ controller: MQTTAutoReconnectController) {
+            reconnectCount += 1
+        }
+    }
+
     func testReconnectBackoffIsSharedAndClamped() {
         let eventLoop = DispatchQueue(label: "tests.reconnect-controller.backoff")
         let scheduler = Scheduler()
-        var reconnectCount = 0
+        let delegate = Delegate()
         let controller = MQTTAutoReconnectController(
             eventLoopQueue: eventLoop,
-            scheduler: scheduler,
-            reconnect: { reconnectCount += 1 }
+            scheduler: scheduler
         )
+        controller.delegate = delegate
         controller.isEnabled = true
         controller.autoReconnectTimeInterval = 1
         controller.maxAutoReconnectTimeInterval = 3
@@ -63,7 +71,7 @@ final class MQTTAutoReconnectControllerTests: XCTestCase {
         XCTAssertEqual(firstSchedule?.interval, 1)
         scheduler.tasks[0].fire()
         eventLoop.sync {}
-        XCTAssertEqual(reconnectCount, 1)
+        XCTAssertEqual(delegate.reconnectCount, 1)
         XCTAssertEqual(controller.reconnectTimeInterval, 2)
 
         let second = controller.socketDidDisconnect()
@@ -72,7 +80,7 @@ final class MQTTAutoReconnectControllerTests: XCTestCase {
         XCTAssertEqual(secondSchedule?.interval, 2)
         scheduler.tasks[1].fire()
         eventLoop.sync {}
-        XCTAssertEqual(reconnectCount, 2)
+        XCTAssertEqual(delegate.reconnectCount, 2)
         XCTAssertEqual(controller.reconnectTimeInterval, 3)
 
         controller.connectionSucceeded()
@@ -85,8 +93,7 @@ final class MQTTAutoReconnectControllerTests: XCTestCase {
         let scheduler = Scheduler()
         let controller = MQTTAutoReconnectController(
             eventLoopQueue: eventLoop,
-            scheduler: scheduler,
-            reconnect: {}
+            scheduler: scheduler
         )
         controller.isEnabled = true
 
@@ -103,8 +110,7 @@ final class MQTTAutoReconnectControllerTests: XCTestCase {
         let scheduler = Scheduler()
         let controller = MQTTAutoReconnectController(
             eventLoopQueue: eventLoop,
-            scheduler: scheduler,
-            reconnect: {}
+            scheduler: scheduler
         )
         controller.isEnabled = true
 
@@ -120,12 +126,12 @@ final class MQTTAutoReconnectControllerTests: XCTestCase {
     func testPauseCancelsAttemptAndResumeRunsItImmediately() {
         let eventLoop = DispatchQueue(label: "tests.reconnect-controller.pause")
         let scheduler = Scheduler()
-        var reconnectCount = 0
+        let delegate = Delegate()
         let controller = MQTTAutoReconnectController(
             eventLoopQueue: eventLoop,
-            scheduler: scheduler,
-            reconnect: { reconnectCount += 1 }
+            scheduler: scheduler
         )
+        controller.delegate = delegate
         controller.isEnabled = true
 
         let context = controller.socketDidDisconnect()
@@ -143,7 +149,7 @@ final class MQTTAutoReconnectControllerTests: XCTestCase {
         scheduler.tasks[1].fire()
         eventLoop.sync {}
 
-        XCTAssertEqual(reconnectCount, 1)
+        XCTAssertEqual(delegate.reconnectCount, 1)
         XCTAssertEqual(controller.reconnectTimeInterval, 2)
     }
 
@@ -152,8 +158,7 @@ final class MQTTAutoReconnectControllerTests: XCTestCase {
         let scheduler = Scheduler()
         let controller = MQTTAutoReconnectController(
             eventLoopQueue: eventLoop,
-            scheduler: scheduler,
-            reconnect: {}
+            scheduler: scheduler
         )
         controller.isEnabled = true
         controller.beginUnexpectedDisconnect()
@@ -169,13 +174,114 @@ final class MQTTAutoReconnectControllerTests: XCTestCase {
         XCTAssertEqual(scheduler.intervals, [0])
     }
 
+    func testOverlappingDisconnectCallbacksWaitForEveryLifecycle() {
+        let eventLoop = DispatchQueue(label: "tests.reconnect-controller.overlapping-disconnects")
+        let scheduler = Scheduler()
+        let controller = MQTTAutoReconnectController(
+            eventLoopQueue: eventLoop,
+            scheduler: scheduler
+        )
+        controller.isEnabled = true
+
+        let staleContext = controller.socketDidDisconnect()
+        controller.isEnabled = false
+        controller.isEnabled = true
+        let currentContext = controller.socketDidDisconnect()
+
+        XCTAssertNil(controller.completeDisconnectCallbacks(currentContext))
+        XCTAssertTrue(scheduler.tasks.isEmpty)
+
+        let schedule = controller.completeDisconnectCallbacks(staleContext)
+        XCTAssertEqual(schedule?.attemptCount, 1)
+        XCTAssertEqual(schedule?.interval, 1)
+        XCTAssertEqual(scheduler.intervals, [1])
+    }
+
+    func testConcurrentDisconnectCallbackCompletionsScheduleOnce() {
+        let eventLoop = DispatchQueue(label: "tests.reconnect-controller.concurrent-disconnects")
+        let scheduler = Scheduler()
+        let controller = MQTTAutoReconnectController(
+            eventLoopQueue: eventLoop,
+            scheduler: scheduler
+        )
+        controller.isEnabled = true
+        let contexts = [controller.socketDidDisconnect(), controller.socketDidDisconnect()]
+
+        DispatchQueue.concurrentPerform(iterations: contexts.count) { index in
+            _ = controller.completeDisconnectCallbacks(contexts[index])
+        }
+
+        XCTAssertEqual(scheduler.tasks.count, 1)
+        XCTAssertEqual(scheduler.intervals, [1])
+        XCTAssertEqual(controller.reconnectAttemptCount, 1)
+    }
+
+    func testResetDoesNotReviveStaleDisconnectCallback() {
+        let eventLoop = DispatchQueue(label: "tests.reconnect-controller.stale-disconnect")
+        let scheduler = Scheduler()
+        let controller = MQTTAutoReconnectController(
+            eventLoopQueue: eventLoop,
+            scheduler: scheduler
+        )
+        controller.isEnabled = true
+
+        let staleContext = controller.socketDidDisconnect()
+        controller.isEnabled = false
+        controller.isEnabled = true
+
+        XCTAssertNil(controller.completeDisconnectCallbacks(staleContext))
+        XCTAssertTrue(scheduler.tasks.isEmpty)
+        XCTAssertEqual(controller.reconnectAttemptCount, 0)
+    }
+
+    func testDisconnectCallbackDoesNotScheduleWhileReconnectIsConnecting() {
+        let eventLoop = DispatchQueue(label: "tests.reconnect-controller.connecting")
+        let scheduler = Scheduler()
+        let delegate = Delegate()
+        let controller = MQTTAutoReconnectController(
+            eventLoopQueue: eventLoop,
+            scheduler: scheduler
+        )
+        controller.delegate = delegate
+        controller.isEnabled = true
+
+        let firstContext = controller.socketDidDisconnect()
+        XCTAssertNotNil(controller.completeDisconnectCallbacks(firstContext))
+        let overlappingContext = controller.socketDidDisconnect()
+
+        scheduler.tasks[0].fire()
+        eventLoop.sync {}
+        XCTAssertEqual(delegate.reconnectCount, 1)
+        XCTAssertNil(controller.completeDisconnectCallbacks(overlappingContext))
+        XCTAssertEqual(scheduler.tasks.count, 1)
+    }
+
+    func testDeinitializingControllerCancelsScheduledTask() {
+        let eventLoop = DispatchQueue(label: "tests.reconnect-controller.deinit")
+        let scheduler = Scheduler()
+        var controller: MQTTAutoReconnectController? = MQTTAutoReconnectController(
+            eventLoopQueue: eventLoop,
+            scheduler: scheduler
+        )
+        controller?.isEnabled = true
+        let context = controller?.socketDidDisconnect()
+        XCTAssertNotNil(context.flatMap { controller?.completeDisconnectCallbacks($0) })
+        let task = scheduler.tasks[0]
+
+        weak var releasedController: MQTTAutoReconnectController?
+        releasedController = controller
+        controller = nil
+
+        XCTAssertNil(releasedController)
+        XCTAssertTrue(task.isCancelled)
+    }
+
     func testExpectedDisconnectNeverSchedulesReconnect() {
         let eventLoop = DispatchQueue(label: "tests.reconnect-controller.expected")
         let scheduler = Scheduler()
         let controller = MQTTAutoReconnectController(
             eventLoopQueue: eventLoop,
-            scheduler: scheduler,
-            reconnect: {}
+            scheduler: scheduler
         )
         controller.isEnabled = true
 
