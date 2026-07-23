@@ -28,7 +28,6 @@ private struct CocoaMQTTReconnectScheduler: MQTTReconnectScheduling {
 struct MQTTAutoReconnectDisconnectContext {
     fileprivate let epoch: UInt64
     fileprivate let token: UInt64
-    let suppressesReconnect: Bool
 }
 
 /// Owns protocol-neutral reconnect state for both MQTT 3.1.1 and MQTT 5 clients.
@@ -234,17 +233,21 @@ final class MQTTAutoReconnectController {
         guard case let .paused(pausedAttempt) = attemptState else { return nil }
 
         attemptState = .idle
-        guard enabled, connectionIsDisconnected else {
+        guard enabled else {
             pendingReconnect = nil
             return nil
         }
 
-        if pendingReconnect != nil || !inFlightDisconnectCallbacks.isEmpty {
-            if var pendingReconnect = pendingReconnect {
-                pendingReconnect.pendingAttempt = pendingReconnect.pendingAttempt.merging(pausedAttempt)
-                pendingReconnect.delay = .immediate
-                self.pendingReconnect = pendingReconnect
-            }
+        if var pendingReconnect = pendingReconnect {
+            pendingReconnect.pendingAttempt = pendingReconnect.pendingAttempt.merging(pausedAttempt)
+            pendingReconnect.delay = .immediate
+            self.pendingReconnect = pendingReconnect
+        }
+
+        guard connectionIsDisconnected else { return nil }
+        guard pendingReconnect == nil else { return nil }
+        guard inFlightDisconnectCallbacks.isEmpty else {
+            assert(pausedAttempt == .none, "An in-flight unexpected disconnect must retain its pending reconnect")
             return nil
         }
 
@@ -290,8 +293,7 @@ final class MQTTAutoReconnectController {
         inFlightDisconnectCallbacks.insert(token)
         return MQTTAutoReconnectDisconnectContext(
             epoch: disconnectEpoch,
-            token: token,
-            suppressesReconnect: suppressesReconnect
+            token: token
         )
     }
 
