@@ -20,17 +20,19 @@ final class ClientEventLoopTests: XCTestCase {
         }
     }
 
-    private final class BlockingNativeTeardownSocket: CocoaMQTTSocketProtocol, MQTTClientTeardownSocket, @unchecked Sendable {
+    private final class BlockingTeardownSocket: CocoaMQTTSocketProtocol, MQTTClientTeardownSocket, @unchecked Sendable {
         var enableSSL = false
 
         let disconnectStarted = DispatchSemaphore(value: 0)
         let allowDisconnect = DispatchSemaphore(value: 0)
 
-        func scheduleClientTeardown() {
+        func prepareClientTeardown() -> Bool {
             setDelegate(nil, delegateQueue: nil)
-            DispatchQueue.global(qos: .utility).async {
-                self.disconnect()
-            }
+            return true
+        }
+
+        func performClientTeardown() {
+            disconnect()
         }
 
         func setDelegate(_ theDelegate: CocoaMQTTSocketDelegate?, delegateQueue: DispatchQueue?) {}
@@ -330,7 +332,7 @@ final class ClientEventLoopTests: XCTestCase {
     private func assertDeinitDoesNotWaitForNativeTransportDisconnect(
         makeClient: (CocoaMQTTSocketProtocol) -> AnyObject
     ) {
-        let socket = BlockingNativeTeardownSocket()
+        let socket = BlockingTeardownSocket()
         let holder = ClientHolder(makeClient(socket))
         let releaseReturned = DispatchSemaphore(value: 0)
 
