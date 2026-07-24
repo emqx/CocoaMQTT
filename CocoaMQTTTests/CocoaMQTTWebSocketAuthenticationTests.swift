@@ -1,4 +1,6 @@
 import Foundation
+import CryptoKit
+import Network
 import Security
 import XCTest
 @testable import CocoaMQTT
@@ -7,6 +9,100 @@ import XCTest
 #endif
 
 final class CocoaMQTTWebSocketAuthenticationTests: XCTestCase {
+    @available(macOS 10.15, iOS 13.0, tvOS 13.0, *)
+    private final class LoopbackWebSocketServer {
+        private let listener: NWListener
+        private let queue = DispatchQueue(label: "tests.websocket-message-size.server")
+        private let ready = DispatchSemaphore(value: 0)
+        private var connection: NWConnection?
+        private var requestData = Data()
+        private let payload: Data
+
+        var port: UInt16 {
+            listener.port?.rawValue ?? 0
+        }
+
+        init(payload: Data) throws {
+            self.payload = payload
+            listener = try NWListener(using: .tcp, on: .any)
+            listener.stateUpdateHandler = { [ready] state in
+                if case .ready = state {
+                    ready.signal()
+                }
+            }
+            listener.newConnectionHandler = { [weak self] connection in
+                self?.accept(connection)
+            }
+            listener.start(queue: queue)
+            guard ready.wait(timeout: .now() + 3) == .success else {
+                listener.cancel()
+                throw CocoaMQTTError.invalidURL
+            }
+        }
+
+        deinit {
+            stop()
+        }
+
+        func stop() {
+            connection?.cancel()
+            listener.cancel()
+        }
+
+        private func accept(_ connection: NWConnection) {
+            self.connection = connection
+            connection.start(queue: queue)
+            receiveRequest(on: connection)
+        }
+
+        private func receiveRequest(on connection: NWConnection) {
+            connection.receive(minimumIncompleteLength: 1, maximumLength: 8_192) { [weak self] data, _, _, error in
+                guard let self = self, error == nil else { return }
+                if let data = data {
+                    self.requestData.append(data)
+                }
+                guard self.requestData.range(of: Data("\r\n\r\n".utf8)) != nil else {
+                    self.receiveRequest(on: connection)
+                    return
+                }
+                self.sendHandshakeAndPayload(on: connection)
+            }
+        }
+
+        private func sendHandshakeAndPayload(on connection: NWConnection) {
+            guard let request = String(data: requestData, encoding: .utf8),
+                  let keyLine = request.split(separator: "\r\n").first(where: {
+                      $0.lowercased().hasPrefix("sec-websocket-key:")
+                  }),
+                  let key = keyLine.split(separator: ":", maxSplits: 1).last?
+                    .trimmingCharacters(in: .whitespaces) else {
+                connection.cancel()
+                return
+            }
+            let source = Data((key + "258EAFA5-E914-47DA-95CA-C5AB0DC85B11").utf8)
+            let accept = Data(Insecure.SHA1.hash(data: source)).base64EncodedString()
+            let response = [
+                "HTTP/1.1 101 Switching Protocols",
+                "Upgrade: websocket",
+                "Connection: Upgrade",
+                "Sec-WebSocket-Accept: \(accept)",
+                "Sec-WebSocket-Protocol: mqtt"
+            ].joined(separator: "\r\n") + "\r\n\r\n"
+            connection.send(content: Data(response.utf8), completion: .contentProcessed { [weak self] error in
+                guard let self = self, error == nil else { return }
+                connection.send(content: self.binaryFrame(), completion: .idempotent)
+            })
+        }
+
+        private func binaryFrame() -> Data {
+            var frame = Data([0x82, 0x7F])
+            var length = UInt64(payload.count).bigEndian
+            withUnsafeBytes(of: &length) { frame.append(contentsOf: $0) }
+            frame.append(payload)
+            return frame
+        }
+    }
+
     private final class ChallengeSenderStub: NSObject, URLAuthenticationChallengeSender {
         func use(_ credential: URLCredential, for challenge: URLAuthenticationChallenge) {}
         func continueWithoutCredential(for challenge: URLAuthenticationChallenge) {}
@@ -17,12 +113,21 @@ final class CocoaMQTTWebSocketAuthenticationTests: XCTestCase {
 
     private final class SocketDelegateSpy: CocoaMQTTSocketDelegate {
         private(set) var urlSessionTrustCallCount = 0
+        var connected: (() -> Void)?
+        var receivedData: ((Data) -> Void)?
+        var disconnected: ((Error?) -> Void)?
 
-        func socketConnected(_ socket: CocoaMQTTSocketProtocol) {}
+        func socketConnected(_ socket: CocoaMQTTSocketProtocol) {
+            connected?()
+        }
         func socket(_ socket: CocoaMQTTSocketProtocol, didReceive trust: SecTrust, completionHandler: @escaping (Bool) -> Void) {}
         func socket(_ socket: CocoaMQTTSocketProtocol, didWriteDataWithTag tag: Int) {}
-        func socket(_ socket: CocoaMQTTSocketProtocol, didRead data: Data, withTag tag: Int) {}
-        func socketDidDisconnect(_ socket: CocoaMQTTSocketProtocol, withError err: Error?) {}
+        func socket(_ socket: CocoaMQTTSocketProtocol, didRead data: Data, withTag tag: Int) {
+            receivedData?(data)
+        }
+        func socketDidDisconnect(_ socket: CocoaMQTTSocketProtocol, withError err: Error?) {
+            disconnected?(err)
+        }
 
         func socketUrlSession(
             _ socket: CocoaMQTTSocketProtocol,
@@ -106,6 +211,38 @@ final class CocoaMQTTWebSocketAuthenticationTests: XCTestCase {
 
         wait(for: [completed], timeout: 1)
         XCTAssertEqual(delegate.urlSessionTrustCallCount, 1)
+    }
+
+    @available(macOS 10.15, iOS 13.0, tvOS 13.0, *)
+    func testFoundationConnectionReceivesMessageLargerThanDefaultLimitWhenConfigured() throws {
+        let payload = Data(repeating: 0xA5, count: 1_048_577)
+        let server = try LoopbackWebSocketServer(payload: payload)
+        defer { server.stop() }
+        let websocket = CocoaMQTTWebSocket(uri: "/mqtt")
+        let delegate = SocketDelegateSpy()
+        let callbackQueue = DispatchQueue(label: "tests.websocket-message-size.delegate")
+        let opened = expectation(description: "opened WebSocket")
+        let received = expectation(description: "received WebSocket message larger than 1 MiB")
+        delegate.connected = {
+            opened.fulfill()
+        }
+        delegate.disconnected = { error in
+            XCTFail("WebSocket closed before receiving the message: \(String(describing: error))")
+        }
+        delegate.receivedData = { data in
+            XCTAssertEqual(data.count, payload.count)
+            XCTAssertEqual(data.first, payload.first)
+            XCTAssertEqual(data.last, payload.last)
+            received.fulfill()
+        }
+        websocket.maximumMessageSize = payload.count + 1
+        websocket.setDelegate(delegate, delegateQueue: callbackQueue)
+        try websocket.connect(toHost: "127.0.0.1", onPort: server.port)
+        websocket.readData(toLength: UInt(payload.count), withTimeout: 5, tag: 1)
+
+        wait(for: [opened, received], timeout: 5)
+        delegate.disconnected = nil
+        websocket.disconnect()
     }
 
     private func makeTrust() throws -> SecTrust {
