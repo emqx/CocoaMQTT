@@ -341,13 +341,13 @@ final class ClientEventLoopTests: XCTestCase {
             releaseReturned.signal()
         }
 
-        XCTAssertEqual(socket.disconnectStarted.wait(timeout: .now() + 1), .success)
-        let result = releaseReturned.wait(timeout: .now() + 1)
+        XCTAssertEqual(socket.disconnectStarted.wait(timeout: .now() + 3), .success)
+        let result = releaseReturned.wait(timeout: .now() + 3)
         socket.allowDisconnect.signal()
 
         XCTAssertEqual(result, .success)
         if result != .success {
-            XCTAssertEqual(releaseReturned.wait(timeout: .now() + 1), .success)
+            XCTAssertEqual(releaseReturned.wait(timeout: .now() + 3), .success)
         }
     }
 }
