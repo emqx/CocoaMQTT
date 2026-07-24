@@ -425,9 +425,7 @@ public class CocoaMQTT: NSObject, CocoaMQTTClient {
 
     deinit {
         keepAliveController.stop()
-
-        socket.setDelegate(nil, delegateQueue: nil)
-        socket.disconnect()
+        socket.disconnectForClientDeinit()
     }
 
     fileprivate func send(_ frame: Frame, tag: Int = 0, disconnectAfterWriting: Bool = false) {

@@ -100,6 +100,23 @@ public protocol CocoaMQTTSocketProtocol {
     func write(_ data: Data, withTimeout timeout: TimeInterval, tag: Int)
 }
 
+protocol MQTTClientTeardownSocket: AnyObject {
+    func scheduleClientTeardown()
+}
+
+extension CocoaMQTTSocketProtocol {
+    /// Native TCP teardown can block while removing streams from its run loop.
+    /// Other transports retain their established synchronous cleanup contract.
+    func disconnectForClientDeinit() {
+        if let socket = self as? MQTTClientTeardownSocket {
+            socket.scheduleClientTeardown()
+            return
+        }
+        setDelegate(nil, delegateQueue: nil)
+        disconnect()
+    }
+}
+
 /// Normalizes callbacks from built-in and custom transports onto the client's
 /// private event loop. Custom transports are not required to honor the queue
 /// passed to `setDelegate`; correctness is enforced at this boundary instead.
@@ -197,9 +214,22 @@ public extension CocoaMQTTSocketProtocol {
 
 public class CocoaMQTTSocket: NSObject {
 
+    private final class TeardownReference: @unchecked Sendable {
+        let socket: CocoaMQTTSocket
+
+        init(_ socket: CocoaMQTTSocket) {
+            self.socket = socket
+        }
+    }
+
     private static let trustEvaluationQueue = DispatchQueue(
         label: "trust.cocoamqtt.emqx",
         qos: .userInitiated
+    )
+    private static let teardownQueue = DispatchQueue(
+        label: "io.emqx.CocoaMQTT.transport-teardown",
+        qos: .utility,
+        attributes: .concurrent
     )
 
     public var backgroundOnSocket = true
@@ -235,7 +265,9 @@ public class CocoaMQTTSocket: NSObject {
     fileprivate let reference = MGCDAsyncSocket()
     fileprivate weak var delegate: CocoaMQTTSocketDelegate?
     private let connectionStateLock = NSLock()
+    private let teardownCondition = NSCondition()
     private var connectedHost: String?
+    private var teardownPending = false
 
     public override init() { super.init() }
 
@@ -262,6 +294,9 @@ public class CocoaMQTTSocket: NSObject {
 
 extension CocoaMQTTSocket: CocoaMQTTDisconnectAfterWritingSocket {
     public func setDelegate(_ theDelegate: CocoaMQTTSocketDelegate?, delegateQueue: DispatchQueue?) {
+        if theDelegate != nil {
+            waitForPendingClientTeardown()
+        }
         delegate = theDelegate
         reference.setDelegate((delegate != nil ? self : nil), delegateQueue: delegateQueue)
     }
@@ -271,6 +306,7 @@ extension CocoaMQTTSocket: CocoaMQTTDisconnectAfterWritingSocket {
     }
 
     public func connect(toHost host: String, onPort port: UInt16, withTimeout timeout: TimeInterval) throws {
+        waitForPendingClientTeardown()
         connectionStateLock.lock()
         connectedHost = host
         connectionStateLock.unlock()
@@ -278,6 +314,7 @@ extension CocoaMQTTSocket: CocoaMQTTDisconnectAfterWritingSocket {
     }
 
     public func disconnect() {
+        waitForPendingClientTeardown()
         reference.disconnect()
     }
 
@@ -292,6 +329,43 @@ extension CocoaMQTTSocket: CocoaMQTTDisconnectAfterWritingSocket {
     public func writeAndDisconnect(_ data: Data, withTimeout timeout: TimeInterval, tag: Int) {
         reference.write(data, withTimeout: timeout, tag: tag)
         reference.disconnectAfterWriting()
+    }
+}
+
+extension CocoaMQTTSocket: MQTTClientTeardownSocket {
+    func scheduleClientTeardown() {
+        teardownCondition.lock()
+        guard !teardownPending else {
+            teardownCondition.unlock()
+            return
+        }
+        teardownPending = true
+        teardownCondition.unlock()
+
+        delegate = nil
+        reference.setDelegate(nil, delegateQueue: nil)
+
+        let socketReference = TeardownReference(self)
+        Self.teardownQueue.async {
+            socketReference.socket.finishClientTeardown()
+        }
+    }
+
+    private func finishClientTeardown() {
+        reference.disconnect()
+
+        teardownCondition.lock()
+        teardownPending = false
+        teardownCondition.broadcast()
+        teardownCondition.unlock()
+    }
+
+    private func waitForPendingClientTeardown() {
+        teardownCondition.lock()
+        while teardownPending {
+            teardownCondition.wait()
+        }
+        teardownCondition.unlock()
     }
 }
 

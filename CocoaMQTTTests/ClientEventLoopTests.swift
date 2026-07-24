@@ -12,18 +12,57 @@ final class ClientEventLoopTests: XCTestCase {
         }
     }
 
+    private final class ClientHolder: @unchecked Sendable {
+        var client: AnyObject?
+
+        init(_ client: AnyObject) {
+            self.client = client
+        }
+    }
+
+    private final class BlockingNativeTeardownSocket: CocoaMQTTSocketProtocol, MQTTClientTeardownSocket, @unchecked Sendable {
+        var enableSSL = false
+
+        let disconnectStarted = DispatchSemaphore(value: 0)
+        let allowDisconnect = DispatchSemaphore(value: 0)
+
+        func scheduleClientTeardown() {
+            setDelegate(nil, delegateQueue: nil)
+            DispatchQueue.global(qos: .utility).async {
+                self.disconnect()
+            }
+        }
+
+        func setDelegate(_ theDelegate: CocoaMQTTSocketDelegate?, delegateQueue: DispatchQueue?) {}
+        func connect(toHost host: String, onPort port: UInt16) throws {}
+        func connect(toHost host: String, onPort port: UInt16, withTimeout timeout: TimeInterval) throws {}
+        func disconnect() {
+            disconnectStarted.signal()
+            allowDisconnect.wait()
+        }
+        func readData(toLength length: UInt, withTimeout timeout: TimeInterval, tag: Int) {}
+        func write(_ data: Data, withTimeout timeout: TimeInterval, tag: Int) {}
+    }
+
     private final class SocketSpy: CocoaMQTTSocketProtocol {
         var enableSSL = false
 
         private let lock = NSLock()
         private weak var delegate: CocoaMQTTSocketDelegate?
         private var _delegateQueue: DispatchQueue?
+        private var _disconnectCallCount = 0
         var writeHandler: (() -> Void)?
 
         var capturedDelegateQueue: DispatchQueue? {
             lock.lock()
             defer { lock.unlock() }
             return _delegateQueue
+        }
+
+        var disconnectCallCount: Int {
+            lock.lock()
+            defer { lock.unlock() }
+            return _disconnectCallCount
         }
 
         func setDelegate(_ theDelegate: CocoaMQTTSocketDelegate?, delegateQueue: DispatchQueue?) {
@@ -42,7 +81,11 @@ final class ClientEventLoopTests: XCTestCase {
 
         func connect(toHost host: String, onPort port: UInt16) throws {}
         func connect(toHost host: String, onPort port: UInt16, withTimeout timeout: TimeInterval) throws {}
-        func disconnect() {}
+        func disconnect() {
+            lock.lock()
+            _disconnectCallCount += 1
+            lock.unlock()
+        }
         func readData(toLength length: UInt, withTimeout timeout: TimeInterval, tag: Int) {}
         func write(_ data: Data, withTimeout timeout: TimeInterval, tag: Int) {
             writeHandler?()
@@ -179,6 +222,31 @@ final class ClientEventLoopTests: XCTestCase {
         callbackQueue.sync {}
     }
 
+    func testMQTT311DeinitDoesNotWaitForNativeTransportDisconnect() {
+        assertDeinitDoesNotWaitForNativeTransportDisconnect {
+            CocoaMQTT(clientID: "nonblocking-deinit-311", socket: $0)
+        }
+    }
+
+    func testMQTT5DeinitDoesNotWaitForNativeTransportDisconnect() {
+        assertDeinitDoesNotWaitForNativeTransportDisconnect {
+            CocoaMQTT5(clientID: "nonblocking-deinit-5", socket: $0)
+        }
+    }
+
+    func testCustomSocketRetainsSynchronousDeinitCleanupByDefault() {
+        let socket = SocketSpy()
+        var mqtt311: CocoaMQTT? = CocoaMQTT(clientID: "custom-deinit-311", socket: socket)
+        var mqtt5: CocoaMQTT5? = CocoaMQTT5(clientID: "custom-deinit-5", socket: socket)
+
+        XCTAssertNotNil(mqtt311)
+        XCTAssertNotNil(mqtt5)
+        mqtt311 = nil
+        XCTAssertEqual(socket.disconnectCallCount, 1)
+        mqtt5 = nil
+        XCTAssertEqual(socket.disconnectCallCount, 2)
+    }
+
     func testCallbackQueueChangeDoesNotMoveAlreadySubmittedCallbacks() {
         let mqtt = CocoaMQTT(clientID: "callback-queue-snapshot")
         let firstQueue = DispatchQueue(label: "tests.event-loop.first-callback")
@@ -257,5 +325,27 @@ final class ClientEventLoopTests: XCTestCase {
         )
 
         wait(for: [write], timeout: 1)
+    }
+
+    private func assertDeinitDoesNotWaitForNativeTransportDisconnect(
+        makeClient: (CocoaMQTTSocketProtocol) -> AnyObject
+    ) {
+        let socket = BlockingNativeTeardownSocket()
+        let holder = ClientHolder(makeClient(socket))
+        let releaseReturned = DispatchSemaphore(value: 0)
+
+        DispatchQueue(label: "tests.client-release").async {
+            holder.client = nil
+            releaseReturned.signal()
+        }
+
+        XCTAssertEqual(socket.disconnectStarted.wait(timeout: .now() + 1), .success)
+        let result = releaseReturned.wait(timeout: .now() + 1)
+        socket.allowDisconnect.signal()
+
+        XCTAssertEqual(result, .success)
+        if result != .success {
+            XCTAssertEqual(releaseReturned.wait(timeout: .now() + 1), .success)
+        }
     }
 }
