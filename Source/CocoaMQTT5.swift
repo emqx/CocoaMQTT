@@ -242,7 +242,7 @@ public class CocoaMQTT5: NSObject, CocoaMQTT5Client {
 
     /// Keep alive time interval
     public var keepAlive: UInt16 = 60
-    private var aliveTimer: CocoaMQTTTimer?
+    private let keepAliveController: MQTTKeepAliveController
 
     /// Maximum duration in seconds for each Remaining Length byte and the complete payload read.
     /// Each deadline starts with its read and is not reset by partial data. Header reads remain unlimited.
@@ -443,8 +443,10 @@ public class CocoaMQTT5: NSObject, CocoaMQTT5Client {
         let eventLoopQueue = DispatchQueue(label: "io.emqx.CocoaMQTT5.event-loop.\(UUID().uuidString)")
         self.eventLoopQueue = eventLoopQueue
         self.autoReconnectController = MQTTAutoReconnectController(eventLoopQueue: eventLoopQueue)
+        self.keepAliveController = MQTTKeepAliveController(eventLoopQueue: eventLoopQueue)
         super.init()
         autoReconnectController.delegate = self
+        keepAliveController.delegate = self
         socketDelegateProxy = CocoaMQTTSocketDelegateProxy(eventLoopQueue: eventLoopQueue)
         socketDelegateProxy.delegate = self
         $connState.setMutationObserver { [weak self] state in
@@ -460,7 +462,7 @@ public class CocoaMQTT5: NSObject, CocoaMQTT5Client {
     }
 
     deinit {
-        aliveTimer?.suspend()
+        keepAliveController.stop()
         sessionExpiryController?.handleDisconnect()
         socket.setDelegate(nil, delegateQueue: nil)
         socket.disconnect()
@@ -730,6 +732,7 @@ public class CocoaMQTT5: NSObject, CocoaMQTT5Client {
     /// Disconnect unexpectedly.
     /// This keeps auto-reconnect behavior enabled.
     func internal_disconnect() {
+        keepAliveController.stop()
         autoReconnectController.beginUnexpectedDisconnect()
         socket.disconnect()
     }
@@ -761,6 +764,7 @@ public class CocoaMQTT5: NSObject, CocoaMQTT5Client {
                                      userProperties: [String: String]? = nil,
                                      recordsLocalReason: Bool = false) {
         guard autoReconnectController.beginExpectedDisconnect() else { return }
+        keepAliveController.stop()
         if recordsLocalReason {
             markPendingLocalDisconnect(reasonCode: reasonCode)
         }
@@ -773,6 +777,11 @@ public class CocoaMQTT5: NSObject, CocoaMQTT5Client {
     }
     /// Send a PING request to broker
     public func ping() {
+        keepAliveController.pingSent()
+        sendPing()
+    }
+
+    private func sendPing() {
         printDebug("ping")
         guard send(FramePingReq(), tag: -0xC0) else {
             internal_disconnect()
@@ -1246,6 +1255,7 @@ extension CocoaMQTT5: CocoaMQTTSocketDelegate {
 
     public func socketDidDisconnect(_ socket: CocoaMQTTSocketProtocol, withError err: Error?) {
         // Clean up
+        keepAliveController.stop()
         socket.setDelegate(nil, delegateQueue: nil)
         clientStateLock.lock()
         // Publish uses the same lock, so no frame can enter the new connection
@@ -1366,22 +1376,7 @@ extension CocoaMQTT5: CocoaMQTTReaderDelegate {
 
             autoReconnectController.connectionSucceeded()
 
-            // Start keepalive timer
-
             let negotiatedKeepAlive = properties?.serverKeepAlive ?? keepAlive
-            aliveTimer = nil
-            if negotiatedKeepAlive > 0 {
-                aliveTimer = CocoaMQTTTimer.every(Double(negotiatedKeepAlive), name: "aliveTimer") { [weak self] in
-                    guard let self = self else { return }
-                    self.eventLoopQueue.async {
-                        guard self.connState == .connected else {
-                            self.aliveTimer = nil
-                            return
-                        }
-                        self.ping()
-                    }
-                }
-            }
 
             // recover session if enable
 
@@ -1421,6 +1416,8 @@ extension CocoaMQTT5: CocoaMQTTReaderDelegate {
 
             deliver.completeConnection()
             connState = .connected
+            // Start only after session recovery has completed and the client can send PINGREQ.
+            keepAliveController.start(interval: negotiatedKeepAlive)
 
         } else {
             connState = .disconnected
@@ -1624,11 +1621,28 @@ extension CocoaMQTT5: CocoaMQTTReaderDelegate {
 
     func didReceive(_ reader: CocoaMQTTReader, pingresp: FramePingResp) {
         printDebug("RECV: \(pingresp)")
+        keepAliveController.pingResponseReceived()
 
         __delegate_queue { mqtt5 in
             mqtt5.delegate?.mqtt5DidReceivePong(mqtt5)
             mqtt5.didReceivePong(mqtt5)
         }
+    }
+}
+
+extension CocoaMQTT5: MQTTKeepAliveControllerDelegate {
+    func keepAliveControllerRequestsPing(_ controller: MQTTKeepAliveController) {
+        guard connState == .connected else {
+            controller.stop()
+            return
+        }
+        sendPing()
+    }
+
+    func keepAliveControllerDidTimeOut(_ controller: MQTTKeepAliveController) {
+        guard connState == .connected else { return }
+        printWarning("PINGRESP timed out, closing socket")
+        internal_disconnect()
     }
 }
 
@@ -1643,7 +1657,7 @@ extension CocoaMQTT5 {
     }
 
     func t_keepAliveInterval() -> TimeInterval? {
-        aliveTimer?.timeInterval
+        keepAliveController.interval
     }
 
     func t_sessionExpiryControllerCount() -> Int {
