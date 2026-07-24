@@ -184,6 +184,21 @@ final class KeepAliveTests: XCTestCase {
         XCTAssertNil(controller.interval)
     }
 
+    func testDeinitializingControllerCancelsScheduledTask() {
+        let eventLoop = DispatchQueue(label: "tests.keepalive.deinit")
+        let scheduler = Scheduler()
+        var controller: MQTTKeepAliveController? = MQTTKeepAliveController(
+            eventLoopQueue: eventLoop,
+            scheduler: scheduler
+        )
+
+        controller?.start(interval: 5)
+        let scheduledTask = scheduler.tasks[0]
+        controller = nil
+
+        XCTAssertTrue(scheduledTask.isCancelled)
+    }
+
     private func establishSession(_ mqtt: CocoaMQTT, socket: SocketSpy) {
         XCTAssertTrue(mqtt.connect())
         mqtt.socketConnected(socket)

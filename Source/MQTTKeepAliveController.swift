@@ -54,7 +54,7 @@ final class MQTTKeepAliveController: @unchecked Sendable {
     }
 
     deinit {
-        scheduledTask?.cancel()
+        stop()
     }
 
     var interval: TimeInterval? {
