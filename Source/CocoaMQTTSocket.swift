@@ -100,6 +100,50 @@ public protocol CocoaMQTTSocketProtocol {
     func write(_ data: Data, withTimeout timeout: TimeInterval, tag: Int)
 }
 
+protocol MQTTClientTeardownSocket: AnyObject {
+    func prepareClientTeardown() -> Bool
+    func performClientTeardown()
+}
+
+private final class MQTTClientTeardownReference: @unchecked Sendable {
+    let socket: MQTTClientTeardownSocket
+
+    init(_ socket: MQTTClientTeardownSocket) {
+        self.socket = socket
+    }
+}
+
+private enum MQTTClientTeardownScheduler {
+    static let queue = DispatchQueue(
+        label: "io.emqx.CocoaMQTT.transport-teardown",
+        qos: .utility,
+        attributes: .concurrent
+    )
+}
+
+extension MQTTClientTeardownSocket {
+    func scheduleClientTeardown() {
+        guard prepareClientTeardown() else { return }
+        let reference = MQTTClientTeardownReference(self)
+        MQTTClientTeardownScheduler.queue.async {
+            reference.socket.performClientTeardown()
+        }
+    }
+}
+
+extension CocoaMQTTSocketProtocol {
+    /// Native TCP teardown can block while removing streams from its run loop.
+    /// Other transports retain their established synchronous cleanup contract.
+    func disconnectForClientDeinit() {
+        if let socket = self as? MQTTClientTeardownSocket {
+            socket.scheduleClientTeardown()
+            return
+        }
+        setDelegate(nil, delegateQueue: nil)
+        disconnect()
+    }
+}
+
 /// Normalizes callbacks from built-in and custom transports onto the client's
 /// private event loop. Custom transports are not required to honor the queue
 /// passed to `setDelegate`; correctness is enforced at this boundary instead.
@@ -235,7 +279,9 @@ public class CocoaMQTTSocket: NSObject {
     fileprivate let reference = MGCDAsyncSocket()
     fileprivate weak var delegate: CocoaMQTTSocketDelegate?
     private let connectionStateLock = NSLock()
+    private let teardownCondition = NSCondition()
     private var connectedHost: String?
+    private var teardownPending = false
 
     public override init() { super.init() }
 
@@ -262,8 +308,10 @@ public class CocoaMQTTSocket: NSObject {
 
 extension CocoaMQTTSocket: CocoaMQTTDisconnectAfterWritingSocket {
     public func setDelegate(_ theDelegate: CocoaMQTTSocketDelegate?, delegateQueue: DispatchQueue?) {
-        delegate = theDelegate
-        reference.setDelegate((delegate != nil ? self : nil), delegateQueue: delegateQueue)
+        withClientTeardownExcluded {
+            delegate = theDelegate
+            reference.setDelegate((delegate != nil ? self : nil), delegateQueue: delegateQueue)
+        }
     }
 
     public func connect(toHost host: String, onPort port: UInt16) throws {
@@ -271,27 +319,71 @@ extension CocoaMQTTSocket: CocoaMQTTDisconnectAfterWritingSocket {
     }
 
     public func connect(toHost host: String, onPort port: UInt16, withTimeout timeout: TimeInterval) throws {
-        connectionStateLock.lock()
-        connectedHost = host
-        connectionStateLock.unlock()
-        try reference.connect(toHost: host, onPort: port, withTimeout: timeout)
+        try withClientTeardownExcluded {
+            connectionStateLock.lock()
+            connectedHost = host
+            connectionStateLock.unlock()
+            try reference.connect(toHost: host, onPort: port, withTimeout: timeout)
+        }
     }
 
     public func disconnect() {
-        reference.disconnect()
+        withClientTeardownExcluded {
+            reference.disconnect()
+        }
     }
 
     public func readData(toLength length: UInt, withTimeout timeout: TimeInterval, tag: Int) {
-        reference.readData(toLength: length, withTimeout: timeout, tag: tag)
+        withClientTeardownExcluded {
+            reference.readData(toLength: length, withTimeout: timeout, tag: tag)
+        }
     }
 
     public func write(_ data: Data, withTimeout timeout: TimeInterval, tag: Int) {
-        reference.write(data, withTimeout: timeout, tag: tag)
+        withClientTeardownExcluded {
+            reference.write(data, withTimeout: timeout, tag: tag)
+        }
     }
 
     public func writeAndDisconnect(_ data: Data, withTimeout timeout: TimeInterval, tag: Int) {
-        reference.write(data, withTimeout: timeout, tag: tag)
-        reference.disconnectAfterWriting()
+        withClientTeardownExcluded {
+            reference.write(data, withTimeout: timeout, tag: tag)
+            reference.disconnectAfterWriting()
+        }
+    }
+}
+
+extension CocoaMQTTSocket: MQTTClientTeardownSocket {
+    func prepareClientTeardown() -> Bool {
+        teardownCondition.lock()
+        defer { teardownCondition.unlock() }
+        guard !teardownPending else {
+            return false
+        }
+        teardownPending = true
+        delegate = nil
+        reference.setDelegate(nil, delegateQueue: nil)
+        return true
+    }
+
+    func performClientTeardown() {
+        reference.disconnect()
+
+        teardownCondition.lock()
+        teardownPending = false
+        teardownCondition.broadcast()
+        teardownCondition.unlock()
+    }
+
+    private func withClientTeardownExcluded<Result>(
+        _ operation: () throws -> Result
+    ) rethrows -> Result {
+        teardownCondition.lock()
+        while teardownPending {
+            teardownCondition.wait()
+        }
+        defer { teardownCondition.unlock() }
+        return try operation()
     }
 }
 

@@ -464,8 +464,7 @@ public class CocoaMQTT5: NSObject, CocoaMQTT5Client {
     deinit {
         keepAliveController.stop()
         sessionExpiryController?.handleDisconnect()
-        socket.setDelegate(nil, delegateQueue: nil)
-        socket.disconnect()
+        socket.disconnectForClientDeinit()
     }
 
     @discardableResult
