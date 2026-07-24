@@ -47,15 +47,26 @@ public protocol CocoaMQTTWebSocketConnectionBuilder {
 
 }
 
+private protocol CocoaMQTTWebSocketMessageSizeConfiguring: AnyObject {
+    var maximumMessageSize: Int { get set }
+}
+
 // MARK: - CocoaMQTTWebSocket
 
 public class CocoaMQTTWebSocket: CocoaMQTTDisconnectAfterWritingSocket {
+
+    private static let foundationDefaultMaximumMessageSize = 1_048_576
 
     public var enableSSL = false
 
     public var shouldConnectWithURIOnly = false
 
     public var headers: [String: String] = [:]
+
+    /// Maximum incoming WebSocket message size for the built-in Foundation
+    /// transport. The default remains 1 MiB to preserve its bounded buffering.
+    /// Values below one byte are clamped to one.
+    public var maximumMessageSize = CocoaMQTTWebSocket.foundationDefaultMaximumMessageSize
 
     public typealias ConnectionBuilder = CocoaMQTTWebSocketConnectionBuilder
 
@@ -108,6 +119,9 @@ public class CocoaMQTTWebSocket: CocoaMQTTDisconnectAfterWritingSocket {
             reset()
             disconnectAfterWrites = false
             let newConnection = try builder.buildConnection(forURL: url, withHeaders: self.headers)
+            if let configurableConnection = newConnection as? CocoaMQTTWebSocketMessageSizeConfiguring {
+                configurableConnection.maximumMessageSize = max(1, maximumMessageSize)
+            }
             connection = newConnection
             newConnection.delegate = self
             newConnection.queue = internalQueue
@@ -348,6 +362,14 @@ public extension CocoaMQTTWebSocket {
 
         public weak var delegate: CocoaMQTTWebSocketConnectionDelegate?
         public lazy var queue = DispatchQueue(label: "CocoaMQTTFoundationWebSocketConnection-\(self.hashValue)")
+        var maximumMessageSize: Int {
+            get {
+                task?.maximumMessageSize ?? CocoaMQTTWebSocket.foundationDefaultMaximumMessageSize
+            }
+            set {
+                task?.maximumMessageSize = max(1, newValue)
+            }
+        }
 
         var session: URLSession?
         var task: URLSessionWebSocketTask?
@@ -404,6 +426,9 @@ public extension CocoaMQTTWebSocket {
         }
     }
 }
+
+@available(OSX 10.15, iOS 13.0, watchOS 6.0, tvOS 13.0, *)
+extension CocoaMQTTWebSocket.FoundationConnection: CocoaMQTTWebSocketMessageSizeConfiguring {}
 
 @available(OSX 10.15, iOS 13.0, watchOS 6.0, tvOS 13.0, *)
 extension CocoaMQTTWebSocket.FoundationConnection: URLSessionWebSocketDelegate {

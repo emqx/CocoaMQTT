@@ -224,6 +224,15 @@ let mqtt = CocoaMQTT(clientID: clientID, host: host, port: 8083, socket: websock
 _ = mqtt.connect()
 ```
 
+The Foundation WebSocket transport accepts incoming messages up to 1 MiB by
+default. Set a larger limit before connecting if the broker may send larger
+MQTT packets:
+
+```swift
+let websocket = CocoaMQTTWebSocket(uri: "/mqtt")
+websocket.maximumMessageSize = 10 * 1024 * 1024
+```
+
 If you want to add additional custom header to the connection, you can use the following:
 
 ```swift
