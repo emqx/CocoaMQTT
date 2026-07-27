@@ -47,15 +47,36 @@ public protocol CocoaMQTTWebSocketConnectionBuilder {
 
 }
 
+private protocol CocoaMQTTWebSocketMessageSizeConfiguring: AnyObject {
+    var maximumMessageSize: Int { get set }
+}
+
 // MARK: - CocoaMQTTWebSocket
 
 public class CocoaMQTTWebSocket: CocoaMQTTDisconnectAfterWritingSocket {
+
+    private static let foundationDefaultMaximumMessageSize = 1_048_576
 
     public var enableSSL = false
 
     public var shouldConnectWithURIOnly = false
 
     public var headers: [String: String] = [:]
+
+    /// Incoming WebSocket message buffering limit for the built-in Foundation
+    /// transport. A message must be smaller than this value. The default is
+    /// 1 MiB, zero removes the limit, and negative values reset to the default.
+    /// Set this before connecting; custom builders must configure their own
+    /// transports. The older Starscream transport does not use this setting.
+    /// Use zero only when the peer and message sizes are otherwise controlled,
+    /// because it permits unbounded message buffering.
+    public var maximumMessageSize = CocoaMQTTWebSocket.foundationDefaultMaximumMessageSize {
+        didSet {
+            if maximumMessageSize < 0 {
+                maximumMessageSize = CocoaMQTTWebSocket.foundationDefaultMaximumMessageSize
+            }
+        }
+    }
 
     public typealias ConnectionBuilder = CocoaMQTTWebSocketConnectionBuilder
 
@@ -108,6 +129,9 @@ public class CocoaMQTTWebSocket: CocoaMQTTDisconnectAfterWritingSocket {
             reset()
             disconnectAfterWrites = false
             let newConnection = try builder.buildConnection(forURL: url, withHeaders: self.headers)
+            if let configurableConnection = newConnection as? CocoaMQTTWebSocketMessageSizeConfiguring {
+                configurableConnection.maximumMessageSize = maximumMessageSize
+            }
             connection = newConnection
             newConnection.delegate = self
             newConnection.queue = internalQueue
@@ -348,6 +372,16 @@ public extension CocoaMQTTWebSocket {
 
         public weak var delegate: CocoaMQTTWebSocketConnectionDelegate?
         public lazy var queue = DispatchQueue(label: "CocoaMQTTFoundationWebSocketConnection-\(self.hashValue)")
+        var maximumMessageSize: Int {
+            get {
+                task?.maximumMessageSize ?? CocoaMQTTWebSocket.foundationDefaultMaximumMessageSize
+            }
+            set {
+                task?.maximumMessageSize = newValue < 0
+                    ? CocoaMQTTWebSocket.foundationDefaultMaximumMessageSize
+                    : newValue
+            }
+        }
 
         var session: URLSession?
         var task: URLSessionWebSocketTask?
@@ -404,6 +438,9 @@ public extension CocoaMQTTWebSocket {
         }
     }
 }
+
+@available(OSX 10.15, iOS 13.0, watchOS 6.0, tvOS 13.0, *)
+extension CocoaMQTTWebSocket.FoundationConnection: CocoaMQTTWebSocketMessageSizeConfiguring {}
 
 @available(OSX 10.15, iOS 13.0, watchOS 6.0, tvOS 13.0, *)
 extension CocoaMQTTWebSocket.FoundationConnection: URLSessionWebSocketDelegate {
