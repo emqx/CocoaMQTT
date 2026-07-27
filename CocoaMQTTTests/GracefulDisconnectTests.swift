@@ -14,6 +14,7 @@ final class GracefulDisconnectTests: XCTestCase {
         private(set) var disconnectCount = 0
         private(set) var writeAndDisconnectCount = 0
         private(set) var finalWrites = [Data]()
+        private(set) var finalWriteTimeouts = [TimeInterval]()
 
         func setDelegate(_ theDelegate: CocoaMQTTSocketDelegate?, delegateQueue: DispatchQueue?) {}
         func connect(toHost host: String, onPort port: UInt16) throws {}
@@ -26,6 +27,7 @@ final class GracefulDisconnectTests: XCTestCase {
         func writeAndDisconnect(_ data: Data, withTimeout timeout: TimeInterval, tag: Int) {
             writeAndDisconnectCount += 1
             finalWrites.append(data)
+            finalWriteTimeouts.append(timeout)
         }
 
         func completeFinalWrite() {
@@ -36,12 +38,14 @@ final class GracefulDisconnectTests: XCTestCase {
     func testMQTT311WaitsForDisconnectWriteAndCoalescesRepeatedRequests() {
         let socket = DeferredDisconnectSocket()
         let mqtt = CocoaMQTT(clientID: "graceful-disconnect-311", socket: socket)
+        mqtt.socketWriteTimeout = 30
 
         mqtt.disconnect()
         mqtt.disconnect()
 
         XCTAssertEqual(socket.writeAndDisconnectCount, 1)
         XCTAssertEqual(socket.finalWrites, [Data([FrameType.disconnect.rawValue, 0])])
+        XCTAssertEqual(socket.finalWriteTimeouts, [30])
         XCTAssertEqual(socket.disconnectCount, 0)
 
         socket.completeFinalWrite()
@@ -51,6 +55,7 @@ final class GracefulDisconnectTests: XCTestCase {
     func testMQTT5WaitsForDisconnectWriteAndPreservesReasonProperties() throws {
         let socket = DeferredDisconnectSocket()
         let mqtt = CocoaMQTT5(clientID: "graceful-disconnect-5", socket: socket)
+        mqtt.socketWriteTimeout = 30
 
         mqtt.disconnect(
             reasonCode: .disconnectWithWillMessage,
@@ -59,6 +64,7 @@ final class GracefulDisconnectTests: XCTestCase {
         mqtt.disconnect()
 
         XCTAssertEqual(socket.writeAndDisconnectCount, 1)
+        XCTAssertEqual(socket.finalWriteTimeouts, [30])
         XCTAssertEqual(socket.disconnectCount, 0)
 
         let bytes = try XCTUnwrap(socket.finalWrites.first).map { $0 }
