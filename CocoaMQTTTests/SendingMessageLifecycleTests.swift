@@ -82,6 +82,9 @@ final class SendingMessageLifecycleTests: XCTestCase {
         XCTAssertEqual(mqtt.socketWriteTimeout, -1)
         XCTAssertEqual(mqtt5.socketWriteTimeout, -1)
 
+        mqtt.socketWriteTimeout = -.infinity
+        XCTAssertEqual(mqtt.socketWriteTimeout, -1)
+
         mqtt.socketWriteTimeout = .infinity
         mqtt5.socketWriteTimeout = .nan
         XCTAssertEqual(mqtt.socketWriteTimeout, 5)

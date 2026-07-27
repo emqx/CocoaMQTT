@@ -343,8 +343,9 @@ mqtt.socketWriteTimeout = 30
 Set `socketWriteTimeout` to `0` or a negative value to disable the deadline.
 This setting applies to MQTT 3.1.1 and MQTT 5 over the built-in TCP and
 WebSocket transports. It does not override the broker's packet-size limit or
-the MQTT 5 Server Maximum Packet Size. Prefer binary payloads or application
-level chunking when messages are large; Base64 increases their encoded size.
+the MQTT 5 Server Maximum Packet Size. Prefer binary payloads or
+application-level chunking when messages are large; Base64 increases their
+encoded size.
 
 ## Example App
 
