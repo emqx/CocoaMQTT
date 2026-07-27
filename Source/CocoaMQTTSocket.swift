@@ -100,6 +100,15 @@ public protocol CocoaMQTTSocketProtocol {
     func write(_ data: Data, withTimeout timeout: TimeInterval, tag: Int)
 }
 
+enum CocoaMQTTSocketWriteTimeout {
+    static let defaultValue: TimeInterval = 5
+
+    static func normalize(_ timeout: TimeInterval) -> TimeInterval {
+        guard timeout.isFinite else { return defaultValue }
+        return timeout > 0 ? timeout : -1
+    }
+}
+
 protocol MQTTClientTeardownSocket: AnyObject {
     func prepareClientTeardown() -> Bool
     func performClientTeardown()

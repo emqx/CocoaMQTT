@@ -178,6 +178,23 @@ public class CocoaMQTT: NSObject, CocoaMQTTClient {
         set { (self.socket as? CocoaMQTTSocket)?.backgroundOnSocket = newValue }
     }
 
+    /// Maximum time allowed for a socket write. Default is 5 seconds.
+    ///
+    /// Set this to zero or a negative value to disable the write deadline.
+    /// This controls only the client transport deadline; broker packet-size
+    /// limits still apply.
+    @objc public var socketWriteTimeout: TimeInterval {
+        get { configuredSocketWriteTimeout }
+        set {
+            configuredSocketWriteTimeout = CocoaMQTTSocketWriteTimeout.normalize(newValue)
+        }
+    }
+    @ConcurrentAtomic(
+        wrappedValue: CocoaMQTTSocketWriteTimeout.defaultValue,
+        label: "CocoaMQTT.socketWriteTimeout"
+    )
+    private var configuredSocketWriteTimeout
+
     /// Delegate Executed queue. Default is `DispatchQueue.main`
     ///
     /// The delegate/closure callback function will be committed asynchronously to it.
@@ -432,10 +449,11 @@ public class CocoaMQTT: NSObject, CocoaMQTTClient {
         printDebug("SEND: \(frame)")
         let data = frame.bytes(version: version)
         let packet = Data(bytes: data, count: data.count)
+        let writeTimeout = socketWriteTimeout
         if disconnectAfterWriting {
-            socket.writeAndDisconnect(packet, withTimeout: 5, tag: tag)
+            socket.writeAndDisconnect(packet, withTimeout: writeTimeout, tag: tag)
         } else {
-            socket.write(packet, withTimeout: 5, tag: tag)
+            socket.write(packet, withTimeout: writeTimeout, tag: tag)
         }
     }
 

@@ -20,6 +20,7 @@ final class SendingMessageLifecycleTests: XCTestCase {
         var enableSSL = false
         var writes = [Data]()
         var writeTags = [Int]()
+        var writeTimeouts = [TimeInterval]()
         var onWrite: ((Int) -> Void)?
 
         func setDelegate(_ theDelegate: CocoaMQTTSocketDelegate?, delegateQueue: DispatchQueue?) {}
@@ -30,8 +31,61 @@ final class SendingMessageLifecycleTests: XCTestCase {
         func write(_ data: Data, withTimeout timeout: TimeInterval, tag: Int) {
             writes.append(data)
             writeTags.append(tag)
+            writeTimeouts.append(timeout)
             onWrite?(tag)
         }
+    }
+
+    func testMQTT311PassesConfiguredTimeoutToPublishWrite() {
+        let socket = SocketSpy()
+        let mqtt = CocoaMQTT(clientID: "write-timeout-311", socket: socket)
+
+        XCTAssertEqual(mqtt.socketWriteTimeout, 5)
+        mqtt.socketWriteTimeout = 30
+        establishSession(mqtt, socket: socket, cleanSession: true, sessionPresent: false)
+        socket.writeTimeouts.removeAll()
+        XCTAssertEqual(
+            mqtt.publish(CocoaMQTTMessage(topic: "write/timeout", payload: [1], qos: .qos0)),
+            0
+        )
+        mqtt.t_waitUntilDeliverIdle()
+
+        XCTAssertEqual(socket.writeTimeouts, [30])
+    }
+
+    func testMQTT5PassesConfiguredTimeoutToPublishWrite() {
+        let socket = SocketSpy()
+        let mqtt = CocoaMQTT5(clientID: "write-timeout-5", socket: socket)
+
+        XCTAssertEqual(mqtt.socketWriteTimeout, 5)
+        mqtt.socketWriteTimeout = 60
+        establishSession(mqtt, socket: socket, cleanStart: true, requestedExpiry: 0)
+        socket.writeTimeouts.removeAll()
+        XCTAssertEqual(
+            mqtt.publish(
+                CocoaMQTT5Message(topic: "write/timeout", payload: [1], qos: .qos0),
+                properties: MqttPublishProperties()
+            ),
+            0
+        )
+        mqtt.t_waitUntilDeliverIdle()
+
+        XCTAssertEqual(socket.writeTimeouts, [60])
+    }
+
+    func testSocketWriteTimeoutNormalizesDisabledAndInvalidValues() {
+        let mqtt = CocoaMQTT(clientID: "write-timeout-normalization")
+        let mqtt5 = CocoaMQTT5(clientID: "write-timeout-normalization-5")
+
+        mqtt.socketWriteTimeout = 0
+        mqtt5.socketWriteTimeout = -10
+        XCTAssertEqual(mqtt.socketWriteTimeout, -1)
+        XCTAssertEqual(mqtt5.socketWriteTimeout, -1)
+
+        mqtt.socketWriteTimeout = .infinity
+        mqtt5.socketWriteTimeout = .nan
+        XCTAssertEqual(mqtt.socketWriteTimeout, 5)
+        XCTAssertEqual(mqtt5.socketWriteTimeout, 5)
     }
 
     func testMQTT311ReleasesQoS0MessageAfterSending() {
