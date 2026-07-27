@@ -63,10 +63,20 @@ public class CocoaMQTTWebSocket: CocoaMQTTDisconnectAfterWritingSocket {
 
     public var headers: [String: String] = [:]
 
-    /// Maximum incoming WebSocket message size for the built-in Foundation
-    /// transport. The default remains 1 MiB to preserve its bounded buffering.
-    /// Values below one byte are clamped to one.
-    public var maximumMessageSize = CocoaMQTTWebSocket.foundationDefaultMaximumMessageSize
+    /// Incoming WebSocket message buffering limit for the built-in Foundation
+    /// transport. A message must be smaller than this value. The default is
+    /// 1 MiB, zero removes the limit, and negative values reset to the default.
+    /// Set this before connecting; custom builders must configure their own
+    /// transports. The older Starscream transport does not use this setting.
+    /// Use zero only when the peer and message sizes are otherwise controlled,
+    /// because it permits unbounded message buffering.
+    public var maximumMessageSize = CocoaMQTTWebSocket.foundationDefaultMaximumMessageSize {
+        didSet {
+            if maximumMessageSize < 0 {
+                maximumMessageSize = CocoaMQTTWebSocket.foundationDefaultMaximumMessageSize
+            }
+        }
+    }
 
     public typealias ConnectionBuilder = CocoaMQTTWebSocketConnectionBuilder
 
@@ -120,7 +130,7 @@ public class CocoaMQTTWebSocket: CocoaMQTTDisconnectAfterWritingSocket {
             disconnectAfterWrites = false
             let newConnection = try builder.buildConnection(forURL: url, withHeaders: self.headers)
             if let configurableConnection = newConnection as? CocoaMQTTWebSocketMessageSizeConfiguring {
-                configurableConnection.maximumMessageSize = max(1, maximumMessageSize)
+                configurableConnection.maximumMessageSize = maximumMessageSize
             }
             connection = newConnection
             newConnection.delegate = self
@@ -367,7 +377,9 @@ public extension CocoaMQTTWebSocket {
                 task?.maximumMessageSize ?? CocoaMQTTWebSocket.foundationDefaultMaximumMessageSize
             }
             set {
-                task?.maximumMessageSize = max(1, newValue)
+                task?.maximumMessageSize = newValue < 0
+                    ? CocoaMQTTWebSocket.foundationDefaultMaximumMessageSize
+                    : newValue
             }
         }
 

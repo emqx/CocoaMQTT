@@ -224,14 +224,19 @@ let mqtt = CocoaMQTT(clientID: clientID, host: host, port: 8083, socket: websock
 _ = mqtt.connect()
 ```
 
-The Foundation WebSocket transport accepts incoming messages up to 1 MiB by
-default. Set a larger limit before connecting if the broker may send larger
-MQTT packets:
+The built-in Foundation WebSocket transport fails a receive when one WebSocket
+message reaches its 1 MiB buffering limit. Set a value greater than the largest
+expected WebSocket message before connecting, or use `0` to remove the limit:
 
 ```swift
 let websocket = CocoaMQTTWebSocket(uri: "/mqtt")
-websocket.maximumMessageSize = 10 * 1024 * 1024
+websocket.maximumMessageSize = 10 * 1024 * 1024 + 1 // Accept up to 10 MiB.
 ```
+
+This setting is independent of MQTT 5 Maximum Packet Size. It is not used by
+the older Starscream transport, and custom connection builders must configure
+their own transport. Use `0` only when message sizes are otherwise controlled,
+because it permits unbounded buffering.
 
 If you want to add additional custom header to the connection, you can use the following:
 

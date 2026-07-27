@@ -71,7 +71,7 @@ final class CocoaMQTTWebSocketAuthenticationTests: XCTestCase {
 
         private func sendHandshakeAndPayload(on connection: NWConnection) {
             guard let request = String(data: requestData, encoding: .utf8),
-                  let keyLine = request.split(separator: "\r\n").first(where: {
+                  let keyLine = request.components(separatedBy: "\r\n").first(where: {
                       $0.lowercased().hasPrefix("sec-websocket-key:")
                   }),
                   let key = keyLine.split(separator: ":", maxSplits: 1).last?
@@ -216,6 +216,53 @@ final class CocoaMQTTWebSocketAuthenticationTests: XCTestCase {
     @available(macOS 10.15, iOS 13.0, tvOS 13.0, *)
     func testFoundationConnectionReceivesMessageLargerThanDefaultLimitWhenConfigured() throws {
         let payload = Data(repeating: 0xA5, count: 1_048_577)
+        try assertReceives(payload, maximumMessageSize: payload.count + 1)
+    }
+
+    @available(macOS 10.15, iOS 13.0, tvOS 13.0, *)
+    func testFoundationConnectionTreatsZeroMaximumMessageSizeAsUnlimited() throws {
+        let payload = Data(repeating: 0x5A, count: 1_048_577)
+        try assertReceives(payload, maximumMessageSize: 0)
+    }
+
+    @available(macOS 10.15, iOS 13.0, tvOS 13.0, *)
+    func testFoundationConnectionRejectsMessageLargerThanDefaultLimit() throws {
+        let payload = Data(repeating: 0xA5, count: 1_048_577)
+        let server = try LoopbackWebSocketServer(payload: payload)
+        defer { server.stop() }
+        let websocket = CocoaMQTTWebSocket(uri: "/mqtt")
+        let delegate = SocketDelegateSpy()
+        let callbackQueue = DispatchQueue(label: "tests.websocket-default-message-size.delegate")
+        let opened = expectation(description: "opened WebSocket")
+        let rejected = expectation(description: "rejected message larger than default limit")
+        delegate.connected = {
+            opened.fulfill()
+        }
+        delegate.receivedData = { _ in
+            XCTFail("Received a WebSocket message larger than the default limit")
+        }
+        delegate.disconnected = { error in
+            XCTAssertNotNil(error)
+            rejected.fulfill()
+        }
+        websocket.setDelegate(delegate, delegateQueue: callbackQueue)
+        try websocket.connect(toHost: "127.0.0.1", onPort: server.port)
+
+        wait(for: [opened, rejected], timeout: 5)
+        delegate.disconnected = nil
+        websocket.disconnect()
+    }
+
+    func testNegativeMaximumMessageSizeResetsToFoundationDefault() {
+        let websocket = CocoaMQTTWebSocket(uri: "/mqtt")
+
+        websocket.maximumMessageSize = -1
+
+        XCTAssertEqual(websocket.maximumMessageSize, 1_048_576)
+    }
+
+    @available(macOS 10.15, iOS 13.0, tvOS 13.0, *)
+    private func assertReceives(_ payload: Data, maximumMessageSize: Int) throws {
         let server = try LoopbackWebSocketServer(payload: payload)
         defer { server.stop() }
         let websocket = CocoaMQTTWebSocket(uri: "/mqtt")
@@ -230,12 +277,10 @@ final class CocoaMQTTWebSocketAuthenticationTests: XCTestCase {
             XCTFail("WebSocket closed before receiving the message: \(String(describing: error))")
         }
         delegate.receivedData = { data in
-            XCTAssertEqual(data.count, payload.count)
-            XCTAssertEqual(data.first, payload.first)
-            XCTAssertEqual(data.last, payload.last)
+            XCTAssertEqual(data, payload)
             received.fulfill()
         }
-        websocket.maximumMessageSize = payload.count + 1
+        websocket.maximumMessageSize = maximumMessageSize
         websocket.setDelegate(delegate, delegateQueue: callbackQueue)
         try websocket.connect(toHost: "127.0.0.1", onPort: server.port)
         websocket.readData(toLength: UInt(payload.count), withTimeout: 5, tag: 1)
