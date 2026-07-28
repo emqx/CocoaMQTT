@@ -65,6 +65,29 @@ final class ClientIdentityTests: XCTestCase {
         XCTAssertEqual(identity.intermediateCertificates.count, 2)
     }
 
+    func testRemovesDuplicateAndRepeatedLeafCertificatesFromChain() throws {
+        let fixture = try Self.fixture.get()
+        let certificateChain = fixture.clientCertificatePEM
+            + fixture.intermediateCertificatePEM
+
+        let identity = try CocoaMQTTClientIdentity(
+            certificateData: certificateChain,
+            privateKeyData: fixture.clientPrivateKeyPKCS1PEM,
+            intermediateCertificateData: [
+                fixture.clientCertificatePEM,
+                fixture.intermediateCertificatePEM
+            ]
+        )
+
+        XCTAssertEqual(identity.intermediateCertificates.count, 1)
+        XCTAssertTrue(CFEqual(
+            identity.intermediateCertificates[0],
+            try XCTUnwrap(CocoaMQTTSocket.serverCertificate(
+                from: fixture.intermediateCertificatePEM
+            ))
+        ))
+    }
+
     func testRejectsMalformedCertificatePEMBundle() throws {
         let fixture = try Self.fixture.get()
         let malformedBundle = fixture.clientCertificatePEM

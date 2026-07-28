@@ -29,7 +29,7 @@ extension CocoaMQTTClientIdentityError: LocalizedError {
         case .encryptedPrivateKeyUnsupported:
             return "Encrypted PEM private keys are not supported."
         case .unsupportedPrivateKeyAlgorithm:
-            return "Only RSA PEM private keys are supported."
+            return "Only RSA private keys are supported."
         case .identityCreationUnavailable:
             return "Client identity creation is unavailable on this operating system."
         case .identityCreationFailed:
@@ -65,8 +65,9 @@ public final class CocoaMQTTClientIdentity: NSObject {
     /// `certificateData` may contain a single DER or PEM leaf certificate, or a
     /// PEM bundle ordered from the leaf through its intermediate certificates.
     /// Each entry in `intermediateCertificateData` may also be a PEM bundle and
-    /// is appended in the supplied order. Root certificates are normally not
-    /// sent as part of the client chain.
+    /// is appended in the supplied order. Duplicate certificates and the leaf
+    /// repeated as an intermediate are ignored. Root certificates are normally
+    /// not sent as part of the client chain.
     @available(macOS 10.14, iOS 12.0, tvOS 12.0, watchOS 5.0, *)
     public convenience init(
         certificateData: Data,
@@ -90,7 +91,11 @@ public final class CocoaMQTTClientIdentity: NSObject {
             }
             return certificates
         }
-        let intermediates = Array(certificateChain.dropFirst()) + explicitIntermediates
+        let candidates = Array(certificateChain.dropFirst()) + explicitIntermediates
+        var seenCertificates = Set([SecCertificateCopyData(certificate) as Data])
+        let intermediates = candidates.filter {
+            seenCertificates.insert(SecCertificateCopyData($0) as Data).inserted
+        }
         self.init(identity: identity, intermediateCertificates: intermediates)
     }
 

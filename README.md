@@ -181,11 +181,12 @@ bundle with the leaf first followed by its intermediates. `privateKeyData`
 accepts RSA PKCS#1 (`RSA PRIVATE KEY`) or unencrypted RSA PKCS#8 (`PRIVATE KEY`)
 input. Encrypted and EC PEM private keys are not currently supported. The
 intermediate array is flattened in the supplied order after any certificates in
-the leaf bundle; pass the leaf issuer first and normally exclude the root. It is
-independent from `trustedServerCertificates`, which validates the broker. The
-PEM/DER importer requires macOS 10.14, iOS 12, tvOS 12, or visionOS 1. This API
-applies to the built-in TCP transport, not MQTT over WebSocket; assigning it to
-a client using another socket transport has no effect.
+the leaf bundle; duplicates and a repeated leaf are ignored. Pass the leaf
+issuer first and normally exclude the root. It is independent from
+`trustedServerCertificates`, which validates the broker. The PEM/DER importer
+requires macOS 10.14, iOS 12, tvOS 12, or visionOS 1. This API applies to the
+built-in TCP transport, not MQTT over WebSocket; assigning it to a client using
+another socket transport has no effect.
 
 PKCS#12 remains supported through the lower-level `sslSettings` API. Generate a
 `.p12` file from a client certificate and private key:
