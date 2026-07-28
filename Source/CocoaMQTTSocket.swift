@@ -272,6 +272,12 @@ public class CocoaMQTTSocket: NSObject {
     /// Additional CA certificates trusted for this connection.
     public var trustedServerCertificates = [SecCertificate]()
 
+    /// Client identity sent by the built-in TCP socket during mutual TLS.
+    ///
+    /// A value already supplied through
+    /// `sslSettings[kCFStreamSSLCertificates]` takes precedence.
+    public var clientIdentity: CocoaMQTTClientIdentity?
+
     /// Whether custom CA validation also accepts certificates rooted in the
     /// system trust store. Default is true.
     @objc public var usesSystemTrustStore = true
@@ -424,6 +430,12 @@ extension CocoaMQTTSocket: MGCDAsyncSocketDelegate {
 
     func tlsSettings(forHost host: String) -> [String: NSObject] {
         var settings = sslSettings ?? [:]
+        let certificatesKey = kCFStreamSSLCertificates as String
+        if settings[certificatesKey] == nil, let clientIdentity = clientIdentity {
+            settings[certificatesKey] = (
+                [clientIdentity.identity] + clientIdentity.intermediateCertificates
+            ) as NSArray
+        }
         let peerNameKey = kCFStreamSSLPeerName as String
         if settings[peerNameKey] == nil {
             settings[peerNameKey] = (effectiveTLSServerName(fallback: host) ?? host) as NSString

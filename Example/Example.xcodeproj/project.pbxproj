@@ -7,7 +7,7 @@
 	objects = {
 
 /* Begin PBXBuildFile section */
-		04029F191DE3F183004513DD /* client-keycert.p12 in Resources */ = {isa = PBXBuildFile; fileRef = 04029F181DE3F176004513DD /* client-keycert.p12 */; };
+		F0A600000000000000000002 /* MutualTLSConfiguration.swift in Sources */ = {isa = PBXBuildFile; fileRef = F0A600000000000000000001 /* MutualTLSConfiguration.swift */; };
 		042448B31C366F2300F6A33E /* ChatMessage.swift in Sources */ = {isa = PBXBuildFile; fileRef = 042448B21C366F2300F6A33E /* ChatMessage.swift */; };
 		04A7EAA01C362BC4004A40EF /* ChatRightMessageCell.swift in Sources */ = {isa = PBXBuildFile; fileRef = 04A7EA9F1C362BC4004A40EF /* ChatRightMessageCell.swift */; };
 		04DB76581C1E7BB900776B4C /* AppDelegate.swift in Sources */ = {isa = PBXBuildFile; fileRef = 04DB76571C1E7BB900776B4C /* AppDelegate.swift */; };
@@ -36,7 +36,7 @@
 /* End PBXCopyFilesBuildPhase section */
 
 /* Begin PBXFileReference section */
-		04029F181DE3F176004513DD /* client-keycert.p12 */ = {isa = PBXFileReference; lastKnownFileType = file; path = "client-keycert.p12"; sourceTree = "<group>"; };
+		F0A600000000000000000001 /* MutualTLSConfiguration.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = MutualTLSConfiguration.swift; sourceTree = "<group>"; };
 		042448B21C366F2300F6A33E /* ChatMessage.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = ChatMessage.swift; sourceTree = "<group>"; };
 		04A7EA9F1C362BC4004A40EF /* ChatRightMessageCell.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = ChatRightMessageCell.swift; sourceTree = "<group>"; };
 		04DB76541C1E7BB900776B4C /* Example.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = Example.app; sourceTree = BUILT_PRODUCTS_DIR; };
@@ -85,6 +85,7 @@
 			isa = PBXGroup;
 			children = (
 				04DB76591C1E7BB900776B4C /* ViewController.swift */,
+				F0A600000000000000000001 /* MutualTLSConfiguration.swift */,
 				04FE64861C2C41AE001E8F43 /* ChatViewController.swift */,
 				04FE64A61C2D9F75001E8F43 /* ChatLeftMessageCell.swift */,
 				04A7EA9F1C362BC4004A40EF /* ChatRightMessageCell.swift */,
@@ -98,7 +99,6 @@
 		04DB767C1C1E7C2D00776B4C /* Supporting Files */ = {
 			isa = PBXGroup;
 			children = (
-				04029F181DE3F176004513DD /* client-keycert.p12 */,
 				04DB765E1C1E7BB900776B4C /* Assets.xcassets */,
 				04DB76571C1E7BB900776B4C /* AppDelegate.swift */,
 				04DB76601C1E7BB900776B4C /* LaunchScreen.storyboard */,
@@ -162,7 +162,7 @@
 			);
 			mainGroup = 04DB764B1C1E7BB800776B4C;
 			packageReferences = (
-				114A128D2D69097B00538CC6 /* XCRemoteSwiftPackageReference "CocoaMQTT" */,
+				114A128D2D69097B00538CC6 /* XCLocalSwiftPackageReference ".." */,
 			);
 			productRefGroup = 04DB76551C1E7BB900776B4C /* Products */;
 			projectDirPath = "";
@@ -178,7 +178,6 @@
 			isa = PBXResourcesBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
-				04029F191DE3F183004513DD /* client-keycert.p12 in Resources */,
 				04DB76621C1E7BB900776B4C /* LaunchScreen.storyboard in Resources */,
 				04DB765F1C1E7BB900776B4C /* Assets.xcassets in Resources */,
 				04DB765D1C1E7BB900776B4C /* Main.storyboard in Resources */,
@@ -195,6 +194,7 @@
 				04FE64A71C2D9F75001E8F43 /* ChatLeftMessageCell.swift in Sources */,
 				04A7EAA01C362BC4004A40EF /* ChatRightMessageCell.swift in Sources */,
 				04DB765A1C1E7BB900776B4C /* ViewController.swift in Sources */,
+				F0A600000000000000000002 /* MutualTLSConfiguration.swift in Sources */,
 				042448B31C366F2300F6A33E /* ChatMessage.swift in Sources */,
 				04FE64871C2C41AE001E8F43 /* ChatViewController.swift in Sources */,
 				04DB76581C1E7BB900776B4C /* AppDelegate.swift in Sources */,
@@ -393,31 +393,27 @@
 		};
 /* End XCConfigurationList section */
 
-/* Begin XCRemoteSwiftPackageReference section */
-		114A128D2D69097B00538CC6 /* XCRemoteSwiftPackageReference "CocoaMQTT" */ = {
-			isa = XCRemoteSwiftPackageReference;
-			repositoryURL = "https://github.com/RaziPour1993/CocoaMQTT";
-			requirement = {
-				branch = "update-cocoamqtt-2025";
-				kind = branch;
-			};
+/* Begin XCLocalSwiftPackageReference section */
+		114A128D2D69097B00538CC6 /* XCLocalSwiftPackageReference ".." */ = {
+			isa = XCLocalSwiftPackageReference;
+			relativePath = ..;
 		};
-/* End XCRemoteSwiftPackageReference section */
+/* End XCLocalSwiftPackageReference section */
 
 /* Begin XCSwiftPackageProductDependency section */
 		114A128E2D69097B00538CC6 /* CocoaMQTT */ = {
 			isa = XCSwiftPackageProductDependency;
-			package = 114A128D2D69097B00538CC6 /* XCRemoteSwiftPackageReference "CocoaMQTT" */;
+			package = 114A128D2D69097B00538CC6 /* XCLocalSwiftPackageReference ".." */;
 			productName = CocoaMQTT;
 		};
 		114A12902D69097B00538CC6 /* CocoaMQTTWebSocket */ = {
 			isa = XCSwiftPackageProductDependency;
-			package = 114A128D2D69097B00538CC6 /* XCRemoteSwiftPackageReference "CocoaMQTT" */;
+			package = 114A128D2D69097B00538CC6 /* XCLocalSwiftPackageReference ".." */;
 			productName = CocoaMQTTWebSocket;
 		};
 		114A12932D690B0700538CC6 /* CocoaMQTTWebSocket */ = {
 			isa = XCSwiftPackageProductDependency;
-			package = 114A128D2D69097B00538CC6 /* XCRemoteSwiftPackageReference "CocoaMQTT" */;
+			package = 114A128D2D69097B00538CC6 /* XCLocalSwiftPackageReference ".." */;
 			productName = CocoaMQTTWebSocket;
 		};
 /* End XCSwiftPackageProductDependency section */

@@ -348,6 +348,14 @@ public class CocoaMQTT: NSObject, CocoaMQTTClient {
         set { (self.socket as? CocoaMQTTSocket)?.trustedServerCertificates = newValue }
     }
 
+    /// Client identity sent by the built-in TCP socket during mutual TLS.
+    ///
+    /// This does not configure WebSocket client authentication.
+    public var clientIdentity: CocoaMQTTClientIdentity? {
+        get { return (self.socket as? CocoaMQTTSocket)?.clientIdentity }
+        set { (self.socket as? CocoaMQTTSocket)?.clientIdentity = newValue }
+    }
+
     /// Whether custom CA validation also accepts the system trust store.
     @objc public var usesSystemTrustStore: Bool {
         get { return (self.socket as? CocoaMQTTSocket)?.usesSystemTrustStore ?? true }

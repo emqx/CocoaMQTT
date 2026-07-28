@@ -76,7 +76,6 @@ class ViewController: UIViewController {
 
     func mqttSettingList(){
         mqttSetting()
-        //mutualTLSSetting()
         //simpleSSLSetting()
         //mqttWebsocketsSetting()
         //mqttWebsocketSSLSetting()
@@ -166,55 +165,6 @@ class ViewController: UIViewController {
 
     }
     
-    func mutualTLSSetting() {
-        if mqttVesion == "3.1.1" {
-
-            let clientID = "CocoaMQTT-\(animal!)-" + String(ProcessInfo().processIdentifier)
-            mqtt = CocoaMQTT(clientID: clientID, host: defaultHost, port: 8883)
-            mqtt!.username = ""
-            mqtt!.password = ""
-            mqtt!.willMessage = CocoaMQTTMessage(topic: "/will", string: "dieout")
-            mqtt!.keepAlive = 60
-            mqtt!.delegate = self
-            mqtt!.enableSSL = true
-
-            let clientCertArray = getClientCertFromP12File(certName: "client-keycert", certPassword: "MySecretPassword")
-
-            var sslSettings: [String: NSObject] = [:]
-            sslSettings[kCFStreamSSLCertificates as String] = clientCertArray
-
-            mqtt!.sslSettings = sslSettings
-
-        }else if mqttVesion == "5.0" {
-
-            let clientID = "CocoaMQTT5-\(animal!)-" + String(ProcessInfo().processIdentifier)
-            mqtt5 = CocoaMQTT5(clientID: clientID, host: defaultHost, port: 8883)
-
-            let connectProperties = MqttConnectProperties()
-            connectProperties.topicAliasMaximum = 0
-            connectProperties.sessionExpiryInterval = 0
-            connectProperties.receiveMaximum = 100
-            connectProperties.maximumPacketSize = 500
-
-            mqtt5!.connectProperties = connectProperties
-
-            mqtt5!.username = ""
-            mqtt5!.password = ""
-            mqtt5!.willMessage = CocoaMQTT5Message(topic: "/will", string: "dieout")
-            mqtt5!.keepAlive = 60
-            mqtt5!.delegate = self
-
-            mqtt5!.enableSSL = true
-            let clientCertArray = getClientCertFromP12File(certName: "client-keycert", certPassword: "MySecretPassword")
-            var sslSettings: [String: NSObject] = [:]
-            sslSettings[kCFStreamSSLCertificates as String] = clientCertArray
-
-            mqtt5!.sslSettings = sslSettings
-
-        }
-
-    }
-    
     func mqttWebsocketsSetting() {
         if mqttVesion == "3.1.1" {
 
@@ -297,44 +247,6 @@ class ViewController: UIViewController {
 
     }
     
-    func getClientCertFromP12File(certName: String, certPassword: String) -> CFArray? {
-        // get p12 file path
-        let resourcePath = Bundle.main.path(forResource: certName, ofType: "p12")
-        
-        guard let filePath = resourcePath, let p12Data = NSData(contentsOfFile: filePath) else {
-            print("Failed to open the certificate file: \(certName).p12")
-            return nil
-        }
-        
-        // create key dictionary for reading p12 file
-        let key = kSecImportExportPassphrase as String
-        let options : NSDictionary = [key: certPassword]
-        
-        var items : CFArray?
-        let securityError = SecPKCS12Import(p12Data, options, &items)
-        
-        guard securityError == errSecSuccess else {
-            if securityError == errSecAuthFailed {
-                print("ERROR: SecPKCS12Import returned errSecAuthFailed. Incorrect password?")
-            } else {
-                print("Failed to open the certificate file: \(certName).p12")
-            }
-            return nil
-        }
-        
-        guard let theArray = items, CFArrayGetCount(theArray) > 0 else {
-            return nil
-        }
-        
-        let dictionary = (theArray as NSArray).object(at: 0)
-        guard let identity = (dictionary as AnyObject).value(forKey: kSecImportItemIdentity as String) else {
-            return nil
-        }
-        let certArray = [identity] as CFArray
-        
-        return certArray
-    }
-
 }
 
 extension ViewController: CocoaMQTT5Delegate {
