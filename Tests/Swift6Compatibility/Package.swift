@@ -5,7 +5,7 @@ import PackageDescription
 let package = Package(
     name: "CocoaMQTTSwift6CompatibilityCheck",
     platforms: [
-        .macOS(.v13)
+        .macOS(.v10_13)
     ],
     dependencies: [
         .package(name: "CocoaMQTT", path: "../..")
