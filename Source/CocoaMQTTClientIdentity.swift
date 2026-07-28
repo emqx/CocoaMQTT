@@ -5,6 +5,7 @@
 
 import Foundation
 import Security
+import Darwin
 
 /// Errors raised while creating a mutual-TLS client identity.
 public enum CocoaMQTTClientIdentityError: Error, Equatable {
@@ -12,6 +13,7 @@ public enum CocoaMQTTClientIdentityError: Error, Equatable {
     case invalidPrivateKey
     case encryptedPrivateKeyUnsupported
     case unsupportedPrivateKeyAlgorithm
+    case identityCreationUnavailable
     case certificatePrivateKeyMismatch
     case invalidIntermediateCertificate(index: Int)
 }
@@ -27,6 +29,8 @@ extension CocoaMQTTClientIdentityError: LocalizedError {
             return "Encrypted PEM private keys are not supported."
         case .unsupportedPrivateKeyAlgorithm:
             return "Only RSA PEM private keys are supported."
+        case .identityCreationUnavailable:
+            return "Client identity creation is unavailable on this operating system."
         case .certificatePrivateKeyMismatch:
             return "The client certificate and private key do not match."
         case let .invalidIntermediateCertificate(index):
@@ -64,9 +68,7 @@ public final class CocoaMQTTClientIdentity: NSObject {
         }
 
         let privateKey = try Self.makeRSAPrivateKey(from: privateKeyData)
-        guard let identity = SecIdentityCreate(nil, certificate, privateKey) else {
-            throw CocoaMQTTClientIdentityError.certificatePrivateKeyMismatch
-        }
+        let identity = try Self.makeIdentity(certificate: certificate, privateKey: privateKey)
 
         let intermediates = try intermediateCertificateData.enumerated().map { index, data in
             guard let certificate = CocoaMQTTSocket.serverCertificate(from: data) else {
@@ -94,7 +96,7 @@ public final class CocoaMQTTClientIdentity: NSObject {
                 .dropFirst()
                 .filter { $0.contains("PRIVATE KEY-----") }
                 .count
-            guard privateKeyBeginCount == 2 else {
+            guard privateKeyBeginCount == 1 else {
                 throw CocoaMQTTClientIdentityError.invalidPrivateKey
             }
             if pem.contains("-----BEGIN RSA PRIVATE KEY-----") {
@@ -123,6 +125,30 @@ public final class CocoaMQTTClientIdentity: NSObject {
             kSecAttrKeyClass: kSecAttrKeyClassPrivate
         ]
         return SecKeyCreateWithData(data as CFData, attributes as CFDictionary, nil)
+    }
+
+    private typealias SecIdentityCreateFunction = @convention(c) (
+        CFAllocator?,
+        SecCertificate,
+        SecKey
+    ) -> Unmanaged<SecIdentity>?
+
+    /// `SecIdentityCreate` has been available in Apple operating systems for
+    /// years, but was absent from older SDK headers. Resolve the public Security
+    /// framework symbol at runtime so clients can still build with those SDKs.
+    private static func makeIdentity(
+        certificate: SecCertificate,
+        privateKey: SecKey
+    ) throws -> SecIdentity {
+        let defaultSymbolScope = UnsafeMutableRawPointer(bitPattern: -2)
+        guard let symbol = dlsym(defaultSymbolScope, "SecIdentityCreate") else {
+            throw CocoaMQTTClientIdentityError.identityCreationUnavailable
+        }
+        let createIdentity = unsafeBitCast(symbol, to: SecIdentityCreateFunction.self)
+        guard let identity = createIdentity(nil, certificate, privateKey)?.takeRetainedValue() else {
+            throw CocoaMQTTClientIdentityError.certificatePrivateKeyMismatch
+        }
+        return identity
     }
 
     private static func decodePEM(_ pem: String, label: String) throws -> Data {
