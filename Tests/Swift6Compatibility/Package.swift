@@ -3,7 +3,7 @@
 import PackageDescription
 
 let package = Package(
-    name: "CocoaMQTTSwift6Consumer",
+    name: "CocoaMQTTSwift6CompatibilityCheck",
     platforms: [
         .macOS(.v13)
     ],
@@ -12,7 +12,7 @@ let package = Package(
     ],
     targets: [
         .executableTarget(
-            name: "Swift6Consumer",
+            name: "Swift6Compatibility",
             dependencies: [
                 .product(name: "CocoaMQTT", package: "CocoaMQTT"),
                 .product(name: "CocoaMQTTWebSocket", package: "CocoaMQTT")
