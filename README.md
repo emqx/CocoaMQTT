@@ -8,6 +8,9 @@
 MQTT v3.1.1 and v5.0 client library for iOS/macOS/tvOS/visionOS written with Swift 5.
 visionOS is supported through Swift Package Manager.
 
+Both Swift Package Manager products can be used by Swift 6 applications and
+are verified by a Swift 6 consumer build in CI.
+
 
 ## Build
 

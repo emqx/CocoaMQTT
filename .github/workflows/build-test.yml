@@ -50,6 +50,13 @@ jobs:
       - name: Build core target with Swift 6 language mode
         run: swift build --target CocoaMQTT -Xswiftc -swift-version -Xswiftc 6
 
+      - name: Build and run a Swift 6 consumer using both products
+        run: |
+          swift run \
+            --package-path Tests/Swift6Consumer \
+            --scratch-path "${RUNNER_TEMP}/CocoaMQTT-Swift6Consumer" \
+            Swift6Consumer
+
   visionos-compile-check:
     name: visionOS Compile Check (SPM)
     runs-on: macos-15
