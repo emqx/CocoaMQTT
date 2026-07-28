@@ -57,7 +57,7 @@ public final class CocoaMQTTClientIdentity: NSObject {
         super.init()
     }
 
-    @available(macOS 10.12, iOS 11.2, tvOS 11.2, watchOS 4.2, *)
+    @available(macOS 10.14, iOS 12.0, tvOS 12.0, watchOS 5.0, *)
     public convenience init(
         certificateData: Data,
         privateKeyData: Data,
@@ -68,6 +68,9 @@ public final class CocoaMQTTClientIdentity: NSObject {
         }
 
         let privateKey = try Self.makeRSAPrivateKey(from: privateKeyData)
+        guard Self.keysMatch(certificate: certificate, privateKey: privateKey) else {
+            throw CocoaMQTTClientIdentityError.certificatePrivateKeyMismatch
+        }
         let identity = try Self.makeIdentity(certificate: certificate, privateKey: privateKey)
 
         let intermediates = try intermediateCertificateData.enumerated().map { index, data in
@@ -125,6 +128,23 @@ public final class CocoaMQTTClientIdentity: NSObject {
             kSecAttrKeyClass: kSecAttrKeyClassPrivate
         ]
         return SecKeyCreateWithData(data as CFData, attributes as CFDictionary, nil)
+    }
+
+    @available(macOS 10.14, iOS 12.0, tvOS 12.0, watchOS 5.0, *)
+    private static func keysMatch(
+        certificate: SecCertificate,
+        privateKey: SecKey
+    ) -> Bool {
+        guard let certificateKey = SecCertificateCopyKey(certificate),
+              let derivedKey = SecKeyCopyPublicKey(privateKey),
+              let certificateKeyData = SecKeyCopyExternalRepresentation(
+                certificateKey,
+                nil
+              ),
+              let derivedKeyData = SecKeyCopyExternalRepresentation(derivedKey, nil) else {
+            return false
+        }
+        return CFEqual(certificateKeyData, derivedKeyData)
     }
 
     private typealias SecIdentityCreateFunction = @convention(c) (
