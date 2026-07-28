@@ -22,6 +22,7 @@ enum MutualTLSExampleError: Error {
     case pkcs12ImportFailed(OSStatus)
     case pkcs12IdentityMissing
     case identityCertificateUnavailable
+    case invalidPKCS12CertificateChain
 }
 
 enum MutualTLSConfiguration {
@@ -105,7 +106,9 @@ enum MutualTLSConfiguration {
         }
 
         var seenCertificates = Set([SecCertificateCopyData(leafCertificate) as Data])
-        let certificateChain = item[kSecImportItemCertChain as String] as? [SecCertificate] ?? []
+        let certificateChain = try certificates(
+            fromPKCS12Item: item[kSecImportItemCertChain as String]
+        )
         let intermediates = certificateChain.filter {
             seenCertificates.insert(SecCertificateCopyData($0) as Data).inserted
         }
@@ -115,20 +118,43 @@ enum MutualTLSConfiguration {
         )
     }
 
+    private static func certificates(fromPKCS12Item value: Any?) throws -> [SecCertificate] {
+        guard let value else {
+            return []
+        }
+        guard CFGetTypeID(value as CFTypeRef) == CFArrayGetTypeID() else {
+            throw MutualTLSExampleError.invalidPKCS12CertificateChain
+        }
+
+        let array = value as! CFArray
+        return try (0..<CFArrayGetCount(array)).map { index in
+            let element = unsafeBitCast(
+                CFArrayGetValueAtIndex(array, index),
+                to: CFTypeRef.self
+            )
+            guard CFGetTypeID(element) == SecCertificateGetTypeID() else {
+                throw MutualTLSExampleError.invalidPKCS12CertificateChain
+            }
+            return unsafeBitCast(element, to: SecCertificate.self)
+        }
+    }
+
     private static func configure<Client: CocoaMQTTMutualTLSConfiguring>(
         client: Client,
         identity: CocoaMQTTClientIdentity,
         brokerCAURLs: [URL],
         usesSystemTrustStore: Bool
     ) throws {
-        client.clientIdentity = identity
-        client.trustedServerCertificates = try brokerCAURLs.map { url in
+        let brokerCertificates = try brokerCAURLs.map { url in
             let data = try Data(contentsOf: url)
             guard let certificate = CocoaMQTTSocket.serverCertificate(from: data) else {
                 throw MutualTLSExampleError.invalidBrokerCertificate(url)
             }
             return certificate
         }
+
+        client.clientIdentity = identity
+        client.trustedServerCertificates = brokerCertificates
         client.usesSystemTrustStore = usesSystemTrustStore
         client.enableSSL = true
     }

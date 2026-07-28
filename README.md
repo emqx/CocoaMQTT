@@ -161,8 +161,8 @@ does not safely trust a private CA by itself.
 ### Mutual TLS
 
 For a complete setup that works with either `CocoaMQTT` or `CocoaMQTT5`, see
-the [PEM/DER example](Example/Example/MutualTLSConfiguration.swift#L33-L54) or
-the [PKCS#12 example](Example/Example/MutualTLSConfiguration.swift#L60-L77).
+the [PEM/DER example](Example/Example/MutualTLSConfiguration.swift#L34-L55) or
+the [PKCS#12 example](Example/Example/MutualTLSConfiguration.swift#L61-L78).
 Both examples configure the client identity and broker trust separately.
 
 `certificateData` accepts a DER certificate, a single PEM certificate, or a PEM
