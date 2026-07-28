@@ -181,7 +181,8 @@ PKCS#1 (`RSA PRIVATE KEY`) or unencrypted RSA PKCS#8 (`PRIVATE KEY`) input.
 Encrypted and EC PEM private keys are not currently supported. The intermediate
 array is the client certificate chain (normally excluding the leaf and root).
 It is independent from `trustedServerCertificates`, which validates the broker.
-This API applies to the built-in TCP transport, not MQTT over WebSocket.
+The PEM/DER importer requires macOS 10.14, iOS 12, or tvOS 12. This API applies
+to the built-in TCP transport, not MQTT over WebSocket.
 
 PKCS#12 remains supported through the lower-level `sslSettings` API. Generate a
 `.p12` file from a client certificate and private key:
