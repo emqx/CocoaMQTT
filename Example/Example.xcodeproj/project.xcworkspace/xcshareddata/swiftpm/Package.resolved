@@ -1,15 +1,6 @@
 {
-  "originHash" : "97ccf4585a84fd6c96b51d947bf978fd9175796bed3b7e563e8319b17fe881c4",
+  "originHash" : "79a54671afdc862e41038a32b382d98dcc71a6104e7e918f9b6dd1146cf23da9",
   "pins" : [
-    {
-      "identity" : "cocoamqtt",
-      "kind" : "remoteSourceControl",
-      "location" : "https://github.com/RaziPour1993/CocoaMQTT",
-      "state" : {
-        "branch" : "update-cocoamqtt-2025",
-        "revision" : "4abf2d10315dff60661a32f1db5dcc45a9df9f09"
-      }
-    },
     {
       "identity" : "mqttcocoaasyncsocket",
       "kind" : "remoteSourceControl",

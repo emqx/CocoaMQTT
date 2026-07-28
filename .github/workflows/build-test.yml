@@ -12,6 +12,26 @@ concurrency:
   cancel-in-progress: true
 
 jobs:
+  example-compile-check:
+    name: Example Compile Check
+    runs-on: macos-15
+    timeout-minutes: 15
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Build iOS example with the local package
+        run: |
+          xcodebuild \
+            -project Example/Example.xcodeproj \
+            -scheme Example \
+            -sdk iphonesimulator \
+            -destination "generic/platform=iOS Simulator" \
+            -derivedDataPath "${RUNNER_TEMP}/CocoaMQTT-Example" \
+            build \
+            CODE_SIGNING_ALLOWED=NO
+
   swift6-compile-check:
     name: Swift 6 Compile Check (Core)
     runs-on: macos-15

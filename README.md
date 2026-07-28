@@ -160,21 +160,10 @@ does not safely trust a private CA by itself.
 
 ### Mutual TLS
 
-For the built-in TCP transport, client certificate and RSA private key PEM/DER
-files can be loaded directly without adding the key to the Keychain:
-
-```swift
-let clientIdentity = try CocoaMQTTClientIdentity(
-    certificateData: try Data(contentsOf: clientCertificateURL),
-    privateKeyData: try Data(contentsOf: clientPrivateKeyURL),
-    intermediateCertificateData: [try Data(contentsOf: clientIntermediateURL)]
-)
-
-mqtt.clientIdentity = clientIdentity
-mqtt.trustedServerCertificates = [brokerCA]
-mqtt.usesSystemTrustStore = false
-mqtt.enableSSL = true
-```
+For a complete setup that works with either `CocoaMQTT` or `CocoaMQTT5`, see
+the [PEM/DER example](Example/Example/MutualTLSConfiguration.swift#L33-L54) or
+the [PKCS#12 example](Example/Example/MutualTLSConfiguration.swift#L60-L77).
+Both examples configure the client identity and broker trust separately.
 
 `certificateData` accepts a DER certificate, a single PEM certificate, or a PEM
 bundle with the leaf first followed by its intermediates. `privateKeyData`
@@ -188,17 +177,16 @@ requires macOS 10.14, iOS 12, tvOS 12, or visionOS 1. This API applies to the
 built-in TCP transport, not MQTT over WebSocket; assigning it to a client using
 another socket transport has no effect.
 
-PKCS#12 remains supported through the lower-level `sslSettings` API. Generate a
-`.p12` file from a client certificate and private key:
+PKCS#12 is a password-protected identity container supported by Apple's
+[`SecPKCS12Import`](https://developer.apple.com/documentation/security/secpkcs12import%28_%3A_%3A_%3A%29).
+The example imports its identity and certificate chain, then uses the same
+`clientIdentity` API as the PEM/DER path.
 
-```
-openssl pkcs12 -export -clcerts -in client-cert.pem -inkey client-key.pem -out client.p12
-```
-
-After importing the identity and certificate chain with `SecPKCS12Import`, pass
-them through `sslSettings[kCFStreamSSLCertificates as String]`. Client identity
-configuration is independent from server trust; public or private CA validation
-above still applies.
+Do not ship a production unencrypted PEM private key in the application bundle.
+Do not embed a PKCS#12 file together with its password either. Obtain credentials
+through secure provisioning or user input, and keep long-lived secrets in
+Keychain-backed storage. The file format itself does not determine App Store
+eligibility; use supported Security framework APIs and protect the private key.
 
 ## MQTT over Websocket
 
