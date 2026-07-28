@@ -49,6 +49,13 @@ jobs:
           SCRATCH_PATH="${RUNNER_TEMP}/CocoaMQTT-visionOS"
 
           swift build \
+            --target CocoaMQTT \
+            --triple arm64-apple-xros1.0 \
+            --sdk "${SDK_PATH}" \
+            --scratch-path "${SCRATCH_PATH}"
+
+          swift build \
+            --target CocoaMQTTWebSocket \
             --triple arm64-apple-xros1.0 \
             --sdk "${SDK_PATH}" \
             --scratch-path "${SCRATCH_PATH}"

@@ -5,7 +5,8 @@
 ![License](https://img.shields.io/cocoapods/l/BadgeSwift.svg?style=flat)
 ![Swift version](https://img.shields.io/badge/swift-5-orange.svg)
 
-MQTT v3.1.1 and v5.0 client library for iOS/macOS/tvOS/visionOS written with Swift 5
+MQTT v3.1.1 and v5.0 client library for iOS/macOS/tvOS/visionOS written with Swift 5.
+visionOS is supported through Swift Package Manager.
 
 
 ## Build
@@ -14,8 +15,9 @@ Build with Xcode 11.1 / Swift 5.1
 
 IOS Target: 12.0 or above
 OSX Target: 10.13 or above
-TVOS Target: 10.0 or above
-visionOS Target: 1.0 or above (Swift Package Manager only)
+TVOS Target: 12.0 or above with Swift Package Manager or CocoaPods WebSockets;
+10.0 or above with CocoaPods Core
+visionOS Target: 1.0 or above (Swift Package Manager only, compile-verified in CI)
 
 ##  xcode 14.3 issue:
 ```ruby
@@ -37,7 +39,8 @@ To integrate CocoaMQTT into your Xcode project using [Swift Package Manager](htt
 5. Add the package to your target.
 
 Swift Package Manager supports iOS, macOS, tvOS, and visionOS. Both the
-`CocoaMQTT` and `CocoaMQTTWebSocket` products are compiled for visionOS in CI.
+`CocoaMQTT` and `CocoaMQTTWebSocket` products are compile-verified against the
+visionOS SDK in CI.
 
 At last, import "CocoaMQTT" to your project:
 
