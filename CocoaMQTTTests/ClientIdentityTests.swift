@@ -2,6 +2,9 @@
 import Security
 import XCTest
 @testable import CocoaMQTT
+#if IS_SWIFT_PACKAGE
+@testable import CocoaMQTTWebSocket
+#endif
 
 final class ClientIdentityTests: XCTestCase {
 
@@ -33,6 +36,46 @@ final class ClientIdentityTests: XCTestCase {
             certificateData: fixture.clientCertificatePEM,
             privateKeyData: Data(key.utf8)
         ))
+    }
+
+    func testCreatesIdentityFromCertificateChainPEMBundle() throws {
+        let fixture = try Self.fixture.get()
+        let certificateChain = fixture.clientCertificatePEM
+            + fixture.intermediateCertificatePEM
+
+        let identity = try CocoaMQTTClientIdentity(
+            certificateData: certificateChain,
+            privateKeyData: fixture.clientPrivateKeyPKCS1PEM
+        )
+
+        XCTAssertEqual(identity.intermediateCertificates.count, 1)
+    }
+
+    func testFlattensIntermediateCertificatePEMBundles() throws {
+        let fixture = try Self.fixture.get()
+        let intermediateBundle = fixture.intermediateCertificatePEM
+            + fixture.rootCertificatePEM
+
+        let identity = try CocoaMQTTClientIdentity(
+            certificateData: fixture.clientCertificatePEM,
+            privateKeyData: fixture.clientPrivateKeyPKCS1PEM,
+            intermediateCertificateData: [intermediateBundle]
+        )
+
+        XCTAssertEqual(identity.intermediateCertificates.count, 2)
+    }
+
+    func testRejectsMalformedCertificatePEMBundle() throws {
+        let fixture = try Self.fixture.get()
+        let malformedBundle = fixture.clientCertificatePEM
+            + Data("-----BEGIN CERTIFICATE-----\ninvalid\n".utf8)
+
+        XCTAssertThrowsError(try CocoaMQTTClientIdentity(
+            certificateData: malformedBundle,
+            privateKeyData: fixture.clientPrivateKeyPKCS1PEM
+        )) { error in
+            XCTAssertEqual(error as? CocoaMQTTClientIdentityError, .invalidCertificate)
+        }
     }
 
     func testCreatesIdentityFromDERCertificateAndPrivateKeys() throws {
@@ -180,7 +223,7 @@ final class ClientIdentityTests: XCTestCase {
         XCTAssertTrue(socket.tlsSettings(forHost: "broker.example.com")[key] === rawValue)
     }
 
-    func testMQTTClientsProxyIdentityOnlyForBuiltInSocket() throws {
+    func testMQTTClientsProxyIdentityForBuiltInSocket() throws {
         let fixture = try Self.fixture.get()
         let identity = try CocoaMQTTClientIdentity(
             certificateData: fixture.clientCertificatePEM,
@@ -195,6 +238,30 @@ final class ClientIdentityTests: XCTestCase {
         XCTAssertTrue(mqtt.clientIdentity === identity)
         XCTAssertTrue(mqtt5.clientIdentity === identity)
     }
+
+#if IS_SWIFT_PACKAGE
+    func testMQTTClientsDoNotApplyIdentityToWebSocketTransport() throws {
+        let fixture = try Self.fixture.get()
+        let identity = try CocoaMQTTClientIdentity(
+            certificateData: fixture.clientCertificatePEM,
+            privateKeyData: fixture.clientPrivateKeyPKCS1PEM
+        )
+        let mqtt = CocoaMQTT(
+            clientID: "identity-websocket-311",
+            socket: CocoaMQTTWebSocket(uri: "/mqtt")
+        )
+        let mqtt5 = CocoaMQTT5(
+            clientID: "identity-websocket-5",
+            socket: CocoaMQTTWebSocket(uri: "/mqtt")
+        )
+
+        mqtt.clientIdentity = identity
+        mqtt5.clientIdentity = identity
+
+        XCTAssertNil(mqtt.clientIdentity)
+        XCTAssertNil(mqtt5.clientIdentity)
+    }
+#endif
 
     private func pemDER(_ data: Data, label: String) throws -> Data {
         let pem = try XCTUnwrap(String(data: data, encoding: .utf8))

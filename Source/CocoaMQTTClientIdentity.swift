@@ -14,6 +14,7 @@ public enum CocoaMQTTClientIdentityError: Error, Equatable {
     case encryptedPrivateKeyUnsupported
     case unsupportedPrivateKeyAlgorithm
     case identityCreationUnavailable
+    case identityCreationFailed
     case certificatePrivateKeyMismatch
     case invalidIntermediateCertificate(index: Int)
 }
@@ -31,6 +32,8 @@ extension CocoaMQTTClientIdentityError: LocalizedError {
             return "Only RSA PEM private keys are supported."
         case .identityCreationUnavailable:
             return "Client identity creation is unavailable on this operating system."
+        case .identityCreationFailed:
+            return "The client identity could not be created."
         case .certificatePrivateKeyMismatch:
             return "The client certificate and private key do not match."
         case let .invalidIntermediateCertificate(index):
@@ -57,13 +60,21 @@ public final class CocoaMQTTClientIdentity: NSObject {
         super.init()
     }
 
+    /// Creates an identity from certificate and private-key data.
+    ///
+    /// `certificateData` may contain a single DER or PEM leaf certificate, or a
+    /// PEM bundle ordered from the leaf through its intermediate certificates.
+    /// Each entry in `intermediateCertificateData` may also be a PEM bundle and
+    /// is appended in the supplied order. Root certificates are normally not
+    /// sent as part of the client chain.
     @available(macOS 10.14, iOS 12.0, tvOS 12.0, watchOS 5.0, *)
     public convenience init(
         certificateData: Data,
         privateKeyData: Data,
         intermediateCertificateData: [Data] = []
     ) throws {
-        guard let certificate = CocoaMQTTSocket.serverCertificate(from: certificateData) else {
+        guard let certificateChain = Self.certificates(from: certificateData),
+              let certificate = certificateChain.first else {
             throw CocoaMQTTClientIdentityError.invalidCertificate
         }
 
@@ -73,13 +84,47 @@ public final class CocoaMQTTClientIdentity: NSObject {
         }
         let identity = try Self.makeIdentity(certificate: certificate, privateKey: privateKey)
 
-        let intermediates = try intermediateCertificateData.enumerated().map { index, data in
-            guard let certificate = CocoaMQTTSocket.serverCertificate(from: data) else {
+        let explicitIntermediates = try intermediateCertificateData.enumerated().flatMap { index, data in
+            guard let certificates = Self.certificates(from: data) else {
                 throw CocoaMQTTClientIdentityError.invalidIntermediateCertificate(index: index)
             }
-            return certificate
+            return certificates
         }
+        let intermediates = Array(certificateChain.dropFirst()) + explicitIntermediates
         self.init(identity: identity, intermediateCertificates: intermediates)
+    }
+
+    private static func certificates(from data: Data) -> [SecCertificate]? {
+        guard let pem = String(data: data, encoding: .utf8),
+              pem.contains("-----BEGIN CERTIFICATE-----") else {
+            guard let certificate = SecCertificateCreateWithData(nil, data as CFData) else {
+                return nil
+            }
+            return [certificate]
+        }
+
+        let beginMarker = "-----BEGIN CERTIFICATE-----"
+        let endMarker = "-----END CERTIFICATE-----"
+        let sections = pem.components(separatedBy: beginMarker)
+        guard sections.count > 1,
+              sections.count - 1 == pem.components(separatedBy: endMarker).count - 1 else {
+            return nil
+        }
+
+        var certificates = [SecCertificate]()
+        for section in sections.dropFirst() {
+            guard let end = section.range(of: endMarker) else {
+                return nil
+            }
+            let encoded = section[..<end.lowerBound].filter { !$0.isWhitespace }
+            guard !encoded.isEmpty,
+                  let decoded = Data(base64Encoded: String(encoded)),
+                  let certificate = SecCertificateCreateWithData(nil, decoded as CFData) else {
+                return nil
+            }
+            certificates.append(certificate)
+        }
+        return certificates.isEmpty ? nil : certificates
     }
 
     private static func makeRSAPrivateKey(from data: Data) throws -> SecKey {
@@ -166,7 +211,7 @@ public final class CocoaMQTTClientIdentity: NSObject {
         }
         let createIdentity = unsafeBitCast(symbol, to: SecIdentityCreateFunction.self)
         guard let identity = createIdentity(nil, certificate, privateKey)?.takeRetainedValue() else {
-            throw CocoaMQTTClientIdentityError.certificatePrivateKeyMismatch
+            throw CocoaMQTTClientIdentityError.identityCreationFailed
         }
         return identity
     }

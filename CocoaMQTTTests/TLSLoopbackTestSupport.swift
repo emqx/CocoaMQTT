@@ -150,6 +150,7 @@ final class TLSMQTTLoopbackBroker {
 final class TLSLoopbackCertificateFixture {
 
     let rootCertificate: SecCertificate
+    let rootCertificatePEM: Data
     let untrustedRootCertificate: SecCertificate
     let serverIdentity: SecIdentity
     let clientCertificatePEM: Data
@@ -272,6 +273,7 @@ final class TLSLoopbackCertificateFixture {
         ])
 
         let rootData = try Data(contentsOf: rootPEM)
+        rootCertificatePEM = rootData
         guard let rootCertificate = CocoaMQTTSocket.serverCertificate(from: rootData) else {
             throw TLSLoopbackError.invalidRootCertificate
         }

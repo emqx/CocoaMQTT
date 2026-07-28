@@ -150,6 +150,40 @@ final class TLSLoopbackIntegrationTests: XCTestCase {
         XCTAssertEqual(broker.receivedProtocolLevels, [4])
     }
 
+    func testMQTT311ConnectsWithClientCertificateChainPEMBundle() throws {
+        let fixture = try Self.fixture.get()
+        let broker = try TLSMQTTLoopbackBroker(
+            identity: fixture.serverIdentity,
+            trustedClientRootCertificate: fixture.rootCertificate
+        )
+        let port = try start(broker)
+        let connected = expectation(description: "MQTT 3.1.1 mTLS bundle connected")
+        let mqtt = CocoaMQTT(
+            clientID: "mtls-loopback-bundle-311",
+            host: "127.0.0.1",
+            port: port
+        )
+        configurePrivateCATrust(
+            on: mqtt,
+            rootCertificate: fixture.rootCertificate,
+            usesSystemTrustStore: false
+        )
+        mqtt.clientIdentity = try CocoaMQTTClientIdentity(
+            certificateData: fixture.clientCertificatePEM
+                + fixture.intermediateCertificatePEM,
+            privateKeyData: fixture.clientPrivateKeyPKCS1PEM
+        )
+        mqtt.didConnectAck = { client, ack in
+            XCTAssertEqual(ack, .accept)
+            connected.fulfill()
+            client.disconnect()
+        }
+
+        XCTAssertTrue(mqtt.connect(timeout: 2))
+        wait(for: [connected], timeout: 3)
+        XCTAssertEqual(broker.receivedProtocolLevels, [4])
+    }
+
     func testMQTT5ConnectsWithPKCS8PEMClientIdentity() throws {
         let fixture = try Self.fixture.get()
         let broker = try TLSMQTTLoopbackBroker(
