@@ -5,6 +5,9 @@ import PackageDescription
 
 let package = Package(
     name: "CocoaMQTT",
+    // visionOS is supported through SwiftPM and compiled in CI. An explicit
+    // declaration requires PackageDescription 5.9, while this manifest
+    // intentionally remains compatible with Swift tools 5.7.
     platforms: [
         .macOS(.v10_13),
         .iOS(.v12),

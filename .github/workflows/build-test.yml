@@ -30,6 +30,36 @@ jobs:
       - name: Build core target with Swift 6 language mode
         run: swift build --target CocoaMQTT -Xswiftc -swift-version -Xswiftc 6
 
+  visionos-compile-check:
+    name: visionOS Compile Check (SPM)
+    runs-on: macos-15
+    timeout-minutes: 15
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Show visionOS SDK
+        run: xcodebuild -version -sdk xros
+
+      - name: Build SwiftPM products for visionOS
+        run: |
+          set -euo pipefail
+          SDK_PATH="$(xcrun --sdk xros --show-sdk-path)"
+          SCRATCH_PATH="${RUNNER_TEMP}/CocoaMQTT-visionOS"
+
+          swift build \
+            --target CocoaMQTT \
+            --triple arm64-apple-xros1.0 \
+            --sdk "${SDK_PATH}" \
+            --scratch-path "${SCRATCH_PATH}"
+
+          swift build \
+            --target CocoaMQTTWebSocket \
+            --triple arm64-apple-xros1.0 \
+            --sdk "${SDK_PATH}" \
+            --scratch-path "${SCRATCH_PATH}"
+
   build-and-test:
     name: Swift Build & Test
     runs-on: macos-15
