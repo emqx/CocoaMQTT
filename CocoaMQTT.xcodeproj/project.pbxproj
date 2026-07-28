@@ -7,6 +7,9 @@
 	objects = {
 
 /* Begin PBXBuildFile section */
+		F0A500000000000000000002 /* CocoaMQTTClientIdentity.swift in Sources */ = {isa = PBXBuildFile; fileRef = F0A500000000000000000001 /* CocoaMQTTClientIdentity.swift */; };
+		F0A500000000000000000003 /* CocoaMQTTClientIdentity.swift in Sources */ = {isa = PBXBuildFile; fileRef = F0A500000000000000000001 /* CocoaMQTTClientIdentity.swift */; };
+		F0A500000000000000000004 /* CocoaMQTTClientIdentity.swift in Sources */ = {isa = PBXBuildFile; fileRef = F0A500000000000000000001 /* CocoaMQTTClientIdentity.swift */; };
 		1111248C24BB515E00E2DFBC /* CocoaMQTT.h in Headers */ = {isa = PBXBuildFile; fileRef = 040997711C1B1070006B5A6D /* CocoaMQTT.h */; settings = {ATTRIBUTES = (Public, ); }; };
 		1111248E24BB515E00E2DFBC /* CocoaMQTT.swift in Sources */ = {isa = PBXBuildFile; fileRef = 0409977A1C1B1529006B5A6D /* CocoaMQTT.swift */; };
 		1111248F24BB515E00E2DFBC /* FrameConnAck.swift in Sources */ = {isa = PBXBuildFile; fileRef = 8D43DE4D22FAEC6700D9A06B /* FrameConnAck.swift */; };
@@ -260,6 +263,7 @@
 		F0A300000000000000000005 /* MQTTAutoReconnectControllerTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MQTTAutoReconnectControllerTests.swift; sourceTree = "<group>"; };
 		F0A400000000000000000001 /* MQTTKeepAliveController.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = MQTTKeepAliveController.swift; sourceTree = "<group>"; };
 		F0A400000000000000000005 /* KeepAliveTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = KeepAliveTests.swift; sourceTree = "<group>"; };
+		F0A500000000000000000001 /* CocoaMQTTClientIdentity.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = CocoaMQTTClientIdentity.swift; sourceTree = "<group>"; };
 		A1B2C3D4E5F60718293A0011 /* utilities/ConcurrentAtomic.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = utilities/ConcurrentAtomic.swift; sourceTree = "<group>"; };
 		A1B2C3D4E5F60718293A0012 /* ConcurrentAtomicTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ConcurrentAtomicTests.swift; sourceTree = "<group>"; };
 		A1B2C3D4E5F60718293A0013 /* ThreadSafetyRegressionTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ThreadSafetyRegressionTests.swift; sourceTree = "<group>"; };
@@ -351,6 +355,7 @@
 				8D43DE4922FAEABD00D9A06B /* Frame */,
 				8D43DE4A22FAEAD800D9A06B /* Utils */,
 				0409977A1C1B1529006B5A6D /* CocoaMQTT.swift */,
+				F0A500000000000000000001 /* CocoaMQTTClientIdentity.swift */,
 				0409977C1C1B1529006B5A6D /* CocoaMQTTMessage.swift */,
 				9228E8B027610A4300063DF2 /* CocoaMQTT5.swift */,
 				9228E8B127610A4300063DF2 /* CocoaMQTT5Message.swift */,
@@ -658,6 +663,7 @@
 				F0A200000000000000000003 /* MQTT5SessionState.swift in Sources */,
 				F0A300000000000000000003 /* MQTTAutoReconnectController.swift in Sources */,
 				F0A400000000000000000003 /* MQTTKeepAliveController.swift in Sources */,
+				F0A500000000000000000003 /* CocoaMQTTClientIdentity.swift in Sources */,
 				1111248E24BB515E00E2DFBC /* CocoaMQTT.swift in Sources */,
 				9228E8CF27610AA400063DF2 /* MqttAuthProperties.swift in Sources */,
 				1111248F24BB515E00E2DFBC /* FrameConnAck.swift in Sources */,
@@ -713,6 +719,7 @@
 				F0A200000000000000000004 /* MQTT5SessionState.swift in Sources */,
 				F0A300000000000000000004 /* MQTTAutoReconnectController.swift in Sources */,
 				F0A400000000000000000004 /* MQTTKeepAliveController.swift in Sources */,
+				F0A500000000000000000004 /* CocoaMQTTClientIdentity.swift in Sources */,
 				111124B824BB516300E2DFBC /* CocoaMQTT.swift in Sources */,
 				9228E8D027610AA400063DF2 /* MqttAuthProperties.swift in Sources */,
 				111124B924BB516300E2DFBC /* FrameConnAck.swift in Sources */,
@@ -768,6 +775,7 @@
 				F0A200000000000000000002 /* MQTT5SessionState.swift in Sources */,
 				F0A300000000000000000002 /* MQTTAutoReconnectController.swift in Sources */,
 				F0A400000000000000000002 /* MQTTKeepAliveController.swift in Sources */,
+				F0A500000000000000000002 /* CocoaMQTTClientIdentity.swift in Sources */,
 				8225B53A227C2FC600E4DB51 /* CocoaMQTT.swift in Sources */,
 				9228E8CE27610AA400063DF2 /* MqttAuthProperties.swift in Sources */,
 				8D43DE4E22FAEC6700D9A06B /* FrameConnAck.swift in Sources */,

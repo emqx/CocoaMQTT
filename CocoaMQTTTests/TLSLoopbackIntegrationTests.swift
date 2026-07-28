@@ -120,6 +120,110 @@ final class TLSLoopbackIntegrationTests: XCTestCase {
         XCTAssertTrue(broker.receivedProtocolLevels.isEmpty)
     }
 
+    func testMQTT311ConnectsWithPKCS1PEMClientIdentity() throws {
+        let fixture = try Self.fixture.get()
+        let broker = try TLSMQTTLoopbackBroker(
+            identity: fixture.serverIdentity,
+            trustedClientRootCertificate: fixture.rootCertificate
+        )
+        let port = try start(broker)
+        let connected = expectation(description: "MQTT 3.1.1 mTLS connected")
+        let mqtt = CocoaMQTT(clientID: "mtls-loopback-311", host: "127.0.0.1", port: port)
+        configurePrivateCATrust(
+            on: mqtt,
+            rootCertificate: fixture.rootCertificate,
+            usesSystemTrustStore: false
+        )
+        mqtt.clientIdentity = try CocoaMQTTClientIdentity(
+            certificateData: fixture.clientCertificatePEM,
+            privateKeyData: fixture.clientPrivateKeyPKCS1PEM,
+            intermediateCertificateData: [fixture.intermediateCertificatePEM]
+        )
+        mqtt.didConnectAck = { client, ack in
+            XCTAssertEqual(ack, .accept)
+            connected.fulfill()
+            client.disconnect()
+        }
+
+        XCTAssertTrue(mqtt.connect(timeout: 2))
+        wait(for: [connected], timeout: 3)
+        XCTAssertEqual(broker.receivedProtocolLevels, [4])
+    }
+
+    func testMQTT5ConnectsWithPKCS8PEMClientIdentity() throws {
+        let fixture = try Self.fixture.get()
+        let broker = try TLSMQTTLoopbackBroker(
+            identity: fixture.serverIdentity,
+            trustedClientRootCertificate: fixture.rootCertificate
+        )
+        let port = try start(broker)
+        let connected = expectation(description: "MQTT 5 mTLS connected")
+        let mqtt = CocoaMQTT5(clientID: "mtls-loopback-5", host: "127.0.0.1", port: port)
+        configurePrivateCATrust(on: mqtt, rootCertificate: fixture.rootCertificate)
+        mqtt.usesSystemTrustStore = false
+        mqtt.clientIdentity = try CocoaMQTTClientIdentity(
+            certificateData: fixture.clientCertificatePEM,
+            privateKeyData: fixture.clientPrivateKeyPKCS8PEM,
+            intermediateCertificateData: [fixture.intermediateCertificatePEM]
+        )
+        mqtt.didConnectAck = { client, reasonCode, _ in
+            XCTAssertEqual(reasonCode, .success)
+            connected.fulfill()
+            client.disconnect()
+        }
+
+        XCTAssertTrue(mqtt.connect(timeout: 2))
+        wait(for: [connected], timeout: 3)
+        XCTAssertEqual(broker.receivedProtocolLevels, [5])
+    }
+
+    func testBrokerRequiringClientCertificateRejectsMissingIdentity() throws {
+        let fixture = try Self.fixture.get()
+        let broker = try TLSMQTTLoopbackBroker(
+            identity: fixture.serverIdentity,
+            trustedClientRootCertificate: fixture.rootCertificate
+        )
+        let port = try start(broker)
+        let disconnected = expectation(description: "mTLS connection rejected")
+        let mqtt = CocoaMQTT(clientID: "mtls-loopback-missing", host: "127.0.0.1", port: port)
+        configurePrivateCATrust(
+            on: mqtt,
+            rootCertificate: fixture.rootCertificate,
+            usesSystemTrustStore: false
+        )
+        mqtt.didDisconnect = { _, _ in disconnected.fulfill() }
+
+        XCTAssertTrue(mqtt.connect(timeout: 2))
+        wait(for: [disconnected], timeout: 3)
+        XCTAssertTrue(broker.receivedProtocolLevels.isEmpty)
+    }
+
+    func testBrokerRejectsClientIdentitySignedByWrongCA() throws {
+        let fixture = try Self.fixture.get()
+        let broker = try TLSMQTTLoopbackBroker(
+            identity: fixture.serverIdentity,
+            trustedClientRootCertificate: fixture.untrustedRootCertificate
+        )
+        let port = try start(broker)
+        let disconnected = expectation(description: "untrusted client identity rejected")
+        let mqtt = CocoaMQTT(clientID: "mtls-loopback-wrong-ca", host: "127.0.0.1", port: port)
+        configurePrivateCATrust(
+            on: mqtt,
+            rootCertificate: fixture.rootCertificate,
+            usesSystemTrustStore: false
+        )
+        mqtt.clientIdentity = try CocoaMQTTClientIdentity(
+            certificateData: fixture.clientCertificatePEM,
+            privateKeyData: fixture.clientPrivateKeyPKCS1PEM,
+            intermediateCertificateData: [fixture.intermediateCertificatePEM]
+        )
+        mqtt.didDisconnect = { _, _ in disconnected.fulfill() }
+
+        XCTAssertTrue(mqtt.connect(timeout: 2))
+        wait(for: [disconnected], timeout: 3)
+        XCTAssertTrue(broker.receivedProtocolLevels.isEmpty)
+    }
+
     private func start(_ broker: TLSMQTTLoopbackBroker) throws -> UInt16 {
         let ready = expectation(description: "TLS broker ready")
         broker.start { ready.fulfill() }

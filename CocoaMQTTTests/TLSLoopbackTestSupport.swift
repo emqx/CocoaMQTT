@@ -24,7 +24,11 @@ final class TLSMQTTLoopbackBroker {
         return protocolLevels
     }
 
-    init(identity: SecIdentity, onConnect: ((UInt8) -> Void)? = nil) throws {
+    init(
+        identity: SecIdentity,
+        trustedClientRootCertificate: SecCertificate? = nil,
+        onConnect: ((UInt8) -> Void)? = nil
+    ) throws {
         self.onConnect = onConnect
         let tlsOptions = NWProtocolTLS.Options()
         guard let protocolIdentity = sec_identity_create(identity) else {
@@ -34,6 +38,33 @@ final class TLSMQTTLoopbackBroker {
             tlsOptions.securityProtocolOptions,
             protocolIdentity
         )
+        if let trustedClientRootCertificate {
+            sec_protocol_options_set_peer_authentication_required(
+                tlsOptions.securityProtocolOptions,
+                true
+            )
+            sec_protocol_options_set_verify_block(
+                tlsOptions.securityProtocolOptions,
+                { _, trust, complete in
+                    let secTrust = sec_trust_copy_ref(trust).takeRetainedValue()
+                    guard SecTrustSetPolicies(
+                        secTrust,
+                        SecPolicyCreateBasicX509()
+                    ) == errSecSuccess,
+                    SecTrustSetAnchorCertificates(
+                        secTrust,
+                        [trustedClientRootCertificate] as CFArray
+                    ) == errSecSuccess,
+                    SecTrustSetAnchorCertificatesOnly(secTrust, true) == errSecSuccess else {
+                        complete(false)
+                        return
+                    }
+                    var error: CFError?
+                    complete(SecTrustEvaluateWithError(secTrust, &error))
+                },
+                queue
+            )
+        }
         listener = try NWListener(
             using: NWParameters(tls: tlsOptions, tcp: NWProtocolTCP.Options()),
             on: .any
@@ -121,6 +152,11 @@ final class TLSLoopbackCertificateFixture {
     let rootCertificate: SecCertificate
     let untrustedRootCertificate: SecCertificate
     let serverIdentity: SecIdentity
+    let clientCertificatePEM: Data
+    let clientPrivateKeyPKCS1PEM: Data
+    let clientPrivateKeyPKCS8PEM: Data
+    let wrongPrivateKeyPEM: Data
+    let intermediateCertificatePEM: Data
 
     private let directory: URL
 
@@ -152,6 +188,12 @@ final class TLSLoopbackCertificateFixture {
         let serverPEM = file("server.pem")
         let serverChain = file("server-chain.pem")
         let serverPKCS12 = file("server.p12")
+        let clientKeyPKCS8 = file("client-pkcs8.key")
+        let clientKeyPKCS1 = file("client-pkcs1.key")
+        let clientRequest = file("client.csr")
+        let clientExtensions = file("client.ext")
+        let clientPEM = file("client.pem")
+        let wrongKey = file("wrong.key")
 
         try Data("""
         basicConstraints=critical,CA:TRUE,pathlen:0
@@ -165,6 +207,11 @@ final class TLSLoopbackCertificateFixture {
         basicConstraints=critical,CA:FALSE
         keyUsage=critical,digitalSignature,keyEncipherment
         """.utf8).write(to: serverExtensions)
+        try Data("""
+        extendedKeyUsage=clientAuth
+        basicConstraints=critical,CA:FALSE
+        keyUsage=critical,digitalSignature,keyEncipherment
+        """.utf8).write(to: clientExtensions)
 
         try Self.runOpenSSL([
             "req", "-x509", "-newkey", "rsa:2048", "-sha256", "-nodes",
@@ -206,6 +253,23 @@ final class TLSLoopbackCertificateFixture {
             "-inkey", serverKey.path, "-in", serverPEM.path,
             "-certfile", serverChain.path, "-passout", "pass:loopback"
         ])
+        try Self.runOpenSSL([
+            "req", "-newkey", "rsa:2048", "-sha256", "-nodes",
+            "-subj", "/CN=CocoaMQTT Loopback Client",
+            "-keyout", clientKeyPKCS8.path, "-out", clientRequest.path
+        ])
+        try Self.runOpenSSL([
+            "x509", "-req", "-in", clientRequest.path,
+            "-CA", intermediatePEM.path, "-CAkey", intermediateKey.path, "-CAcreateserial",
+            "-days", "365", "-sha256", "-extfile", clientExtensions.path,
+            "-out", clientPEM.path
+        ])
+        try Self.runOpenSSL([
+            "rsa", "-in", clientKeyPKCS8.path, "-out", clientKeyPKCS1.path
+        ])
+        try Self.runOpenSSL([
+            "genrsa", "-out", wrongKey.path, "2048"
+        ])
 
         let rootData = try Data(contentsOf: rootPEM)
         guard let rootCertificate = CocoaMQTTSocket.serverCertificate(from: rootData) else {
@@ -219,6 +283,11 @@ final class TLSLoopbackCertificateFixture {
             throw TLSLoopbackError.invalidRootCertificate
         }
         self.untrustedRootCertificate = untrustedRootCertificate
+        clientCertificatePEM = try Data(contentsOf: clientPEM)
+        clientPrivateKeyPKCS1PEM = try Data(contentsOf: clientKeyPKCS1)
+        clientPrivateKeyPKCS8PEM = try Data(contentsOf: clientKeyPKCS8)
+        wrongPrivateKeyPEM = try Data(contentsOf: wrongKey)
+        intermediateCertificatePEM = try Data(contentsOf: intermediatePEM)
 
         let p12 = try Data(contentsOf: serverPKCS12)
         let options = [kSecImportExportPassphrase as String: "loopback"] as CFDictionary
