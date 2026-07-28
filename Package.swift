@@ -9,6 +9,9 @@ let package = Package(
         .macOS(.v10_13),
         .iOS(.v12),
         .tvOS(.v12)
+        // visionOS is supported through SwiftPM and compiled in CI. An explicit
+        // declaration requires PackageDescription 5.9, while this manifest
+        // intentionally remains compatible with Swift tools 5.7.
     ],
     products: [
         .library(name: "CocoaMQTT", targets: ["CocoaMQTT"]),
