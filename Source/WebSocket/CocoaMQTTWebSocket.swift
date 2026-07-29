@@ -53,7 +53,7 @@ private protocol CocoaMQTTWebSocketMessageSizeConfiguring: AnyObject {
 
 // MARK: - CocoaMQTTWebSocket
 
-public class CocoaMQTTWebSocket: CocoaMQTTDisconnectAfterWritingSocket {
+public class CocoaMQTTWebSocket: CocoaMQTTDisconnectAfterWritingSocket, CocoaMQTTClientIdentityConfiguring {
 
     private static let foundationDefaultMaximumMessageSize = 1_048_576
 
@@ -62,6 +62,13 @@ public class CocoaMQTTWebSocket: CocoaMQTTDisconnectAfterWritingSocket {
     public var shouldConnectWithURIOnly = false
 
     public var headers: [String: String] = [:]
+
+    /// Client identity sent by the built-in Foundation transport during the
+    /// TLS handshake. The older Starscream transport does not support this
+    /// setting. Custom connection builders may opt in by returning a
+    /// `CocoaMQTTClientIdentityConfiguring` connection. Set this before
+    /// connecting.
+    public var clientIdentity: CocoaMQTTClientIdentity?
 
     /// Incoming WebSocket message buffering limit for the built-in Foundation
     /// transport. A message must be smaller than this value. The default is
@@ -131,6 +138,9 @@ public class CocoaMQTTWebSocket: CocoaMQTTDisconnectAfterWritingSocket {
             let newConnection = try builder.buildConnection(forURL: url, withHeaders: self.headers)
             if let configurableConnection = newConnection as? CocoaMQTTWebSocketMessageSizeConfiguring {
                 configurableConnection.maximumMessageSize = maximumMessageSize
+            }
+            if let configurableConnection = newConnection as? CocoaMQTTClientIdentityConfiguring {
+                configurableConnection.clientIdentity = clientIdentity
             }
             connection = newConnection
             newConnection.delegate = self
@@ -368,10 +378,11 @@ extension CocoaMQTTWebSocket: CocoaMQTTWebSocketConnectionDelegate {
 
 @available(OSX 10.15, iOS 13.0, watchOS 6.0, tvOS 13.0, *)
 public extension CocoaMQTTWebSocket {
-    class FoundationConnection: NSObject, CocoaMQTTWebSocketConnection {
+    class FoundationConnection: NSObject, CocoaMQTTWebSocketConnection, CocoaMQTTClientIdentityConfiguring {
 
         public weak var delegate: CocoaMQTTWebSocketConnectionDelegate?
         public lazy var queue = DispatchQueue(label: "CocoaMQTTFoundationWebSocketConnection-\(self.hashValue)")
+        public var clientIdentity: CocoaMQTTClientIdentity?
         var maximumMessageSize: Int {
             get {
                 task?.maximumMessageSize ?? CocoaMQTTWebSocket.foundationDefaultMaximumMessageSize
@@ -446,6 +457,18 @@ extension CocoaMQTTWebSocket.FoundationConnection: CocoaMQTTWebSocketMessageSize
 extension CocoaMQTTWebSocket.FoundationConnection: URLSessionWebSocketDelegate {
     public func urlSession(_ session: URLSession, task: URLSessionTask, didReceive challenge: URLAuthenticationChallenge, completionHandler: @escaping (URLSession.AuthChallengeDisposition, URLCredential?) -> Void) {
         queue.async {
+            if challenge.protectionSpace.authenticationMethod == NSURLAuthenticationMethodClientCertificate,
+               let clientIdentity = self.clientIdentity {
+                completionHandler(
+                    .useCredential,
+                    URLCredential(
+                        identity: clientIdentity.identity,
+                        certificates: clientIdentity.intermediateCertificates,
+                        persistence: .forSession
+                    )
+                )
+                return
+            }
             if let trust = challenge.protectionSpace.serverTrust, let delegate = self.delegate {
                 delegate.urlSessionConnection(self, didReceiveTrust: trust, didReceiveChallenge: challenge, completionHandler: completionHandler)
             } else {

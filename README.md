@@ -177,8 +177,15 @@ the leaf bundle; duplicates and a repeated leaf are ignored. Pass the leaf
 issuer first and normally exclude the root. It is independent from
 `trustedServerCertificates`, which validates the broker. The PEM/DER importer
 requires macOS 10.14, iOS 12, tvOS 12, or visionOS 1. This API applies to the
-built-in TCP transport, not MQTT over WebSocket; assigning it to a client using
-another socket transport has no effect.
+built-in TCP transport and the Foundation WebSocket transport available on
+macOS 10.15, iOS 13, tvOS 13, watchOS 6, and later. The older Starscream
+WebSocket transport does not support client identities. Custom transports can
+opt in by conforming to `CocoaMQTTClientIdentityConfiguring`.
+
+For WSS brokers that use a private server CA, the TCP-only
+`trustedServerCertificates` setting does not apply. Validate that server trust
+through `mqttUrlSession(_:didReceiveTrust:didReceiveChallenge:completionHandler:)`
+or its MQTT 5 equivalent. Client identity and server trust remain independent.
 
 PKCS#12 is a password-protected identity container supported by Apple's
 [`SecPKCS12Import`](https://developer.apple.com/documentation/security/secpkcs12import%28_%3A_%3A_%3A%29).

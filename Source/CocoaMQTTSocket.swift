@@ -251,7 +251,7 @@ public extension CocoaMQTTSocketProtocol {
 
 // MARK: - CocoaMQTTSocket
 
-public class CocoaMQTTSocket: NSObject {
+public class CocoaMQTTSocket: NSObject, CocoaMQTTClientIdentityConfiguring {
 
     private static let trustEvaluationQueue = DispatchQueue(
         label: "trust.cocoamqtt.emqx",
