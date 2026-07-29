@@ -53,7 +53,9 @@ private protocol CocoaMQTTWebSocketMessageSizeConfiguring: AnyObject {
 
 // MARK: - CocoaMQTTWebSocket
 
-public class CocoaMQTTWebSocket: CocoaMQTTDisconnectAfterWritingSocket, CocoaMQTTClientIdentityConfiguring {
+public class CocoaMQTTWebSocket: CocoaMQTTDisconnectAfterWritingSocket,
+    CocoaMQTTClientIdentityConfiguring,
+    CocoaMQTTServerTrustConfiguring {
 
     private static let foundationDefaultMaximumMessageSize = 1_048_576
 
@@ -62,6 +64,20 @@ public class CocoaMQTTWebSocket: CocoaMQTTDisconnectAfterWritingSocket, CocoaMQT
     public var shouldConnectWithURIOnly = false
 
     public var headers: [String: String] = [:]
+
+    /// Server name used for TLS identity verification. Defaults to the URL
+    /// host, which continues to control routing and TLS SNI.
+    public var tlsServerName: String?
+
+    /// Additional CA certificates trusted by the Foundation transport.
+    public var trustedServerCertificates = [SecCertificate]()
+
+    /// Whether custom CA validation also accepts the system trust store.
+    public var usesSystemTrustStore = true
+
+    /// Gives the client trust callback first chance to decide. Configured
+    /// custom CA certificates remain the fallback.
+    public var manuallyEvaluateTrust = false
 
     /// Client identity sent by the built-in Foundation transport during the
     /// TLS handshake. The older Starscream transport does not support this

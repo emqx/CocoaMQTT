@@ -182,10 +182,13 @@ macOS 10.15, iOS 13, tvOS 13, watchOS 6, and later. The older Starscream
 WebSocket transport does not support client identities. Custom transports can
 opt in by conforming to `CocoaMQTTClientIdentityConfiguring`.
 
-For WSS brokers that use a private server CA, the TCP-only
-`trustedServerCertificates` setting does not apply. Validate that server trust
-through `mqttUrlSession(_:didReceiveTrust:didReceiveChallenge:completionHandler:)`
-or its MQTT 5 equivalent. Client identity and server trust remain independent.
+The high-level TLS settings—`tlsServerName`, `trustedServerCertificates`,
+`usesSystemTrustStore`, `manuallyEvaluateTrust`, and `clientIdentity`—work the
+same way with the built-in TCP and Foundation WebSocket transports.
+`sslSettings` remains a TCP-only low-level escape hatch. Client identity and
+server trust remain independent. For WebSocket connections, `tlsServerName`
+overrides certificate identity verification; the WebSocket URL host still
+controls routing and TLS SNI.
 
 PKCS#12 is a password-protected identity container supported by Apple's
 [`SecPKCS12Import`](https://developer.apple.com/documentation/security/secpkcs12import%28_%3A_%3A_%3A%29).

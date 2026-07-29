@@ -99,6 +99,33 @@ final class WebSocketMTLSIntegrationTests: XCTestCase {
         XCTAssertTrue(broker.receivedProtocolLevels.isEmpty)
     }
 
+    func testWebSocketRejectsServerSignedByUntrustedCA() throws {
+        let fixture = try Self.fixture.get()
+        let broker = try TLSWebSocketMQTTLoopbackBroker(
+            identity: fixture.serverIdentity,
+            trustedClientRootCertificate: fixture.rootCertificate
+        )
+        let port = try start(broker)
+        let disconnected = expectation(description: "untrusted WSS server rejected")
+        let socket = CocoaMQTTWebSocket(uri: "/mqtt")
+        let mqtt = CocoaMQTT(
+            clientID: "wss-untrusted-server",
+            host: "127.0.0.1",
+            port: port,
+            socket: socket
+        )
+        configure(
+            mqtt,
+            identity: try makeClientIdentity(fixture),
+            trustedRoot: fixture.untrustedRootCertificate
+        )
+        mqtt.didDisconnect = { _, _ in disconnected.fulfill() }
+
+        XCTAssertTrue(mqtt.connect(timeout: 2))
+        wait(for: [disconnected], timeout: 5)
+        XCTAssertTrue(broker.receivedProtocolLevels.isEmpty)
+    }
+
     private func start(_ broker: TLSWebSocketMQTTLoopbackBroker) throws -> UInt16 {
         let ready = expectation(description: "mTLS WebSocket broker ready")
         broker.start { ready.fulfill() }
@@ -126,9 +153,9 @@ final class WebSocketMTLSIntegrationTests: XCTestCase {
         mqtt.autoReconnect = false
         mqtt.logLevel = .off
         mqtt.clientIdentity = identity
-        mqtt.didReceiveTrust = { _, trust, completion in
-            completion(Self.evaluate(trust, trustedRoot: trustedRoot))
-        }
+        mqtt.tlsServerName = "broker.example.com"
+        mqtt.trustedServerCertificates = [trustedRoot]
+        mqtt.usesSystemTrustStore = false
     }
 
     private func configure(
@@ -140,28 +167,9 @@ final class WebSocketMTLSIntegrationTests: XCTestCase {
         mqtt.autoReconnect = false
         mqtt.logLevel = .off
         mqtt.clientIdentity = identity
-        mqtt.didReceiveTrust = { _, trust, completion in
-            completion(Self.evaluate(trust, trustedRoot: trustedRoot))
-        }
-    }
-
-    private static func evaluate(
-        _ trust: SecTrust,
-        trustedRoot: SecCertificate
-    ) -> Bool {
-        guard SecTrustSetPolicies(
-            trust,
-            SecPolicyCreateSSL(true, "127.0.0.1" as CFString)
-        ) == errSecSuccess,
-        SecTrustSetAnchorCertificates(
-            trust,
-            [trustedRoot] as CFArray
-        ) == errSecSuccess,
-        SecTrustSetAnchorCertificatesOnly(trust, true) == errSecSuccess else {
-            return false
-        }
-        var error: CFError?
-        return SecTrustEvaluateWithError(trust, &error)
+        mqtt.tlsServerName = "broker.example.com"
+        mqtt.trustedServerCertificates = [trustedRoot]
+        mqtt.usesSystemTrustStore = false
     }
 }
 #endif

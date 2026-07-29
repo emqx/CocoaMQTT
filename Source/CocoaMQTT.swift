@@ -338,14 +338,14 @@ public class CocoaMQTT: NSObject, CocoaMQTTClient {
 
     /// Server name used for TLS identity verification. Defaults to `host`.
     @objc public var tlsServerName: String? {
-        get { return (self.socket as? CocoaMQTTSocket)?.tlsServerName }
-        set { (self.socket as? CocoaMQTTSocket)?.tlsServerName = newValue }
+        get { return (self.socket as? CocoaMQTTServerTrustConfiguring)?.tlsServerName }
+        set { (self.socket as? CocoaMQTTServerTrustConfiguring)?.tlsServerName = newValue }
     }
 
-    /// Additional CA certificates trusted by the built-in TCP socket.
+    /// Additional CA certificates trusted by supported TLS transports.
     public var trustedServerCertificates: [SecCertificate] {
-        get { return (self.socket as? CocoaMQTTSocket)?.trustedServerCertificates ?? [] }
-        set { (self.socket as? CocoaMQTTSocket)?.trustedServerCertificates = newValue }
+        get { return (self.socket as? CocoaMQTTServerTrustConfiguring)?.trustedServerCertificates ?? [] }
+        set { (self.socket as? CocoaMQTTServerTrustConfiguring)?.trustedServerCertificates = newValue }
     }
 
     /// Client identity sent by transports that support mutual TLS.
@@ -360,22 +360,19 @@ public class CocoaMQTT: NSObject, CocoaMQTTClient {
 
     /// Whether custom CA validation also accepts the system trust store.
     @objc public var usesSystemTrustStore: Bool {
-        get { return (self.socket as? CocoaMQTTSocket)?.usesSystemTrustStore ?? true }
-        set { (self.socket as? CocoaMQTTSocket)?.usesSystemTrustStore = newValue }
+        get { return (self.socket as? CocoaMQTTServerTrustConfiguring)?.usesSystemTrustStore ?? true }
+        set { (self.socket as? CocoaMQTTServerTrustConfiguring)?.usesSystemTrustStore = newValue }
     }
 
-    /// Enables manual server trust evaluation on the built-in TCP socket.
-    /// Implement the trust delegate method or `didReceiveTrust` closure before
-    /// enabling this property.
+    /// Gives the trust delegate or `didReceiveTrust` closure first chance to
+    /// decide. Configured custom CA certificates remain the fallback.
     @objc public var manuallyEvaluateTrust: Bool {
-        get { return (self.socket as? CocoaMQTTSocket)?.manuallyEvaluateTrust ?? false }
-        set { (self.socket as? CocoaMQTTSocket)?.manuallyEvaluateTrust = newValue }
+        get { return (self.socket as? CocoaMQTTServerTrustConfiguring)?.manuallyEvaluateTrust ?? false }
+        set { (self.socket as? CocoaMQTTServerTrustConfiguring)?.manuallyEvaluateTrust = newValue }
     }
 
     /// Legacy name for enabling manual trust evaluation.
     ///
-    /// This setting does not apply to `CocoaMQTTWebSocket`. Handle a WebSocket
-    /// trust challenge with `mqttUrlSession` or `didReceiveTrust` instead.
     /// Default is false. Setting this does not accept a certificate by itself.
     @available(*, deprecated, renamed: "manuallyEvaluateTrust")
     public var allowUntrustCACertificate: Bool {
@@ -947,6 +944,18 @@ extension CocoaMQTT: CocoaMQTTSocketDelegate {
                     guard let handler = mqtt.customDidReceiveTrust else { return false }
                     handler(mqtt, trust, completion)
                     return true
+                },
+                fallback: { completion in
+                    guard let configuration = socket as? CocoaMQTTServerTrustConfiguring else {
+                        return false
+                    }
+                    return CocoaMQTTServerTrustEvaluator.evaluate(
+                        trust,
+                        configuration: configuration,
+                        serverName: configuration.tlsServerName
+                            ?? challenge.protectionSpace.host,
+                        completionHandler: completion
+                    )
                 },
                 legacyCredential: URLCredential(trust: trust),
                 completionHandler: completionHandler
