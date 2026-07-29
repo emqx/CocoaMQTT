@@ -14,9 +14,9 @@ final class ConcurrentAtomicTests: XCTestCase {
         XCTAssertEqual(value, 10)
     }
 
-    func testMutateReturnsAfterApplyingTransform() {
+    func testWithMutationReturnsAfterApplyingTransform() {
         value = 1
-        let result = $value.mutate { value in
+        let result = $value.withMutation { value in
             value *= 20
             return value
         }

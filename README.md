@@ -1,5 +1,11 @@
 # CocoaMQTT
 
+> **CocoaMQTT 2.x LTS:** This branch contains the latest stable 2.x release
+> line. It preserves the established CocoaAsyncSocket and Starscream transport
+> architecture and receives compatibility, correctness, and security fixes.
+> CocoaMQTT 3 development continues on `master`. See the
+> [2.x maintenance policy](MAINTENANCE.md) and [changelog](CHANGELOG.md).
+
 ![PodVersion](https://img.shields.io/cocoapods/v/CocoaMQTT5.svg)
 ![Platforms](https://img.shields.io/cocoapods/p/CocoaMQTT5.svg)
 ![License](https://img.shields.io/cocoapods/l/BadgeSwift.svg?style=flat)

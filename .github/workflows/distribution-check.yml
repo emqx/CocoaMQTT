@@ -4,6 +4,7 @@ on:
   pull_request:
     paths:
       - "Source/**/*.swift"
+      - "Source/Info.plist"
       - "Source/PrivacyInfo.xcprivacy"
       - "CocoaMQTTTests/**/*.swift"
       - "Package.swift"
@@ -11,6 +12,7 @@ on:
       - "CocoaMQTT.podspec"
       - "CocoaMQTT.xcodeproj/project.pbxproj"
       - "CocoaMQTT.xcodeproj/project.xcworkspace/xcshareddata/swiftpm/Package.resolved"
+      - ".github/api-breakage-allowlist-2.3.txt"
       - ".github/workflows/distribution-check.yml"
   push:
     tags:
@@ -25,6 +27,31 @@ concurrency:
   cancel-in-progress: true
 
 jobs:
+  api-compatibility:
+    name: CocoaMQTT 2.3 API Compatibility
+    runs-on: macos-15
+    timeout-minutes: 20
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Diagnose API-breaking changes
+        run: |
+          swift package diagnose-api-breaking-changes 2.3.0 \
+            --products CocoaMQTT CocoaMQTTWebSocket \
+            --breakage-allowlist-path .github/api-breakage-allowlist-2.3.txt
+
+      - name: Preserve the pull request base API
+        if: github.event_name == 'pull_request'
+        env:
+          BASE_SHA: ${{ github.event.pull_request.base.sha }}
+        run: |
+          swift package diagnose-api-breaking-changes "${BASE_SHA}" \
+            --products CocoaMQTT CocoaMQTTWebSocket
+
   tag-version-check:
     name: Tag Version Guard
     if: startsWith(github.ref, 'refs/tags/')
@@ -34,32 +61,45 @@ jobs:
     steps:
       - name: Checkout
         uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
 
-      - name: Verify pushed tag matches CocoaMQTT.podspec version
+      - name: Verify release version and branch
         run: |
           set -euo pipefail
 
           VERSION="$(ruby -ne 'puts $1 if /s\.version\s*=\s*"([^"]+)"/' CocoaMQTT.podspec)"
           SOURCE_TAG="$(ruby -ne 'puts $1 if /:tag\s*=>\s*"([^"]+)"/' CocoaMQTT.podspec)"
+          FRAMEWORK_VERSION="$(
+            python3 -c 'import plistlib; print(plistlib.load(open("Source/Info.plist", "rb"))["CFBundleShortVersionString"])'
+          )"
 
-          if [ -z "${VERSION}" ] || [ -z "${SOURCE_TAG}" ]; then
-            echo "Failed to parse version or source tag from CocoaMQTT.podspec"
+          if [ -z "${VERSION}" ] || [ -z "${SOURCE_TAG}" ] || [ -z "${FRAMEWORK_VERSION}" ]; then
+            echo "Failed to parse release version metadata"
             exit 1
           fi
 
-          if [ "${VERSION}" != "${SOURCE_TAG}" ]; then
-            echo "podspec version (${VERSION}) must match source tag (${SOURCE_TAG})"
+          if [ "${VERSION}" != "${SOURCE_TAG}" ] || [ "${VERSION}" != "${FRAMEWORK_VERSION}" ]; then
+            echo "Release versions must match: podspec=${VERSION}, source=${SOURCE_TAG}, framework=${FRAMEWORK_VERSION}"
             exit 1
           fi
 
           TAG_NAME="${GITHUB_REF#refs/tags/}"
-          TAG_VERSION="${TAG_NAME#v}"
-          if [ "${TAG_VERSION}" != "${VERSION}" ]; then
-            echo "Git tag (${TAG_NAME}) must match podspec version (${VERSION})"
+          if [ "${TAG_NAME}" != "${SOURCE_TAG}" ]; then
+            echo "Git tag (${TAG_NAME}) must exactly match podspec source tag (${SOURCE_TAG})"
             exit 1
           fi
 
-          echo "Tag/version guard passed: tag=${TAG_NAME}, podspec=${VERSION}"
+          if [[ "${VERSION}" == 2.* ]]; then
+            git fetch origin release/2.x
+            TAG_COMMIT="$(git rev-parse "${GITHUB_SHA}^{commit}")"
+            if ! git merge-base --is-ancestor "${TAG_COMMIT}" origin/release/2.x; then
+              echo "CocoaMQTT 2.x tag must point to a commit on release/2.x"
+              exit 1
+            fi
+          fi
+
+          echo "Release guard passed: tag=${TAG_NAME}, version=${VERSION}"
 
   spm-smoke:
     name: SPM Release Smoke
@@ -210,20 +250,23 @@ jobs:
       - name: Install CocoaPods
         run: gem install cocoapods --no-document
 
-      - name: Verify podspec version and source tag
+      - name: Verify release version metadata
         run: |
           set -euo pipefail
 
           VERSION="$(ruby -ne 'puts $1 if /s\.version\s*=\s*"([^"]+)"/' CocoaMQTT.podspec)"
           SOURCE_TAG="$(ruby -ne 'puts $1 if /:tag\s*=>\s*"([^"]+)"/' CocoaMQTT.podspec)"
+          FRAMEWORK_VERSION="$(
+            python3 -c 'import plistlib; print(plistlib.load(open("Source/Info.plist", "rb"))["CFBundleShortVersionString"])'
+          )"
 
-          if [ -z "${VERSION}" ] || [ -z "${SOURCE_TAG}" ]; then
-            echo "Failed to parse CocoaMQTT.podspec version or source tag"
+          if [ -z "${VERSION}" ] || [ -z "${SOURCE_TAG}" ] || [ -z "${FRAMEWORK_VERSION}" ]; then
+            echo "Failed to parse release version metadata"
             exit 1
           fi
 
-          if [ "${VERSION}" != "${SOURCE_TAG}" ]; then
-            echo "podspec version (${VERSION}) must match source tag (${SOURCE_TAG})"
+          if [ "${VERSION}" != "${SOURCE_TAG}" ] || [ "${VERSION}" != "${FRAMEWORK_VERSION}" ]; then
+            echo "Release versions must match: podspec=${VERSION}, source=${SOURCE_TAG}, framework=${FRAMEWORK_VERSION}"
             exit 1
           fi
 

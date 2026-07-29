@@ -19,6 +19,11 @@ public class MqttDecodePubComp: NSObject {
     public var userProperty: [String: String]?
     public var userProperties = [CocoaMQTTUserProperty]()
 
+    @available(*, deprecated, message: "Assumes MQTT 5 data; use the overload with protocolVersion")
+    public func decodePubComp(fixedHeader: UInt8, pubAckData: [UInt8]) {
+        _ = decodePubComp(fixedHeader: fixedHeader, pubAckData: pubAckData, protocolVersion: .v5)
+    }
+
     @discardableResult
     public func decodePubComp(fixedHeader: UInt8,
                               pubAckData: [UInt8],

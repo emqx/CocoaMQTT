@@ -8,12 +8,24 @@ import Foundation
 ///
 /// Iteration uses a stable snapshot so concurrent mutations cannot invalidate an
 /// iterator. Use `snapshot()` when an operation needs one consistent dictionary.
-public final class ThreadSafeDictionary<K: Hashable, V>: Sequence {
+///
+/// - Important: Index-based `Collection` operations are retained for source
+///   compatibility, but an index can be invalidated by a mutation between calls.
+///   Use `snapshot()` for multi-step indexed access.
+public final class ThreadSafeDictionary<K: Hashable, V>: Collection {
     public typealias Element = Dictionary<K, V>.Element
     public typealias Iterator = Dictionary<K, V>.Iterator
 
     private var dictionary: [K: V]
     private let concurrentQueue: DispatchQueue
+
+    public var startIndex: Dictionary<K, V>.Index {
+        concurrentQueue.sync { dictionary.startIndex }
+    }
+
+    public var endIndex: Dictionary<K, V>.Index {
+        concurrentQueue.sync { dictionary.endIndex }
+    }
 
     public var count: Int {
         concurrentQueue.sync { dictionary.count }
@@ -37,6 +49,12 @@ public final class ThreadSafeDictionary<K: Hashable, V>: Sequence {
         snapshot().makeIterator()
     }
 
+    public func index(after index: Dictionary<K, V>.Index) -> Dictionary<K, V>.Index {
+        concurrentQueue.sync {
+            dictionary.index(after: index)
+        }
+    }
+
     public subscript(key: K) -> V? {
         get {
             concurrentQueue.sync {
@@ -47,6 +65,12 @@ public final class ThreadSafeDictionary<K: Hashable, V>: Sequence {
             concurrentQueue.sync(flags: .barrier) {
                 dictionary[key] = newValue
             }
+        }
+    }
+
+    public subscript(index: Dictionary<K, V>.Index) -> Element {
+        concurrentQueue.sync {
+            dictionary[index]
         }
     }
 

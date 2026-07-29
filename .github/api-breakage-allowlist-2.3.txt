@@ -1,0 +1,1 @@
+API breakage: typealias ThreadSafeDictionary.Iterator has underlying type change from Swift.IndexingIterator<CocoaMQTT.ThreadSafeDictionary<K, V>> to Swift.Dictionary<K, V>.Iterator
