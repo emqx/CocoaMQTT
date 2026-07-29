@@ -16,10 +16,9 @@ are covered by a Swift 6 compatibility check in CI.
 
 Build with Xcode 11.1 / Swift 5.1
 
-IOS Target: 12.0 or above
-OSX Target: 10.13 or above
-TVOS Target: 12.0 or above with Swift Package Manager or CocoaPods WebSockets;
-10.0 or above with CocoaPods Core
+Core: iOS 12.0, macOS 10.13, and tvOS 12.0 or above with Swift Package
+Manager; tvOS 10.0 or above with CocoaPods Core
+WebSocket: iOS 13.0, macOS 10.15, and tvOS 13.0 or above
 visionOS Target: 1.0 or above (Swift Package Manager only, compile-verified in CI)
 
 ##  xcode 14.3 issue:
@@ -43,7 +42,10 @@ To integrate CocoaMQTT into your Xcode project using [Swift Package Manager](htt
 
 Swift Package Manager supports iOS, macOS, tvOS, and visionOS. Both the
 `CocoaMQTT` and `CocoaMQTTWebSocket` products are compile-verified against the
-visionOS SDK in CI.
+visionOS SDK in CI. Because Swift Package Manager platform declarations apply
+to the package rather than an individual product, availability annotations
+enforce the higher minimum OS versions when using `CocoaMQTTWebSocket`; the
+core `CocoaMQTT` product retains its existing minimum versions.
 
 At last, import "CocoaMQTT" to your project:
 
@@ -167,11 +169,9 @@ a trust callback or custom CA certificates rejects the connection.
 For TCP, create `CocoaMQTT` or `CocoaMQTT5` normally. For WSS, use the
 [MQTT 3.1.1 WebSocket client](Example/Example/MutualTLSConfiguration.swift#L35-L47)
 or [MQTT 5 WebSocket client](Example/Example/MutualTLSConfiguration.swift#L52-L64)
-example. `CocoaMQTTWebSocket` automatically uses Apple's
-`URLSessionWebSocketTask` on macOS 10.15, iOS 13, tvOS 13, visionOS 1, and
-later; no transport selection is required. Older supported OS versions
-automatically fall back to Starscream, where `clientIdentity` does not
-participate in the TLS handshake. Before calling `connect()`, apply either the
+example. `CocoaMQTTWebSocket` uses Apple's `URLSessionWebSocketTask` on macOS
+10.15, iOS 13, tvOS 13, visionOS 1, and later. Before calling `connect()`,
+apply either the
 [PEM/DER configuration](Example/Example/MutualTLSConfiguration.swift#L70-L93)
 or [PKCS#12 configuration](Example/Example/MutualTLSConfiguration.swift#L99-L118).
 Both configuration functions work with MQTT 3.1.1 and MQTT 5 over TCP or
@@ -189,9 +189,8 @@ the leaf bundle; duplicates and a repeated leaf are ignored. Pass the leaf
 issuer first and normally exclude the root. It is independent from
 `trustedServerCertificates`, which validates the broker. The PEM/DER importer
 requires macOS 10.14, iOS 12, tvOS 12, or visionOS 1. This API applies to the
-built-in TCP transport and the Apple `URLSessionWebSocketTask` transport. The
-older Starscream WebSocket fallback does not support client identities. Custom
-transports can opt in by conforming to
+built-in TCP transport and the Apple `URLSessionWebSocketTask` transport.
+Custom transports can opt in by conforming to
 `CocoaMQTTClientIdentityConfiguring`.
 
 `URLSessionWebSocketTask` client identities are scoped to the original
@@ -221,6 +220,24 @@ eligibility; use supported Security framework APIs and protect the private key.
 ## MQTT over WebSocket
 
 CocoaMQTT supports connecting to MQTT brokers over WebSocket.
+The built-in implementation uses Apple Foundation's
+`URLSessionWebSocketTask` and requires iOS 13, macOS 10.15, tvOS 13, or
+visionOS 1 and later.
+
+### Migration from the Starscream fallback
+
+CocoaMQTT 3 removes the Starscream dependency and the public
+`CocoaMQTTWebSocket.StarscreamConnection` adapter. Applications using
+`CocoaMQTTWebSocket` must raise their deployment target to the versions above,
+or guard its use with an availability check and provide another path on older
+systems.
+
+Adding Starscream as an application dependency does not restore the removed
+adapter. Applications must migrate to `URLSessionWebSocketTask`, remain on
+CocoaMQTT 2 when older OS support is required, or provide their own
+`CocoaMQTTWebSocketConnection` and `CocoaMQTTWebSocketConnectionBuilder`
+implementation. Applications that use Starscream directly for unrelated
+connections must declare it as their own dependency.
 
 If you integrated by **Swift Package Manager**, follow these steps:
 
@@ -290,10 +307,9 @@ let websocket = CocoaMQTTWebSocket(uri: "/mqtt")
 websocket.maximumMessageSize = 10 * 1024 * 1024 + 1 // Accept up to 10 MiB.
 ```
 
-This setting is independent of MQTT 5 Maximum Packet Size. It is not used by
-the older Starscream fallback, and custom connection builders must configure
-their own transport. Use `0` only when message sizes are otherwise controlled,
-because it permits unbounded buffering.
+This setting is independent of MQTT 5 Maximum Packet Size. Custom connection
+builders must configure their own transport. Use `0` only when message sizes
+are otherwise controlled, because it permits unbounded buffering.
 
 If you want to add additional custom header to the connection, you can use the following:
 
@@ -420,8 +436,6 @@ These third-party functions are used:
 
 ~~[GCDAsyncSocket](https://github.com/robbiehanson/CocoaAsyncSocket)~~
 * [MqttCocoaAsyncSocket](https://github.com/leeway1208/MqttCocoaAsyncSocket)
-* [Starscream](https://github.com/daltoniam/Starscream) (legacy WebSocket
-  fallback for older Apple OS versions)
 
 
 ## LICENSE
