@@ -9,6 +9,14 @@ final class WebSocketMTLSIntegrationTests: XCTestCase {
 
     private static let fixture = Result { try TLSLoopbackCertificateFixture() }
 
+    private final class ChallengeSenderStub: NSObject, URLAuthenticationChallengeSender {
+        func use(_ credential: URLCredential, for challenge: URLAuthenticationChallenge) {}
+        func continueWithoutCredential(for challenge: URLAuthenticationChallenge) {}
+        func cancel(_ challenge: URLAuthenticationChallenge) {}
+        func performDefaultHandling(for challenge: URLAuthenticationChallenge) {}
+        func rejectProtectionSpaceAndContinue(with challenge: URLAuthenticationChallenge) {}
+    }
+
     override static func tearDown() {
         try? fixture.get().removeTemporaryFiles()
         super.tearDown()
@@ -126,6 +134,51 @@ final class WebSocketMTLSIntegrationTests: XCTestCase {
         XCTAssertTrue(broker.receivedProtocolLevels.isEmpty)
     }
 
+    func testFoundationConnectionUsesIdentityForMatchingEndpoint() throws {
+        let fixture = try Self.fixture.get()
+        let identity = try makeClientIdentity(fixture)
+        let connection = try makeFoundationConnection()
+        connection.clientIdentity = identity
+        addTeardownBlock { connection.disconnect() }
+
+        let completed = expectation(description: "client identity supplied")
+        performClientCertificateChallenge(on: connection, host: "broker.example.com") { disposition, credential in
+            XCTAssertEqual(disposition, .useCredential)
+            XCTAssertTrue(credential?.identity === identity.identity)
+            XCTAssertEqual(credential?.certificates.count, 1)
+            completed.fulfill()
+        }
+        wait(for: [completed], timeout: 1)
+    }
+
+    func testFoundationConnectionCancelsChallengeWithoutConfiguredIdentity() throws {
+        let connection = try makeFoundationConnection()
+        addTeardownBlock { connection.disconnect() }
+
+        let completed = expectation(description: "missing identity rejected")
+        performClientCertificateChallenge(on: connection, host: "broker.example.com") { disposition, credential in
+            XCTAssertEqual(disposition, .cancelAuthenticationChallenge)
+            XCTAssertNil(credential)
+            completed.fulfill()
+        }
+        wait(for: [completed], timeout: 1)
+    }
+
+    func testFoundationConnectionDoesNotSendIdentityToAnotherHost() throws {
+        let fixture = try Self.fixture.get()
+        let connection = try makeFoundationConnection()
+        connection.clientIdentity = try makeClientIdentity(fixture)
+        addTeardownBlock { connection.disconnect() }
+
+        let completed = expectation(description: "cross-host identity rejected")
+        performClientCertificateChallenge(on: connection, host: "redirect.example.com") { disposition, credential in
+            XCTAssertEqual(disposition, .cancelAuthenticationChallenge)
+            XCTAssertNil(credential)
+            completed.fulfill()
+        }
+        wait(for: [completed], timeout: 1)
+    }
+
     private func start(_ broker: TLSWebSocketMQTTLoopbackBroker) throws -> UInt16 {
         let ready = expectation(description: "mTLS WebSocket broker ready")
         broker.start { ready.fulfill() }
@@ -141,6 +194,41 @@ final class WebSocketMTLSIntegrationTests: XCTestCase {
             certificateData: fixture.clientCertificatePEM,
             privateKeyData: fixture.clientPrivateKeyPKCS1PEM,
             intermediateCertificateData: [fixture.intermediateCertificatePEM]
+        )
+    }
+
+    private func makeFoundationConnection() throws -> CocoaMQTTWebSocket.FoundationConnection {
+        CocoaMQTTWebSocket.FoundationConnection(
+            url: try XCTUnwrap(URL(string: "wss://broker.example.com:443/mqtt")),
+            config: .ephemeral
+        )
+    }
+
+    private func performClientCertificateChallenge(
+        on connection: CocoaMQTTWebSocket.FoundationConnection,
+        host: String,
+        completion: @escaping (URLSession.AuthChallengeDisposition, URLCredential?) -> Void
+    ) {
+        let protectionSpace = URLProtectionSpace(
+            host: host,
+            port: 443,
+            protocol: "https",
+            realm: nil,
+            authenticationMethod: NSURLAuthenticationMethodClientCertificate
+        )
+        let challenge = URLAuthenticationChallenge(
+            protectionSpace: protectionSpace,
+            proposedCredential: nil,
+            previousFailureCount: 0,
+            failureResponse: nil,
+            error: nil,
+            sender: ChallengeSenderStub()
+        )
+        connection.urlSession(
+            connection.session!,
+            task: connection.task!,
+            didReceive: challenge,
+            completionHandler: completion
         )
     }
 

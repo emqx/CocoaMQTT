@@ -159,7 +159,8 @@ For advanced pinning or enterprise policies, set `manuallyEvaluateTrust = true`
 and implement the trust delegate method or `didReceiveTrust` closure. Never
 accept every certificate in production. The legacy
 `allowUntrustCACertificate` property only enables this manual evaluation; it
-does not safely trust a private CA by itself.
+does not safely trust a private CA by itself. Enabling manual evaluation without
+a trust callback or custom CA certificates rejects the connection.
 
 ### Mutual TLS
 
@@ -182,9 +183,14 @@ macOS 10.15, iOS 13, tvOS 13, watchOS 6, and later. The older Starscream
 WebSocket transport does not support client identities. Custom transports can
 opt in by conforming to `CocoaMQTTClientIdentityConfiguring`.
 
-The high-level TLS settings—`tlsServerName`, `trustedServerCertificates`,
-`usesSystemTrustStore`, `manuallyEvaluateTrust`, and `clientIdentity`—work the
-same way with the built-in TCP and Foundation WebSocket transports.
+Foundation WebSocket client identities are scoped to the original WebSocket
+host and port. A client-certificate challenge is cancelled when no
+`clientIdentity` is configured or after a cross-host redirect.
+
+The same high-level TLS settings—`tlsServerName`,
+`trustedServerCertificates`, `usesSystemTrustStore`, `manuallyEvaluateTrust`,
+and `clientIdentity`—are available to the built-in TCP and Foundation
+WebSocket transports while preserving each transport's existing callback flow.
 `sslSettings` remains a TCP-only low-level escape hatch. Client identity and
 server trust remain independent. For WebSocket connections, `tlsServerName`
 overrides certificate identity verification; the WebSocket URL host still

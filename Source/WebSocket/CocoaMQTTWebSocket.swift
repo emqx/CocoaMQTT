@@ -76,14 +76,16 @@ public class CocoaMQTTWebSocket: CocoaMQTTDisconnectAfterWritingSocket,
     public var usesSystemTrustStore = true
 
     /// Gives the client trust callback first chance to decide. Configured
-    /// custom CA certificates remain the fallback.
+    /// custom CA certificates remain the fallback; without either, enabling
+    /// this setting rejects the connection.
     public var manuallyEvaluateTrust = false
 
     /// Client identity sent by the built-in Foundation transport during the
     /// TLS handshake. The older Starscream transport does not support this
     /// setting. Custom connection builders may opt in by returning a
     /// `CocoaMQTTClientIdentityConfiguring` connection. Set this before
-    /// connecting.
+    /// connecting. The Foundation transport sends it only to the original
+    /// WebSocket host and port.
     public var clientIdentity: CocoaMQTTClientIdentity?
 
     /// Incoming WebSocket message buffering limit for the built-in Foundation
@@ -399,6 +401,8 @@ public extension CocoaMQTTWebSocket {
         public weak var delegate: CocoaMQTTWebSocketConnectionDelegate?
         public lazy var queue = DispatchQueue(label: "CocoaMQTTFoundationWebSocketConnection-\(self.hashValue)")
         public var clientIdentity: CocoaMQTTClientIdentity?
+        private let endpointHost: String?
+        private let endpointPort: Int?
         var maximumMessageSize: Int {
             get {
                 task?.maximumMessageSize ?? CocoaMQTTWebSocket.foundationDefaultMaximumMessageSize
@@ -414,6 +418,8 @@ public extension CocoaMQTTWebSocket {
         var task: URLSessionWebSocketTask?
 
         public init(url: URL, config: URLSessionConfiguration) {
+            endpointHost = url.host
+            endpointPort = url.port ?? (url.scheme?.lowercased() == "wss" ? 443 : 80)
             super.init()
             let theSession = URLSession(configuration: config, delegate: self, delegateQueue: nil)
             session = theSession
@@ -473,8 +479,17 @@ extension CocoaMQTTWebSocket.FoundationConnection: CocoaMQTTWebSocketMessageSize
 extension CocoaMQTTWebSocket.FoundationConnection: URLSessionWebSocketDelegate {
     public func urlSession(_ session: URLSession, task: URLSessionTask, didReceive challenge: URLAuthenticationChallenge, completionHandler: @escaping (URLSession.AuthChallengeDisposition, URLCredential?) -> Void) {
         queue.async {
-            if challenge.protectionSpace.authenticationMethod == NSURLAuthenticationMethodClientCertificate,
-               let clientIdentity = self.clientIdentity {
+            if challenge.protectionSpace.authenticationMethod == NSURLAuthenticationMethodClientCertificate {
+                let protectionSpace = challenge.protectionSpace
+                guard let endpointHost = self.endpointHost,
+                      let endpointPort = self.endpointPort,
+                      !protectionSpace.isProxy(),
+                      protectionSpace.host.caseInsensitiveCompare(endpointHost) == .orderedSame,
+                      protectionSpace.port == endpointPort,
+                      let clientIdentity = self.clientIdentity else {
+                    completionHandler(.cancelAuthenticationChallenge, nil)
+                    return
+                }
                 completionHandler(
                     .useCredential,
                     URLCredential(

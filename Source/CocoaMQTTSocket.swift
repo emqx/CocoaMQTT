@@ -85,6 +85,30 @@ enum CocoaMQTTServerTrustEvaluator {
         }
         return true
     }
+
+    @discardableResult
+    static func evaluate(
+        _ trust: SecTrust,
+        socket: CocoaMQTTSocketProtocol,
+        defaultServerName: String?,
+        completionHandler: @escaping (Bool) -> Void
+    ) -> Bool {
+        if let socket = socket as? CocoaMQTTSocket {
+            return socket.evaluateServerTrust(
+                trust,
+                completionHandler: completionHandler
+            )
+        }
+        guard let configuration = socket as? CocoaMQTTServerTrustConfiguring else {
+            return false
+        }
+        return evaluate(
+            trust,
+            configuration: configuration,
+            serverName: configuration.tlsServerName ?? defaultServerName,
+            completionHandler: completionHandler
+        )
+    }
 }
 
 /// Selects one trust callback and prevents competing callbacks from resolving

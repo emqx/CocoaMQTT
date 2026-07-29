@@ -399,7 +399,8 @@ public class CocoaMQTT5: NSObject, CocoaMQTT5Client {
     }
 
     /// Gives the trust delegate or `didReceiveTrust` closure first chance to
-    /// decide. Configured custom CA certificates remain the fallback.
+    /// decide. Configured custom CA certificates remain the fallback; without
+    /// either, enabling this setting rejects the connection.
     @objc public var manuallyEvaluateTrust: Bool {
         get { return (self.socket as? CocoaMQTTServerTrustConfiguring)?.manuallyEvaluateTrust ?? false }
         set { (self.socket as? CocoaMQTTServerTrustConfiguring)?.manuallyEvaluateTrust = newValue }
@@ -1219,10 +1220,12 @@ extension CocoaMQTT5: CocoaMQTTSocketDelegate {
                 handler(mqtt5, trust, completion)
                 return true
             }, fallback: { completion in
-                (socket as? CocoaMQTTSocket)?.evaluateServerTrust(
+                CocoaMQTTServerTrustEvaluator.evaluate(
                     trust,
+                    socket: socket,
+                    defaultServerName: mqtt5.host,
                     completionHandler: completion
-                ) ?? false
+                )
             }, completionHandler: completionHandler)
         }, onDeallocated: { completionHandler(false) })
     }
@@ -1249,14 +1252,10 @@ extension CocoaMQTT5: CocoaMQTTSocketDelegate {
                     return true
                 },
                 fallback: { completion in
-                    guard let configuration = socket as? CocoaMQTTServerTrustConfiguring else {
-                        return false
-                    }
                     return CocoaMQTTServerTrustEvaluator.evaluate(
                         trust,
-                        configuration: configuration,
-                        serverName: configuration.tlsServerName
-                            ?? challenge.protectionSpace.host,
+                        socket: socket,
+                        defaultServerName: challenge.protectionSpace.host,
                         completionHandler: completion
                     )
                 },
