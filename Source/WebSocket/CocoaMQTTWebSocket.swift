@@ -52,6 +52,7 @@ private protocol CocoaMQTTWebSocketMessageSizeConfiguring: AnyObject {
 
 // MARK: - CocoaMQTTWebSocket
 
+@available(macOS 10.15, iOS 13.0, watchOS 6.0, tvOS 13.0, *)
 public class CocoaMQTTWebSocket: CocoaMQTTDisconnectAfterWritingSocket,
     CocoaMQTTClientIdentityConfiguring,
     CocoaMQTTServerTrustConfiguring {
@@ -80,10 +81,8 @@ public class CocoaMQTTWebSocket: CocoaMQTTDisconnectAfterWritingSocket,
     public var manuallyEvaluateTrust = false
 
     /// Client identity sent during the TLS handshake by the built-in Apple
-    /// `URLSessionWebSocketTask` transport, selected automatically on macOS
-    /// 10.15, iOS 13, tvOS 13, visionOS 1, and later. The Starscream fallback
-    /// used on older OS versions does not apply this identity. Custom
-    /// connection builders may opt in by returning a
+    /// `URLSessionWebSocketTask` transport. Custom connection builders may opt
+    /// in by returning a
     /// `CocoaMQTTClientIdentityConfiguring` connection. Set this before
     /// connecting. The built-in transport sends it only to the original
     /// WebSocket host and port.
@@ -93,8 +92,7 @@ public class CocoaMQTTWebSocket: CocoaMQTTDisconnectAfterWritingSocket,
     /// `URLSessionWebSocketTask` transport. A message must be smaller than this
     /// value. The default is 1 MiB, zero removes the limit, and negative values
     /// reset to the default. Set this before connecting; custom builders must
-    /// configure their own transports. The older Starscream fallback does not
-    /// use this setting.
+    /// configure their own transports.
     /// Use zero only when the peer and message sizes are otherwise controlled,
     /// because it permits unbounded message buffering.
     public var maximumMessageSize = CocoaMQTTWebSocket.foundationDefaultMaximumMessageSize {
@@ -331,6 +329,7 @@ public class CocoaMQTTWebSocket: CocoaMQTTDisconnectAfterWritingSocket,
     }
 }
 
+@available(macOS 10.15, iOS 13.0, watchOS 6.0, tvOS 13.0, *)
 extension CocoaMQTTWebSocket: CocoaMQTTWebSocketConnectionDelegate {
     public func urlSessionConnection(_ conn: CocoaMQTTWebSocketConnection, didReceiveTrust trust: SecTrust, didReceiveChallenge challenge: URLAuthenticationChallenge, completionHandler: @escaping (URLSession.AuthChallengeDisposition, URLCredential?) -> Void) {
         guard let delegate = delegate else {
@@ -519,6 +518,7 @@ extension CocoaMQTTWebSocket.FoundationConnection: URLSessionWebSocketDelegate {
 
 // MARK: - Helper
 
+@available(macOS 10.15, iOS 13.0, watchOS 6.0, tvOS 13.0, *)
 extension CocoaMQTTWebSocket {
 
     func __delegate_queue(_ fun: @escaping () -> Void) {

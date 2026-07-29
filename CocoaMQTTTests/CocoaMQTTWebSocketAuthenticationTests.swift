@@ -171,6 +171,16 @@ final class CocoaMQTTWebSocketAuthenticationTests: XCTestCase {
         }
     }
 
+    @available(macOS 10.15, iOS 13.0, tvOS 13.0, *)
+    func testDefaultBuilderUsesURLSessionWebSocketTransport() throws {
+        let connection = try CocoaMQTTWebSocket.DefaultConnectionBuilder().buildConnection(
+            forURL: try XCTUnwrap(URL(string: "wss://broker.example.com/mqtt")),
+            withHeaders: [:]
+        )
+
+        XCTAssertTrue(connection is CocoaMQTTWebSocket.FoundationConnection)
+    }
+
     func testSecureConnectForwardsCustomAuthorizerHeaders() throws {
         let builder = BuilderSpy()
         let websocket = CocoaMQTTWebSocket(uri: "/mqtt", builder: builder)

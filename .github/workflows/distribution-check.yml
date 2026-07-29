@@ -143,8 +143,12 @@ jobs:
           import CocoaMQTTWebSocket
 
           let message = CocoaMQTTMessage(topic: "ci/spm", string: "ok")
-          let socket = CocoaMQTTWebSocket(uri: "/mqtt")
-          print("\(message.topic) \(socket.enableSSL)")
+          print(message.topic)
+
+          if #available(macOS 10.15, iOS 13.0, tvOS 13.0, watchOS 6.0, *) {
+              let socket = CocoaMQTTWebSocket(uri: "/mqtt")
+              print(socket.enableSSL)
+          }
           SPM_MAIN
 
           swift build --package-path "${TMP_DIR}"

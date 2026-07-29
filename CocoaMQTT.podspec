@@ -28,9 +28,9 @@ Pod::Spec.new do |s|
     ss.dependency "CocoaMQTT/Core"
     # Declaring any platform in a subspec overrides all inherited platform
     # values from the parent spec, so all supported platforms are redeclared.
-    ss.ios.deployment_target = "12.0"
-    ss.osx.deployment_target = "10.13"
-    ss.tvos.deployment_target = "12.0"
+    ss.ios.deployment_target = "13.0"
+    ss.osx.deployment_target = "10.15"
+    ss.tvos.deployment_target = "13.0"
     ss.source_files = "Source/WebSocket/CocoaMQTTWebSocket.swift"
   end
 end
