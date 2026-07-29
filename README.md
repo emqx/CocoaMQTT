@@ -226,15 +226,18 @@ visionOS 1 and later.
 
 ### Migration from the Starscream fallback
 
-The next major release removes the Starscream dependency and the public
+CocoaMQTT 3 removes the Starscream dependency and the public
 `CocoaMQTTWebSocket.StarscreamConnection` adapter. Applications using
 `CocoaMQTTWebSocket` must raise their deployment target to the versions above,
 or guard its use with an availability check and provide another path on older
-systems. Applications that referenced Starscream APIs directly must add
-Starscream as their own dependency or migrate to
-`URLSessionWebSocketTask`. The public
-`CocoaMQTTWebSocketConnectionBuilder` extension point remains available for
-custom transports.
+systems.
+
+Adding Starscream as an application dependency does not restore the removed
+adapter. Applications must migrate to `URLSessionWebSocketTask`, remain on
+CocoaMQTT 2 when older OS support is required, or provide their own
+`CocoaMQTTWebSocketConnection` and `CocoaMQTTWebSocketConnectionBuilder`
+implementation. Applications that use Starscream directly for unrelated
+connections must declare it as their own dependency.
 
 If you integrated by **Swift Package Manager**, follow these steps:
 
