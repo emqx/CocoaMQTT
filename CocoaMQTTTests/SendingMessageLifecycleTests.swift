@@ -643,6 +643,58 @@ final class SendingMessageLifecycleTests: XCTestCase {
         XCTAssertEqual(pubrel.map { Array([UInt8]($0)[2...3]) }, UInt16(packetIdentifier).hlBytes)
     }
 
+    func testMQTT311SessionResumeDoesNotDuplicateQoS2PublishesQueuedWhileDisconnected() throws {
+        let clientID = "mqtt311-qos2-offline-\(UUID().uuidString)"
+        defer { clearStorage(clientID) }
+        let socket = SocketSpy()
+        let mqtt = CocoaMQTT(clientID: clientID, socket: socket)
+        mqtt.inflightWindowSize = 100
+        establishSession(mqtt, socket: socket, cleanSession: false, sessionPresent: false)
+
+        let unacknowledgedIdentifier = mqtt.publish(
+            CocoaMQTTMessage(topic: "t/before-disconnect", payload: [0], qos: .qos2)
+        )
+        mqtt.t_waitUntilDeliverIdle()
+        XCTAssertGreaterThan(unacknowledgedIdentifier, 0)
+
+        mqtt.socketDidDisconnect(socket, withError: nil)
+        let offlineIdentifiers = (1...10).map { index in
+            mqtt.publish(
+                CocoaMQTTMessage(
+                    topic: "t/while-disconnected/\(index)",
+                    payload: [UInt8(index)],
+                    qos: .qos2
+                )
+            )
+        }
+        mqtt.t_waitUntilDeliverIdle()
+        XCTAssertTrue(offlineIdentifiers.allSatisfy { $0 > 0 })
+
+        socket.writes.removeAll()
+        socket.writeTags.removeAll()
+        establishSession(mqtt, socket: socket, cleanSession: false, sessionPresent: true)
+        mqtt.t_waitUntilDeliverIdle()
+
+        let expectedIdentifiers = [unacknowledgedIdentifier] + offlineIdentifiers
+        let publishWrites = zip(socket.writeTags, socket.writes).filter {
+            $0.0 > 0 && $0.1.first.map { $0 & 0xf0 } == FrameType.publish.rawValue
+        }
+        XCTAssertEqual(publishWrites.map { $0.0 }.sorted(), expectedIdentifiers.sorted())
+        for identifier in expectedIdentifiers {
+            XCTAssertEqual(publishWrites.filter { $0.0 == identifier }.count, 1)
+        }
+
+        let recoveredPublish = try XCTUnwrap(
+            publishWrites.first { $0.0 == unacknowledgedIdentifier }?.1
+        )
+        XCTAssertEqual(recoveredPublish.first.map { $0 & 0x08 }, 0x08)
+        XCTAssertTrue(
+            publishWrites
+                .filter { offlineIdentifiers.contains($0.0) }
+                .allSatisfy { $0.1.first.map { $0 & 0x08 } == 0 }
+        )
+    }
+
     func testMQTT311SessionPresentFalseDiscardsPreviousQoSState() {
         let clientID = "mqtt311-session-missing-\(UUID().uuidString)"
         defer { clearStorage(clientID) }
