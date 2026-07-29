@@ -350,9 +350,11 @@ public class CocoaMQTT: NSObject, CocoaMQTTClient {
 
     /// Client identity sent by transports that support mutual TLS.
     ///
-    /// The built-in TCP socket and the Foundation WebSocket transport support
-    /// this capability. Custom transports may opt in by conforming to
-    /// `CocoaMQTTClientIdentityConfiguring`.
+    /// The built-in TCP socket supports this capability. On modern Apple OS
+    /// versions, the default WebSocket transport uses `URLSessionWebSocketTask`
+    /// and also supports it. The Starscream fallback used on older OS versions
+    /// does not apply this identity. Custom transports may opt in by conforming
+    /// to `CocoaMQTTClientIdentityConfiguring`.
     public var clientIdentity: CocoaMQTTClientIdentity? {
         get { return (self.socket as? CocoaMQTTClientIdentityConfiguring)?.clientIdentity }
         set { (self.socket as? CocoaMQTTClientIdentityConfiguring)?.clientIdentity = newValue }

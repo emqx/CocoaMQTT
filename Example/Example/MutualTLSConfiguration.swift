@@ -29,8 +29,8 @@ enum MutualTLSExampleError: Error {
 
 enum MutualTLSConfiguration {
 
-    /// Creates an MQTT 3.1.1 client using the built-in Foundation WebSocket
-    /// transport on supported OS versions.
+    /// Creates an MQTT 3.1.1 client using the built-in Apple
+    /// `URLSessionWebSocketTask` transport.
     @available(iOS 13.0, macOS 10.15, tvOS 13.0, *)
     static func makeMQTT311WebSocketClient(
         clientID: String,
@@ -46,8 +46,8 @@ enum MutualTLSConfiguration {
         )
     }
 
-    /// Creates an MQTT 5 client using the built-in Foundation WebSocket
-    /// transport on supported OS versions.
+    /// Creates an MQTT 5 client using the built-in Apple
+    /// `URLSessionWebSocketTask` transport.
     @available(iOS 13.0, macOS 10.15, tvOS 13.0, *)
     static func makeMQTT5WebSocketClient(
         clientID: String,

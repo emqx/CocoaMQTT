@@ -80,19 +80,22 @@ public class CocoaMQTTWebSocket: CocoaMQTTDisconnectAfterWritingSocket,
     /// this setting rejects the connection.
     public var manuallyEvaluateTrust = false
 
-    /// Client identity sent by the built-in Foundation transport during the
-    /// TLS handshake. The older Starscream transport does not support this
-    /// setting. Custom connection builders may opt in by returning a
+    /// Client identity sent during the TLS handshake by the built-in Apple
+    /// `URLSessionWebSocketTask` transport, selected automatically on macOS
+    /// 10.15, iOS 13, tvOS 13, visionOS 1, and later. The Starscream fallback
+    /// used on older OS versions does not apply this identity. Custom
+    /// connection builders may opt in by returning a
     /// `CocoaMQTTClientIdentityConfiguring` connection. Set this before
-    /// connecting. The Foundation transport sends it only to the original
+    /// connecting. The built-in transport sends it only to the original
     /// WebSocket host and port.
     public var clientIdentity: CocoaMQTTClientIdentity?
 
-    /// Incoming WebSocket message buffering limit for the built-in Foundation
-    /// transport. A message must be smaller than this value. The default is
-    /// 1 MiB, zero removes the limit, and negative values reset to the default.
-    /// Set this before connecting; custom builders must configure their own
-    /// transports. The older Starscream transport does not use this setting.
+    /// Incoming WebSocket message buffering limit for the built-in Apple
+    /// `URLSessionWebSocketTask` transport. A message must be smaller than this
+    /// value. The default is 1 MiB, zero removes the limit, and negative values
+    /// reset to the default. Set this before connecting; custom builders must
+    /// configure their own transports. The older Starscream fallback does not
+    /// use this setting.
     /// Use zero only when the peer and message sizes are otherwise controlled,
     /// because it permits unbounded message buffering.
     public var maximumMessageSize = CocoaMQTTWebSocket.foundationDefaultMaximumMessageSize {
