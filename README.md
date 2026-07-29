@@ -164,10 +164,16 @@ a trust callback or custom CA certificates rejects the connection.
 
 ### Mutual TLS
 
-For a complete setup that works with either `CocoaMQTT` or `CocoaMQTT5`, see
-the [PEM/DER example](Example/Example/MutualTLSConfiguration.swift#L34-L55) or
-the [PKCS#12 example](Example/Example/MutualTLSConfiguration.swift#L61-L78).
-Both examples configure the client identity and broker trust separately.
+For TCP, create `CocoaMQTT` or `CocoaMQTT5` normally. For Foundation WSS, use
+the [MQTT 3.1.1 WebSocket client](Example/Example/MutualTLSConfiguration.swift#L35-L47)
+or [MQTT 5 WebSocket client](Example/Example/MutualTLSConfiguration.swift#L52-L64)
+example. Before calling `connect()`, apply either the
+[PEM/DER configuration](Example/Example/MutualTLSConfiguration.swift#L70-L93)
+or [PKCS#12 configuration](Example/Example/MutualTLSConfiguration.swift#L99-L118).
+Both configuration functions work with MQTT 3.1.1 and MQTT 5 over TCP or
+Foundation WSS, and configure the client identity and broker trust separately.
+Use their `tlsServerName` parameter when the connection host differs from the
+DNS name in the broker certificate.
 
 `certificateData` accepts a DER certificate, a single PEM certificate, or a PEM
 bundle with the leaf first followed by its intermediates. `privateKeyData`
