@@ -159,14 +159,26 @@ For advanced pinning or enterprise policies, set `manuallyEvaluateTrust = true`
 and implement the trust delegate method or `didReceiveTrust` closure. Never
 accept every certificate in production. The legacy
 `allowUntrustCACertificate` property only enables this manual evaluation; it
-does not safely trust a private CA by itself.
+does not safely trust a private CA by itself. Enabling manual evaluation without
+a trust callback or custom CA certificates rejects the connection.
 
 ### Mutual TLS
 
-For a complete setup that works with either `CocoaMQTT` or `CocoaMQTT5`, see
-the [PEM/DER example](Example/Example/MutualTLSConfiguration.swift#L34-L55) or
-the [PKCS#12 example](Example/Example/MutualTLSConfiguration.swift#L61-L78).
-Both examples configure the client identity and broker trust separately.
+For TCP, create `CocoaMQTT` or `CocoaMQTT5` normally. For WSS, use the
+[MQTT 3.1.1 WebSocket client](Example/Example/MutualTLSConfiguration.swift#L35-L47)
+or [MQTT 5 WebSocket client](Example/Example/MutualTLSConfiguration.swift#L52-L64)
+example. `CocoaMQTTWebSocket` automatically uses Apple's
+`URLSessionWebSocketTask` on macOS 10.15, iOS 13, tvOS 13, visionOS 1, and
+later; no transport selection is required. Older supported OS versions
+automatically fall back to Starscream, where `clientIdentity` does not
+participate in the TLS handshake. Before calling `connect()`, apply either the
+[PEM/DER configuration](Example/Example/MutualTLSConfiguration.swift#L70-L93)
+or [PKCS#12 configuration](Example/Example/MutualTLSConfiguration.swift#L99-L118).
+Both configuration functions work with MQTT 3.1.1 and MQTT 5 over TCP or
+WSS using `URLSessionWebSocketTask`, and configure the client identity and
+broker trust separately.
+Use their `tlsServerName` parameter when the connection host differs from the
+DNS name in the broker certificate.
 
 `certificateData` accepts a DER certificate, a single PEM certificate, or a PEM
 bundle with the leaf first followed by its intermediates. `privateKeyData`
@@ -177,8 +189,23 @@ the leaf bundle; duplicates and a repeated leaf are ignored. Pass the leaf
 issuer first and normally exclude the root. It is independent from
 `trustedServerCertificates`, which validates the broker. The PEM/DER importer
 requires macOS 10.14, iOS 12, tvOS 12, or visionOS 1. This API applies to the
-built-in TCP transport, not MQTT over WebSocket; assigning it to a client using
-another socket transport has no effect.
+built-in TCP transport and the Apple `URLSessionWebSocketTask` transport. The
+older Starscream WebSocket fallback does not support client identities. Custom
+transports can opt in by conforming to
+`CocoaMQTTClientIdentityConfiguring`.
+
+`URLSessionWebSocketTask` client identities are scoped to the original
+WebSocket host and port. A client-certificate challenge is cancelled when no
+`clientIdentity` is configured or after a cross-host redirect.
+
+The same high-level TLS settings—`tlsServerName`,
+`trustedServerCertificates`, `usesSystemTrustStore`, `manuallyEvaluateTrust`,
+and `clientIdentity`—are available to the built-in TCP and
+`URLSessionWebSocketTask` transports while preserving each transport's existing
+callback flow. `sslSettings` remains a TCP-only low-level escape hatch. Client
+identity and server trust remain independent. For WebSocket connections,
+`tlsServerName` overrides certificate identity verification; the WebSocket URL
+host still controls routing and TLS SNI.
 
 PKCS#12 is a password-protected identity container supported by Apple's
 [`SecPKCS12Import`](https://developer.apple.com/documentation/security/secpkcs12import%28_%3A_%3A_%3A%29).
@@ -191,9 +218,9 @@ through secure provisioning or user input, and keep long-lived secrets in
 Keychain-backed storage. The file format itself does not determine App Store
 eligibility; use supported Security framework APIs and protect the private key.
 
-## MQTT over Websocket
+## MQTT over WebSocket
 
-In the 1.3.0, The CocoaMQTT has supported to connect to MQTT Broker by Websocket.
+CocoaMQTT supports connecting to MQTT brokers over WebSocket.
 
 If you integrated by **Swift Package Manager**, follow these steps:
 
@@ -201,17 +228,17 @@ If you integrated by **Swift Package Manager**, follow these steps:
 2. Go to `File` > `Swift Packages` > `Add Package Dependency`.
 3. Enter the repository URL: `https://github.com/emqx/CocoaMQTT.git`.
 4. Choose the latest version or specify a version range.
-5. Add the package to your target.
+5. Add the `CocoaMQTT` and `CocoaMQTTWebSocket` products to your target.
 
-At last, import "CocoaMQTT" and "Starscream" to your project:
+Import the CocoaMQTT products into your project:
 
 ```swift
 import CocoaMQTT
 import CocoaMQTTWebSocket
-import Starscream
 ```
 
-If you integrated by **CocoaPods**, you need to modify you `Podfile` like the followings and execute `pod install` again:
+If you integrated by **CocoaPods**, update your `Podfile` as follows and run
+`pod install` again:
 
 ```ruby
 use_frameworks!
@@ -226,11 +253,11 @@ If you're using CocoaMQTT in a project with only a `.podspec` and no `Podfile`, 
 ```ruby
 Pod::Spec.new do |s|
   ...
-  s.dependency "Starscream"
+  s.dependency "CocoaMQTT/WebSockets"
 end
 ```
 
-Then, Create a MQTT instance over Websocket:
+Then, create an MQTT instance over WebSocket:
 
 ```swift
 ///MQTT 5.0
@@ -253,9 +280,10 @@ let mqtt = CocoaMQTT(clientID: clientID, host: host, port: 8083, socket: websock
 _ = mqtt.connect()
 ```
 
-The built-in Foundation WebSocket transport fails a receive when one WebSocket
-message reaches its 1 MiB buffering limit. Set a value greater than the largest
-expected WebSocket message before connecting, or use `0` to remove the limit:
+The built-in Apple `URLSessionWebSocketTask` transport fails a receive when one
+WebSocket message reaches its 1 MiB buffering limit. Set a value greater than
+the largest expected WebSocket message before connecting, or use `0` to remove
+the limit:
 
 ```swift
 let websocket = CocoaMQTTWebSocket(uri: "/mqtt")
@@ -263,7 +291,7 @@ websocket.maximumMessageSize = 10 * 1024 * 1024 + 1 // Accept up to 10 MiB.
 ```
 
 This setting is independent of MQTT 5 Maximum Packet Size. It is not used by
-the older Starscream transport, and custom connection builders must configure
+the older Starscream fallback, and custom connection builders must configure
 their own transport. Use `0` only when message sizes are otherwise controlled,
 because it permits unbounded buffering.
 
@@ -288,7 +316,6 @@ If you want to connect using WebSocket Secure (wss), you can use the following e
 ```swift
 import CocoaMQTT
 import CocoaMQTTWebSocket
-import Starscream
 
 class WebSocketManager {
     
@@ -393,7 +420,8 @@ These third-party functions are used:
 
 ~~[GCDAsyncSocket](https://github.com/robbiehanson/CocoaAsyncSocket)~~
 * [MqttCocoaAsyncSocket](https://github.com/leeway1208/MqttCocoaAsyncSocket)
-* [Starscream](https://github.com/daltoniam/Starscream)
+* [Starscream](https://github.com/daltoniam/Starscream) (legacy WebSocket
+  fallback for older Apple OS versions)
 
 
 ## LICENSE

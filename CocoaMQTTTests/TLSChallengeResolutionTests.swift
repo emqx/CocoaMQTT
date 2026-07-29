@@ -4,8 +4,12 @@ import XCTest
 @testable import CocoaMQTT
 
 final class TLSChallengeResolutionTests: XCTestCase {
-    private final class SocketStub: CocoaMQTTSocketProtocol {
+    private final class SocketStub: CocoaMQTTSocketProtocol, CocoaMQTTServerTrustConfiguring {
         var enableSSL = false
+        var tlsServerName: String?
+        var trustedServerCertificates = [SecCertificate]()
+        var usesSystemTrustStore = true
+        var manuallyEvaluateTrust = false
 
         func setDelegate(_ theDelegate: CocoaMQTTSocketDelegate?, delegateQueue: DispatchQueue?) {}
         func connect(toHost host: String, onPort port: UInt16) throws {}
@@ -260,6 +264,26 @@ final class TLSChallengeResolutionTests: XCTestCase {
         wait(for: [completed], timeout: 2)
     }
 
+    func testMQTTClientsUseCustomTransportTrustCapability() throws {
+        let socket311 = try configuredSocketStub()
+        let socket5 = try configuredSocketStub()
+        let mqtt = CocoaMQTT(clientID: "custom-transport-ca-311", socket: socket311)
+        let mqtt5 = CocoaMQTT5(clientID: "custom-transport-ca-5", socket: socket5)
+        let mqttCompleted = expectation(description: "MQTT 3.1.1 custom transport trust accepted")
+        let mqtt5Completed = expectation(description: "MQTT 5 custom transport trust accepted")
+
+        mqtt.socket(socket311, didReceive: try leafTrust()) { trusted in
+            XCTAssertTrue(trusted)
+            mqttCompleted.fulfill()
+        }
+        mqtt5.socket(socket5, didReceive: try leafTrust()) { trusted in
+            XCTAssertTrue(trusted)
+            mqtt5Completed.fulfill()
+        }
+
+        wait(for: [mqttCompleted, mqtt5Completed], timeout: 2)
+    }
+
     func testURLSessionChallengeDefaultsToSystemValidation() throws {
         var dispositions = [URLSession.AuthChallengeDisposition]()
 
@@ -352,6 +376,25 @@ final class TLSChallengeResolutionTests: XCTestCase {
         let mqtt = CocoaMQTT5(clientID: "tls-default-5", socket: socket)
 
         try assertSystemDefaultChallengeHandling(client: mqtt, socket: socket)
+    }
+
+    func testURLSessionManualTrustWithoutHandlerOrCertificatesRejects() throws {
+        let socket = SocketStub()
+        socket.manuallyEvaluateTrust = true
+        let mqtt = CocoaMQTT(clientID: "tls-manual-empty", socket: socket)
+        let completed = expectation(description: "empty manual trust rejected")
+
+        mqtt.socketUrlSession(
+            socket,
+            didReceiveTrust: try makeTrust(),
+            didReceiveChallenge: makeChallenge()
+        ) { disposition, credential in
+            XCTAssertEqual(disposition, .rejectProtectionSpace)
+            XCTAssertNil(credential)
+            completed.fulfill()
+        }
+
+        wait(for: [completed], timeout: 1)
     }
 
     func testMQTT311URLSessionChallengeCancelsIfClientIsReleasedBeforeCallback() throws {
@@ -561,6 +604,14 @@ final class TLSChallengeResolutionTests: XCTestCase {
         }
 
         wait(for: [completed], timeout: 1)
+    }
+
+    private func configuredSocketStub() throws -> SocketStub {
+        let socket = SocketStub()
+        socket.tlsServerName = "broker.example.com"
+        socket.trustedServerCertificates = [try certificate(base64: testRootCertificate)]
+        socket.usesSystemTrustStore = false
+        return socket
     }
 
     private func makeTrust() throws -> SecTrust {

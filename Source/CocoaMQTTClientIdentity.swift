@@ -276,6 +276,15 @@ public final class CocoaMQTTClientIdentity: NSObject {
     }
 }
 
+/// An optional transport capability for configuring a mutual-TLS client identity.
+///
+/// This is separate from `CocoaMQTTSocketProtocol` so existing custom socket
+/// implementations remain source compatible. Custom transports can adopt this
+/// protocol when they support client-certificate authentication.
+public protocol CocoaMQTTClientIdentityConfiguring: AnyObject {
+    var clientIdentity: CocoaMQTTClientIdentity? { get set }
+}
+
 private enum DERError: Error {
     case invalid
 }

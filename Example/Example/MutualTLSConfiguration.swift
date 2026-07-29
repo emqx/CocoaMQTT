@@ -4,6 +4,7 @@
 //
 
 import CocoaMQTT
+import CocoaMQTTWebSocket
 import Foundation
 import Security
 
@@ -11,6 +12,7 @@ protocol CocoaMQTTMutualTLSConfiguring: AnyObject {
     var clientIdentity: CocoaMQTTClientIdentity? { get set }
     var trustedServerCertificates: [SecCertificate] { get set }
     var usesSystemTrustStore: Bool { get set }
+    var tlsServerName: String? { get set }
     var enableSSL: Bool { get set }
 }
 
@@ -27,6 +29,40 @@ enum MutualTLSExampleError: Error {
 
 enum MutualTLSConfiguration {
 
+    /// Creates an MQTT 3.1.1 client using the built-in Apple
+    /// `URLSessionWebSocketTask` transport.
+    @available(iOS 13.0, macOS 10.15, tvOS 13.0, *)
+    static func makeMQTT311WebSocketClient(
+        clientID: String,
+        host: String,
+        port: UInt16 = 443,
+        uri: String = "/mqtt"
+    ) -> CocoaMQTT {
+        CocoaMQTT(
+            clientID: clientID,
+            host: host,
+            port: port,
+            socket: CocoaMQTTWebSocket(uri: uri)
+        )
+    }
+
+    /// Creates an MQTT 5 client using the built-in Apple
+    /// `URLSessionWebSocketTask` transport.
+    @available(iOS 13.0, macOS 10.15, tvOS 13.0, *)
+    static func makeMQTT5WebSocketClient(
+        clientID: String,
+        host: String,
+        port: UInt16 = 443,
+        uri: String = "/mqtt"
+    ) -> CocoaMQTT5 {
+        CocoaMQTT5(
+            clientID: clientID,
+            host: host,
+            port: port,
+            socket: CocoaMQTTWebSocket(uri: uri)
+        )
+    }
+
     /// Configures either MQTT client with an in-memory PEM/DER client identity.
     ///
     /// Obtain private-key data through secure provisioning. Do not embed a
@@ -37,7 +73,8 @@ enum MutualTLSConfiguration {
         privateKeyURL: URL,
         intermediateCertificateURLs: [URL] = [],
         brokerCAURLs: [URL] = [],
-        usesSystemTrustStore: Bool = true
+        usesSystemTrustStore: Bool = true,
+        tlsServerName: String? = nil
     ) throws {
         let identity = try CocoaMQTTClientIdentity(
             certificateData: try Data(contentsOf: clientCertificateURL),
@@ -50,7 +87,8 @@ enum MutualTLSConfiguration {
             client: client,
             identity: identity,
             brokerCAURLs: brokerCAURLs,
-            usesSystemTrustStore: usesSystemTrustStore
+            usesSystemTrustStore: usesSystemTrustStore,
+            tlsServerName: tlsServerName
         )
     }
 
@@ -63,7 +101,8 @@ enum MutualTLSConfiguration {
         pkcs12URL: URL,
         password: String,
         brokerCAURLs: [URL] = [],
-        usesSystemTrustStore: Bool = true
+        usesSystemTrustStore: Bool = true,
+        tlsServerName: String? = nil
     ) throws {
         let identity = try clientIdentity(
             fromPKCS12: Data(contentsOf: pkcs12URL),
@@ -73,7 +112,8 @@ enum MutualTLSConfiguration {
             client: client,
             identity: identity,
             brokerCAURLs: brokerCAURLs,
-            usesSystemTrustStore: usesSystemTrustStore
+            usesSystemTrustStore: usesSystemTrustStore,
+            tlsServerName: tlsServerName
         )
     }
 
@@ -143,7 +183,8 @@ enum MutualTLSConfiguration {
         client: Client,
         identity: CocoaMQTTClientIdentity,
         brokerCAURLs: [URL],
-        usesSystemTrustStore: Bool
+        usesSystemTrustStore: Bool,
+        tlsServerName: String?
     ) throws {
         let brokerCertificates = try brokerCAURLs.map { url in
             let data = try Data(contentsOf: url)
@@ -156,6 +197,9 @@ enum MutualTLSConfiguration {
         client.clientIdentity = identity
         client.trustedServerCertificates = brokerCertificates
         client.usesSystemTrustStore = usesSystemTrustStore
+        if let tlsServerName {
+            client.tlsServerName = tlsServerName
+        }
         client.enableSSL = true
     }
 }

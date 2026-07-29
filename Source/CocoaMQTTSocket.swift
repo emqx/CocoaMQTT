@@ -9,6 +9,108 @@ import Foundation
 import Security
 import MqttCocoaAsyncSocket
 
+/// An optional transport capability for configuring TLS server trust.
+///
+/// Keeping this separate from `CocoaMQTTSocketProtocol` preserves source
+/// compatibility for existing custom transports.
+public protocol CocoaMQTTServerTrustConfiguring: AnyObject {
+    var tlsServerName: String? { get set }
+    var trustedServerCertificates: [SecCertificate] { get set }
+    var usesSystemTrustStore: Bool { get set }
+    var manuallyEvaluateTrust: Bool { get set }
+}
+
+enum CocoaMQTTServerTrustEvaluator {
+    private static let queue = DispatchQueue(
+        label: "trust.cocoamqtt.emqx",
+        qos: .userInitiated
+    )
+
+    /// Returns false when the transport should retain its default trust policy.
+    @discardableResult
+    static func evaluate(
+        _ trust: SecTrust,
+        configuration: CocoaMQTTServerTrustConfiguring,
+        serverName: String?,
+        completionHandler: @escaping (Bool) -> Void
+    ) -> Bool {
+        let certificates = configuration.trustedServerCertificates
+        if configuration.manuallyEvaluateTrust && certificates.isEmpty {
+            completionHandler(false)
+            return true
+        }
+        guard !certificates.isEmpty || configuration.tlsServerName != nil else {
+            return false
+        }
+        guard let serverName else {
+            completionHandler(false)
+            return true
+        }
+
+        guard SecTrustSetPolicies(
+            trust,
+            SecPolicyCreateSSL(true, serverName as CFString)
+        ) == errSecSuccess else {
+            completionHandler(false)
+            return true
+        }
+        if !certificates.isEmpty {
+            guard SecTrustSetAnchorCertificates(
+                trust,
+                certificates as CFArray
+            ) == errSecSuccess,
+            SecTrustSetAnchorCertificatesOnly(
+                trust,
+                !configuration.usesSystemTrustStore
+            ) == errSecSuccess else {
+                completionHandler(false)
+                return true
+            }
+        }
+
+        let queue = Self.queue
+        queue.async {
+            if #available(macOS 10.15, iOS 13.0, tvOS 13.0, *) {
+                SecTrustEvaluateAsyncWithError(trust, queue) { _, trusted, error in
+                    if let error {
+                        printError("TLS server trust evaluation failed: \(error)")
+                    }
+                    completionHandler(trusted)
+                }
+            } else {
+                SecTrustEvaluateAsync(trust, queue) { _, result in
+                    completionHandler(result == .proceed || result == .unspecified)
+                }
+            }
+        }
+        return true
+    }
+
+    @discardableResult
+    static func evaluate(
+        _ trust: SecTrust,
+        socket: CocoaMQTTSocketProtocol,
+        defaultServerName: String?,
+        completionHandler: @escaping (Bool) -> Void
+    ) -> Bool {
+        if let socket = socket as? CocoaMQTTSocket {
+            return socket.evaluateServerTrust(
+                trust,
+                completionHandler: completionHandler
+            )
+        }
+        guard let configuration = socket as? CocoaMQTTServerTrustConfiguring else {
+            return false
+        }
+        return evaluate(
+            trust,
+            configuration: configuration,
+            serverName: configuration.tlsServerName ?? defaultServerName,
+            completionHandler: completionHandler
+        )
+    }
+}
+
 /// Selects one trust callback and prevents competing callbacks from resolving
 /// the same transport challenge more than once.
 enum CocoaMQTTTrustHandling {
@@ -51,6 +153,7 @@ enum CocoaMQTTTrustHandling {
     static func resolveURLSessionChallenge(
         urlSessionHandler: (@escaping URLSessionCompletion) -> Bool,
         legacyHandler: (@escaping (Bool) -> Void) -> Bool,
+        fallback: (@escaping (Bool) -> Void) -> Bool = { _ in false },
         legacyCredential: URLCredential,
         completionHandler: @escaping URLSessionCompletion
     ) {
@@ -67,6 +170,13 @@ enum CocoaMQTTTrustHandling {
         if legacyHandler({ accepted in
             // A legacy `true` is an explicit trust decision, not a request to
             // repeat the system validation that may already have failed.
+            completion(accepted
+                ? (.useCredential, legacyCredential)
+                : (.rejectProtectionSpace, nil))
+        }) {
+            return
+        }
+        if fallback({ accepted in
             completion(accepted
                 ? (.useCredential, legacyCredential)
                 : (.rejectProtectionSpace, nil))
@@ -251,12 +361,9 @@ public extension CocoaMQTTSocketProtocol {
 
 // MARK: - CocoaMQTTSocket
 
-public class CocoaMQTTSocket: NSObject {
-
-    private static let trustEvaluationQueue = DispatchQueue(
-        label: "trust.cocoamqtt.emqx",
-        qos: .userInitiated
-    )
+public class CocoaMQTTSocket: NSObject,
+    CocoaMQTTClientIdentityConfiguring,
+    CocoaMQTTServerTrustConfiguring {
 
     public var backgroundOnSocket = true
 
@@ -282,8 +389,9 @@ public class CocoaMQTTSocket: NSObject {
     /// system trust store. Default is true.
     @objc public var usesSystemTrustStore = true
 
-    /// Pauses automatic server trust handling and forwards the trust decision
-    /// to the client's delegate or `didReceiveTrust` closure.
+    /// Gives the client's trust callback first chance to decide. Without a
+    /// callback, configured custom CA certificates are still evaluated;
+    /// without either, the connection is rejected.
     @objc public var manuallyEvaluateTrust = false
 
     /// Legacy name for enabling manual trust evaluation. Setting this does not
@@ -450,33 +558,12 @@ extension CocoaMQTTSocket: MGCDAsyncSocketDelegate {
     /// when no built-in custom-anchor policy is configured.
     @discardableResult
     func evaluateServerTrust(_ trust: SecTrust, completionHandler: @escaping (Bool) -> Void) -> Bool {
-        guard !trustedServerCertificates.isEmpty,
-              let serverName = effectiveTLSServerName() else { return false }
-
-        let policy = SecPolicyCreateSSL(true, serverName as CFString)
-        guard SecTrustSetPolicies(trust, policy) == errSecSuccess,
-              SecTrustSetAnchorCertificates(trust, trustedServerCertificates as CFArray) == errSecSuccess,
-              SecTrustSetAnchorCertificatesOnly(trust, !usesSystemTrustStore) == errSecSuccess else {
-            completionHandler(false)
-            return true
-        }
-
-        let queue = Self.trustEvaluationQueue
-        queue.async {
-            if #available(macOS 10.15, iOS 13.0, tvOS 13.0, *) {
-                SecTrustEvaluateAsyncWithError(trust, queue) { _, trusted, error in
-                    if let error = error {
-                        printError("TLS server trust evaluation failed: \(error)")
-                    }
-                    completionHandler(trusted)
-                }
-            } else {
-                SecTrustEvaluateAsync(trust, queue) { _, result in
-                    completionHandler(result == .proceed || result == .unspecified)
-                }
-            }
-        }
-        return true
+        CocoaMQTTServerTrustEvaluator.evaluate(
+            trust,
+            configuration: self,
+            serverName: effectiveTLSServerName(),
+            completionHandler: completionHandler
+        )
     }
 
     private func effectiveTLSServerName(fallback: String? = nil) -> String? {

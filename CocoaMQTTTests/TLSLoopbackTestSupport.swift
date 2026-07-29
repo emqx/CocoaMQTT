@@ -146,6 +146,157 @@ final class TLSMQTTLoopbackBroker {
     }
 }
 
+/// Minimal mutual-TLS WebSocket broker that records CONNECT protocol levels
+/// and returns CONNACK.
+@available(macOS 10.15, *)
+final class TLSWebSocketMQTTLoopbackBroker {
+
+    private let queue = DispatchQueue(label: "tests.cocoamqtt.wss-loopback-broker")
+    private let listener: NWListener
+    private let lock = NSLock()
+    private var connections = [NWConnection]()
+    private var protocolLevels = [UInt8]()
+
+    var port: UInt16? {
+        listener.port?.rawValue
+    }
+
+    var receivedProtocolLevels: [UInt8] {
+        lock.lock()
+        defer { lock.unlock() }
+        return protocolLevels
+    }
+
+    init(identity: SecIdentity, trustedClientRootCertificate: SecCertificate) throws {
+        let tlsOptions = NWProtocolTLS.Options()
+        guard let protocolIdentity = sec_identity_create(identity) else {
+            throw TLSLoopbackError.invalidIdentity
+        }
+        sec_protocol_options_set_local_identity(
+            tlsOptions.securityProtocolOptions,
+            protocolIdentity
+        )
+        sec_protocol_options_set_peer_authentication_required(
+            tlsOptions.securityProtocolOptions,
+            true
+        )
+        sec_protocol_options_set_verify_block(
+            tlsOptions.securityProtocolOptions,
+            { _, trust, complete in
+                let secTrust = sec_trust_copy_ref(trust).takeRetainedValue()
+                guard SecTrustSetPolicies(
+                    secTrust,
+                    SecPolicyCreateBasicX509()
+                ) == errSecSuccess,
+                SecTrustSetAnchorCertificates(
+                    secTrust,
+                    [trustedClientRootCertificate] as CFArray
+                ) == errSecSuccess,
+                SecTrustSetAnchorCertificatesOnly(secTrust, true) == errSecSuccess else {
+                    complete(false)
+                    return
+                }
+                var error: CFError?
+                complete(SecTrustEvaluateWithError(secTrust, &error))
+            },
+            queue
+        )
+        let webSocketOptions = NWProtocolWebSocket.Options()
+        webSocketOptions.autoReplyPing = true
+        webSocketOptions.setClientRequestHandler(queue) { subprotocols, _ in
+            NWProtocolWebSocket.Response(
+                status: .accept,
+                subprotocol: subprotocols.contains("mqtt") ? "mqtt" : nil
+            )
+        }
+        let parameters = NWParameters(tls: tlsOptions, tcp: NWProtocolTCP.Options())
+        parameters.defaultProtocolStack.applicationProtocols.insert(webSocketOptions, at: 0)
+        listener = try NWListener(using: parameters, on: .any)
+    }
+
+    func start(onReady: @escaping () -> Void) {
+        listener.stateUpdateHandler = { state in
+            if case .ready = state {
+                onReady()
+            }
+        }
+        listener.newConnectionHandler = { [weak self] connection in
+            guard let self else { return }
+            self.lock.lock()
+            self.connections.append(connection)
+            self.lock.unlock()
+            connection.stateUpdateHandler = { [weak self, weak connection] state in
+                guard let self, let connection, case .ready = state else { return }
+                self.receiveConnect(from: connection, buffer: Data())
+            }
+            connection.start(queue: self.queue)
+        }
+        listener.start(queue: queue)
+    }
+
+    func stop() {
+        listener.cancel()
+        lock.lock()
+        let activeConnections = connections
+        connections.removeAll()
+        lock.unlock()
+        activeConnections.forEach { $0.cancel() }
+    }
+
+    private func receiveConnect(from connection: NWConnection, buffer: Data) {
+        connection.receive(minimumIncompleteLength: 1, maximumLength: 65_536) { [weak self, weak connection] data, _, isComplete, error in
+            guard let self, let connection else { return }
+            var nextBuffer = buffer
+            if let data {
+                nextBuffer.append(data)
+            }
+            if let protocolLevel = Self.connectProtocolLevel(in: nextBuffer) {
+                self.lock.lock()
+                self.protocolLevels.append(protocolLevel)
+                self.lock.unlock()
+                let connAck = protocolLevel == 5
+                    ? Data([0x20, 0x03, 0x00, 0x00, 0x00])
+                    : Data([0x20, 0x02, 0x00, 0x00])
+                let metadata = NWProtocolWebSocket.Metadata(opcode: .binary)
+                let context = NWConnection.ContentContext(
+                    identifier: "MQTT CONNACK",
+                    metadata: [metadata]
+                )
+                connection.send(
+                    content: connAck,
+                    contentContext: context,
+                    isComplete: true,
+                    completion: .contentProcessed { _ in }
+                )
+                return
+            }
+            if !isComplete && error == nil {
+                self.receiveConnect(from: connection, buffer: nextBuffer)
+            }
+        }
+    }
+
+    private static func connectProtocolLevel(in data: Data) -> UInt8? {
+        guard data.count >= 2, data[0] >> 4 == 1 else { return nil }
+        var remainingLength = 0
+        var multiplier = 1
+        var index = 1
+        for _ in 0..<4 {
+            guard index < data.count else { return nil }
+            let byte = data[index]
+            remainingLength += Int(byte & 0x7f) * multiplier
+            index += 1
+            if byte & 0x80 == 0 {
+                guard remainingLength >= 7,
+                      data.count >= index + remainingLength else { return nil }
+                return data[index + 6]
+            }
+            multiplier *= 128
+        }
+        return nil
+    }
+}
+
 /// Generates fresh certificates so Apple's leaf-validity limit cannot expire the tests.
 final class TLSLoopbackCertificateFixture {
 

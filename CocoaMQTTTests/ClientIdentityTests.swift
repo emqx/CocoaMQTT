@@ -263,7 +263,7 @@ final class ClientIdentityTests: XCTestCase {
     }
 
 #if IS_SWIFT_PACKAGE
-    func testMQTTClientsDoNotApplyIdentityToWebSocketTransport() throws {
+    func testMQTTClientsProxyIdentityToWebSocketTransport() throws {
         let fixture = try Self.fixture.get()
         let identity = try CocoaMQTTClientIdentity(
             certificateData: fixture.clientCertificatePEM,
@@ -281,8 +281,8 @@ final class ClientIdentityTests: XCTestCase {
         mqtt.clientIdentity = identity
         mqtt5.clientIdentity = identity
 
-        XCTAssertNil(mqtt.clientIdentity)
-        XCTAssertNil(mqtt5.clientIdentity)
+        XCTAssertTrue(mqtt.clientIdentity === identity)
+        XCTAssertTrue(mqtt5.clientIdentity === identity)
     }
 #endif
 
