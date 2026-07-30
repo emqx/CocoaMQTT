@@ -1,12 +1,9 @@
 name: Release CocoaMQTT 2.x
 
 on:
-  workflow_dispatch:
-    inputs:
-      version:
-        description: Stable 2.x version to release, for example 2.4.0
-        required: true
-        type: string
+  push:
+    branches:
+      - release/2.x
 
 permissions:
   contents: read
@@ -16,13 +13,13 @@ concurrency:
   cancel-in-progress: false
 
 jobs:
-  package-validation:
-    name: Validate 2.x Package
-    runs-on: macos-15
-    timeout-minutes: 35
-
-    env:
-      VERSION: ${{ inputs.version }}
+  prepare_release:
+    name: Prepare 2.x release
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    outputs:
+      should_release: ${{ steps.release.outputs.should_release }}
+      version: ${{ steps.release.outputs.version }}
 
     steps:
       - name: Checkout release commit
@@ -30,20 +27,10 @@ jobs:
         with:
           fetch-depth: 0
 
-      - name: Verify release branch, version, and tag availability
-        env:
-          RELEASE_REF: ${{ github.ref }}
+      - name: Verify release metadata and tag state
+        id: release
         run: |
           set -euo pipefail
-
-          if [ "${RELEASE_REF}" != "refs/heads/release/2.x" ]; then
-            echo "This workflow must run from release/2.x"
-            exit 1
-          fi
-          if [[ ! "${VERSION}" =~ ^2\.[0-9]+\.[0-9]+$ ]]; then
-            echo "Version must be a stable semantic 2.x version"
-            exit 1
-          fi
 
           git fetch origin \
             release/2.x:refs/remotes/origin/release/2.x \
@@ -53,22 +40,57 @@ jobs:
             exit 1
           fi
 
-          POD_VERSION="$(ruby -ne 'puts $1 if /s\.version\s*=\s*"([^"]+)"/' CocoaMQTT.podspec)"
+          VERSION="$(ruby -ne 'puts $1 if /s\.version\s*=\s*"([^"]+)"/' CocoaMQTT.podspec)"
           SOURCE_TAG="$(ruby -ne 'puts $1 if /:tag\s*=>\s*"([^"]+)"/' CocoaMQTT.podspec)"
           FRAMEWORK_VERSION="$(
             python3 -c 'import plistlib; print(plistlib.load(open("Source/Info.plist", "rb"))["CFBundleShortVersionString"])'
           )"
-          if [ "${VERSION}" != "${POD_VERSION}" ] ||
-             [ "${VERSION}" != "${SOURCE_TAG}" ] ||
+          if [[ ! "${VERSION}" =~ ^2\.[0-9]+\.[0-9]+$ ]]; then
+            echo "Version must be a stable semantic 2.x version"
+            exit 1
+          fi
+          if [ "${VERSION}" != "${SOURCE_TAG}" ] ||
              [ "${VERSION}" != "${FRAMEWORK_VERSION}" ]; then
             echo "Release metadata does not match ${VERSION}"
             exit 1
           fi
 
-          if git ls-remote --exit-code --tags origin "refs/tags/${VERSION}" >/dev/null 2>&1; then
-            echo "Tag ${VERSION} already exists"
+          echo "version=${VERSION}" >> "${GITHUB_OUTPUT}"
+          REMOTE_TAG="$(
+            git ls-remote origin "refs/tags/${VERSION}" |
+              awk 'NR == 1 { print $1 }'
+          )"
+          if [ -z "${REMOTE_TAG}" ]; then
+            echo "should_release=true" >> "${GITHUB_OUTPUT}"
+            exit 0
+          fi
+          REMOTE_COMMIT="$(
+            git ls-remote origin "refs/tags/${VERSION}^{}" |
+              awk 'NR == 1 { print $1 }'
+          )"
+          if [ -z "${REMOTE_COMMIT}" ]; then
+            REMOTE_COMMIT="${REMOTE_TAG}"
+          fi
+          if ! git merge-base --is-ancestor "${REMOTE_COMMIT}" HEAD; then
+            echo "Existing tag ${VERSION} is not an ancestor of release/2.x"
             exit 1
           fi
+
+          echo "Tag ${VERSION} already identifies an earlier release/2.x commit; no release is needed"
+          echo "should_release=false" >> "${GITHUB_OUTPUT}"
+
+  package-validation:
+    name: Validate 2.x Package
+    needs: prepare_release
+    if: needs.prepare_release.outputs.should_release == 'true'
+    runs-on: macos-15
+    timeout-minutes: 35
+
+    steps:
+      - name: Checkout release commit
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
 
       - name: Verify public API compatibility
         run: |
@@ -84,13 +106,14 @@ jobs:
 
   cocoapods-validation:
     name: Validate 2.x CocoaPods
+    needs: prepare_release
+    if: needs.prepare_release.outputs.should_release == 'true'
     runs-on: macos-15
     timeout-minutes: 35
 
     env:
       COCOAPODS_DISABLE_STATS: "true"
       LANG: en_US.UTF-8
-      VERSION: ${{ inputs.version }}
 
     steps:
       - name: Checkout release commit
@@ -103,11 +126,6 @@ jobs:
 
       - name: Install CocoaPods
         run: gem install cocoapods --no-document
-
-      - name: Verify podspec version
-        run: |
-          POD_VERSION="$(ruby -ne 'puts $1 if /s\.version\s*=\s*"([^"]+)"/' CocoaMQTT.podspec)"
-          test "${VERSION}" = "${POD_VERSION}"
 
       - name: Lint CocoaPods subspecs
         run: |
@@ -125,15 +143,17 @@ jobs:
   create-tag:
     name: Create verified 2.x tag
     needs:
+      - prepare_release
       - package-validation
       - cocoapods-validation
+    if: needs.prepare_release.outputs.should_release == 'true'
     runs-on: ubuntu-latest
     timeout-minutes: 5
     permissions:
       contents: write
 
     env:
-      VERSION: ${{ inputs.version }}
+      VERSION: ${{ needs.prepare_release.outputs.version }}
 
     steps:
       - name: Checkout verified release commit
@@ -145,10 +165,6 @@ jobs:
         run: |
           set -euo pipefail
 
-          if [ "${GITHUB_REF}" != "refs/heads/release/2.x" ]; then
-            echo "This workflow must run from release/2.x"
-            exit 1
-          fi
           git fetch origin \
             release/2.x:refs/remotes/origin/release/2.x \
             --force
