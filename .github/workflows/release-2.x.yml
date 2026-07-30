@@ -1,4 +1,4 @@
-name: Release CocoaMQTT 2.x
+name: Check CocoaMQTT 2.x Release
 
 on:
   push:
@@ -20,6 +20,7 @@ jobs:
     outputs:
       should_release: ${{ steps.release.outputs.should_release }}
       version: ${{ steps.release.outputs.version }}
+      previous_tag: ${{ steps.release.outputs.previous_tag }}
 
     steps:
       - name: Checkout release commit
@@ -55,7 +56,30 @@ jobs:
             exit 1
           fi
 
+          PREVIOUS_TAG="$(
+            git tag --list "2.*" |
+              ruby -rrubygems -e '
+                current = Gem::Version.new(ARGV.fetch(0))
+                versions = STDIN.each_line.each_with_object([]) do |line, result|
+                  tag = line.strip
+                  next unless tag.match?(/\A2\.\d+\.\d+\z/)
+                  version = Gem::Version.new(tag)
+                  result << [version, tag] if version < current
+                end
+                puts versions.max_by(&:first)&.last
+              ' "${VERSION}"
+          )"
+          if [ -z "${PREVIOUS_TAG}" ]; then
+            echo "No earlier stable 2.x tag exists for compatibility validation"
+            exit 1
+          fi
+          if ! git merge-base --is-ancestor "${PREVIOUS_TAG}^{commit}" HEAD; then
+            echo "Previous release tag ${PREVIOUS_TAG} is not an ancestor of release/2.x"
+            exit 1
+          fi
+
           echo "version=${VERSION}" >> "${GITHUB_OUTPUT}"
+          echo "previous_tag=${PREVIOUS_TAG}" >> "${GITHUB_OUTPUT}"
           REMOTE_TAG="$(
             git ls-remote origin "refs/tags/${VERSION}" |
               awk 'NR == 1 { print $1 }'
@@ -93,10 +117,16 @@ jobs:
           fetch-depth: 0
 
       - name: Verify public API compatibility
+        env:
+          PREVIOUS_TAG: ${{ needs.prepare_release.outputs.previous_tag }}
         run: |
           swift package diagnose-api-breaking-changes 2.3.0 \
             --products CocoaMQTT CocoaMQTTWebSocket \
             --breakage-allowlist-path .github/api-breakage-allowlist-2.3.txt
+          if [ "${PREVIOUS_TAG}" != "2.3.0" ]; then
+            swift package diagnose-api-breaking-changes "${PREVIOUS_TAG}" \
+              --products CocoaMQTT CocoaMQTTWebSocket
+          fi
 
       - name: Build package
         run: swift build
@@ -139,54 +169,3 @@ jobs:
             --allow-warnings \
             --skip-tests \
             --fail-fast
-
-  create-tag:
-    name: Create verified 2.x tag
-    needs:
-      - prepare_release
-      - package-validation
-      - cocoapods-validation
-    if: needs.prepare_release.outputs.should_release == 'true'
-    runs-on: ubuntu-latest
-    timeout-minutes: 5
-    permissions:
-      contents: write
-
-    env:
-      VERSION: ${{ needs.prepare_release.outputs.version }}
-
-    steps:
-      - name: Checkout verified release commit
-        uses: actions/checkout@v4
-        with:
-          fetch-depth: 0
-
-      - name: Create annotated release tag
-        run: |
-          set -euo pipefail
-
-          git fetch origin \
-            release/2.x:refs/remotes/origin/release/2.x \
-            --force
-          if [ "$(git rev-parse HEAD)" != "$(git rev-parse origin/release/2.x)" ]; then
-            echo "release/2.x advanced while validation was running"
-            exit 1
-          fi
-          if git ls-remote --exit-code --tags origin "refs/tags/${VERSION}" >/dev/null 2>&1; then
-            echo "Tag ${VERSION} already exists"
-            exit 1
-          fi
-
-          git config user.name "github-actions[bot]"
-          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
-          git tag --annotate "${VERSION}" --message "CocoaMQTT ${VERSION}"
-          git push origin "refs/tags/${VERSION}"
-
-          REMOTE_COMMIT="$(
-            git ls-remote origin "refs/tags/${VERSION}^{}" |
-              awk 'NR == 1 { print $1 }'
-          )"
-          if [ "${REMOTE_COMMIT}" != "$(git rev-parse HEAD)" ]; then
-            echo "Remote tag ${VERSION} does not resolve to the validated commit"
-            exit 1
-          fi
