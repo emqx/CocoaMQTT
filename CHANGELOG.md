@@ -27,9 +27,11 @@ Compatibility note:
   type inference or the `Sequence` APIs. `for-in` and `map` use snapshot
   iteration. Index-based Collection access is not safe across concurrent
   mutations; use `snapshot()` for multi-step indexed access.
-- `ConcurrentAtomic.mutate` remains source-compatible but is now synchronous.
-  It returns only after applying the mutation. Its closure must not re-enter the
-  same wrapper. Use the new `withMutation` API when the transform needs to
-  return a value.
+- `ConcurrentAtomic` property assignment and `mutate` remain source-compatible
+  but now execute synchronously. They return only after applying the mutation,
+  so code must not rely on the former fire-and-forget ordering. A mutation
+  closure must not read from or write to the same wrapper because that would
+  re-enter its synchronization barrier. Use the new `withMutation` API when the
+  transform needs to return a value.
 - Deprecated decoder overloads without a `protocolVersion` now assume MQTT 5
   packet data. Use the explicit overload when decoding MQTT 3.1.1 data.

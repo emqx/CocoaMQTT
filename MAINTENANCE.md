@@ -37,9 +37,9 @@ snapshot. Index-based Collection access is not safe across mutations; use
 `snapshot()` for multi-step indexed access.
 
 The deprecated decoder overloads without an explicit protocol version assume
-MQTT 5 packet data. `ConcurrentAtomic.mutate` retains its 2.3 source signature
-but executes synchronously in 2.4; its closure must not re-enter the same
-wrapper.
+MQTT 5 packet data. `ConcurrentAtomic` property assignment and `mutate` retain
+their 2.3 source signatures but execute synchronously in 2.4. A mutation
+closure must not read from or write to the same wrapper.
 
 ## Support lifetime
 

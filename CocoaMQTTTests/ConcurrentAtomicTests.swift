@@ -2,6 +2,10 @@ import XCTest
 @testable import CocoaMQTT
 
 final class ConcurrentAtomicTests: XCTestCase {
+    private enum MutationError: Error, Equatable {
+        case expected
+    }
+
     @ConcurrentAtomic var value: Int = 1
 
     func testSetSync() {
@@ -22,6 +26,31 @@ final class ConcurrentAtomicTests: XCTestCase {
         }
 
         XCTAssertEqual(result, 20)
+        XCTAssertEqual(value, 20)
+    }
+
+    @available(*, deprecated, message: "Exercises the CocoaMQTT 2.3 compatibility overload")
+    func testResultReturningMutateCompatibilityOverload() {
+        value = 1
+        let result = $value.mutate { value -> Int in
+            value *= 20
+            return value
+        }
+
+        XCTAssertEqual(result, 20)
+        XCTAssertEqual(value, 20)
+    }
+
+    @available(*, deprecated, message: "Exercises the CocoaMQTT 2.3 compatibility overload")
+    func testThrowingMutateCompatibilityOverload() {
+        value = 1
+
+        XCTAssertThrowsError(try $value.mutate { value -> Int in
+            value = 20
+            throw MutationError.expected
+        }) { error in
+            XCTAssertEqual(error as? MutationError, .expected)
+        }
         XCTAssertEqual(value, 20)
     }
 

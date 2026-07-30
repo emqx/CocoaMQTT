@@ -20,7 +20,9 @@ are covered by a Swift 6 compatibility check in CI.
 
 ## Build
 
-Build with Xcode 11.1 / Swift 5.1
+Swift Package Manager requires Swift 5.7 / Xcode 14 or later. CocoaPods uses
+Swift 5 language mode. Both distribution paths are validated in CI with the
+toolchain named in the workflow configuration.
 
 IOS Target: 12.0 or above
 OSX Target: 10.13 or above
