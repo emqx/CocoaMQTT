@@ -48,6 +48,19 @@ public enum CocoaMQTTPropertyName: UInt8 {
     case sharedSubscriptionAvailable = 0x2A
 }
 
+/// Integer formats used by the legacy MQTT property decoder helpers.
+///
+/// This type remains available for source compatibility with CocoaMQTT 2.3.
+@available(*, deprecated, message: "CocoaMQTT decoders now validate integer formats internally")
+public enum formatInt: Int {
+    case formatUint8 = 0x11
+    case formatUint16 = 0x12
+    case formatUint32 = 0x14
+    case formatSint8 = 0x21
+    case formatSint16 = 0x22
+    case formatSint32 = 0x24
+}
+
 func getMQTTPropertyData(type: UInt8, value: [UInt8]) -> [UInt8] {
     var properties = [UInt8]()
     properties.append(UInt8(type))

@@ -1,0 +1,39 @@
+name: LTS Compatibility
+
+on:
+  pull_request:
+    branches:
+      - release/2.x
+
+permissions:
+  contents: read
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  api-compatibility:
+    name: LTS API Compatibility
+    runs-on: macos-15
+    timeout-minutes: 20
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Preserve the CocoaMQTT 2.3 public API
+        run: |
+          swift package diagnose-api-breaking-changes 2.3.0 \
+            --products CocoaMQTT CocoaMQTTWebSocket \
+            --breakage-allowlist-path .github/api-breakage-allowlist-2.3.txt
+
+      - name: Preserve the pull request base API
+        if: github.event_name == 'pull_request'
+        env:
+          BASE_SHA: ${{ github.event.pull_request.base.sha }}
+        run: |
+          swift package diagnose-api-breaking-changes "${BASE_SHA}" \
+            --products CocoaMQTT CocoaMQTTWebSocket

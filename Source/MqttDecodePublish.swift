@@ -39,6 +39,11 @@ public class MqttDecodePublish: NSObject {
     public var packetIdentifier: UInt16?
     public var mqtt5DataIndex = 0
 
+    @available(*, deprecated, message: "Assumes MQTT 5 data; use the overload with protocolVersion")
+    public func decodePublish(fixedHeader: UInt8, publishData: [UInt8]) {
+        _ = decodePublish(fixedHeader: fixedHeader, publishData: publishData, protocolVersion: .v5)
+    }
+
     @discardableResult
     public func decodePublish(fixedHeader: UInt8,
                               publishData: [UInt8],
