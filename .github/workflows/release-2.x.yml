@@ -165,3 +165,12 @@ jobs:
           git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
           git tag --annotate "${VERSION}" --message "CocoaMQTT ${VERSION}"
           git push origin "refs/tags/${VERSION}"
+
+          REMOTE_COMMIT="$(
+            git ls-remote origin "refs/tags/${VERSION}^{}" |
+              awk 'NR == 1 { print $1 }'
+          )"
+          if [ "${REMOTE_COMMIT}" != "$(git rev-parse HEAD)" ]; then
+            echo "Remote tag ${VERSION} does not resolve to the validated commit"
+            exit 1
+          fi

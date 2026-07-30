@@ -31,6 +31,9 @@ public API against both 2.3.0 and the pull request base commit.
 
 Stable tags are created through the `Release CocoaMQTT 2.x` workflow after it
 revalidates release metadata, API compatibility, package tests, and CocoaPods.
+The workflow also verifies that the remote annotated tag resolves to the
+validated branch head. Repository rules prevent stable `2.*` tags from being
+moved or deleted.
 
 `ThreadSafeDictionary.Iterator` intentionally changed from an index-based live
 iterator to a dictionary snapshot iterator. Restoring the old concrete iterator
