@@ -20,22 +20,15 @@ are covered by a Swift 6 compatibility check in CI.
 
 ## Build
 
-Swift Package Manager requires Swift 5.7 / Xcode 14 or later. CocoaPods uses
-Swift 5 language mode. Both distribution paths are validated in CI with the
-toolchain named in the workflow configuration.
+The package manifest requires Swift tools 5.7. Release CI validates the current
+Xcode toolchain and Swift 6 compatibility; it does not independently exercise
+the oldest Swift 5.7 compiler. CocoaPods uses Swift 5 language mode.
 
 IOS Target: 12.0 or above
 OSX Target: 10.13 or above
 TVOS Target: 12.0 or above with Swift Package Manager or CocoaPods WebSockets;
 10.0 or above with CocoaPods Core
 visionOS Target: 1.0 or above (Swift Package Manager only, compile-verified in CI)
-
-##  xcode 14.3 issue:
-```ruby
-File not found: /Applications/Xcode.app/Contents/Developer/Toolchains/XcodeDefault.xctoolchain/usr/lib/arc/libarclite_iphonesimulator.a
-```
-If you encounter the issue, Please update your project minimum depolyments to 11.0
-
 
 ## Installation
 

@@ -29,6 +29,9 @@ Patch releases in this line preserve the 2.4 public API and supported platform
 matrix. CI builds both package products, validates CocoaPods, and checks the
 public API against both 2.3.0 and the pull request base commit.
 
+Stable tags are created through the `Release CocoaMQTT 2.x` workflow after it
+revalidates release metadata, API compatibility, package tests, and CocoaPods.
+
 `ThreadSafeDictionary.Iterator` intentionally changed from an index-based live
 iterator to a dictionary snapshot iterator. Restoring the old concrete iterator
 would reintroduce invalid-index crashes during concurrent mutation. The type

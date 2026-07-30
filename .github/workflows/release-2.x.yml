@@ -1,0 +1,167 @@
+name: Release CocoaMQTT 2.x
+
+on:
+  workflow_dispatch:
+    inputs:
+      version:
+        description: Stable 2.x version to release, for example 2.4.0
+        required: true
+        type: string
+
+permissions:
+  contents: read
+
+concurrency:
+  group: release-cocoamqtt-2.x
+  cancel-in-progress: false
+
+jobs:
+  package-validation:
+    name: Validate 2.x Package
+    runs-on: macos-15
+    timeout-minutes: 35
+
+    env:
+      VERSION: ${{ inputs.version }}
+
+    steps:
+      - name: Checkout release commit
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Verify release branch, version, and tag availability
+        env:
+          RELEASE_REF: ${{ github.ref }}
+        run: |
+          set -euo pipefail
+
+          if [ "${RELEASE_REF}" != "refs/heads/release/2.x" ]; then
+            echo "This workflow must run from release/2.x"
+            exit 1
+          fi
+          if [[ ! "${VERSION}" =~ ^2\.[0-9]+\.[0-9]+$ ]]; then
+            echo "Version must be a stable semantic 2.x version"
+            exit 1
+          fi
+
+          git fetch origin \
+            release/2.x:refs/remotes/origin/release/2.x \
+            --force
+          if [ "$(git rev-parse HEAD)" != "$(git rev-parse origin/release/2.x)" ]; then
+            echo "The checked-out commit is not the current release/2.x head"
+            exit 1
+          fi
+
+          POD_VERSION="$(ruby -ne 'puts $1 if /s\.version\s*=\s*"([^"]+)"/' CocoaMQTT.podspec)"
+          SOURCE_TAG="$(ruby -ne 'puts $1 if /:tag\s*=>\s*"([^"]+)"/' CocoaMQTT.podspec)"
+          FRAMEWORK_VERSION="$(
+            python3 -c 'import plistlib; print(plistlib.load(open("Source/Info.plist", "rb"))["CFBundleShortVersionString"])'
+          )"
+          if [ "${VERSION}" != "${POD_VERSION}" ] ||
+             [ "${VERSION}" != "${SOURCE_TAG}" ] ||
+             [ "${VERSION}" != "${FRAMEWORK_VERSION}" ]; then
+            echo "Release metadata does not match ${VERSION}"
+            exit 1
+          fi
+
+          if git ls-remote --exit-code --tags origin "refs/tags/${VERSION}" >/dev/null 2>&1; then
+            echo "Tag ${VERSION} already exists"
+            exit 1
+          fi
+
+      - name: Verify public API compatibility
+        run: |
+          swift package diagnose-api-breaking-changes 2.3.0 \
+            --products CocoaMQTT CocoaMQTTWebSocket \
+            --breakage-allowlist-path .github/api-breakage-allowlist-2.3.txt
+
+      - name: Build package
+        run: swift build
+
+      - name: Run deterministic and loopback tests
+        run: swift test --skip CocoaMQTTTests.CocoaMQTTTests
+
+  cocoapods-validation:
+    name: Validate 2.x CocoaPods
+    runs-on: macos-15
+    timeout-minutes: 35
+
+    env:
+      COCOAPODS_DISABLE_STATS: "true"
+      LANG: en_US.UTF-8
+      VERSION: ${{ inputs.version }}
+
+    steps:
+      - name: Checkout release commit
+        uses: actions/checkout@v4
+
+      - name: Setup Ruby
+        uses: ruby/setup-ruby@19a43a6a2428d455dbd1b85344698725179c9d8c # v1
+        with:
+          ruby-version: "3.2"
+
+      - name: Install CocoaPods
+        run: gem install cocoapods --no-document
+
+      - name: Verify podspec version
+        run: |
+          POD_VERSION="$(ruby -ne 'puts $1 if /s\.version\s*=\s*"([^"]+)"/' CocoaMQTT.podspec)"
+          test "${VERSION}" = "${POD_VERSION}"
+
+      - name: Lint CocoaPods subspecs
+        run: |
+          pod lib lint CocoaMQTT.podspec \
+            --subspec=Core \
+            --allow-warnings \
+            --skip-tests \
+            --fail-fast
+          pod lib lint CocoaMQTT.podspec \
+            --subspec=WebSockets \
+            --allow-warnings \
+            --skip-tests \
+            --fail-fast
+
+  create-tag:
+    name: Create verified 2.x tag
+    needs:
+      - package-validation
+      - cocoapods-validation
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    permissions:
+      contents: write
+
+    env:
+      VERSION: ${{ inputs.version }}
+
+    steps:
+      - name: Checkout verified release commit
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Create annotated release tag
+        run: |
+          set -euo pipefail
+
+          if [ "${GITHUB_REF}" != "refs/heads/release/2.x" ]; then
+            echo "This workflow must run from release/2.x"
+            exit 1
+          fi
+          git fetch origin \
+            release/2.x:refs/remotes/origin/release/2.x \
+            --force
+          if [ "$(git rev-parse HEAD)" != "$(git rev-parse origin/release/2.x)" ]; then
+            echo "release/2.x advanced while validation was running"
+            exit 1
+          fi
+          if git ls-remote --exit-code --tags origin "refs/tags/${VERSION}" >/dev/null 2>&1; then
+            echo "Tag ${VERSION} already exists"
+            exit 1
+          fi
+
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git tag --annotate "${VERSION}" --message "CocoaMQTT ${VERSION}"
+          git push origin "refs/tags/${VERSION}"
