@@ -10,7 +10,7 @@ permissions:
 
 concurrency:
   group: release-cocoamqtt-2.x
-  cancel-in-progress: false
+  cancel-in-progress: true
 
 jobs:
   prepare_release:
@@ -18,7 +18,7 @@ jobs:
     runs-on: ubuntu-latest
     timeout-minutes: 5
     outputs:
-      should_release: ${{ steps.release.outputs.should_release }}
+      should_validate: ${{ steps.release.outputs.should_validate }}
       version: ${{ steps.release.outputs.version }}
       previous_tag: ${{ steps.release.outputs.previous_tag }}
 
@@ -85,7 +85,7 @@ jobs:
               awk 'NR == 1 { print $1 }'
           )"
           if [ -z "${REMOTE_TAG}" ]; then
-            echo "should_release=true" >> "${GITHUB_OUTPUT}"
+            echo "should_validate=true" >> "${GITHUB_OUTPUT}"
             exit 0
           fi
           REMOTE_COMMIT="$(
@@ -101,12 +101,12 @@ jobs:
           fi
 
           echo "Tag ${VERSION} already identifies an earlier release/2.x commit; no release is needed"
-          echo "should_release=false" >> "${GITHUB_OUTPUT}"
+          echo "should_validate=false" >> "${GITHUB_OUTPUT}"
 
   package-validation:
     name: Validate 2.x Package
     needs: prepare_release
-    if: needs.prepare_release.outputs.should_release == 'true'
+    if: needs.prepare_release.outputs.should_validate == 'true'
     runs-on: macos-15
     timeout-minutes: 35
 
@@ -137,7 +137,7 @@ jobs:
   cocoapods-validation:
     name: Validate 2.x CocoaPods
     needs: prepare_release
-    if: needs.prepare_release.outputs.should_release == 'true'
+    if: needs.prepare_release.outputs.should_validate == 'true'
     runs-on: macos-15
     timeout-minutes: 35
 
@@ -169,3 +169,49 @@ jobs:
             --allow-warnings \
             --skip-tests \
             --fail-fast
+
+  release-readiness:
+    name: 2.x Release Ready
+    needs:
+      - prepare_release
+      - package-validation
+      - cocoapods-validation
+    if: needs.prepare_release.outputs.should_validate == 'true'
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+
+    env:
+      VERSION: ${{ needs.prepare_release.outputs.version }}
+
+    steps:
+      - name: Checkout validated release commit
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Confirm current branch head and report tag target
+        run: |
+          set -euo pipefail
+
+          git fetch origin \
+            release/2.x:refs/remotes/origin/release/2.x \
+            --force
+          VALIDATED_COMMIT="$(git rev-parse HEAD)"
+          CURRENT_HEAD="$(git rev-parse origin/release/2.x)"
+          if [ "${VALIDATED_COMMIT}" != "${CURRENT_HEAD}" ]; then
+            echo "release/2.x advanced while release-readiness checks were running"
+            exit 1
+          fi
+
+          {
+            echo "## CocoaMQTT ${VERSION} is ready to tag"
+            echo
+            echo "Validated commit: \`${VALIDATED_COMMIT}\`"
+            echo
+            echo "Create the annotated tag only for this exact commit:"
+            echo
+            echo "\`\`\`console"
+            echo "git tag --annotate ${VERSION} ${VALIDATED_COMMIT} --message \"CocoaMQTT ${VERSION}\""
+            echo "git push origin refs/tags/${VERSION}"
+            echo "\`\`\`"
+          } >> "${GITHUB_STEP_SUMMARY}"

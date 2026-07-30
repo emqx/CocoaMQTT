@@ -35,11 +35,12 @@ the workflow revalidates release metadata, API compatibility against both 2.3.0
 and the preceding stable 2.x release, package tests, and CocoaPods. It does not
 create or publish a tag.
 
-After that workflow succeeds, a maintainer creates an annotated tag for the
-validated `release/2.x` head and pushes it. Do not create a stable `2.*` tag
-before the release-readiness workflow passes. The tag push runs the distribution
-checks, including validation against the tagged SPM and CocoaPods sources.
-Repository rules prevent stable `2.*` tags from being moved or deleted.
+The final `2.x Release Ready` job rechecks that the validated commit is still
+the current branch head and reports its full commit SHA. After that job succeeds,
+a maintainer creates an annotated tag for exactly that SHA and pushes it. Do not
+create a stable `2.*` tag before this job passes. The tag push runs the
+distribution checks, including validation against the tagged SPM and CocoaPods
+sources. Repository rules prevent stable `2.*` tags from being moved or deleted.
 
 `ThreadSafeDictionary.Iterator` intentionally changed from an index-based live
 iterator to a dictionary snapshot iterator. Restoring the old concrete iterator
