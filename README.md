@@ -1,12 +1,23 @@
 # CocoaMQTT
 
-![PodVersion](https://img.shields.io/cocoapods/v/CocoaMQTT5.svg)
-![Platforms](https://img.shields.io/cocoapods/p/CocoaMQTT5.svg)
-![License](https://img.shields.io/cocoapods/l/BadgeSwift.svg?style=flat)
+> [!IMPORTANT]
+> **`master` contains CocoaMQTT 3 development and may include breaking
+> changes.** For production applications, use
+> [CocoaMQTT 2.4.0](https://github.com/emqx/CocoaMQTT/releases/tag/2.4.0),
+> the latest release on the maintained
+> [`release/2.x`](https://github.com/emqx/CocoaMQTT/tree/release/2.x) line.
+> See the [2.x documentation](https://github.com/emqx/CocoaMQTT/blob/release/2.x/README.md)
+> and [maintenance policy](https://github.com/emqx/CocoaMQTT/blob/release/2.x/MAINTENANCE.md).
+
+[![Stable release](https://img.shields.io/github/v/release/emqx/CocoaMQTT?label=stable)](https://github.com/emqx/CocoaMQTT/releases/latest)
+[![CocoaPods](https://img.shields.io/cocoapods/v/CocoaMQTT.svg)](https://cocoapods.org/pods/CocoaMQTT)
+![Platforms](https://img.shields.io/cocoapods/p/CocoaMQTT.svg)
+[![License](https://img.shields.io/github/license/emqx/CocoaMQTT)](LICENSE)
 ![Swift version](https://img.shields.io/badge/swift-5-orange.svg)
 
-MQTT v3.1.1 and v5.0 client library for iOS/macOS/tvOS/visionOS written with Swift 5.
-visionOS is supported through Swift Package Manager.
+CocoaMQTT is an MQTT 3.1.1 and MQTT 5.0 client library for
+iOS/macOS/tvOS/visionOS written in Swift. visionOS is supported through Swift
+Package Manager.
 
 Both Swift Package Manager products can be used by Swift 6 applications and
 are covered by a Swift 6 compatibility check in CI.
@@ -14,21 +25,23 @@ are covered by a Swift 6 compatibility check in CI.
 
 ## Build
 
-Build with Xcode 11.1 / Swift 5.1
+The package manifest requires Swift tools 5.7. CI validates the current Xcode
+toolchain and Swift 6 compatibility. CocoaPods uses Swift 5 language mode.
 
-Core: iOS 12.0, macOS 10.13, and tvOS 12.0 or above with Swift Package
-Manager; tvOS 10.0 or above with CocoaPods Core
-WebSocket: iOS 13.0, macOS 10.15, and tvOS 13.0 or above
-visionOS Target: 1.0 or above (Swift Package Manager only, compile-verified in CI)
+| Product | iOS | macOS | tvOS | visionOS |
+| --- | --- | --- | --- | --- |
+| `CocoaMQTT` via Swift Package Manager | 12.0 | 10.13 | 12.0 | 1.0 |
+| `CocoaMQTTWebSocket` via Swift Package Manager | 13.0 | 10.15 | 13.0 | 1.0 |
+| CocoaPods 2.x Core | 12.0 | 10.13 | 10.0 | Not supported |
+| CocoaPods 2.x WebSockets | 13.0 | 10.15 | 13.0 | Not supported |
 
-##  xcode 14.3 issue:
-```ruby
-File not found: /Applications/Xcode.app/Contents/Developer/Toolchains/XcodeDefault.xctoolchain/usr/lib/arc/libarclite_iphonesimulator.a
-```
-If you encounter the issue, Please update your project minimum depolyments to 11.0
-
+visionOS support is compile-verified in CI.
 
 ## Installation
+
+Production applications should install the stable 2.x LTS release. The
+development snapshot instructions are provided for evaluating CocoaMQTT 3
+before its first stable release.
 
 ### Swift Package Manager
 
@@ -37,25 +50,29 @@ To integrate CocoaMQTT into your Xcode project using [Swift Package Manager](htt
 1. Open your project in Xcode.
 2. Go to `File` > `Swift Packages` > `Add Package Dependency`.
 3. Enter the repository URL: `https://github.com/emqx/CocoaMQTT.git`.
-4. Choose the latest version or specify a version range.
+4. Select `2.4.0` with an “Up to Next Major Version” dependency rule
+   (`2.4.0 ..< 3.0.0`).
 5. Add the package to your target.
 
-Swift Package Manager supports iOS, macOS, tvOS, and visionOS. Both the
-`CocoaMQTT` and `CocoaMQTTWebSocket` products are compile-verified against the
-visionOS SDK in CI. Because Swift Package Manager platform declarations apply
-to the package rather than an individual product, availability annotations
-enforce the higher minimum OS versions when using `CocoaMQTTWebSocket`; the
-core `CocoaMQTT` product retains its existing minimum versions.
-
-At last, import "CocoaMQTT" to your project:
+Then import `CocoaMQTT`:
 
 ```swift
 import CocoaMQTT
 ```
 
+To evaluate CocoaMQTT 3, select the `master` branch in Xcode or use a branch
+dependency:
+
+```swift
+.package(url: "https://github.com/emqx/CocoaMQTT.git", branch: "master")
+```
+
+Do not use an unversioned `master` dependency for production releases.
+
 ### CocoaPods
 
-To integrate CocoaMQTT into your Xcode project using [CocoaPods](http://cocoapods.org), you need to modify you `Podfile` like the followings:
+To integrate CocoaMQTT 2.x using [CocoaPods](https://cocoapods.org), add it to
+your `Podfile`:
 
 > **visionOS:** CocoaPods installation is not currently supported because the
 > transitive CocoaPods dependencies do not declare visionOS compatibility. Use
@@ -65,28 +82,34 @@ To integrate CocoaMQTT into your Xcode project using [CocoaPods](http://cocoapod
 use_frameworks!
 
 target 'Example' do
-    pod 'CocoaMQTT'
+    pod 'CocoaMQTT', '~> 2.4'
 end
 ```
 
-Then, run the following command:
+Then run:
 
 ```bash
-$ pod install
+pod install
 ```
 
-At last, import "CocoaMQTT" to your project:
+Then import `CocoaMQTT`:
 
 ```swift
 import CocoaMQTT
 ```
 
+CocoaMQTT 3 development snapshots are not published to CocoaPods. Use the Swift
+Package Manager branch dependency above or a local checkout for evaluation.
+
 ## Usage
 
-Create a client to connect [MQTT broker](https://www.emqx.com/en/mqtt/public-mqtt5-broker):
+The following sections document the CocoaMQTT 3 API on `master`. For stable
+CocoaMQTT 2.4 usage, see the
+[2.x README](https://github.com/emqx/CocoaMQTT/blob/release/2.x/README.md).
+
+Create an MQTT 5 client:
 
 ```swift
-///MQTT 5.0
 let clientID = "CocoaMQTT-" + String(ProcessInfo().processIdentifier)
 let mqtt5 = CocoaMQTT5(clientID: clientID, host: "broker.emqx.io", port: 1883)
 
@@ -103,8 +126,11 @@ mqtt5.willMessage = CocoaMQTTMessage(topic: "/will", string: "dieout")
 mqtt5.keepAlive = 60
 mqtt5.delegate = self
 mqtt5.connect()
+```
 
-///MQTT 3.1.1
+Or create an MQTT 3.1.1 client:
+
+```swift
 let clientID = "CocoaMQTT-" + String(ProcessInfo().processIdentifier)
 let mqtt = CocoaMQTT(clientID: clientID, host: "broker.emqx.io", port: 1883)
 mqtt.username = "test"
@@ -119,7 +145,7 @@ Now you can use closures instead of `CocoaMQTTDelegate`:
 
 ```swift 
 mqtt.didReceiveMessage = { mqtt, message, id in
-    print("Message received in topic \(message.topic) with payload \(message.string!)")           
+    print("Message received in topic \(message.topic) with payload \(message.string ?? "")")
 }
 ```
 
@@ -244,7 +270,7 @@ If you integrated by **Swift Package Manager**, follow these steps:
 1. Open your project in Xcode.
 2. Go to `File` > `Swift Packages` > `Add Package Dependency`.
 3. Enter the repository URL: `https://github.com/emqx/CocoaMQTT.git`.
-4. Choose the latest version or specify a version range.
+4. Select the `master` branch to evaluate CocoaMQTT 3.
 5. Add the `CocoaMQTT` and `CocoaMQTTWebSocket` products to your target.
 
 Import the CocoaMQTT products into your project:
@@ -254,25 +280,9 @@ import CocoaMQTT
 import CocoaMQTTWebSocket
 ```
 
-If you integrated by **CocoaPods**, update your `Podfile` as follows and run
-`pod install` again:
-
-```ruby
-use_frameworks!
-
-target 'Example' do
-    pod 'CocoaMQTT/WebSockets'
-end
-```
-
-If you're using CocoaMQTT in a project with only a `.podspec` and no `Podfile`, e.g. in a module for React Native, add this line to your `.podspec`:
-
-```ruby
-Pod::Spec.new do |s|
-  ...
-  s.dependency "CocoaMQTT/WebSockets"
-end
-```
+CocoaMQTT 3 is not currently distributed through CocoaPods. For the stable
+CocoaMQTT 2.4 WebSocket subspec and its older-platform behavior, follow the
+[2.x WebSocket installation instructions](https://github.com/emqx/CocoaMQTT/blob/release/2.x/README.md#mqtt-over-websocket).
 
 Then, create an MQTT instance over WebSocket:
 
@@ -421,13 +431,13 @@ encoded size.
 
 ## Example App
 
-You can follow the Example App to learn how to use it. But we need to make the Example App works first:
+Open the sample application from the repository root:
 
 ```bash
-$ cd Examples
+open Example/Example.xcodeproj
 ```
 
-Then, open the `Example.xcodeproj` by Xcode and start it!
+Choose the Example scheme and run it in Xcode.
 
 ## Dependencies
 
