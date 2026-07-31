@@ -167,6 +167,10 @@
 		F0A400000000000000000003 /* MQTTKeepAliveController.swift in Sources */ = {isa = PBXBuildFile; fileRef = F0A400000000000000000001 /* MQTTKeepAliveController.swift */; };
 		F0A400000000000000000004 /* MQTTKeepAliveController.swift in Sources */ = {isa = PBXBuildFile; fileRef = F0A400000000000000000001 /* MQTTKeepAliveController.swift */; };
 		F0A400000000000000000006 /* KeepAliveTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = F0A400000000000000000005 /* KeepAliveTests.swift */; };
+		F0A600000000000000000002 /* MQTTClientCore.swift in Sources */ = {isa = PBXBuildFile; fileRef = F0A600000000000000000001 /* MQTTClientCore.swift */; };
+		F0A600000000000000000003 /* MQTTClientCore.swift in Sources */ = {isa = PBXBuildFile; fileRef = F0A600000000000000000001 /* MQTTClientCore.swift */; };
+		F0A600000000000000000004 /* MQTTClientCore.swift in Sources */ = {isa = PBXBuildFile; fileRef = F0A600000000000000000001 /* MQTTClientCore.swift */; };
+		F0A600000000000000000006 /* ConnectionStateContractTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = F0A600000000000000000005 /* ConnectionStateContractTests.swift */; };
 		A1B2C3D4E5F60718293A0001 /* utilities/ConcurrentAtomic.swift in Sources */ = {isa = PBXBuildFile; fileRef = A1B2C3D4E5F60718293A0011 /* utilities/ConcurrentAtomic.swift */; };
 		A1B2C3D4E5F60718293A0002 /* utilities/ConcurrentAtomic.swift in Sources */ = {isa = PBXBuildFile; fileRef = A1B2C3D4E5F60718293A0011 /* utilities/ConcurrentAtomic.swift */; };
 		A1B2C3D4E5F60718293A0003 /* utilities/ConcurrentAtomic.swift in Sources */ = {isa = PBXBuildFile; fileRef = A1B2C3D4E5F60718293A0011 /* utilities/ConcurrentAtomic.swift */; };
@@ -261,6 +265,8 @@
 		F0A400000000000000000001 /* MQTTKeepAliveController.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = MQTTKeepAliveController.swift; sourceTree = "<group>"; };
 		F0A400000000000000000005 /* KeepAliveTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = KeepAliveTests.swift; sourceTree = "<group>"; };
 		F0A500000000000000000001 /* CocoaMQTTClientIdentity.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = CocoaMQTTClientIdentity.swift; sourceTree = "<group>"; };
+		F0A600000000000000000001 /* MQTTClientCore.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = MQTTClientCore.swift; sourceTree = "<group>"; };
+		F0A600000000000000000005 /* ConnectionStateContractTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ConnectionStateContractTests.swift; sourceTree = "<group>"; };
 		A1B2C3D4E5F60718293A0011 /* utilities/ConcurrentAtomic.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = utilities/ConcurrentAtomic.swift; sourceTree = "<group>"; };
 		A1B2C3D4E5F60718293A0012 /* ConcurrentAtomicTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ConcurrentAtomicTests.swift; sourceTree = "<group>"; };
 		A1B2C3D4E5F60718293A0013 /* ThreadSafetyRegressionTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ThreadSafetyRegressionTests.swift; sourceTree = "<group>"; };
@@ -330,6 +336,7 @@
 				0409971E1C1B0B96006B5A6D /* CocoaMQTTTests.swift */,
 				F0A300000000000000000005 /* MQTTAutoReconnectControllerTests.swift */,
 				F0A400000000000000000005 /* KeepAliveTests.swift */,
+				F0A600000000000000000005 /* ConnectionStateContractTests.swift */,
 				A1B2C3D4E5F60718293A0012 /* ConcurrentAtomicTests.swift */,
 				A1B2C3D4E5F60718293A0014 /* PublicLoggerAPITests.swift */,
 				8D14C7622345CAB5002D959E /* CocoaMQTTDeliverTests.swift */,
@@ -410,6 +417,7 @@
 				F0A200000000000000000001 /* MQTT5SessionState.swift */,
 				F0A300000000000000000001 /* MQTTAutoReconnectController.swift */,
 				F0A400000000000000000001 /* MQTTKeepAliveController.swift */,
+				F0A600000000000000000001 /* MQTTClientCore.swift */,
 				A1B2C3D4E5F60718293A0011 /* utilities/ConcurrentAtomic.swift */,
 				9228E8C827610A9100063DF2 /* CocoaMQTTReasonCode.swift */,
 				9228E8C427610A8500063DF2 /* CocoaMQTTProperty.swift */,
@@ -653,6 +661,7 @@
 				F0A200000000000000000003 /* MQTT5SessionState.swift in Sources */,
 				F0A300000000000000000003 /* MQTTAutoReconnectController.swift in Sources */,
 				F0A400000000000000000003 /* MQTTKeepAliveController.swift in Sources */,
+				F0A600000000000000000003 /* MQTTClientCore.swift in Sources */,
 				F0A500000000000000000003 /* CocoaMQTTClientIdentity.swift in Sources */,
 				1111248E24BB515E00E2DFBC /* CocoaMQTT.swift in Sources */,
 				9228E8CF27610AA400063DF2 /* MqttAuthProperties.swift in Sources */,
@@ -709,6 +718,7 @@
 				F0A200000000000000000004 /* MQTT5SessionState.swift in Sources */,
 				F0A300000000000000000004 /* MQTTAutoReconnectController.swift in Sources */,
 				F0A400000000000000000004 /* MQTTKeepAliveController.swift in Sources */,
+				F0A600000000000000000004 /* MQTTClientCore.swift in Sources */,
 				F0A500000000000000000004 /* CocoaMQTTClientIdentity.swift in Sources */,
 				111124B824BB516300E2DFBC /* CocoaMQTT.swift in Sources */,
 				9228E8D027610AA400063DF2 /* MqttAuthProperties.swift in Sources */,
@@ -765,6 +775,7 @@
 				F0A200000000000000000002 /* MQTT5SessionState.swift in Sources */,
 				F0A300000000000000000002 /* MQTTAutoReconnectController.swift in Sources */,
 				F0A400000000000000000002 /* MQTTKeepAliveController.swift in Sources */,
+				F0A600000000000000000002 /* MQTTClientCore.swift in Sources */,
 				F0A500000000000000000002 /* CocoaMQTTClientIdentity.swift in Sources */,
 				8225B53A227C2FC600E4DB51 /* CocoaMQTT.swift in Sources */,
 				9228E8CE27610AA400063DF2 /* MqttAuthProperties.swift in Sources */,
@@ -820,6 +831,7 @@
 				8D14C7632345CAB5002D959E /* CocoaMQTTDeliverTests.swift in Sources */,
 				F0A300000000000000000006 /* MQTTAutoReconnectControllerTests.swift in Sources */,
 				F0A400000000000000000006 /* KeepAliveTests.swift in Sources */,
+				F0A600000000000000000006 /* ConnectionStateContractTests.swift in Sources */,
 				8D14C7672349C2A3002D959E /* CocoaMQTTStorageTests.swift in Sources */,
 				8225B556227C334700E4DB51 /* CocoaMQTTTests.swift in Sources */,
 				A1B2C3D4E5F60718293A0004 /* ConcurrentAtomicTests.swift in Sources */,
