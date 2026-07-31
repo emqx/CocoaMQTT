@@ -1,5 +1,7 @@
 # CocoaMQTT
 
+**English** | [简体中文](README_zh.md)
+
 > [!IMPORTANT]
 > **`master` contains CocoaMQTT 3 development and may include breaking
 > changes.** For production applications, use
@@ -299,8 +301,8 @@ mqtt5.connectProperties = connectProperties
 _ = mqtt5.connect()
 
 ///MQTT 3.1.1
-let websocket = CocoaMQTTWebSocket(uri: "/mqtt")
-let mqtt = CocoaMQTT(clientID: clientID, host: host, port: 8083, socket: websocket)
+let websocket311 = CocoaMQTTWebSocket(uri: "/mqtt")
+let mqtt = CocoaMQTT(clientID: clientID, host: host, port: 8083, socket: websocket311)
 
 // ...
 
