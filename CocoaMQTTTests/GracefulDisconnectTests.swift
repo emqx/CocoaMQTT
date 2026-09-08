@@ -86,12 +86,15 @@ final class GracefulDisconnectTests: XCTestCase {
     private final class WebSocketConnection: NSObject, CocoaMQTTWebSocketConnection {
         weak var delegate: CocoaMQTTWebSocketConnectionDelegate?
         var queue = DispatchQueue(label: "tests.graceful-disconnect.websocket")
+        var onConnect: (() -> Void)?
         var onWrite: (() -> Void)?
         var onDisconnect: (() -> Void)?
         private var completions = [(Error?) -> Void]()
         private var events = [String]()
 
-        func connect() {}
+        func connect() {
+            onConnect?()
+        }
 
         func disconnect() {
             events.append("disconnect")
@@ -294,6 +297,97 @@ final class GracefulDisconnectTests: XCTestCase {
 
         wait(for: [writeQueued, disconnected], timeout: 1)
         XCTAssertEqual(connection.snapshot().last, "disconnect")
+    }
+
+    func testWebSocketConnectTimeoutClosesPendingConnection() throws {
+        let connection = WebSocketConnection()
+        let websocket = CocoaMQTTWebSocket(
+            uri: "/mqtt",
+            builder: WebSocketBuilder(connection: connection)
+        )
+        let delegate = SocketDelegate()
+        let callbackQueue = DispatchQueue(label: "tests.graceful-disconnect.connect-timeout-callbacks")
+        let disconnected = expectation(description: "pending connection timed out")
+        delegate.onDisconnect = { error in
+            guard let mqttError = error as? CocoaMQTTError,
+                  case .connectTimeout = mqttError else {
+                return XCTFail("Expected connectTimeout, got \(String(describing: error))")
+            }
+            disconnected.fulfill()
+        }
+        websocket.setDelegate(delegate, delegateQueue: callbackQueue)
+
+        try websocket.connect(toHost: "localhost", onPort: 8083, withTimeout: 0.01)
+
+        wait(for: [disconnected], timeout: 1)
+        XCTAssertEqual(connection.snapshot().last, "disconnect")
+    }
+
+    func testWebSocketConnectTimeoutIsCancelledAfterConnectionOpens() throws {
+        let connection = WebSocketConnection()
+        let websocket = CocoaMQTTWebSocket(
+            uri: "/mqtt",
+            builder: WebSocketBuilder(connection: connection)
+        )
+        let opened = expectation(description: "connection opened")
+        let notDisconnected = expectation(description: "opened connection remains connected")
+        notDisconnected.isInverted = true
+        connection.onConnect = { [weak connection] in
+            guard let connection = connection else { return }
+            connection.delegate?.connectionOpened(connection)
+            opened.fulfill()
+        }
+        connection.onDisconnect = {
+            notDisconnected.fulfill()
+        }
+
+        try websocket.connect(toHost: "localhost", onPort: 8083, withTimeout: 0.01)
+
+        wait(for: [opened, notDisconnected], timeout: 0.1)
+    }
+
+    func testWebSocketReconnectDoesNotApplyStaleTimeoutToReusedConnection() throws {
+        let connection = WebSocketConnection()
+        let websocket = CocoaMQTTWebSocket(
+            uri: "/mqtt",
+            builder: WebSocketBuilder(connection: connection)
+        )
+        let delegate = SocketDelegate()
+        let callbackQueue = DispatchQueue(label: "tests.graceful-disconnect.stale-connect-timeout-callbacks")
+        let timerBlockStarted = expectation(description: "connect timeout timer blocked")
+        let secondConnectReturned = expectation(description: "second connection attempt returned")
+        let notDisconnected = expectation(description: "reconnected socket remains connected")
+        notDisconnected.isInverted = true
+        let timerBlockGate = DispatchSemaphore(value: 0)
+        var connectCount = 0
+
+        delegate.onDisconnect = { _ in
+            notDisconnected.fulfill()
+        }
+        connection.onConnect = { [weak connection] in
+            connectCount += 1
+            if connectCount == 2, let connection = connection {
+                connection.delegate?.connectionOpened(connection)
+            }
+        }
+        websocket.setDelegate(delegate, delegateQueue: callbackQueue)
+        try websocket.connect(toHost: "localhost", onPort: 8083, withTimeout: 0.01)
+
+        websocket.internalQueue.async {
+            timerBlockStarted.fulfill()
+            timerBlockGate.wait()
+        }
+        wait(for: [timerBlockStarted], timeout: 1)
+
+        DispatchQueue.global().async {
+            try? websocket.connect(toHost: "localhost", onPort: 8083, withTimeout: 1)
+            secondConnectReturned.fulfill()
+        }
+
+        usleep(100_000)
+        timerBlockGate.signal()
+        wait(for: [secondConnectReturned], timeout: 1)
+        wait(for: [notDisconnected], timeout: 0.1)
     }
 
     func testWebSocketIncompletePayloadTriggersReadTimeout() throws {

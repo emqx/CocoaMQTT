@@ -166,6 +166,16 @@ public class CocoaMQTTWebSocket: CocoaMQTTDisconnectAfterWritingSocket,
             connection = newConnection
             newConnection.delegate = self
             newConnection.queue = internalQueue
+            let connectGeneration = self.connectGeneration
+            if timeout > 0 {
+                connectTimeoutTimer.schedule(wallDeadline: .now() + timeout) { [weak self, newConnection] in
+                    guard let self = self,
+                          self.connectGeneration == connectGeneration,
+                          let currentConnection = self.connection,
+                          currentConnection.isEqual(newConnection) else { return }
+                    self.closeConnection(withError: CocoaMQTTError.connectTimeout)
+                }
+            }
             newConnection.connect()
         }
     }
@@ -207,12 +217,16 @@ public class CocoaMQTTWebSocket: CocoaMQTTDisconnectAfterWritingSocket,
     internal var internalQueue = DispatchQueue(label: "CocoaMQTTWebSocket")
 
     private var connection: CocoaMQTTWebSocketConnection?
+    private var connectGeneration: UInt64 = 0
+    private lazy var connectTimeoutTimer = ReusableTimer(queue: internalQueue)
 
     private func reset() {
+        connectGeneration &+= 1
         connection?.delegate = nil
         connection?.disconnect()
         connection = nil
 
+        connectTimeoutTimer.reset()
         readBuffer.removeAll()
         scheduledReads.removeAll()
         readTimeoutTimer.reset()
@@ -371,6 +385,8 @@ extension CocoaMQTTWebSocket: CocoaMQTTWebSocketConnectionDelegate {
 
     public func connectionOpened(_ conn: CocoaMQTTWebSocketConnection) {
         guard conn.isEqual(connection) else { return }
+        connectGeneration &+= 1
+        connectTimeoutTimer.reset()
         guard let delegate = delegate else { return }
         guard let delegateQueue = delegateQueue else { return }
         delegateQueue.async {
