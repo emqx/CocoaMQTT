@@ -4,6 +4,7 @@ on:
   pull_request:
     branches:
       - master
+      - release/2.x
     paths:
       - "Source/**/*.swift"
       - "CocoaMQTTTests/**/*.swift"

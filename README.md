@@ -1,5 +1,11 @@
 # CocoaMQTT
 
+> **CocoaMQTT 2.x LTS:** This branch contains the latest stable 2.x release
+> line. It preserves the established CocoaAsyncSocket and Starscream transport
+> architecture and receives compatibility, correctness, and security fixes.
+> CocoaMQTT 3 development continues on `master`. See the
+> [2.x maintenance policy](MAINTENANCE.md) and [changelog](CHANGELOG.md).
+
 ![PodVersion](https://img.shields.io/cocoapods/v/CocoaMQTT5.svg)
 ![Platforms](https://img.shields.io/cocoapods/p/CocoaMQTT5.svg)
 ![License](https://img.shields.io/cocoapods/l/BadgeSwift.svg?style=flat)
@@ -14,20 +20,15 @@ are covered by a Swift 6 compatibility check in CI.
 
 ## Build
 
-Build with Xcode 11.1 / Swift 5.1
+The package manifest requires Swift tools 5.7. Release CI validates the current
+Xcode toolchain and Swift 6 compatibility; it does not independently exercise
+the oldest Swift 5.7 compiler. CocoaPods uses Swift 5 language mode.
 
 IOS Target: 12.0 or above
 OSX Target: 10.13 or above
 TVOS Target: 12.0 or above with Swift Package Manager or CocoaPods WebSockets;
 10.0 or above with CocoaPods Core
 visionOS Target: 1.0 or above (Swift Package Manager only, compile-verified in CI)
-
-##  xcode 14.3 issue:
-```ruby
-File not found: /Applications/Xcode.app/Contents/Developer/Toolchains/XcodeDefault.xctoolchain/usr/lib/arc/libarclite_iphonesimulator.a
-```
-If you encounter the issue, Please update your project minimum depolyments to 11.0
-
 
 ## Installation
 

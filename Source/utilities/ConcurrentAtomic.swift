@@ -71,9 +71,32 @@ public class ConcurrentAtomic<T> {
     ///   same instance would deadlock.
     ///
     /// - Parameter transform: A closure that receives `inout` access to the wrapped value.
-    /// - Returns: The value returned by `transform`.
+    ///
+    /// Mutations are synchronous in 2.4 so callers can safely observe the result
+    /// immediately after this method returns. The escaping closure signature is
+    /// retained for CocoaMQTT 2.3 source compatibility.
+    public func mutate(_ transform: @escaping (inout T) -> Void) {
+        queue.sync(flags: .barrier) {
+            transform(&self._value)
+            self.mutationObserver?(self._value)
+        }
+    }
+
+    /// Compatibility overload for transforms that return a value.
+    ///
+    /// Prefer `withMutation` in new code to make the returned value explicit.
     @discardableResult
+    @available(*, deprecated, renamed: "withMutation(_:)")
     public func mutate<Result>(_ transform: (inout T) throws -> Result) rethrows -> Result {
+        try withMutation(transform)
+    }
+
+    /// Atomically mutates the wrapped value and returns the transform result.
+    ///
+    /// - Important: Do not re-enter this `ConcurrentAtomic` instance from
+    ///   `transform`.
+    @discardableResult
+    public func withMutation<Result>(_ transform: (inout T) throws -> Result) rethrows -> Result {
         try queue.sync(flags: .barrier) {
             defer { self.mutationObserver?(self._value) }
             return try transform(&self._value)

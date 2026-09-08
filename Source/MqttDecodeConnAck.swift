@@ -54,6 +54,11 @@ public class MqttDecodeConnAck: NSObject {
     // 3.2.2.3.18 Authentication Data
     public var authenticationData = [UInt8]()
 
+    @available(*, deprecated, message: "Assumes MQTT 5 data; use properties(connackData:protocolVersion:)")
+    public func properties(connackData: [UInt8]) {
+        _ = properties(connackData: connackData, protocolVersion: .v5)
+    }
+
     @discardableResult
     public func properties(connackData: [UInt8],
                            protocolVersion: CocoaMQTTProtocolVersion) -> Bool {
