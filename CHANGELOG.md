@@ -1,5 +1,18 @@
 # Changelog
 
+## 2.4.1
+
+Fix WebSocket connection timeouts when `withTimeout` is positive. A pending
+WebSocket connection now closes with `CocoaMQTTError.connectTimeout`, and the
+timeout is invalidated when the connection opens or a new connection attempt
+starts.
+
+Compatibility note:
+
+- This release intentionally adds `CocoaMQTTError.connectTimeout` to the public
+  error enum. Existing exhaustive switches over `CocoaMQTTError` must handle
+  the new case.
+
 ## 2.4.0
 
 CocoaMQTT 2.4.0 is the stable, long-term-maintenance baseline for the 2.x

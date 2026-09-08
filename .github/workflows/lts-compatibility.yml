@@ -36,4 +36,5 @@ jobs:
           BASE_SHA: ${{ github.event.pull_request.base.sha }}
         run: |
           swift package diagnose-api-breaking-changes "${BASE_SHA}" \
-            --products CocoaMQTT CocoaMQTTWebSocket
+            --products CocoaMQTT CocoaMQTTWebSocket \
+            --breakage-allowlist-path .github/api-breakage-allowlist-2.3.txt

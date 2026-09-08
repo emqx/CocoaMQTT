@@ -25,9 +25,12 @@ into `release/2.x`; the branches must not be merged wholesale.
 
 ## Compatibility
 
-Patch releases in this line preserve the 2.4 public API and supported platform
-matrix. CI builds both package products, validates CocoaPods, and checks the
-public API against both 2.3.0 and the pull request base commit.
+Patch releases in this line normally preserve the 2.4 public API and supported
+platform matrix. 2.4.1 is an explicit compatibility exception: it adds
+`CocoaMQTTError.connectTimeout` so WebSocket connect timeouts use the existing
+public error type. CI records this exception in the API breakage allowlist.
+CI builds both package products, validates CocoaPods, and checks the public API
+against both 2.3.0 and the pull request base commit.
 
 Merging a stable version metadata update into `release/2.x` starts the
 `Check CocoaMQTT 2.x Release` workflow. If that version is not already tagged,
