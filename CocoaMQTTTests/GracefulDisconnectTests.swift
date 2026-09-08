@@ -309,10 +309,10 @@ final class GracefulDisconnectTests: XCTestCase {
         let callbackQueue = DispatchQueue(label: "tests.graceful-disconnect.connect-timeout-callbacks")
         let disconnected = expectation(description: "pending connection timed out")
         delegate.onDisconnect = { error in
-            XCTAssertTrue(
-                error is CocoaMQTTConnectTimeoutError,
-                "Expected CocoaMQTTConnectTimeoutError, got \(String(describing: error))"
-            )
+            guard let mqttError = error as? CocoaMQTTError,
+                  case .connectTimeout = mqttError else {
+                return XCTFail("Expected CocoaMQTTError.connectTimeout, got \(String(describing: error))")
+            }
             disconnected.fulfill()
         }
         websocket.setDelegate(delegate, delegateQueue: callbackQueue)

@@ -173,7 +173,7 @@ public class CocoaMQTTWebSocket: CocoaMQTTDisconnectAfterWritingSocket,
                           self.connectGeneration == connectGeneration,
                           let currentConnection = self.connection,
                           currentConnection.isEqual(newConnection) else { return }
-                    self.closeConnection(withError: CocoaMQTTConnectTimeoutError())
+                    self.closeConnection(withError: CocoaMQTTError.connectTimeout)
                 }
             }
             newConnection.connect()

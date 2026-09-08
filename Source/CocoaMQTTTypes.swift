@@ -76,13 +76,9 @@ extension UInt8 {
     }
 }
 
-/// Error reported when a WebSocket connection does not open before its timeout.
-public struct CocoaMQTTConnectTimeoutError: Error {
-    public init() {}
-}
-
 public enum CocoaMQTTError: Error {
     case invalidURL
+    case connectTimeout
     case readTimeout
     case writeTimeout
     @available(OSX 10.15, iOS 13.0, watchOS 6.0, tvOS 13.0, *)
