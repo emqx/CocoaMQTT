@@ -131,7 +131,7 @@ final class CocoaMQTTReaderProtocolErrorTests: XCTestCase {
         func didReceive(_ reader: CocoaMQTTReader, auth: FrameAuth) { authCount += 1 }
     }
 
-    func testMalformedPublishDisconnectsSocket() {
+    func testMalformedPublishIsDiscardedAndKeepsSessionAlive() {
         let socket = SocketSpy()
         let delegate = ReaderDelegateSpy()
         let reader = CocoaMQTTReader(socket: socket, delegate: delegate)
@@ -140,11 +140,14 @@ final class CocoaMQTTReaderProtocolErrorTests: XCTestCase {
         reader.lengthReady(0x06)
         reader.payloadReady(Data([0x00, 0x00, 0x41, 0x41, 0x41, 0x41]))
 
-        XCTAssertEqual(socket.disconnectCount, 1)
+        // A malformed PUBLISH must not tear down the whole MQTT session; the
+        // frame is discarded and the read loop continues (reads the next header).
+        XCTAssertEqual(socket.disconnectCount, 0)
         XCTAssertEqual(delegate.publishCount, 0)
+        XCTAssertEqual(socket.readRequests.last?.tag, CocoaMQTTReadTag.header.rawValue)
     }
 
-    func testTruncatedMQTT5PublishPropertyDisconnectsWithoutCrashing() {
+    func testTruncatedMQTT5PublishIsDiscardedWithoutCrashingOrDisconnecting() {
         let socket = SocketSpy()
         let delegate = ReaderDelegateSpy()
         let reader = CocoaMQTTReader(socket: socket, delegate: delegate, protocolVersion: .v5)
@@ -154,8 +157,11 @@ final class CocoaMQTTReaderProtocolErrorTests: XCTestCase {
         reader.lengthReady(UInt8(body.count))
         reader.payloadReady(Data(body))
 
-        XCTAssertEqual(socket.disconnectCount, 1)
+        // A malformed PUBLISH (any protocol version) is discarded without a crash
+        // and the session stays alive; the loop continues reading the next header.
+        XCTAssertEqual(socket.disconnectCount, 0)
         XCTAssertEqual(delegate.publishCount, 0)
+        XCTAssertEqual(socket.readRequests.last?.tag, CocoaMQTTReadTag.header.rawValue)
     }
 
     func testTruncatedMQTT5AcknowledgementPropertyDisconnectsWithoutCrashing() {

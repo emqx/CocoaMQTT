@@ -164,8 +164,11 @@ class CocoaMQTTReader {
             delegate?.didReceive(self, connack: connack)
         case .publish:
             guard let publish = FramePublish(packetFixedHeaderType: header, bytes: data, protocolVersion: protocolVersion) else {
-                protocolError("Reader parse \(frameType) failed, data: \(data)")
-                return
+                // A single malformed/unparseable PUBLISH must not tear down the whole
+                // MQTT session. Discard this one frame and continue the read loop so
+                // that other devices on the same connection stay online.
+                printWarning("Discarded malformed PUBLISH frame (header: \(header), bytes: \(data.count)); keeping MQTT session alive")
+                break
             }
             delegate?.didReceive(self, publish: publish)
         case .puback:
