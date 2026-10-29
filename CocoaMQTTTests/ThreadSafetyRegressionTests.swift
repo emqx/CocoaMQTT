@@ -4,6 +4,7 @@
 //
 
 import XCTest
+import MqttCocoaAsyncSocket
 @testable import CocoaMQTT
 #if IS_SWIFT_PACKAGE
 @testable import CocoaMQTTWebSocket
@@ -19,6 +20,8 @@ final class ThreadSafetyRegressionTests: XCTestCase {
     }
 
     private final class SocketDelegateStub: CocoaMQTTSocketDelegate {
+        var didWrite: (() -> Void)?
+
         func socketConnected(_ socket: CocoaMQTTSocketProtocol) {}
         func socket(_ socket: CocoaMQTTSocketProtocol, didReceive trust: SecTrust, completionHandler: @escaping (Bool) -> Void) {
             completionHandler(true)
@@ -26,9 +29,73 @@ final class ThreadSafetyRegressionTests: XCTestCase {
         func socketUrlSession(_ socket: CocoaMQTTSocketProtocol, didReceiveTrust trust: SecTrust, didReceiveChallenge challenge: URLAuthenticationChallenge, completionHandler: @escaping (URLSession.AuthChallengeDisposition, URLCredential?) -> Void) {
             completionHandler(.performDefaultHandling, nil)
         }
-        func socket(_ socket: CocoaMQTTSocketProtocol, didWriteDataWithTag tag: Int) {}
+        func socket(_ socket: CocoaMQTTSocketProtocol, didWriteDataWithTag tag: Int) {
+            didWrite?()
+        }
         func socket(_ socket: CocoaMQTTSocketProtocol, didRead data: Data, withTag tag: Int) {}
         func socketDidDisconnect(_ socket: CocoaMQTTSocketProtocol, withError err: Error?) {}
+    }
+
+    func testTCPWriteCallbacksDuringDelegateReplacement() {
+        let socket = CocoaMQTTSocket()
+        let nativeSocket = MGCDAsyncSocket()
+        let callbackQueue = DispatchQueue(label: "tests.tcp.write-callbacks")
+        let group = DispatchGroup()
+        let start = DispatchSemaphore(value: 0)
+
+        group.enter()
+        DispatchQueue.global().async {
+            start.wait()
+            for _ in 0..<10_000 {
+                // Release each delegate while write callbacks are still arriving.
+                let delegate = SocketDelegateStub()
+                socket.setDelegate(delegate, delegateQueue: callbackQueue)
+                socket.setDelegate(nil, delegateQueue: nil)
+            }
+            group.leave()
+        }
+
+        group.enter()
+        callbackQueue.async {
+            start.wait()
+            for tag in 0..<10_000 {
+                socket.socket(nativeSocket, didWriteDataWithTag: tag)
+            }
+            group.leave()
+        }
+        start.signal()
+        start.signal()
+        XCTAssertEqual(group.wait(timeout: .now() + 10), .success)
+    }
+
+    func testTCPWriteCallbackCanClearDelegate() {
+        let socket = CocoaMQTTSocket()
+        let delegate = SocketDelegateStub()
+        var callbackCount = 0
+        delegate.didWrite = {
+            callbackCount += 1
+            socket.setDelegate(nil, delegateQueue: nil)
+        }
+        socket.setDelegate(delegate, delegateQueue: .main)
+
+        socket.socket(MGCDAsyncSocket(), didWriteDataWithTag: 1)
+        socket.socket(MGCDAsyncSocket(), didWriteDataWithTag: 2)
+
+        XCTAssertEqual(callbackCount, 1)
+    }
+
+    func testTCPSocketDoesNotRetainDelegate() {
+        let socket = CocoaMQTTSocket()
+        weak var releasedDelegate: SocketDelegateStub?
+        do {
+            let delegate = SocketDelegateStub()
+            releasedDelegate = delegate
+            socket.setDelegate(delegate, delegateQueue: .main)
+        }
+
+        XCTAssertNil(releasedDelegate)
+        socket.socket(MGCDAsyncSocket(), didWriteDataWithTag: 1)
+        socket.setDelegate(nil, delegateQueue: nil)
     }
 
     private func waitUntil(timeout: TimeInterval, condition: () -> Bool) -> Bool {

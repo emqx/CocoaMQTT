@@ -403,7 +403,25 @@ public class CocoaMQTTSocket: NSObject,
     }
 
     fileprivate let reference = MGCDAsyncSocket()
-    fileprivate weak var delegate: CocoaMQTTSocketDelegate?
+    private let delegateLock = NSLock()
+    private weak var weakDelegate: CocoaMQTTSocketDelegate?
+
+    // Teardown can clear the delegate while a native callback is already queued.
+    // Snapshot it under a separate lock, releasing the lock before any callback
+    // or native socket operation so delegate re-entry cannot deadlock.
+    fileprivate var delegate: CocoaMQTTSocketDelegate? {
+        get {
+            delegateLock.lock()
+            defer { delegateLock.unlock() }
+            return weakDelegate
+        }
+        set {
+            delegateLock.lock()
+            defer { delegateLock.unlock() }
+            weakDelegate = newValue
+        }
+    }
+
     private let connectionStateLock = NSLock()
     private let teardownCondition = NSCondition()
     private var connectedHost: String?
