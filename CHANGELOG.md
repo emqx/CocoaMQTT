@@ -1,5 +1,12 @@
 # Changelog
 
+## 2.4.2
+
+Fix a TCP socket delegate read/write race that can occur when queued socket
+callbacks overlap delegate replacement or client teardown (#744). Delegate
+access is synchronized while preserving weak ownership and allowing callbacks
+to re-enter delegate configuration safely. No public API changes.
+
 ## 2.4.1
 
 Fix WebSocket connection timeouts when `withTimeout` is positive. A pending
