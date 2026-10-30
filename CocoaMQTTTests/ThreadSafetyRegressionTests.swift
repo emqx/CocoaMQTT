@@ -4,6 +4,7 @@
 //
 
 import XCTest
+import MqttCocoaAsyncSocket
 @testable import CocoaMQTT
 #if IS_SWIFT_PACKAGE
 @testable import CocoaMQTTWebSocket
@@ -19,6 +20,8 @@ final class ThreadSafetyRegressionTests: XCTestCase {
     }
 
     private final class SocketDelegateStub: CocoaMQTTSocketDelegate {
+        var didWrite: (() -> Void)?
+
         func socketConnected(_ socket: CocoaMQTTSocketProtocol) {}
         func socket(_ socket: CocoaMQTTSocketProtocol, didReceive trust: SecTrust, completionHandler: @escaping (Bool) -> Void) {
             completionHandler(true)
@@ -26,9 +29,155 @@ final class ThreadSafetyRegressionTests: XCTestCase {
         func socketUrlSession(_ socket: CocoaMQTTSocketProtocol, didReceiveTrust trust: SecTrust, didReceiveChallenge challenge: URLAuthenticationChallenge, completionHandler: @escaping (URLSession.AuthChallengeDisposition, URLCredential?) -> Void) {
             completionHandler(.performDefaultHandling, nil)
         }
-        func socket(_ socket: CocoaMQTTSocketProtocol, didWriteDataWithTag tag: Int) {}
+        func socket(_ socket: CocoaMQTTSocketProtocol, didWriteDataWithTag tag: Int) {
+            didWrite?()
+        }
         func socket(_ socket: CocoaMQTTSocketProtocol, didRead data: Data, withTag tag: Int) {}
         func socketDidDisconnect(_ socket: CocoaMQTTSocketProtocol, withError err: Error?) {}
+    }
+
+    func testTCPWriteCallbacksDuringDelegateReplacement() {
+        let socket = CocoaMQTTSocket()
+        let nativeSocket = MGCDAsyncSocket()
+        let callbackQueue = DispatchQueue(label: "tests.tcp.write-callbacks")
+        let group = DispatchGroup()
+        let start = DispatchSemaphore(value: 0)
+
+        group.enter()
+        DispatchQueue.global().async {
+            start.wait()
+            for _ in 0..<10_000 {
+                // Release each delegate while write callbacks are still arriving.
+                let delegate = SocketDelegateStub()
+                socket.setDelegate(delegate, delegateQueue: callbackQueue)
+                socket.setDelegate(nil, delegateQueue: nil)
+            }
+            group.leave()
+        }
+
+        group.enter()
+        callbackQueue.async {
+            start.wait()
+            for tag in 0..<10_000 {
+                socket.socket(nativeSocket, didWriteDataWithTag: tag)
+            }
+            group.leave()
+        }
+        start.signal()
+        start.signal()
+        XCTAssertEqual(group.wait(timeout: .now() + 10), .success)
+    }
+
+    func testTCPWriteCallbackCanClearDelegate() {
+        let socket = CocoaMQTTSocket()
+        let delegate = SocketDelegateStub()
+        var callbackCount = 0
+        delegate.didWrite = {
+            callbackCount += 1
+            socket.setDelegate(nil, delegateQueue: nil)
+        }
+        socket.setDelegate(delegate, delegateQueue: .main)
+
+        socket.socket(MGCDAsyncSocket(), didWriteDataWithTag: 1)
+        socket.socket(MGCDAsyncSocket(), didWriteDataWithTag: 2)
+
+        XCTAssertEqual(callbackCount, 1)
+    }
+
+    func testTCPSocketDoesNotRetainDelegate() {
+        let socket = CocoaMQTTSocket()
+        weak var releasedDelegate: SocketDelegateStub?
+        do {
+            let delegate = SocketDelegateStub()
+            releasedDelegate = delegate
+            socket.setDelegate(delegate, delegateQueue: .main)
+        }
+
+        XCTAssertNil(releasedDelegate)
+        socket.socket(MGCDAsyncSocket(), didWriteDataWithTag: 1)
+        socket.setDelegate(nil, delegateQueue: nil)
+    }
+
+    func testTCPClientTeardownDuringWriteCallbackPreservesDelegateLifetime() {
+        let socket = CocoaMQTTSocket()
+        let nativeSocket = MGCDAsyncSocket()
+        let callbackQueue = DispatchQueue(label: "tests.tcp.teardown.callback")
+        let callbackStarted = DispatchSemaphore(value: 0)
+        let resumeCallback = DispatchSemaphore(value: 0)
+        let callbackFinished = DispatchSemaphore(value: 0)
+        let teardownFinished = DispatchSemaphore(value: 0)
+        var delegate: SocketDelegateStub? = SocketDelegateStub()
+        weak var releasedDelegate = delegate
+
+        delegate?.didWrite = {
+            callbackStarted.signal()
+            XCTAssertEqual(resumeCallback.wait(timeout: .now() + 10), .success)
+        }
+        socket.setDelegate(delegate, delegateQueue: callbackQueue)
+        defer { resumeCallback.signal() }
+
+        callbackQueue.async {
+            socket.socket(nativeSocket, didWriteDataWithTag: 1)
+            callbackFinished.signal()
+        }
+        guard callbackStarted.wait(timeout: .now() + 5) == .success else {
+            return XCTFail("Write callback did not start")
+        }
+
+        DispatchQueue.global().async {
+            // Teardown must finish even while the delegate callback is blocked.
+            let prepared = socket.prepareClientTeardown()
+            XCTAssertTrue(prepared)
+            if prepared {
+                XCTAssertFalse(socket.prepareClientTeardown())
+                socket.performClientTeardown()
+            }
+            teardownFinished.signal()
+        }
+        guard teardownFinished.wait(timeout: .now() + 5) == .success else {
+            return XCTFail("Teardown waited for the active write callback")
+        }
+
+        delegate = nil
+        XCTAssertNotNil(releasedDelegate, "The active callback must retain its delegate snapshot")
+        resumeCallback.signal()
+        guard callbackFinished.wait(timeout: .now() + 5) == .success else {
+            return XCTFail("Write callback did not finish")
+        }
+        XCTAssertNil(releasedDelegate, "The snapshot must be released after the callback")
+    }
+
+    func testTCPWriteCallbackCanScheduleClientTeardownAndRebindDelegate() {
+        let socket = CocoaMQTTSocket()
+        let nativeSocket = MGCDAsyncSocket()
+        let callbackQueue = DispatchQueue(label: "tests.tcp.teardown.reentrant")
+        let callbackReturned = DispatchSemaphore(value: 0)
+        let delegateRebound = DispatchSemaphore(value: 0)
+        let delegate = SocketDelegateStub()
+        delegate.didWrite = {
+            socket.disconnectForClientDeinit()
+        }
+        socket.setDelegate(delegate, delegateQueue: callbackQueue)
+
+        callbackQueue.async {
+            socket.socket(nativeSocket, didWriteDataWithTag: 1)
+            callbackReturned.signal()
+        }
+        guard callbackReturned.wait(timeout: .now() + 5) == .success else {
+            return XCTFail("Callback-triggered teardown did not return")
+        }
+
+        let replacement = SocketDelegateStub()
+        let replacementCalled = DispatchSemaphore(value: 0)
+        replacement.didWrite = { replacementCalled.signal() }
+        callbackQueue.async {
+            // Rebinding waits for any scheduled native teardown to complete.
+            socket.setDelegate(replacement, delegateQueue: callbackQueue)
+            socket.socket(nativeSocket, didWriteDataWithTag: 2)
+            delegateRebound.signal()
+        }
+        XCTAssertEqual(delegateRebound.wait(timeout: .now() + 5), .success)
+        XCTAssertEqual(replacementCalled.wait(timeout: .now() + 5), .success)
     }
 
     private func waitUntil(timeout: TimeInterval, condition: () -> Bool) -> Bool {
