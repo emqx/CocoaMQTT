@@ -101,13 +101,13 @@ final class CocoaMQTTStorage: CocoaMQTTStorageProtocol {
             persistedFrame.topic = persistenceTopic
         }
         ensureOrder(for: frame.msgid)
-        userDefault.set(persistedFrame.bytes(version: protocolVersion.rawValue), forKey: key(frame.msgid))
+        userDefault.set(Data(persistedFrame.bytes(version: protocolVersion.rawValue)), forKey: key(frame.msgid))
         return true
     }
 
     func write(_ frame: FramePubRel) -> Bool {
         ensureOrder(for: frame.msgid)
-        userDefault.set(frame.bytes(version: protocolVersion.rawValue), forKey: key(frame.msgid))
+        userDefault.set(Data(frame.bytes(version: protocolVersion.rawValue)), forKey: key(frame.msgid))
         return true
     }
 
@@ -249,6 +249,16 @@ final class CocoaMQTTStorage: CocoaMQTTStorageProtocol {
         return UInt16(storedKey.dropFirst(namespacePrefix.count))
     }
 
+    /// Frames are stored as `Data` (a plist `<data>` blob). Earlier releases stored
+    /// `[UInt8]`, which UserDefaults bridges to an array of one `NSNumber` per byte; those
+    /// values are still read so frames persisted by an older release are recovered.
+    private static func frameBytes(_ value: Any) -> [UInt8]? {
+        if let data = value as? Data {
+            return [UInt8](data)
+        }
+        return value as? [UInt8]
+    }
+
     private static func name(_ clientId: String) -> String {
         return "cocomqtt-\(clientId)"
     }
@@ -275,7 +285,7 @@ final class CocoaMQTTStorage: CocoaMQTTStorageProtocol {
         }
 
         let decodableFrames = legacyFrames.filter { legacyFrame in
-            guard let bytes = legacyFrame.value as? [UInt8],
+            guard let bytes = CocoaMQTTStorage.frameBytes(legacyFrame.value),
                   let parsed = parse(bytes) else { return false }
             return decodeFrame(header: parsed.0, bytes: parsed.1) != nil
         }
@@ -353,7 +363,7 @@ final class CocoaMQTTStorage: CocoaMQTTStorageProtocol {
         }
         for storedFrame in allObjs {
             let v = storedFrame.value
-            guard let bytes = v as? [UInt8] else { continue }
+            guard let bytes = CocoaMQTTStorage.frameBytes(v) else { continue }
             guard let parsed = parse(bytes) else { continue }
 
             if needDelete {
