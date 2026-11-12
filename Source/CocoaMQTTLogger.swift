@@ -9,20 +9,23 @@
 import Foundation
 
 // Convenience functions
-func printDebug(_ message: String) {
-    CocoaMQTTLogger.logger.debug(message)
+//
+// Messages are `@autoclosure`s so that string interpolation (for example the
+// description of a whole payload) is only evaluated when the level is enabled.
+func printDebug(_ message: @autoclosure () -> String) {
+    CocoaMQTTLogger.logger.debug(message())
 }
 
-func printInfo(_ message: String) {
-    CocoaMQTTLogger.logger.info(message)
+func printInfo(_ message: @autoclosure () -> String) {
+    CocoaMQTTLogger.logger.info(message())
 }
 
-func printWarning(_ message: String) {
-    CocoaMQTTLogger.logger.warning(message)
+func printWarning(_ message: @autoclosure () -> String) {
+    CocoaMQTTLogger.logger.warning(message())
 }
 
-func printError(_ message: String) {
-    CocoaMQTTLogger.logger.error(message)
+func printError(_ message: @autoclosure () -> String) {
+    CocoaMQTTLogger.logger.error(message())
 }
 
 // Enum log levels
@@ -52,20 +55,32 @@ open class CocoaMQTTLogger: NSObject {
         print("CocoaMQTT(\(level)): \(message)")
     }
 
-    func debug(_ message: String) {
-        log(level: .debug, message: message)
+    /// Whether messages at `level` are passed to `log(level:message:)`.
+    ///
+    /// Messages below `minLevel` are not built at all, so set `minLevel` to the lowest
+    /// level you want to receive, including when overriding `log(level:message:)`.
+    func isEnabled(_ level: CocoaMQTTLoggerLevel) -> Bool {
+        level.rawValue >= minLevel.rawValue
     }
 
-    func info(_ message: String) {
-        log(level: .info, message: message)
+    func debug(_ message: @autoclosure () -> String) {
+        guard isEnabled(.debug) else { return }
+        log(level: .debug, message: message())
     }
 
-    func warning(_ message: String) {
-        log(level: .warning, message: message)
+    func info(_ message: @autoclosure () -> String) {
+        guard isEnabled(.info) else { return }
+        log(level: .info, message: message())
     }
 
-    func error(_ message: String) {
-        log(level: .error, message: message)
+    func warning(_ message: @autoclosure () -> String) {
+        guard isEnabled(.warning) else { return }
+        log(level: .warning, message: message())
+    }
+
+    func error(_ message: @autoclosure () -> String) {
+        guard isEnabled(.error) else { return }
+        log(level: .error, message: message())
     }
 
 }

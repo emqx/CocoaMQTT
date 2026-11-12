@@ -232,6 +232,36 @@ class CocoaMQTTStorageTests: XCTestCase {
         XCTAssertTrue(legacy.readAll().isEmpty)
     }
 
+    func testFramesArePersistedAsData() throws {
+        let clientId = "storage-data-format-\(UUID().uuidString)"
+        defer { clearStorage(clientId) }
+        let storage = try XCTUnwrap(CocoaMQTTStorage(by: clientId, protocolVersion: .v5))
+        let publish = FramePublish(topic: "data/topic", payload: [UInt8](repeating: 0x41, count: 4096), qos: .qos1, msgid: 7)
+        let pubrel = FramePubRel(msgid: 8)
+
+        XCTAssertTrue(storage.write(publish))
+        XCTAssertTrue(storage.write(pubrel))
+
+        let defaults = try XCTUnwrap(UserDefaults(suiteName: "cocomqtt-\(clientId)"))
+        XCTAssertTrue(defaults.object(forKey: "mqtt-5.0-7") is Data)
+        XCTAssertTrue(defaults.object(forKey: "mqtt-5.0-8") is Data)
+        let frames = storage.readAll()
+        XCTAssertEqual(frames.count, 2)
+        assertEqual(frames.first, publish)
+    }
+
+    func testFramesPersistedAsByteArraysAreStillRead() throws {
+        let clientId = "storage-byte-array-format-\(UUID().uuidString)"
+        defer { clearStorage(clientId) }
+        let publish = FramePublish(topic: "array/topic", payload: [1, 2, 3], qos: .qos1, msgid: 5)
+        let defaults = try XCTUnwrap(UserDefaults(suiteName: "cocomqtt-\(clientId)"))
+        defaults.set(publish.bytes(version: "5.0"), forKey: "mqtt-5.0-5")
+
+        let storage = try XCTUnwrap(CocoaMQTTStorage(by: clientId, protocolVersion: .v5))
+
+        assertEqual(storage.readAll().first, publish)
+    }
+
     private func clearStorage(_ clientId: String) {
         let suiteName = "cocomqtt-\(clientId)"
         guard let defaults = UserDefaults(suiteName: suiteName) else {
